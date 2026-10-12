@@ -1,0 +1,1 @@
+export const endpoints = { auth:'/auth', profile:'/profile', resumes:'/resumes', jobs:'/jobs', matching:'/matching', assessment:'/assessments', learning:'/learning', assistant:'/assistant', consultations:'/consultations', subscriptions:'/subscriptions', admin:'/admin' } as const;

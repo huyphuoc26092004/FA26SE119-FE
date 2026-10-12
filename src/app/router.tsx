@@ -1,0 +1,127 @@
+import { Navigate, createBrowserRouter, Outlet } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
+import type { UserRole } from '../types/domain';
+import PublicLayout from '../layouts/PublicLayout';
+import CandidateLayout from '../layouts/CandidateLayout';
+import ConsultantLayout from '../layouts/ConsultantLayout';
+import AdminLayout from '../layouts/AdminLayout';
+import HomePage from '../pages/public/HomePage';
+import { LoginPage, RegisterPage, ForgotPasswordPage } from '../pages/public/AuthPages';
+import DashboardPage from '../pages/candidate/DashboardPage';
+import ProfilePage from '../pages/candidate/ProfilePage';
+import ResumesPage from '../pages/candidate/ResumesPage';
+import JobsPage from '../pages/candidate/JobsPage';
+import JobDetailsPage from '../pages/candidate/JobDetailsPage';
+import AssistantPage from '../pages/candidate/AssistantPage';
+import { AdminDashboard, ConsultantDashboard } from '../pages/shared/RoleDashboards';
+import PlaceholderPage from '../pages/shared/PlaceholderPage';
+import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
+export function ProtectedRoute(){const authenticated=useAuthStore(s=>s.isAuthenticated);return authenticated?<Outlet/>:<Navigate to="/login" replace/>;}
+export function RoleRoute({role}:{role:UserRole}){const current=useAuthStore(s=>s.role);return current===role?<Outlet/>:<Navigate to="/unauthorized" replace/>;}
+const placeholders=(paths:string[])=>paths.map(path=>({path,element:<PlaceholderPage/>}));
+export const router = createBrowserRouter([
+  {
+    element: <PublicLayout />,
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/jobs', element: <JobsPage /> },
+      { path: '/jobs/:jobId', element: <JobDetailsPage /> },
+      { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+    ],
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <RoleRoute role="CANDIDATE" />,
+        children: [
+          {
+            path: '/candidate',
+            element: <CandidateLayout />,
+            children: [
+              { index: true, element: <DashboardPage /> },
+              { path: 'profile', element: <ProfilePage /> },
+              { path: 'resumes', element: <ResumesPage /> },
+              { path: 'jobs', element: <JobsPage /> },
+              { path: 'jobs/:jobId', element: <JobDetailsPage /> },
+              { path: 'assistant', element: <AssistantPage /> },
+              ...placeholders([
+                'profile/edit',
+                'resumes/create',
+                'resumes/upload',
+                'resumes/:resumeId',
+                'resumes/:resumeId/edit',
+                'resumes/:resumeId/analysis',
+                'jobs/:jobId/match',
+                'career-intelligence',
+                'assessment',
+                'assessment/:assessmentId',
+                'assessment/:assessmentId/result',
+                'learning',
+                'learning/roadmap',
+                'consultations',
+                'consultations/new',
+                'consultations/:consultationId',
+                'subscription',
+                'payment',
+                'usage',
+                'support',
+              ]),
+            ],
+          },
+        ],
+      },
+      {
+        element: <RoleRoute role="CAREER_CONSULTANT" />,
+        children: [
+          {
+            path: '/consultant',
+            element: <ConsultantLayout />,
+            children: [
+              { index: true, element: <ConsultantDashboard /> },
+              ...placeholders([
+                'consultations',
+                'consultations/:id',
+                'candidates',
+                'candidates/:candidateId',
+              ]),
+            ],
+          },
+        ],
+      },
+      {
+        element: <RoleRoute role="ADMIN" />,
+        children: [
+          {
+            path: '/admin',
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <AdminDashboard /> },
+              ...placeholders([
+                'users',
+                'users/:id',
+                'subscriptions',
+                'payments',
+                'ai',
+                'ai/prompts',
+                'ai/embeddings',
+                'jobs',
+                'vector',
+                'logs',
+                'audit',
+                'notifications',
+                'feedback',
+                'support',
+                'analytics',
+              ]),
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  { path: '/unauthorized', element: <UnauthorizedPage /> },
+  { path: '*', element: <NotFoundPage /> },
+]);

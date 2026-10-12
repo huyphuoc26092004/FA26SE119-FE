@@ -1,0 +1,2 @@
+import type { Resume } from '../../types/domain';
+export const mockResumes: Resume[] = [{id:'cv-1',name:'Frontend Developer CV',position:'Frontend Engineer',language:'English',updatedAt:'Oct 10, 2026',atsScore:88,status:'Ready'},{id:'cv-2',name:'Product Engineer CV',position:'Software Engineer',language:'English',updatedAt:'Oct 7, 2026',atsScore:74,status:'Needs Review'},{id:'cv-3',name:'Internship CV',position:'Web Developer',language:'Vietnamese',updatedAt:'Sep 28, 2026',atsScore:0,status:'Draft'}];
