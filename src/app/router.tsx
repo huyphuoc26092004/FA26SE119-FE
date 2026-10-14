@@ -17,6 +17,11 @@ import {
 import DashboardPage from '../pages/candidate/DashboardPage';
 import ProfilePage from '../pages/candidate/ProfilePage';
 import ResumesPage from '../pages/candidate/ResumesPage';
+import CreateResumePage from '../pages/candidate/CreateResumePage';
+import UploadResumePage from '../pages/candidate/UploadResumePage';
+import ResumeDetailsPage from '../pages/candidate/ResumeDetailsPage';
+import EditResumePage from '../pages/candidate/EditResumePage';
+import AiResumeBuilderPage from '../pages/candidate/AiResumeBuilderPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
@@ -55,16 +60,17 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <DashboardPage /> },
               { path: 'profile', element: <ProfilePage /> },
+              { path: 'profile/edit', element: <ProfilePage isEditMode={true} /> },
               { path: 'resumes', element: <ResumesPage /> },
+              { path: 'resumes/create', element: <CreateResumePage /> },
+              { path: 'resumes/upload', element: <UploadResumePage /> },
+              { path: 'resumes/ai-builder', element: <AiResumeBuilderPage /> },
+              { path: 'resumes/:resumeId', element: <ResumeDetailsPage /> },
+              { path: 'resumes/:resumeId/edit', element: <EditResumePage /> },
               { path: 'jobs', element: <JobsPage /> },
               { path: 'jobs/:jobId', element: <JobDetailsPage /> },
               { path: 'assistant', element: <AssistantPage /> },
               ...placeholders([
-                'profile/edit',
-                'resumes/create',
-                'resumes/upload',
-                'resumes/:resumeId',
-                'resumes/:resumeId/edit',
                 'resumes/:resumeId/analysis',
                 'jobs/:jobId/match',
                 'career-intelligence',
