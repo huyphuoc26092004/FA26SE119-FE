@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { BriefcaseBusiness, MapPin, Search, SlidersHorizontal } from 'lucide-react';
 import { getJobs } from '../../mocks/services/mockService';
 import { Badge, Card, EmptyState, ErrorState, Input, Loading, PageTitle } from '../../components/ui';
@@ -8,6 +8,10 @@ import { useTranslation } from '../../i18n';
 
 export default function JobsPage() {
   const { t } = useTranslation();
+  const locationState = useLocation();
+  const isCandidate = locationState.pathname.startsWith('/candidate');
+  const getJobDetailUrl = (id: string) => (isCandidate ? `/candidate/jobs/${id}` : `/jobs/${id}`);
+
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('All');
   const { data, isPending, isError } = useQuery({ queryKey: ['jobs'], queryFn: getJobs });
@@ -80,7 +84,7 @@ export default function JobsPage() {
                   </div>
                   <div>
                     <Link
-                      to={`/candidate/jobs/${job.id}`}
+                      to={getJobDetailUrl(job.id)}
                       className="text-lg font-bold hover:text-blue-600 transition"
                     >
                       {job.title}
@@ -103,7 +107,7 @@ export default function JobsPage() {
                     {job.match}% {t('jobs.match')}
                   </Badge>
                   <Link
-                    to={`/candidate/jobs/${job.id}`}
+                    to={getJobDetailUrl(job.id)}
                     className="text-sm font-semibold text-blue-600 hover:text-blue-700"
                   >
                     {t('jobs.viewDetailsLink')}

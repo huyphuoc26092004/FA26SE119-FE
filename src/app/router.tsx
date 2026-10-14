@@ -6,7 +6,14 @@ import CandidateLayout from '../layouts/CandidateLayout';
 import ConsultantLayout from '../layouts/ConsultantLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import HomePage from '../pages/public/HomePage';
-import { LoginPage, RegisterPage, ForgotPasswordPage } from '../pages/public/AuthPages';
+import GuestTrialPage from '../pages/public/GuestTrialPage';
+import {
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  VerifyOtpPage,
+  ResetPasswordPage,
+} from '../pages/public/AuthPages';
 import DashboardPage from '../pages/candidate/DashboardPage';
 import ProfilePage from '../pages/candidate/ProfilePage';
 import ResumesPage from '../pages/candidate/ResumesPage';
@@ -24,11 +31,16 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { path: '/', element: <HomePage /> },
+      { path: '/guest-trial', element: <GuestTrialPage /> },
+      { path: '/trial', element: <Navigate to="/guest-trial" replace /> },
       { path: '/jobs', element: <JobsPage /> },
       { path: '/jobs/:jobId', element: <JobDetailsPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
+      { path: '/verify-otp', element: <VerifyOtpPage /> },
+      { path: '/verify-email', element: <VerifyOtpPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
     ],
   },
   {

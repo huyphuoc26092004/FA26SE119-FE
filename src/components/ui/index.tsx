@@ -14,7 +14,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 cursor-pointer ${styles[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 cursor-pointer whitespace-nowrap ${styles[variant]} ${className}`}
     />
   );
 }
@@ -37,8 +37,14 @@ export function Card({
   children: ReactNode;
   className?: string;
 }) {
+  const hasBg = className.includes('bg-');
+  const hasBorder = className.includes('border-');
   return (
-    <section className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}>
+    <section
+      className={`rounded-2xl ${hasBorder ? '' : 'border border-slate-200/80'} ${
+        hasBg ? '' : 'bg-white'
+      } p-5 shadow-sm ${className}`}
+    >
       {children}
     </section>
   );

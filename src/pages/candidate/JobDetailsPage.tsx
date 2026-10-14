@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ExternalLink, MapPin } from 'lucide-react';
 import { getJobById } from '../../mocks/services/mockService';
@@ -8,6 +8,10 @@ import { useTranslation } from '../../i18n';
 export default function JobDetailsPage() {
   const { jobId = '' } = useParams();
   const { t } = useTranslation();
+  const location = useLocation();
+  const isCandidate = location.pathname.startsWith('/candidate');
+  const backUrl = isCandidate ? '/candidate/jobs' : '/jobs';
+
   const { data: job, isPending, isError } = useQuery({
     queryKey: ['job', jobId],
     queryFn: () => getJobById(jobId),
@@ -20,7 +24,7 @@ export default function JobDetailsPage() {
   return (
     <>
       <Link
-        to="/candidate/jobs"
+        to={backUrl}
         className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition"
       >
         <ArrowLeft size={16} />
@@ -67,7 +71,7 @@ export default function JobDetailsPage() {
           </div>
 
           <div className="space-y-3">
-            <Link to={`/candidate/jobs/${job.id}/match`} className="block">
+            <Link to={isCandidate ? `/candidate/jobs/${job.id}/match` : '/login'} className="block">
               <Button className="w-full">{t('jobs.analyzeCvFit')}</Button>
             </Link>
             <Button
