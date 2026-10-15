@@ -100,8 +100,8 @@ export function LoginPage() {
 
   const handleSelectPersona = (p: typeof personas[0]) => {
     setActivePersona(p.id);
-    setValue('email', p.email);
-    setValue('password', 'Demo123!');
+    setValue('email', p.email, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+    setValue('password', 'Demo123!', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
     setError('');
   };
 

@@ -31,6 +31,9 @@ import {
   Star,
   Target,
   Trash2,
+  Trophy,
+  Users,
+  Heart,
   X,
   Zap,
 } from 'lucide-react';
@@ -117,7 +120,16 @@ export default function ResumeDetailsPage() {
                 {t('resumes.editCv')}
               </Button>
             </Link>
-            <Button variant="primary" onClick={handleDownloadPdf}>
+            <Link to={`/candidate/resumes/${cv.id}/analysis`}>
+              <Button
+                variant="primary"
+                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white border-0 shadow-xs"
+              >
+                <Sparkles size={15} className="text-amber-300" />
+                Phân tích & Cải thiện AI ✨
+              </Button>
+            </Link>
+            <Button variant="secondary" onClick={handleDownloadPdf}>
               <Download size={15} />
               {t('resumes.downloadPdf')}
             </Button>
@@ -338,30 +350,48 @@ export default function ResumeDetailsPage() {
             {/* Projects */}
             {cv.projects && cv.projects.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-3">
-                  Dự án nổi bật (Key Projects)
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-3 flex items-center justify-between">
+                  <span>Dự án nổi bật (Key Projects)</span>
+                  <span className="text-2xs font-normal text-slate-400 capitalize">{cv.projects.length} dự án</span>
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   {cv.projects.map((proj) => (
-                    <div key={proj.id}>
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-slate-900 text-xs">{proj.name}</h4>
+                    <div key={proj.id} className="group">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900 text-xs">{proj.name}</h4>
+                          {proj.role && (
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-3xs font-semibold text-slate-600">
+                              {proj.role}
+                            </span>
+                          )}
+                        </div>
                         {proj.link && (
                           <a
                             href={proj.link}
                             target="_blank"
-                            rel="noreferrer"
-                            className="text-2xs text-blue-600 hover:underline flex items-center gap-1"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-blue-700 hover:bg-blue-100 border border-blue-200 transition"
+                            title="Nhấp để mở xem dự án trực tiếp"
                           >
-                            Xem dự án <ExternalLink size={10} />
+                            <ExternalLink size={10} />
+                            Xem dự án / Demo
                           </a>
                         )}
                       </div>
-                      <p className="text-xs text-slate-600 mt-0.5">{proj.description}</p>
-                      {proj.techStack && (
-                        <p className="text-2xs text-slate-400 mt-1">
-                          Công nghệ: {proj.techStack.join(', ')}
-                        </p>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">{proj.description}</p>
+                      {proj.techStack && proj.techStack.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                          <span className="text-3xs text-slate-400 font-medium mr-1">Công nghệ:</span>
+                          {(Array.isArray(proj.techStack) ? proj.techStack : [proj.techStack]).map((tech) => (
+                            <span
+                              key={tech}
+                              className="rounded bg-slate-50 border border-slate-200/80 px-1.5 py-0.2 text-3xs text-slate-600"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -371,15 +401,121 @@ export default function ResumeDetailsPage() {
 
             {/* Certifications */}
             {cv.certifications && cv.certifications.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-2">
-                  Chứng chỉ (Certifications)
+              <div className="mb-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-2.5 flex items-center justify-between">
+                  <span>Chứng chỉ & Chứng nhận (Certifications)</span>
+                  <span className="text-2xs font-normal text-slate-400 capitalize">{cv.certifications.length} chứng chỉ</span>
                 </h3>
-                <div className="space-y-1.5 text-xs text-slate-700">
+                <div className="space-y-2 text-xs text-slate-700">
                   {cv.certifications.map((c) => (
-                    <div key={c.id} className="flex justify-between">
-                      <span className="font-semibold">{c.name} ({c.issuer})</span>
-                      <span className="text-slate-400 text-2xs">{c.date}</span>
+                    <div key={c.id} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-900">{c.name}</span>
+                        <span className="text-slate-500 text-2xs">({c.issuer})</span>
+                        {c.link && (
+                          <a
+                            href={c.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-2xs text-purple-600 hover:underline inline-flex items-center gap-0.5"
+                            title="Xác thực chứng chỉ"
+                          >
+                            <ExternalLink size={10} /> Xác thực
+                          </a>
+                        )}
+                      </div>
+                      <span className="text-slate-400 text-2xs shrink-0 font-medium">{c.date}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Languages */}
+            {cv.languages && cv.languages.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-2.5">
+                  Ngoại ngữ (Languages)
+                </h3>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {cv.languages.map((l) => (
+                    <div
+                      key={l.id}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1 text-2xs"
+                    >
+                      <Globe size={11} className="text-slate-500" />
+                      <span className="font-bold text-slate-800">{l.name}:</span>
+                      <span className="text-slate-600">{l.level}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Awards & Honors */}
+            {cv.awards && cv.awards.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-2.5 flex items-center justify-between">
+                  <span>Giải thưởng & Thành tựu (Awards & Honors)</span>
+                </h3>
+                <div className="space-y-2 text-xs">
+                  {cv.awards.map((a) => (
+                    <div key={a.id} className="flex justify-between items-start gap-3">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Trophy size={12} className="text-amber-500 shrink-0" />
+                          <span className="font-bold text-slate-900 text-xs">{a.title}</span>
+                          {a.issuer && <span className="text-slate-500 text-2xs">· {a.issuer}</span>}
+                        </div>
+                        {a.description && (
+                          <p className="text-2xs text-slate-600 mt-0.5 pl-4.5">{a.description}</p>
+                        )}
+                      </div>
+                      <span className="text-2xs text-slate-400 font-medium shrink-0">{a.year}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Interests */}
+            {cv.interests && cv.interests.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                  Sở thích cá nhân (Interests)
+                </h3>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {cv.interests.map((interest) => (
+                    <span
+                      key={interest}
+                      className="inline-flex items-center gap-1 rounded-md bg-rose-50 border border-rose-100 px-2 py-0.5 text-2xs font-medium text-rose-800"
+                    >
+                      <Heart size={10} className="text-rose-500" />
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* References */}
+            {cv.references && cv.references.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-2.5">
+                  Người tham chiếu (References)
+                </h3>
+                <div className="grid gap-2 sm:grid-cols-2 text-xs">
+                  {cv.references.map((r) => (
+                    <div
+                      key={r.id}
+                      className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/40 text-2xs"
+                    >
+                      <p className="font-bold text-slate-900 text-xs">{r.fullName}</p>
+                      <p className="text-slate-600 font-medium">{r.position} · {r.company}</p>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-slate-500">
+                        {r.email && <span>Email: {r.email}</span>}
+                        {r.phone && <span>SĐT: {r.phone}</span>}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -467,6 +603,22 @@ export default function ResumeDetailsPage() {
                   />
                 </div>
               </div>
+
+              <Link
+                to={`/candidate/resumes/${cv.id}/analysis`}
+                className="mt-4 flex items-center justify-center gap-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 py-2.5 px-3 text-xs font-bold text-blue-700 transition"
+              >
+                <Sparkles size={14} className="text-blue-600" />
+                Xem phân tích chuyên sâu & Cải thiện AI →
+              </Link>
+
+              <Link
+                to={`/candidate/cv-job-fit?cvId=${cv.id}`}
+                className="mt-2 flex items-center justify-center gap-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 py-2.5 px-3 text-xs font-bold text-indigo-700 transition"
+              >
+                <Target size={14} className="text-indigo-600" />
+                So sánh với việc làm cụ thể (CV–Job Fit) →
+              </Link>
             </div>
           </Card>
 

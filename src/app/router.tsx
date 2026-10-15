@@ -22,8 +22,12 @@ import UploadResumePage from '../pages/candidate/UploadResumePage';
 import ResumeDetailsPage from '../pages/candidate/ResumeDetailsPage';
 import EditResumePage from '../pages/candidate/EditResumePage';
 import AiResumeBuilderPage from '../pages/candidate/AiResumeBuilderPage';
+import ResumeAnalysisPage from '../pages/candidate/ResumeAnalysisPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
+import JobMatchPage from '../pages/candidate/JobMatchPage';
+import CvJobFitPage from '../pages/candidate/CvJobFitPage';
+import SalaryEstimationPage from '../pages/candidate/SalaryEstimationPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
 import { AdminDashboard, ConsultantDashboard } from '../pages/shared/RoleDashboards';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
@@ -65,15 +69,20 @@ export const router = createBrowserRouter([
               { path: 'resumes/create', element: <CreateResumePage /> },
               { path: 'resumes/upload', element: <UploadResumePage /> },
               { path: 'resumes/ai-builder', element: <AiResumeBuilderPage /> },
+              { path: 'resumes/analysis', element: <ResumeAnalysisPage /> },
               { path: 'resumes/:resumeId', element: <ResumeDetailsPage /> },
               { path: 'resumes/:resumeId/edit', element: <EditResumePage /> },
+              { path: 'resumes/:resumeId/analysis', element: <ResumeAnalysisPage /> },
               { path: 'jobs', element: <JobsPage /> },
               { path: 'jobs/:jobId', element: <JobDetailsPage /> },
+              { path: 'jobs/:jobId/match', element: <JobMatchPage /> },
+              { path: 'jobs/:jobId/fit-analysis', element: <CvJobFitPage /> },
+              { path: 'cv-job-fit', element: <CvJobFitPage /> },
+              { path: 'resumes/:resumeId/job-fit', element: <CvJobFitPage /> },
+              { path: 'salary-estimation', element: <SalaryEstimationPage /> },
+              { path: 'career-intelligence', element: <SalaryEstimationPage /> },
               { path: 'assistant', element: <AssistantPage /> },
               ...placeholders([
-                'resumes/:resumeId/analysis',
-                'jobs/:jobId/match',
-                'career-intelligence',
                 'assessment',
                 'assessment/:assessmentId',
                 'assessment/:assessmentId/result',

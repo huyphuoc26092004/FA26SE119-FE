@@ -10,11 +10,14 @@ import {
   FileCheck2,
   FileText,
   Filter,
+  LayoutGrid,
+  List,
   MoreVertical,
   Plus,
   Search,
   Sparkles,
   Star,
+  Target,
   Trash2,
   Upload,
   X,
@@ -34,6 +37,7 @@ export default function ResumesPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Ready' | 'Needs Review' | 'Draft'>('All');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [deleteModalCv, setDeleteModalCv] = useState<Resume | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
@@ -207,30 +211,62 @@ export default function ResumesPage() {
           )}
         </div>
 
-        {/* Status Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0">
-          {[
-            { id: 'All', label: t('resumes.filterAll') },
-            { id: 'Ready', label: t('resumes.filterReady') },
-            { id: 'Needs Review', label: t('resumes.filterReview') },
-            { id: 'Draft', label: t('resumes.filterDraft') },
-          ].map((item) => {
-            const active = statusFilter === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setStatusFilter(item.id as any)}
-                className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition whitespace-nowrap cursor-pointer ${
-                  active
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
+        {/* Status Filters and View Switcher */}
+        <div className="flex items-center gap-3 flex-wrap justify-between md:justify-end">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0">
+            {[
+              { id: 'All', label: t('resumes.filterAll') },
+              { id: 'Ready', label: t('resumes.filterReady') },
+              { id: 'Needs Review', label: t('resumes.filterReview') },
+              { id: 'Draft', label: t('resumes.filterDraft') },
+            ].map((item) => {
+              const active = statusFilter === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setStatusFilter(item.id as any)}
+                  className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition whitespace-nowrap cursor-pointer ${
+                    active
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+              title="Xem dạng danh sách"
+            >
+              <List size={14} />
+              <span>Danh sách</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+              title="Xem dạng lưới"
+            >
+              <LayoutGrid size={14} />
+              <span>Lưới</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -272,6 +308,168 @@ export default function ResumesPage() {
             </Link>
           </div>
         </Card>
+      ) : viewMode === 'list' ? (
+        <div className="space-y-3.5">
+          {filteredResumes.map((cv) => (
+            <div
+              key={cv.id}
+              className={`group relative overflow-hidden rounded-2xl border bg-white p-4 sm:p-5 transition-all hover:shadow-md hover:border-blue-300 ${
+                cv.isDefault ? 'border-blue-300 ring-1 ring-blue-200/60' : 'border-slate-200/80'
+              }`}
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                {/* Left Section: Icon, Title, Position, Skills */}
+                <div className="flex items-start gap-4 min-w-0 flex-1">
+                  <div className="relative shrink-0">
+                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-700 shadow-2xs group-hover:scale-105 transition-transform">
+                      <FileText size={24} />
+                    </span>
+                    {cv.isDefault && (
+                      <span
+                        className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-amber-400 text-white shadow-xs"
+                        title={t('resumes.defaultBadge')}
+                      >
+                        <Star size={11} className="fill-white" />
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <Link
+                        to={`/candidate/resumes/${cv.id}`}
+                        className="text-base font-bold text-slate-900 hover:text-blue-600 transition line-clamp-1"
+                      >
+                        {cv.name}
+                      </Link>
+                      {cv.isDefault && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                          <Star size={10} className="fill-amber-400 text-amber-500" />
+                          CV chính
+                        </span>
+                      )}
+                      <Badge tone={getStatusBadgeTone(cv.status)}>
+                        {getStatusLabel(cv.status)}
+                      </Badge>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mb-2.5">
+                      <span className="font-semibold text-slate-700">{cv.position}</span>
+                      <span>•</span>
+                      <span>{cv.language}</span>
+                      <span>•</span>
+                      <span className="text-slate-400">Cập nhật: {cv.updatedAt}</span>
+                    </div>
+
+                    {/* Skills Preview */}
+                    {cv.skills && cv.skills.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {cv.skills.slice(0, 5).map((s) => (
+                          <span
+                            key={s}
+                            className="rounded-md bg-slate-50 border border-slate-200/80 px-2 py-0.5 text-xs text-slate-600"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                        {cv.skills.length > 5 && (
+                          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 font-medium">
+                            +{cv.skills.length - 5}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Middle: ATS Score Pill */}
+                <div className="flex items-center gap-3 shrink-0 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-100 self-start lg:self-center">
+                  <div
+                    className={`grid h-11 w-11 place-items-center rounded-xl border text-base font-black ${getAtsColorClass(
+                      cv.atsScore
+                    )}`}
+                  >
+                    {cv.atsScore || '—'}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800">{t('resumes.atsScore')}</p>
+                    <p className="text-[11px] text-slate-500">
+                      {cv.atsScore >= 85
+                        ? 'Đạt chuẩn cao'
+                        : cv.atsScore >= 70
+                        ? 'Mức khá'
+                        : 'Cần tối ưu thêm'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Actions */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 self-end lg:self-center">
+                  <Link
+                    to={`/candidate/resumes/${cv.id}/analysis`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-2 text-xs font-bold text-blue-700 transition"
+                  >
+                    <Sparkles size={13} className="text-blue-600" />
+                    <span>Đánh giá ATS</span>
+                  </Link>
+
+                  <Link
+                    to={`/candidate/cv-job-fit?cvId=${cv.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 transition"
+                  >
+                    <Target size={13} className="text-indigo-600" />
+                    <span>So khớp việc làm</span>
+                  </Link>
+
+                  <Link
+                    to={`/candidate/resumes/${cv.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    title={t('resumes.viewDetails')}
+                  >
+                    <FileCheck2 size={13} />
+                    <span className="hidden xl:inline">{t('resumes.viewDetails')}</span>
+                  </Link>
+
+                  <Link
+                    to={`/candidate/resumes/${cv.id}/edit`}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    title={t('resumes.editCv')}
+                  >
+                    <Edit3 size={13} />
+                    <span className="hidden xl:inline">{t('resumes.editCv')}</span>
+                  </Link>
+
+                  {!cv.isDefault ? (
+                    <button
+                      type="button"
+                      onClick={() => setDefaultMutation.mutate(cv.id)}
+                      className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-amber-500 hover:border-amber-200 hover:bg-amber-50 transition cursor-pointer"
+                      title={t('resumes.setDefault')}
+                    >
+                      <Star size={14} />
+                    </button>
+                  ) : (
+                    <span
+                      className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 border border-amber-200 text-amber-500"
+                      title="CV chính"
+                    >
+                      <Star size={14} className="fill-amber-400" />
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModalCv(cv)}
+                    className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition cursor-pointer"
+                    title={t('resumes.deleteCv')}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredResumes.map((cv) => (
@@ -357,6 +555,23 @@ export default function ResumesPage() {
 
               {/* Action Buttons */}
               <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to={`/candidate/resumes/${cv.id}/analysis`}
+                    className="inline-flex items-center justify-center gap-1 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 py-2 text-xs font-bold text-blue-700 transition"
+                  >
+                    <Sparkles size={13} className="text-blue-600" />
+                    Đánh giá ATS
+                  </Link>
+                  <Link
+                    to={`/candidate/cv-job-fit?cvId=${cv.id}`}
+                    className="inline-flex items-center justify-center gap-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 py-2 text-xs font-bold text-indigo-700 transition"
+                  >
+                    <Target size={13} className="text-indigo-600" />
+                    So khớp việc làm
+                  </Link>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     to={`/candidate/resumes/${cv.id}`}

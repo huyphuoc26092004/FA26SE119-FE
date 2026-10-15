@@ -1,5 +1,4 @@
-import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
 import { Button } from '../components/ui';
@@ -10,6 +9,7 @@ export default function PublicLayout() {
   const { isAuthenticated, role, user, logout } = useAuthStore();
   const { t, isVietnamese } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const getRoleLabel = () => {
     if (role === 'ADMIN') return t('common.roleAdmin', 'Quản trị viên');
@@ -43,12 +43,26 @@ export default function PublicLayout() {
           </Link>
 
           {/* Nav links */}
-          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium text-slate-600 shrink-0">
-            <Link to="/" className="hover:text-blue-600 transition-colors whitespace-nowrap">
+          <nav className="hidden md:flex items-center gap-2 lg:gap-3 text-sm font-medium text-slate-600 shrink-0">
+            <Link
+              to="/"
+              className={`transition-colors whitespace-nowrap px-3 py-1.5 rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                location.pathname === '/'
+                  ? 'bg-blue-50/80 text-blue-700 font-bold border border-blue-200/60 shadow-2xs'
+                  : 'hover:text-blue-600 hover:bg-slate-50'
+              }`}
+            >
               {t('nav.overview', 'Tổng quan')}
             </Link>
-            <Link to="/jobs" className="hover:text-blue-600 transition-colors flex items-center gap-1.5 whitespace-nowrap">
-              <Briefcase className="h-4 w-4 text-slate-400 group-hover:text-blue-600" />
+            <Link
+              to="/jobs"
+              className={`transition-colors flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                location.pathname.startsWith('/jobs')
+                  ? 'bg-blue-50/80 text-blue-700 font-bold border border-blue-200/60 shadow-2xs'
+                  : 'hover:text-blue-600 hover:bg-slate-50'
+              }`}
+            >
+              <Briefcase className={`h-4 w-4 ${location.pathname.startsWith('/jobs') ? 'text-blue-600' : 'text-slate-400'}`} />
               <span>{t('nav.jobDiscovery', 'Khám phá việc làm')}</span>
             </Link>
             <a
@@ -59,14 +73,14 @@ export default function PublicLayout() {
                   navigate('/#features');
                 }
               }}
-              className="hover:text-blue-600 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              className="hover:text-blue-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <Sparkles className="h-4 w-4 text-blue-600" />
               <span>{t('nav.aiAgentMatching', 'Khớp nối AI Agent')}</span>
             </a>
             <Link
               to="/guest-trial"
-              className="transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              className="transition-colors flex items-center gap-1.5 whitespace-nowrap outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded-full ml-1"
             >
               <span className="rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold text-blue-700 border border-blue-200/80 hover:bg-blue-100 hover:text-blue-800 transition shadow-2xs whitespace-nowrap">
                 {isVietnamese ? 'Trải nghiệm ngay' : 'Guest Trial'}

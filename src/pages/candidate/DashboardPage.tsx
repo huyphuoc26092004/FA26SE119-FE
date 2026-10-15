@@ -347,12 +347,17 @@ export default function DashboardPage() {
             </div>
             <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
               <Link
-                to="/candidate/resumes"
+                to={`/candidate/resumes/${bestResume?.id || 'cv-1'}/analysis`}
                 className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
               >
-                Quản lý CV <ArrowRight size={13} />
+                Phân tích & Cải thiện AI ✨ <ArrowRight size={13} />
               </Link>
-              <span className="text-xs text-slate-400">Định dạng chuẩn ATS</span>
+              <Link
+                to="/candidate/resumes"
+                className="text-xs text-slate-500 hover:text-slate-800"
+              >
+                Quản lý CV
+              </Link>
             </div>
           </Card>
 

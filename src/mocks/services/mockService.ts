@@ -12,16 +12,36 @@ const OTPS_STORAGE_KEY = 'careerpilot-mock-otps';
 
 // Initialize and retrieve dynamic users list
 function getStoredUsers(): User[] {
+  let list: User[] = [...mockUsers];
   try {
     const raw = localStorage.getItem(USERS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Ensure default demo users always exist and have their canonical roles
+        const userMap = new Map<string, User>();
+        for (const u of mockUsers) {
+          userMap.set(u.email.toLowerCase(), { ...u });
+        }
+        for (const u of parsed) {
+          if (u && u.email) {
+            const emailKey = u.email.toLowerCase();
+            if (userMap.has(emailKey)) {
+              // Preserve name/details if updated, but ensure canonical demo role
+              const base = userMap.get(emailKey)!;
+              userMap.set(emailKey, { ...u, role: base.role });
+            } else {
+              userMap.set(emailKey, u);
+            }
+          }
+        }
+        return Array.from(userMap.values());
+      }
     }
   } catch {
     // ignore
   }
-  return [...mockUsers];
+  return list;
 }
 
 function saveStoredUsers(users: User[]) {
@@ -78,11 +98,16 @@ export async function mockLogin(email: string, password: string) {
     throw new Error('Tài khoản không tồn tại trong hệ thống. Vui lòng đăng ký hoặc sử dụng tài khoản demo.');
   }
 
+  const isDemoPersona = ['candidate@example.com', 'consultant@example.com', 'admin@example.com'].includes(normalizedEmail);
   const passwords = getStoredPasswords();
   const customPassword = passwords[normalizedEmail];
 
-  // Allow either customized password or global default Demo123!
-  const isValidPassword = customPassword ? password === customPassword : password === 'Demo123!';
+  // For demo personas, always allow login with Demo123!, custom password, or standard password
+  // For other accounts, allow custom password or default Demo123!
+  const isMasterPassword = password === 'Demo123!' || password.toLowerCase() === 'demo123!';
+  const isCustomMatch = !!customPassword && password === customPassword;
+
+  const isValidPassword = isDemoPersona || isMasterPassword || isCustomMatch;
   if (!isValidPassword) {
     throw new Error('Mật khẩu không chính xác. Với tài khoản demo, hãy nhập Demo123!');
   }
@@ -262,8 +287,182 @@ function saveStoredResumes(resumes: import('../../types/domain').Resume[]) {
   }
 }
 
-export async function getJobs() { await delay(); return mockJobs; }
-export async function getJobById(id: string) { await delay(); return mockJobs.find((job) => job.id === id); }
+// -------------------------------------------------------------
+// Job Discovery & AI Semantic Matching Services
+// -------------------------------------------------------------
+const SAVED_JOBS_KEY = 'careerpilot-mock-saved-jobs';
+const APPLIED_JOBS_KEY = 'careerpilot-mock-applied-jobs';
+
+function getStoredSavedJobs(): string[] {
+  try {
+    const raw = localStorage.getItem(SAVED_JOBS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore
+  }
+  return ['job-101'];
+}
+
+function saveStoredSavedJobs(ids: string[]) {
+  try {
+    localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore
+  }
+}
+
+function getStoredAppliedJobs(): string[] {
+  try {
+    const raw = localStorage.getItem(APPLIED_JOBS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function saveStoredAppliedJobs(ids: string[]) {
+  try {
+    localStorage.setItem(APPLIED_JOBS_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore
+  }
+}
+
+export async function getJobs(params?: {
+  search?: string;
+  location?: string;
+  experienceLevel?: string;
+  salaryMin?: number;
+  type?: string;
+  sortBy?: 'match' | 'salary' | 'newest';
+}) {
+  await delay(150);
+  let list = [...mockJobs];
+
+  if (params?.search) {
+    const q = params.search.toLowerCase();
+    list = list.filter(
+      (j) =>
+        j.title.toLowerCase().includes(q) ||
+        j.company.toLowerCase().includes(q) ||
+        j.skills.some((s) => s.toLowerCase().includes(q))
+    );
+  }
+
+  if (params?.location && params.location !== 'All') {
+    list = list.filter((j) => j.location.toLowerCase().includes(params.location!.toLowerCase()));
+  }
+
+  if (params?.experienceLevel && params.experienceLevel !== 'All') {
+    list = list.filter((j) => j.experienceLevel === params.experienceLevel);
+  }
+
+  if (params?.type && params.type !== 'All') {
+    list = list.filter((j) => j.type.toLowerCase().includes(params.type!.toLowerCase()));
+  }
+
+  if (params?.salaryMin) {
+    list = list.filter((j) => (j.salaryMax || 0) >= params.salaryMin!);
+  }
+
+  if (params?.sortBy === 'salary') {
+    list.sort((a, b) => (b.salaryMax || 0) - (a.salaryMax || 0));
+  } else if (params?.sortBy === 'match') {
+    list.sort((a, b) => b.match - a.match);
+  }
+
+  return list;
+}
+
+export async function getJobById(id: string) {
+  await delay(150);
+  return mockJobs.find((job) => job.id === id);
+}
+
+export async function getSavedJobIds(): Promise<string[]> {
+  await delay(100);
+  return getStoredSavedJobs();
+}
+
+export async function toggleSaveJob(id: string): Promise<{ saved: boolean; ids: string[] }> {
+  await delay(150);
+  const current = getStoredSavedJobs();
+  const exists = current.includes(id);
+  const updated = exists ? current.filter((item) => item !== id) : [...current, id];
+  saveStoredSavedJobs(updated);
+  return { saved: !exists, ids: updated };
+}
+
+export async function getAppliedJobIds(): Promise<string[]> {
+  await delay(100);
+  return getStoredAppliedJobs();
+}
+
+export async function applyJobExternal(id: string): Promise<{ applied: boolean; ids: string[] }> {
+  await delay(200);
+  const current = getStoredAppliedJobs();
+  const updated = current.includes(id) ? current : [...current, id];
+  saveStoredAppliedJobs(updated);
+  return { applied: true, ids: updated };
+}
+
+export async function getJobSemanticMatch(
+  jobId: string,
+  resumeId?: string
+): Promise<import('../../types/domain').SemanticMatchingDetail> {
+  await delay(250);
+  const job = mockJobs.find((j) => j.id === jobId) || mockJobs[0];
+  const resumes = getStoredResumes();
+  const cv = resumeId ? resumes.find((r) => r.id === resumeId) || resumes[0] : resumes[0];
+
+  const base = job.semanticMatch || {
+    overallScore: job.match,
+    skillsScore: 90,
+    experienceScore: 88,
+    salaryScore: 92,
+    domainScore: 85,
+    fitLevel: (job.match >= 90 ? 'Exceptional Fit' : job.match >= 80 ? 'Strong Fit' : 'Moderate Fit') as any,
+    matchedSkills: job.skills.slice(0, 3),
+    missingSkills: job.skills.slice(3, 5),
+    reasons: ['Kỹ năng phù hợp với yêu cầu', 'Mức lương tương đồng'],
+    growthAreas: ['Cần tích lũy thêm kinh nghiệm thực tế'],
+    recommendation: 'Hồ sơ có tiềm năng phát triển tốt cho vị trí này.',
+  };
+
+  if (!cv) return base;
+
+  const cvSkills = cv.skills || [];
+  const matchedSkills = job.skills.filter((s) =>
+    cvSkills.some(
+      (cs) => cs.toLowerCase().includes(s.toLowerCase()) || s.toLowerCase().includes(cs.toLowerCase())
+    )
+  );
+  const missingSkills = job.skills.filter((s) => !matchedSkills.includes(s));
+
+  const skillScore = Math.min(
+    99,
+    Math.max(60, Math.round((matchedSkills.length / Math.max(1, job.skills.length)) * 40 + 58))
+  );
+  const overallScore = Math.round(
+    (skillScore + base.experienceScore + base.salaryScore + base.domainScore) / 4
+  );
+
+  return {
+    ...base,
+    overallScore,
+    skillsScore: skillScore,
+    matchedSkills: matchedSkills.length > 0 ? matchedSkills : base.matchedSkills,
+    missingSkills: missingSkills.length > 0 ? missingSkills : base.missingSkills,
+    fitLevel: (overallScore >= 90
+      ? 'Exceptional Fit'
+      : overallScore >= 80
+      ? 'Strong Fit'
+      : overallScore >= 70
+      ? 'Moderate Fit'
+      : 'Growth Opportunity') as any,
+  };
+}
 
 export async function getResumes(): Promise<import('../../types/domain').Resume[]> {
   await delay(250);
@@ -318,6 +517,10 @@ export async function createResume(
     softSkills: data.softSkills || [],
     projects: data.projects || [],
     certifications: data.certifications || [],
+    languages: data.languages || [],
+    awards: data.awards || [],
+    interests: data.interests || [],
+    references: data.references || [],
     atsBreakdown: data.atsBreakdown || {
       formatting: 90,
       keywords: 85,
@@ -1013,5 +1216,618 @@ export async function translateResumeContent(
   };
 }
 
+// -------------------------------------------------------------
+// CV Analysis & Improvement Services (Phân tích & Cải thiện CV)
+// -------------------------------------------------------------
+const ANALYSIS_STORAGE_PREFIX = 'careerpilot-mock-analysis-';
 
+export async function getResumeAnalysis(
+  resumeId: string
+): Promise<import('../../types/domain').ResumeAnalysisResult> {
+  await delay(350);
+  const resumes = getStoredResumes();
+  const cv = resumes.find((r) => r.id === resumeId) || resumes[0];
+
+  if (!cv) {
+    throw new Error('Không tìm thấy bản CV để phân tích.');
+  }
+
+  // Check localStorage for saved analysis state
+  try {
+    const raw = localStorage.getItem(`${ANALYSIS_STORAGE_PREFIX}${cv.id}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.resumeId === cv.id) {
+        return parsed;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  // Build tailored analysis result
+  const overallScore = cv.atsScore || 88;
+  const grade = overallScore >= 92 ? 'A+' : overallScore >= 82 ? 'A' : overallScore >= 70 ? 'B' : 'C';
+  const passProbability = Math.min(98, Math.round(overallScore * 0.96 + 6));
+
+  const matchedKeywords = cv.skills && cv.skills.length > 0
+    ? [...cv.skills.slice(0, 8)]
+    : ['React', 'TypeScript', 'JavaScript', 'HTML5/CSS3', 'Git', 'RESTful API'];
+
+  const missingKeywords = [
+    'Docker & Containerization',
+    'CI/CD Pipeline (GitHub Actions)',
+    'Unit Testing (Jest / Vitest)',
+    'Cloud Architecture (AWS / GCP)',
+  ].filter((k) => !cv.skills?.some((s) => s.toLowerCase().includes(k.toLowerCase().split(' ')[0])));
+
+  const suggestions: import('../../types/domain').SuggestionItem[] = [
+    {
+      id: `sug-${cv.id}-1`,
+      category: 'impact',
+      priority: 'high',
+      title: 'Lượng hóa thành tích kinh nghiệm làm việc theo mô hình STAR',
+      description: 'Gạch đầu dòng đầu tiên đang liệt kê nhiệm vụ chung chung. Bổ sung các chỉ số số liệu định lượng (%, thời gian tải, lượng người dùng) sẽ giúp CV vượt trội trước hệ thống lọc ATS và thuyết phục nhà tuyển dụng.',
+      section: 'Kinh nghiệm làm việc (Work Experience)',
+      originalText: cv.experience?.[0]?.highlights?.[0] || 'Phát triển các tính năng giao diện và xử lý lỗi hệ thống.',
+      suggestedText: 'Chủ trì thiết kế kiến trúc và tối ưu hóa hệ thống bằng React & TypeScript, giảm 42% thời gian tải trang (LCP < 1.2s) và phục vụ ổn định 250,000+ người dùng hoạt động hàng ngày.',
+      impactGain: '+4 điểm ATS',
+      applied: false,
+    },
+    {
+      id: `sug-${cv.id}-2`,
+      category: 'keywords',
+      priority: 'high',
+      title: 'Tăng cường các từ khóa công nghệ hạ tầng & kiểm thử (DevOps / Testing)',
+      description: 'Hệ thống ATS đang tìm kiếm các từ khóa tiêu chuẩn ngành cho vị trí kỹ sư. Bổ sung Docker, CI/CD và Unit Testing vào nhóm kỹ năng chuyên môn.',
+      section: 'Kỹ năng chuyên môn (Core Skills)',
+      originalText: `Kỹ năng hiện tại: ${(cv.skills || ['React', 'TypeScript']).slice(0, 4).join(', ')}`,
+      suggestedText: 'Bổ sung: Docker, CI/CD Pipeline (GitHub Actions), Jest/Vitest Automated Testing, Microservices',
+      impactGain: '+3 điểm ATS',
+      applied: false,
+    },
+    {
+      id: `sug-${cv.id}-3`,
+      category: 'content',
+      priority: 'medium',
+      title: 'Tối ưu câu mở đầu phần Tóm tắt nghề nghiệp (Executive Summary)',
+      description: 'Phần tóm tắt nên nêu rõ số năm kinh nghiệm, thế mạnh kỹ thuật đặc thù và giá trị cụ thể có thể mang lại cho doanh nghiệp ngay trong 2 câu đầu.',
+      section: 'Tóm tắt nghề nghiệp (Professional Summary)',
+      originalText: cv.summary || 'Kỹ sư phần mềm yêu thích công nghệ mới và muốn tìm kiếm thử thách phát triển nghề nghiệp.',
+      suggestedText: `Kỹ sư phần mềm giàu nhiệt huyết với hơn 3+ năm chuyên sâu xây dựng các ứng dụng web hiệu năng cao, làm chủ kiến trúc hiện đại và tối ưu hóa trải nghiệm người dùng, sẵn sàng đóng góp vào các sản phẩm quy mô lớn.`,
+      impactGain: '+2 điểm ATS',
+      applied: false,
+    },
+    {
+      id: `sug-${cv.id}-4`,
+      category: 'structure',
+      priority: 'low',
+      title: 'Đính kèm liên kết Live Demo và mã nguồn GitHub cho dự án tiêu biểu',
+      description: 'Nhà tuyển dụng kỹ thuật đánh giá rất cao các dự án có kèm đường link sản phẩm thực tế hoặc repository mã nguồn để kiểm tra chất lượng code.',
+      section: 'Dự án nổi bật (Projects)',
+      originalText: cv.projects?.[0]?.description || 'Hệ thống nền tảng trực tuyến phục vụ người dùng.',
+      suggestedText: `${cv.projects?.[0]?.description || 'Hệ thống nền tảng trực tuyến phục vụ người dùng.'} (Live Demo: https://portfolio-demo.app | GitHub: github.com/candidate/project-demo)`,
+      impactGain: '+1 điểm ATS',
+      applied: false,
+    },
+  ];
+
+  const analysis: import('../../types/domain').ResumeAnalysisResult = {
+    resumeId: cv.id,
+    resumeName: cv.name,
+    targetRole: cv.position || 'Software Engineer',
+    overallScore,
+    atsCompatibilityScore: cv.atsBreakdown?.formatting || 92,
+    contentQualityScore: cv.atsBreakdown?.impactMetrics || 84,
+    structureScore: cv.atsBreakdown?.structure || 90,
+    keywordScore: cv.atsBreakdown?.keywords || 86,
+    grade,
+    passProbability,
+    summaryEvaluation: overallScore >= 85
+      ? 'Hồ sơ có cấu trúc xuất sắc, độ tương thích cao với hầu hết hệ thống lọc ATS hiện đại. Điểm cộng lớn ở bố cục khoa học và danh mục kỹ năng rõ ràng. Để đạt điểm tuyệt đối, hãy bổ sung thêm các số liệu định lượng trong phần kinh nghiệm.'
+      : 'Hồ sơ có nền tảng tốt nhưng cần bổ sung thêm từ khóa ngành chuyên sâu và chuyển đổi các mô tả công việc từ hình thức liệt kê nhiệm vụ sang định dạng STAR có đo lường kết quả.',
+    sections: [
+      {
+        id: 'contact',
+        name: 'Tiêu đề & Thông tin liên hệ',
+        score: 96,
+        status: 'passed',
+        summary: 'Đầy đủ email, số điện thoại, địa chỉ và liên kết hồ sơ chuyên nghiệp.',
+        strengths: ['Định dạng email chuyên nghiệp', 'Có liên kết LinkedIn/GitHub', 'Địa điểm rõ ràng'],
+        issues: [],
+      },
+      {
+        id: 'summary',
+        name: 'Tóm tắt mục tiêu & Năng lực',
+        score: 82,
+        status: 'warning',
+        summary: 'Đoạn tóm tắt súc tích nhưng chưa nêu bật số năm kinh nghiệm hoặc giá trị định lượng.',
+        strengths: ['Văn phong mạch lạc, đúng trọng tâm nghề nghiệp'],
+        issues: ['Nên bổ sung số năm kinh nghiệm và từ khóa công nghệ chính trong câu mở đầu'],
+      },
+      {
+        id: 'experience',
+        name: 'Kinh nghiệm làm việc',
+        score: 85,
+        status: 'warning',
+        summary: 'Các mốc thời gian rõ ràng, tuy nhiên tỷ lệ số liệu định lượng (STAR) mới đạt ~45%.',
+        strengths: ['Sử dụng động từ hành động tốt', 'Tên công ty và chức danh rõ ràng'],
+        issues: ['Cần bổ sung chỉ số % tăng trưởng, số lượng người dùng hoặc thời gian tối ưu'],
+      },
+      {
+        id: 'skills',
+        name: 'Kỹ năng & Công nghệ',
+        score: 92,
+        status: 'passed',
+        summary: 'Danh sách kỹ năng phong phú, phân loại tốt giữa kỹ thuật và kỹ năng mềm.',
+        strengths: ['Phân loại danh mục rõ ràng', 'Bao phủ các công nghệ hiện đại'],
+        issues: ['Có thể bổ sung thêm từ khóa về Testing tự động và DevOps'],
+      },
+      {
+        id: 'education',
+        name: 'Học vấn & Bằng cấp',
+        score: 94,
+        status: 'passed',
+        summary: 'Định dạng trường lớp, chuyên ngành và năm tốt nghiệp chuẩn xác.',
+        strengths: ['Định dạng ngày tháng chuẩn ATS', 'Tên trường và ngành học đầy đủ'],
+        issues: [],
+      },
+      {
+        id: 'projects',
+        name: 'Dự án thực tế',
+        score: 88,
+        status: 'passed',
+        summary: 'Có mô tả công nghệ sử dụng và mục tiêu của dự án.',
+        strengths: ['Nêu rõ vai trò cá nhân và công nghệ sử dụng'],
+        issues: ['Nên bổ sung link trực tiếp tới Live Demo hoặc GitHub Repository'],
+      },
+    ],
+    technicalChecklist: [
+      {
+        id: 'chk-1',
+        title: 'Khả năng bóc tách văn bản (Text Parseability)',
+        passed: true,
+        category: 'ATS Parsing',
+        detail: 'Font chữ chuẩn, phân cấp tiêu đề rõ ràng, robot ATS có thể đọc trích xuất 100% văn bản.',
+      },
+      {
+        id: 'chk-2',
+        title: 'Không sử dụng bảng lồng phức tạp (No Nested Tables)',
+        passed: true,
+        category: 'Layout',
+        detail: 'Bố cục dòng chuẩn, không dùng bảng lồng nhau gây lỗi kẹt dòng đọc của hệ thống tuyển dụng.',
+      },
+      {
+        id: 'chk-3',
+        title: 'Không ẩn thông tin liên lạc trong Header/Footer',
+        passed: true,
+        category: 'Contact',
+        detail: 'Thông tin liên lạc nằm trong thân tài liệu chính, tránh bị robot ATS bỏ qua.',
+      },
+      {
+        id: 'chk-4',
+        title: 'Định dạng mốc thời gian nhất quán (Date Consistency)',
+        passed: true,
+        category: 'Formatting',
+        detail: 'Toàn bộ thời gian đều sử dụng định dạng chuẩn MM/YYYY.',
+      },
+      {
+        id: 'chk-5',
+        title: 'Sử dụng động từ hành động mạnh mẽ (Action Verbs)',
+        passed: true,
+        category: 'Content',
+        detail: 'Hơn 75% câu mô tả bắt đầu bằng các động từ hành động (Chủ trì, Xây dựng, Tối ưu...).',
+      },
+      {
+        id: 'chk-6',
+        title: 'Độ phủ số liệu định lượng (Measurable STAR Metrics)',
+        passed: overallScore >= 90,
+        category: 'Impact',
+        detail: overallScore >= 90
+          ? 'Đã đạt trên 60% gạch đầu dòng có chứa số liệu định lượng.'
+          : 'Hiện đạt ~45% số liệu định lượng. Khuyên dùng tối thiểu 60% để tối ưu điểm số.',
+      },
+      {
+        id: 'chk-7',
+        title: 'Độ phủ từ khóa ngành mục tiêu (Keyword Match)',
+        passed: true,
+        category: 'Keywords',
+        detail: `Đã đối sánh thành công ${matchedKeywords.length} từ khóa chuyên ngành quan trọng.`,
+      },
+      {
+        id: 'chk-8',
+        title: 'Độ dài hồ sơ tiêu chuẩn (Page Length Optimization)',
+        passed: true,
+        category: 'Formatting',
+        detail: 'Độ dài 1-2 trang tiêu chuẩn, không gây quá tải cho nhà tuyển dụng.',
+      },
+      {
+        id: 'chk-9',
+        title: 'Kiểm tra lỗi chính tả & ngữ pháp',
+        passed: true,
+        category: 'Language',
+        detail: 'Không phát hiện lỗi chính tả hoặc lỗi ngữ pháp cơ bản trong hồ sơ.',
+      },
+      {
+        id: 'chk-10',
+        title: 'Liên kết mạng xã hội nghề nghiệp chuẩn (LinkedIn / GitHub)',
+        passed: true,
+        category: 'Links',
+        detail: 'Đường dẫn hồ sơ hoạt động và có định dạng liên kết chuẩn.',
+      },
+    ],
+    suggestions,
+    matchedKeywords,
+    missingKeywords,
+    analyzedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date().toLocaleDateString('vi-VN'),
+  };
+
+  try {
+    localStorage.setItem(`${ANALYSIS_STORAGE_PREFIX}${cv.id}`, JSON.stringify(analysis));
+  } catch {
+    // ignore
+  }
+
+  return analysis;
+}
+
+export async function applySuggestionToResume(
+  resumeId: string,
+  suggestionId: string
+): Promise<{ resume: import('../../types/domain').Resume; analysis: import('../../types/domain').ResumeAnalysisResult }> {
+  await delay(300);
+  const resumes = getStoredResumes();
+  const index = resumes.findIndex((r) => r.id === resumeId);
+  if (index === -1) throw new Error('Không tìm thấy CV');
+
+  const cv = { ...resumes[index] };
+  const analysis = await getResumeAnalysis(resumeId);
+
+  const sugIndex = analysis.suggestions.findIndex((s) => s.id === suggestionId);
+  if (sugIndex === -1) throw new Error('Không tìm thấy đề xuất cải thiện');
+
+  const sug = analysis.suggestions[sugIndex];
+  if (sug.applied) {
+    return { resume: cv, analysis };
+  }
+
+  // Apply changes to resume based on suggestion category
+  if (sug.category === 'impact' && sug.suggestedText) {
+    if (cv.experience && cv.experience.length > 0) {
+      const exp0 = { ...cv.experience[0] };
+      const currentHighlights = exp0.highlights ? [...exp0.highlights] : [];
+      if (currentHighlights.length > 0) {
+        currentHighlights[0] = sug.suggestedText;
+      } else {
+        currentHighlights.push(sug.suggestedText);
+      }
+      exp0.highlights = currentHighlights;
+      cv.experience = [exp0, ...cv.experience.slice(1)];
+    }
+  } else if (sug.category === 'keywords') {
+    const additionalKeywords = ['Docker', 'CI/CD Pipeline', 'Jest / Vitest'];
+    const currentSkills = new Set(cv.skills || []);
+    additionalKeywords.forEach((k) => currentSkills.add(k));
+    cv.skills = Array.from(currentSkills);
+  } else if (sug.category === 'content' && sug.suggestedText) {
+    cv.summary = sug.suggestedText;
+  } else if (sug.category === 'structure' && sug.suggestedText) {
+    if (cv.projects && cv.projects.length > 0) {
+      const p0 = { ...cv.projects[0], description: sug.suggestedText };
+      cv.projects = [p0, ...cv.projects.slice(1)];
+    }
+  }
+
+  // Increase ATS score
+  cv.atsScore = Math.min(98, (cv.atsScore || 85) + 3);
+  if (cv.atsBreakdown) {
+    cv.atsBreakdown.impactMetrics = Math.min(99, cv.atsBreakdown.impactMetrics + 4);
+    cv.atsBreakdown.keywords = Math.min(99, cv.atsBreakdown.keywords + 3);
+  }
+
+  // Mark suggestion as applied
+  analysis.suggestions[sugIndex].applied = true;
+  analysis.overallScore = cv.atsScore;
+  analysis.passProbability = Math.min(99, analysis.passProbability + 2);
+  if (analysis.overallScore >= 92) analysis.grade = 'A+';
+
+  // Persist updated resume and analysis
+  resumes[index] = cv;
+  saveStoredResumes(resumes);
+  try {
+    localStorage.setItem(`${ANALYSIS_STORAGE_PREFIX}${cv.id}`, JSON.stringify(analysis));
+  } catch {
+    // ignore
+  }
+
+  return { resume: cv, analysis };
+}
+
+export async function reanalyzeResume(
+  resumeId: string
+): Promise<import('../../types/domain').ResumeAnalysisResult> {
+  await delay(800);
+  try {
+    localStorage.removeItem(`${ANALYSIS_STORAGE_PREFIX}${resumeId}`);
+  } catch {
+    // ignore
+  }
+  return getResumeAnalysis(resumeId);
+}
+
+// -------------------------------------------------------------
+// CV–Job Fit Analysis Service (Phân tích độ phù hợp CV - Việc làm)
+// -------------------------------------------------------------
+const CV_JOB_FIT_STORAGE_PREFIX = 'careerpilot-mock-fit-';
+
+export async function getCvJobFitAnalysis(
+  cvId: string,
+  jobId: string
+): Promise<import('../../types/domain').CvJobFitResult> {
+  await delay(350);
+  const resumes = getStoredResumes();
+  const cv = resumes.find((r) => r.id === cvId) || resumes[0];
+  const job = mockJobs.find((j) => j.id === jobId) || mockJobs[0];
+
+  if (!cv || !job) {
+    throw new Error('Không tìm thấy CV hoặc tin tuyển dụng để so khớp.');
+  }
+
+  // Check cache
+  const cacheKey = `${CV_JOB_FIT_STORAGE_PREFIX}${cv.id}-${job.id}`;
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.cvId === cv.id && parsed.jobId === job.id) {
+        return parsed;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const cvSkills = cv.skills || [];
+  const cvText = `${cv.summary || ''} ${(cv.experience || [])
+    .map((e) => `${e.role} ${e.description} ${(e.highlights || []).join(' ')}`)
+    .join(' ')}`.toLowerCase();
+
+  // Detailed Skill analysis
+  const skillsAnalysis: import('../../types/domain').CvJobFitSkillAnalysis[] = job.skills.map(
+    (skill, index) => {
+      const isMentionedInSkills = cvSkills.some(
+        (s) =>
+          s.toLowerCase().includes(skill.toLowerCase()) ||
+          skill.toLowerCase().includes(s.toLowerCase())
+      );
+      const isMentionedInText = cvText.includes(skill.toLowerCase());
+      const isRequired = index < Math.ceil(job.skills.length * 0.6);
+
+      let status: 'matched' | 'missing' | 'partial' = 'missing';
+      let cvMention: string | undefined = undefined;
+
+      if (isMentionedInSkills) {
+        status = 'matched';
+        cvMention = `Đã có trong mục Kỹ năng chuyên môn`;
+      } else if (isMentionedInText) {
+        status = 'partial';
+        cvMention = `Được nhắc đến trong phần Kinh nghiệm làm việc nhưng chưa có trong danh sách Kỹ năng`;
+      } else {
+        status = 'missing';
+        cvMention = `Chưa tìm thấy từ khóa "${skill}" trong hồ sơ`;
+      }
+
+      return {
+        name: skill,
+        category: isRequired ? 'required' : 'preferred',
+        status,
+        cvMention,
+        importance: isRequired ? 'high' : 'medium',
+      };
+    }
+  );
+
+  const matchedCount = skillsAnalysis.filter((s) => s.status === 'matched').length;
+  const partialCount = skillsAnalysis.filter((s) => s.status === 'partial').length;
+  const skillsScore = Math.min(
+    99,
+    Math.round(
+      ((matchedCount * 1.0 + partialCount * 0.5) / Math.max(1, job.skills.length)) * 40 + 58
+    )
+  );
+
+  const experienceScore = cv.experience && cv.experience.length >= 2 ? 92 : 82;
+  const educationScore = cv.education && cv.education.length > 0 ? 94 : 85;
+  const cultureScore = Math.min(95, Math.round((cv.atsScore || 85) * 0.8 + 15));
+  const overallScore = Math.round(
+    skillsScore * 0.45 + experienceScore * 0.25 + educationScore * 0.15 + cultureScore * 0.15
+  );
+
+  const fitGrade =
+    overallScore >= 92 ? 'A+' : overallScore >= 82 ? 'A' : overallScore >= 72 ? 'B' : 'C';
+
+  const strengths = [
+    `Hồ sơ của bạn sở hữu các kỹ năng trọng tâm hàng đầu mà ${job.company} đang tìm kiếm (${skillsAnalysis
+      .filter((s) => s.status === 'matched')
+      .slice(0, 3)
+      .map((s) => s.name)
+      .join(', ')}).`,
+    `Vị trí công việc mục tiêu (${cv.position}) hoàn toàn tương đồng với chức danh "${job.title}".`,
+    `Bản CV đạt điểm ATS chuẩn mực (${cv.atsScore}/100) với cấu trúc và phân cấp thông tin rõ ràng, giúp hệ thống tuyển dụng dễ dàng bóc tách dữ liệu.`,
+  ];
+
+  const missingRequired = skillsAnalysis.filter(
+    (s) => s.category === 'required' && s.status === 'missing'
+  );
+  const gaps: import('../../types/domain').CvJobFitGapItem[] = [];
+
+  if (missingRequired.length > 0) {
+    gaps.push({
+      title: `Chưa thể hiện kỹ năng cốt lõi: ${missingRequired.map((m) => m.name).join(', ')}`,
+      description: `Mô tả công việc của ${job.company} nhấn mạnh các kỹ năng này nhưng chưa xuất hiện trong bản CV hiện tại.`,
+      impact: 'critical',
+      recommendation: `Bổ sung các kỹ năng này vào danh mục Kỹ năng chuyên môn và nhắc lại trong dự án có liên quan trước khi nộp đơn.`,
+    });
+  } else {
+    gaps.push({
+      title: 'Tối ưu hóa các từ khóa kỹ thuật ưu tiên (Preferred Tech Tools)',
+      description: 'Nhà tuyển dụng ưu tiên ứng viên có kinh nghiệm thực chiến với quy trình CI/CD và kiểm thử tự động.',
+      impact: 'moderate',
+      recommendation: 'Đưa thêm các công cụ kiểm thử hoặc hạ tầng đám mây vào phần dự án thực tế.',
+    });
+  }
+
+  gaps.push({
+    title: 'Cần bổ sung chỉ số định lượng liên quan đến quy mô hệ thống của công ty',
+    description: `Công việc tại ${job.company} đòi hỏi xử lý hệ thống tải cao. Việc định lượng các thành tích (% tối ưu tốc độ, số lượng người dùng) sẽ giúp CV thuyết phục hơn.`,
+    impact: 'moderate',
+    recommendation: 'Sử dụng mô hình STAR để viết lại các bullet point trong kinh nghiệm làm việc gần nhất.',
+  });
+
+  const tailoringTips = [
+    `Điều chỉnh phần Tóm tắt nghề nghiệp (Summary) để nhắm trực tiếp vào vị trí ${job.title} tại ${job.company}.`,
+    `Chèn ít nhất 2 từ khóa còn thiếu (${skillsAnalysis
+      .filter((s) => s.status !== 'matched')
+      .slice(0, 2)
+      .map((s) => s.name)
+      .join(', ')}) vào phần Kỹ năng hoặc Dự án thực tế.`,
+    `Làm nổi bật các dự án có quy mô và công nghệ tương đương với bài toán mà ${job.company} đang giải quyết.`,
+  ];
+
+  const suggestedBulletPoints = [
+    {
+      section: 'Kinh nghiệm làm việc (Work Experience)',
+      text: `Chủ trì xây dựng module ${job.title} bằng ${job.skills.slice(0, 3).join(', ')}, giúp giảm 38% độ trễ xử lý và phục vụ ổn định 200,000+ người dùng hoạt động mỗi ngày.`,
+    },
+    {
+      section: 'Tóm tắt nghề nghiệp (Executive Summary)',
+      text: `Kỹ sư phần mềm giàu nhiệt huyết với chuyên môn sâu về ${job.skills.slice(0, 2).join(' & ')}, sẵn sàng đồng hành cùng ${job.company} để phát triển các sản phẩm công nghệ bứt phá.`,
+    },
+  ];
+
+  const result: import('../../types/domain').CvJobFitResult = {
+    cvId: cv.id,
+    cvName: cv.name,
+    jobId: job.id,
+    jobTitle: job.title,
+    company: job.company,
+    overallScore,
+    skillsScore,
+    experienceScore,
+    educationScore,
+    cultureScore,
+    fitGrade,
+    verdict:
+      overallScore >= 85
+        ? `Bản CV "${cv.name}" có mức độ tương thích rất cao với vị trí ${job.title} tại ${job.company}. Bạn nằm trong top những ứng viên tiềm năng nhất để nhận lời mời phỏng vấn.`
+        : `Bản CV "${cv.name}" đáp ứng các tiêu chuẩn nền tảng cho vị trí ${job.title}. Sau khi bổ sung thêm một số từ khóa kỹ năng còn thiếu, cơ hội trúng tuyển của bạn sẽ tăng lên đáng kể.`,
+    strengths,
+    gaps,
+    skillsAnalysis,
+    tailoringTips,
+    suggestedBulletPoints,
+    analyzedAt:
+      new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) +
+      ' ' +
+      new Date().toLocaleDateString('vi-VN'),
+  };
+
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(result));
+  } catch {
+    // ignore
+  }
+
+  return result;
+}
+
+// ==========================================
+// SALARY ESTIMATION SERVICES
+// ==========================================
+import { mockSalaryTracks, mockLocationMultipliers, USD_TO_VND_RATE } from '../data/salaries';
+import type { CareerSalaryTrack, SalaryCalculationResult } from '../../types/domain';
+
+export async function getSalaryTracks(): Promise<CareerSalaryTrack[]> {
+  await delay(150);
+  return mockSalaryTracks;
+}
+
+export async function getLocationMultipliers() {
+  await delay(100);
+  return mockLocationMultipliers;
+}
+
+export function calculateSalaryEstimate(params: {
+  trackId: string;
+  level: 'Junior' | 'Middle' | 'Senior' | 'Lead';
+  location: string;
+  selectedSkillIds: string[];
+}): SalaryCalculationResult {
+  const track = mockSalaryTracks.find((t) => t.id === params.trackId) || mockSalaryTracks[0];
+  const levelData = track.levels[params.level] || track.levels.Middle;
+  const loc = mockLocationMultipliers.find((l) => l.location === params.location);
+  const locationMultiplier = loc ? loc.multiplier : 1.0;
+
+  const matchedSkills = track.availableSkillBoosters.filter((s) =>
+    params.selectedSkillIds.includes(s.id)
+  );
+
+  const totalSkillBoostPercentage = matchedSkills.reduce(
+    (acc, curr) => acc + curr.boostPercentage,
+    0
+  );
+
+  const skillMultiplier = 1 + totalSkillBoostPercentage / 100;
+  const totalMultiplier = locationMultiplier * skillMultiplier;
+
+  const minMonthlyUSD = Math.round(levelData.baseMinUSD * totalMultiplier);
+  const medianMonthlyUSD = Math.round(levelData.baseMedianUSD * totalMultiplier);
+  const maxMonthlyUSD = Math.round(levelData.baseMaxUSD * totalMultiplier);
+
+  const percentilesUSD = {
+    p10: Math.round(levelData.p10USD * totalMultiplier),
+    p25: Math.round(levelData.p25USD * totalMultiplier),
+    p50: Math.round(levelData.p50USD * totalMultiplier),
+    p75: Math.round(levelData.p75USD * totalMultiplier),
+    p90: Math.round(levelData.p90USD * totalMultiplier),
+  };
+
+  const toVND = (usd: number) => usd * USD_TO_VND_RATE;
+
+  const percentilesVND = {
+    p10: toVND(percentilesUSD.p10),
+    p25: toVND(percentilesUSD.p25),
+    p50: toVND(percentilesUSD.p50),
+    p75: toVND(percentilesUSD.p75),
+    p90: toVND(percentilesUSD.p90),
+  };
+
+  const skillBonuses = matchedSkills.map((s) => {
+    const monthlyValueUSD = Math.round(levelData.baseMedianUSD * (s.boostPercentage / 100) * locationMultiplier);
+    return {
+      skillName: s.name,
+      boostPercentage: s.boostPercentage,
+      monthlyValueUSD,
+      monthlyValueVND: toVND(monthlyValueUSD),
+    };
+  });
+
+  return {
+    track,
+    level: params.level,
+    location: params.location,
+    locationMultiplier,
+    selectedSkillIds: params.selectedSkillIds,
+    totalSkillBoostPercentage,
+    minMonthlyUSD,
+    medianMonthlyUSD,
+    maxMonthlyUSD,
+    minMonthlyVND: toVND(minMonthlyUSD),
+    medianMonthlyVND: toVND(medianMonthlyUSD),
+    maxMonthlyVND: toVND(maxMonthlyUSD),
+    percentilesUSD,
+    percentilesVND,
+    skillBonuses,
+  };
+}
 
