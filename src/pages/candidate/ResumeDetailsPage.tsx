@@ -33,6 +33,7 @@ import {
   Trash2,
   Trophy,
   Users,
+  User,
   Heart,
   X,
   Zap,
@@ -50,6 +51,7 @@ export default function ResumeDetailsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<'topcv-plum' | 'standard-ats'>('topcv-plum');
 
   const { data: cv, isPending, isError } = useQuery({
     queryKey: ['resume', resumeId],
@@ -201,8 +203,378 @@ export default function ResumeDetailsPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
         {/* Left Column: Formatted Resume Document (Paper Aesthetic) */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm print:border-none print:shadow-none">
+        <div className="space-y-4">
+          {/* Template Selector Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 print:hidden">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setSelectedTemplate('topcv-plum')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  selectedTemplate === 'topcv-plum'
+                    ? 'bg-[#382329] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                Mẫu TopCV Elegance 2 Cột (Mặc định)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedTemplate('standard-ats')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  selectedTemplate === 'standard-ats'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-300"></span>
+                Mẫu Đơn Cột ATS Chuẩn
+              </button>
+            </div>
+            <span className="text-2xs text-slate-500 font-medium hidden sm:inline pr-2">
+              Mẫu chuẩn hồ sơ Huy Phước
+            </span>
+          </div>
+
+          {selectedTemplate === 'topcv-plum' ? (
+            /* TOPCV 2-COLUMN PLUM / BURGUNDY TEMPLATE */
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-md overflow-hidden flex flex-col md:flex-row print:border-none print:shadow-none min-h-[960px]">
+              {/* Left Column: Dark Burgundy/Plum Background (#382329) */}
+              <div className="w-full md:w-[36%] bg-[#382329] text-white p-6 sm:p-7 flex flex-col justify-between shrink-0 print:bg-[#382329] print:text-white">
+                <div>
+                  {/* Avatar */}
+                  <div className="mx-auto mb-5 flex h-32 w-32 items-center justify-center rounded-full border-4 border-white/90 bg-white/10 shadow-lg overflow-hidden">
+                    {cv.avatarUrl ? (
+                      <img src={cv.avatarUrl} alt={cv.fullName} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="grid place-items-center h-full w-full bg-slate-300/40 text-white">
+                        <User size={64} className="text-white/90" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Name & Target Position */}
+                  <div className="text-center mb-6">
+                    <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase">
+                      {cv.fullName || 'Huy Phước'}
+                    </h1>
+                    <p className="mt-1 text-xs sm:text-sm font-semibold text-rose-100/90 leading-tight">
+                      {cv.position || 'Nhân viên thu mua/mua hàng'}
+                    </p>
+                  </div>
+
+                  {/* Contact Info List with Icons */}
+                  <div className="space-y-2.5 text-xs text-white/95 border-t border-white/15 pt-5 mb-7">
+                    {cv.phone && (
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid h-5 w-5 place-items-center text-white/80 shrink-0">
+                          <Phone size={13} />
+                        </span>
+                        <span className="font-medium">{cv.phone}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid h-5 w-5 place-items-center text-white/80 shrink-0">
+                        <Calendar size={13} />
+                      </span>
+                      <span className="font-medium">{cv.dob || '26/09/2004'}</span>
+                    </div>
+                    {cv.email && (
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid h-5 w-5 place-items-center text-white/80 shrink-0">
+                          <Mail size={13} />
+                        </span>
+                        <span className="break-all font-medium">{cv.email}</span>
+                      </div>
+                    )}
+                    {(cv.website || cv.github) && (
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid h-5 w-5 place-items-center text-white/80 shrink-0">
+                          <Globe size={13} />
+                        </span>
+                        <span className="break-all font-medium">{cv.website || cv.github}</span>
+                      </div>
+                    )}
+                    {cv.location && (
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid h-5 w-5 place-items-center text-white/80 shrink-0">
+                          <MapPin size={13} />
+                        </span>
+                        <span className="font-medium">{cv.location}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sidebar Section 1: Học vấn */}
+                  {cv.education && cv.education.length > 0 && (
+                    <div className="mb-7">
+                      <div className="mb-3">
+                        <span className="inline-block rounded-full bg-white px-4 py-1 text-xs font-bold text-[#382329] shadow-xs">
+                          Học vấn
+                        </span>
+                      </div>
+                      <div className="space-y-3 text-xs">
+                        {cv.education.map((edu) => (
+                          <div key={edu.id} className="space-y-0.5">
+                            <p className="font-semibold text-white/95">
+                              {edu.degree}
+                            </p>
+                            <p className="text-2xs text-white/70">
+                              {edu.startDate} - {edu.endDate}
+                            </p>
+                            <p className="font-medium text-white/90">
+                              {edu.school}
+                            </p>
+                            {edu.gpa && (
+                              <p className="text-2xs font-semibold text-emerald-300">
+                                GPA: {edu.gpa}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sidebar Section 2: Kỹ năng */}
+                  {cv.skills && cv.skills.length > 0 && (
+                    <div className="mb-7">
+                      <div className="mb-3">
+                        <span className="inline-block rounded-full bg-white px-4 py-1 text-xs font-bold text-[#382329] shadow-xs">
+                          Kỹ năng
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-xs text-white/90">
+                        {cv.skills.map((skill) => (
+                          <div key={skill} className="flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/70 shrink-0"></span>
+                            <span>{skill}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sidebar Section 3: Người giới thiệu */}
+                  {cv.references && cv.references.length > 0 && (
+                    <div className="mb-6">
+                      <div className="mb-3">
+                        <span className="inline-block rounded-full bg-white px-4 py-1 text-xs font-bold text-[#382329] shadow-xs">
+                          Người giới thiệu
+                        </span>
+                      </div>
+                      <div className="space-y-3 text-xs">
+                        {cv.references.map((r) => (
+                          <div key={r.id} className="space-y-0.5">
+                            <p className="font-bold text-white">
+                              {r.fullName} - {r.position} - {r.company}
+                            </p>
+                            {r.phone && (
+                              <p className="text-2xs text-white/80">
+                                Tel.: {r.phone}
+                              </p>
+                            )}
+                            {r.email && (
+                              <p className="text-2xs text-white/80">
+                                Email: {r.email}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-6 border-t border-white/10 text-3xs text-white/50 text-center">
+                  © TopCV.vn Template · Standard ATS Verified
+                </div>
+              </div>
+
+              {/* Right Column: White Background Content Area */}
+              <div className="flex-1 p-6 sm:p-8 bg-white space-y-6">
+                {/* 1. Mục tiêu nghề nghiệp */}
+                {cv.summary && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-3 border-b-2 border-[#382329]/20 pb-1">
+                      <span className="inline-block rounded-full bg-[#382329] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-2xs">
+                        Mục tiêu nghề nghiệp
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-slate-700 text-justify">
+                      {cv.summary}
+                    </p>
+                  </div>
+                )}
+
+                {/* 2. Kinh nghiệm làm việc */}
+                {cv.experience && cv.experience.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4 border-b-2 border-[#382329]/20 pb-1">
+                      <span className="inline-block rounded-full bg-[#382329] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-2xs">
+                        Kinh nghiệm làm việc
+                      </span>
+                    </div>
+                    <div className="space-y-5">
+                      {cv.experience.map((exp) => (
+                        <div key={exp.id} className="space-y-1.5">
+                          <div className="flex justify-between items-baseline gap-2">
+                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
+                              {exp.role}
+                            </h4>
+                            <span className="text-xs font-bold text-slate-900 shrink-0">
+                              {exp.startDate} - {exp.endDate}
+                            </span>
+                          </div>
+                          <p className="font-semibold text-slate-800 text-xs">
+                            {exp.company}
+                          </p>
+                          {exp.highlights && exp.highlights.length > 0 ? (
+                            <ul className="space-y-1 text-xs text-slate-700 leading-relaxed pt-1">
+                              {exp.highlights.map((h, i) => (
+                                <li key={i} className="flex items-start gap-1.5">
+                                  <span className="text-slate-900 mt-0.5">•</span>
+                                  <span>{h}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-xs text-slate-700 leading-relaxed">
+                              {exp.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Danh hiệu và giải thưởng */}
+                {cv.awards && cv.awards.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-3 border-b-2 border-[#382329]/20 pb-1">
+                      <span className="inline-block rounded-full bg-[#382329] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-2xs">
+                        Danh hiệu và giải thưởng
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      {cv.awards.map((a) => (
+                        <div key={a.id} className="flex items-baseline gap-6">
+                          <span className="font-bold text-slate-900 w-12 shrink-0">{a.year}</span>
+                          <div>
+                            <span className="font-medium text-slate-800">{a.title}</span>
+                            {a.issuer && <span className="text-slate-500 text-2xs ml-1">({a.issuer})</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Chứng chỉ */}
+                {cv.certifications && cv.certifications.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-3 border-b-2 border-[#382329]/20 pb-1">
+                      <span className="inline-block rounded-full bg-[#382329] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-2xs">
+                        Chứng chỉ
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      {cv.certifications.map((c) => (
+                        <div key={c.id} className="flex items-baseline gap-6">
+                          <span className="font-bold text-slate-900 w-12 shrink-0">{c.date}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-slate-800">{c.name}</span>
+                            {c.link && (
+                              <a
+                                href={c.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-2xs text-blue-600 hover:underline inline-flex items-center gap-0.5"
+                              >
+                                <ExternalLink size={10} /> Link
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. Hoạt động */}
+                {cv.activities && cv.activities.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-3 border-b-2 border-[#382329]/20 pb-1">
+                      <span className="inline-block rounded-full bg-[#382329] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-2xs">
+                        Hoạt động
+                      </span>
+                    </div>
+                    <div className="space-y-3 text-xs">
+                      {cv.activities.map((act) => (
+                        <div key={act.id} className="space-y-1">
+                          <div className="flex justify-between items-baseline gap-2">
+                            <span className="font-bold text-slate-900">{act.role}</span>
+                            <span className="font-bold text-slate-900">
+                              {act.startDate} - {act.endDate}
+                            </span>
+                          </div>
+                          <p className="font-semibold text-slate-800">{act.organization}</p>
+                          {act.highlights && act.highlights.length > 0 ? (
+                            <ul className="space-y-1 text-slate-700 pt-0.5">
+                              {act.highlights.map((h, i) => (
+                                <li key={i} className="flex items-start gap-1.5">
+                                  <span className="text-slate-900 mt-0.5">•</span>
+                                  <span>{h}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-slate-700">{act.description}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. Dự án nổi bật (Key Projects - nếu có) */}
+                {cv.projects && cv.projects.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-3 border-b-2 border-[#382329]/20 pb-1">
+                      <span className="inline-block rounded-full bg-[#382329] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-2xs">
+                        Dự án nổi bật
+                      </span>
+                    </div>
+                    <div className="space-y-3.5 text-xs">
+                      {cv.projects.map((proj) => (
+                        <div key={proj.id} className="space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-slate-900">{proj.name}</span>
+                            {proj.link && (
+                              <a
+                                href={proj.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-3xs font-semibold text-blue-700 hover:bg-blue-100 border border-blue-200"
+                              >
+                                <ExternalLink size={9} /> Xem dự án
+                              </a>
+                            )}
+                          </div>
+                          {proj.role && <p className="text-2xs text-slate-500 font-medium">Vai trò: {proj.role}</p>}
+                          <p className="text-slate-600 leading-relaxed">{proj.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* STANDARD ATS 1-COLUMN DOCUMENT */
+            <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm print:border-none print:shadow-none">
             {/* CV Header */}
             <div className="border-b-2 border-slate-900 pb-6 mb-6">
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950">
@@ -522,6 +894,7 @@ export default function ResumeDetailsPage() {
               </div>
             )}
           </div>
+        )}
         </div>
 
         {/* Right Column: ATS Score & Deep Diagnostic */}

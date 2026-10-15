@@ -104,6 +104,16 @@ export interface ReferenceItem {
   phone?: string;
 }
 
+export interface ActivityItem {
+  id: string;
+  role: string;
+  organization: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  highlights?: string[];
+}
+
 export interface AtsBreakdown {
   formatting: number;
   keywords: number;
@@ -152,6 +162,9 @@ export interface Resume {
   awards?: AwardItem[];
   interests?: string[];
   references?: ReferenceItem[];
+  activities?: ActivityItem[];
+  dob?: string;
+  avatarUrl?: string;
   atsBreakdown?: AtsBreakdown;
   extractedMeta?: ExtractedMeta;
 }

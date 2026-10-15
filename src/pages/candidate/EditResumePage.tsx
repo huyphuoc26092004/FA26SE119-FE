@@ -163,6 +163,8 @@ export default function EditResumePage() {
       references: enabledSections.references
         ? (formData.references || []).filter((r) => r.fullName?.trim())
         : [],
+      activities: formData.activities || cv.activities || [],
+      dob: formData.dob || cv.dob || '',
     };
     updateMutation.mutate(payload);
   };

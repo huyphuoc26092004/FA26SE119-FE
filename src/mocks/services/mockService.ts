@@ -271,7 +271,18 @@ function getStoredResumes(): import('../../types/domain').Resume[] {
     const raw = localStorage.getItem(RESUMES_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Sync default cv-1 with new Huy Phuoc template if outdated
+        const defaultIndex = parsed.findIndex((r) => r.id === 'cv-1');
+        if (
+          defaultIndex !== -1 &&
+          (parsed[defaultIndex].fullName === 'Alex Morgan' || !parsed[defaultIndex].dob)
+        ) {
+          parsed[defaultIndex] = { ...mockResumes[0], isDefault: true };
+          saveStoredResumes(parsed);
+        }
+        return parsed;
+      }
     }
   } catch {
     // ignore
@@ -521,6 +532,9 @@ export async function createResume(
     awards: data.awards || [],
     interests: data.interests || [],
     references: data.references || [],
+    activities: data.activities || [],
+    dob: data.dob || '',
+    avatarUrl: data.avatarUrl || '',
     atsBreakdown: data.atsBreakdown || {
       formatting: 90,
       keywords: 85,
