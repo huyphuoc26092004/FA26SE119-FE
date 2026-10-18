@@ -1756,6 +1756,343 @@ export async function getCvJobFitAnalysis(
 }
 
 // ==========================================
+// ASSESSMENT & LEARNING SERVICES
+// ==========================================
+import {
+  mockAssessmentTopics,
+  getQuestionsForTopic,
+  mockJobRequirementProfiles,
+  mockCandidateSkills,
+  mockLearningResources,
+  mockRoadmapTemplates,
+} from '../data/assessment';
+import type {
+  AssessmentQuestion,
+  AssessmentResult,
+  AssessmentAttempt,
+  AssessmentGrade,
+  SkillGapAnalysis,
+  SkillGapItem,
+  LearningRoadmap,
+  LearningResource,
+} from '../../types/assessment';
+
+const ASSESSMENT_RESULTS_KEY = 'careerpilot-assessment-results';
+
+function getStoredAssessmentResults(): AssessmentResult[] {
+  try {
+    const raw = localStorage.getItem(ASSESSMENT_RESULTS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return [];
+}
+
+function saveAssessmentResult(result: AssessmentResult) {
+  try {
+    const existing = getStoredAssessmentResults();
+    const idx = existing.findIndex((r) => r.id === result.id);
+    if (idx >= 0) existing[idx] = result;
+    else existing.unshift(result);
+    localStorage.setItem(ASSESSMENT_RESULTS_KEY, JSON.stringify(existing));
+  } catch { /* ignore */ }
+}
+
+/** List of available skill assessment topics */
+export async function getAssessmentTopics() {
+  await delay(200);
+  return mockAssessmentTopics;
+}
+
+/** AI-generated questions for a specific topic */
+export async function getAssessmentQuestions(topicId: string): Promise<AssessmentQuestion[]> {
+  await delay(800); // simulate AI generation delay
+  return getQuestionsForTopic(topicId);
+}
+
+/** Submit assessment answers and get a result */
+export async function submitAssessment(params: {
+  topicId: string;
+  topicName: string;
+  attempts: AssessmentAttempt[];
+  timeTakenMinutes: number;
+}): Promise<AssessmentResult> {
+  await delay(1200); // simulate AI scoring
+
+  const { topicId, topicName, attempts, timeTakenMinutes } = params;
+  const questions = getQuestionsForTopic(topicId);
+  const correctAnswers = attempts.filter((a) => a.isCorrect).length;
+  const totalQuestions = attempts.length;
+  const score = Math.round((correctAnswers / totalQuestions) * 100);
+
+  let grade: AssessmentGrade;
+  if (score >= 95) grade = 'S';
+  else if (score >= 80) grade = 'A';
+  else if (score >= 65) grade = 'B';
+  else if (score >= 50) grade = 'C';
+  else grade = 'D';
+
+  // Compute weak topics from wrong answers
+  const wrongTopics = attempts
+    .filter((a) => !a.isCorrect)
+    .map((a) => questions.find((q) => q.id === a.questionId)?.topic)
+    .filter((t): t is string => Boolean(t));
+
+  const topicCounts = wrongTopics.reduce<Record<string, number>>((acc, t) => {
+    acc[t] = (acc[t] || 0) + 1;
+    return acc;
+  }, {});
+
+  const weaknesses = Object.entries(topicCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([topic]) => topic);
+
+  const correctTopics = attempts
+    .filter((a) => a.isCorrect)
+    .map((a) => questions.find((q) => q.id === a.questionId)?.topic)
+    .filter((t): t is string => Boolean(t));
+
+  const correctTopicSet = [...new Set(correctTopics)].filter((t) => !weaknesses.includes(t)).slice(0, 3);
+
+  const recommendations: Record<AssessmentGrade, string> = {
+    S: `Outstanding! You have mastered ${topicName}. Consider mentoring others or tackling system design challenges.`,
+    A: `Excellent work on ${topicName}! Focus on the advanced topics you missed to reach expert level.`,
+    B: `Good foundation in ${topicName}. Dedicate 2–3 weeks to reinforce your weak areas.`,
+    C: `You understand ${topicName} basics but need structured practice. Follow the recommended learning roadmap.`,
+    D: `${topicName} needs significant work. Start with the beginner resources and revisit fundamentals.`,
+  };
+
+  const topicSuggestions: Record<string, string> = {
+    react: 'TypeScript',
+    typescript: 'System Design',
+    python: 'FastAPI',
+    nodejs: 'Docker',
+    sql: 'System Design',
+    docker: 'AWS',
+    'system-design': 'Leadership',
+    dsa: 'System Design',
+  };
+
+  const result: AssessmentResult = {
+    id: `result-${topicId}-${Date.now()}`,
+    topicId,
+    topicName,
+    completedAt: new Date().toISOString(),
+    totalQuestions,
+    correctAnswers,
+    score,
+    grade,
+    timeTakenMinutes,
+    attempts,
+    strengths: correctTopicSet.length > 0 ? correctTopicSet : ['General comprehension'],
+    weaknesses: weaknesses.length > 0 ? weaknesses : ['None identified – great job!'],
+    recommendation: recommendations[grade],
+    nextTopicSuggestion: topicSuggestions[topicId],
+  };
+
+  saveAssessmentResult(result);
+  return result;
+}
+
+/** Get all past assessment results for the current candidate */
+export async function getAssessmentHistory(): Promise<AssessmentResult[]> {
+  await delay(300);
+  return getStoredAssessmentResults();
+}
+
+/** Get a specific assessment result by id */
+export async function getAssessmentResult(id: string): Promise<AssessmentResult | null> {
+  await delay(200);
+  const results = getStoredAssessmentResults();
+  return results.find((r) => r.id === id) ?? null;
+}
+
+// =====================================================================
+// SKILL GAP ANALYSIS SERVICES
+// =====================================================================
+
+const SKILL_GAP_CACHE_KEY = 'careerpilot-skill-gap-cache';
+
+/** Returns list of available job requirement profiles to analyze against */
+export async function getJobRequirementProfiles() {
+  await delay(200);
+  return mockJobRequirementProfiles;
+}
+
+/** Analyze skill gap between candidate profile and a job requirement profile */
+export async function analyzeSkillGap(params: {
+  jobProfileId: string;
+  candidateSkills?: string[];
+}): Promise<SkillGapAnalysis> {
+  await delay(1500); // simulate AI analysis
+
+  const { jobProfileId, candidateSkills = mockCandidateSkills } = params;
+  const cacheKey = `${SKILL_GAP_CACHE_KEY}-${jobProfileId}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return JSON.parse(cached);
+  } catch { /* ignore */ }
+
+  const profile = mockJobRequirementProfiles.find((p) => p.id === jobProfileId)
+    ?? mockJobRequirementProfiles[0];
+
+  const normalizedCandidateSkills = candidateSkills.map((s) => s.toLowerCase());
+
+  const skillBreakdown: SkillGapItem[] = profile.requiredSkills.map((req) => {
+    const isPresent = normalizedCandidateSkills.some(
+      (cs) => cs.includes(req.name.toLowerCase()) || req.name.toLowerCase().includes(cs)
+    );
+
+    let status: SkillGapItem['status'];
+    let candidateLevel: number;
+    let requiredLevel: number;
+
+    if (isPresent) {
+      if (req.importance === 'critical') {
+        candidateLevel = 65 + Math.floor(Math.random() * 20);
+        requiredLevel = 85;
+        status = candidateLevel >= requiredLevel ? 'strong' : 'present';
+      } else {
+        candidateLevel = 60 + Math.floor(Math.random() * 30);
+        requiredLevel = 70;
+        status = candidateLevel >= requiredLevel ? 'strong' : 'present';
+      }
+    } else {
+      requiredLevel = req.importance === 'critical' ? 85 : req.importance === 'high' ? 75 : 60;
+      candidateLevel = Math.floor(Math.random() * 25);
+      status = candidateLevel > 15 ? 'gap' : 'missing';
+    }
+
+    const gapScore = Math.max(0, requiredLevel - candidateLevel);
+    const resources = mockLearningResources
+      .filter((r) => r.skill.toLowerCase().includes(req.name.toLowerCase()) || req.name.toLowerCase().includes(r.skill.toLowerCase()))
+      .map((r) => r.id);
+
+    return {
+      name: req.name,
+      category: req.category,
+      importance: req.importance,
+      status,
+      candidateLevel,
+      requiredLevel,
+      gapScore,
+      learningResourceIds: resources.slice(0, 3),
+    };
+  });
+
+  const criticalGaps = skillBreakdown.filter(
+    (s) => (s.status === 'gap' || s.status === 'missing') && (s.importance === 'critical' || s.importance === 'high')
+  );
+
+  const quickWins = skillBreakdown.filter(
+    (s) => s.status === 'gap' && s.gapScore !== undefined && s.gapScore <= 30
+  ).slice(0, 3);
+
+  const matchedCount = skillBreakdown.filter((s) => s.status === 'strong' || s.status === 'present').length;
+  const overallMatchScore = Math.round((matchedCount / skillBreakdown.length) * 100);
+
+  let readinessLevel: SkillGapAnalysis['readinessLevel'];
+  if (overallMatchScore >= 80) readinessLevel = 'Ready';
+  else if (overallMatchScore >= 60) readinessLevel = 'Near Ready';
+  else if (overallMatchScore >= 40) readinessLevel = 'Developing';
+  else readinessLevel = 'Early Stage';
+
+  const estimatedWeeksToReady = criticalGaps.length * 4 + quickWins.length * 1;
+
+  const actionPlan = [
+    criticalGaps.length > 0
+      ? `Bridge critical gaps in ${criticalGaps.slice(0, 2).map((g) => g.name).join(' & ')} — allocate 3+ hours/week`
+      : 'Maintain and deepen existing critical skills',
+    quickWins.length > 0
+      ? `Start quick wins: ${quickWins.map((g) => g.name).join(', ')} can be addressed in 1–4 weeks`
+      : 'Polish your strong skills and add quantifiable achievements to your CV',
+    `Target projects at companies like ${profile.company} to build contextual experience`,
+    'Update your CV with newly acquired skills and link to project portfolio',
+  ];
+
+  const analysis: SkillGapAnalysis = {
+    jobProfileId,
+    jobTitle: profile.title,
+    company: profile.company,
+    analyzedAt: new Date().toISOString(),
+    overallMatchScore,
+    readinessLevel,
+    skillBreakdown,
+    criticalGaps,
+    quickWins,
+    estimatedWeeksToReady,
+    actionPlan,
+  };
+
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(analysis));
+  } catch { /* ignore */ }
+
+  return analysis;
+}
+
+// =====================================================================
+// LEARNING ROADMAP SERVICES
+// =====================================================================
+
+/** Get all available roadmap templates */
+export async function getLearningRoadmapTemplates() {
+  await delay(200);
+  return mockRoadmapTemplates;
+}
+
+/** Get a personalized roadmap based on skill gap analysis */
+export async function getPersonalizedRoadmap(params: {
+  targetRoleId?: string;
+  gapAnalysisId?: string;
+}): Promise<LearningRoadmap> {
+  await delay(1000);
+
+  const template = mockRoadmapTemplates.find((r) => r.id === (params.targetRoleId ?? 'roadmap-fe-senior'))
+    ?? mockRoadmapTemplates[0];
+
+  // Enrich phases with actual resource objects
+  const enrichedPhases = template.phases.map((phase) => {
+    const phaseResources: LearningResource[] = [];
+    for (const skill of phase.skills) {
+      const matched = mockLearningResources.filter((r) =>
+        r.skill.toLowerCase().includes(skill.toLowerCase().split(' ')[0]) ||
+        skill.toLowerCase().includes(r.skill.toLowerCase())
+      );
+      phaseResources.push(...matched.slice(0, 2));
+    }
+    // deduplicate
+    const seen = new Set<string>();
+    const uniqueResources = phaseResources.filter((r) => {
+      if (seen.has(r.id)) return false;
+      seen.add(r.id);
+      return true;
+    });
+
+    return { ...phase, resources: uniqueResources.slice(0, 4), completed: false };
+  });
+
+  return {
+    id: `roadmap-${Date.now()}`,
+    title: template.title,
+    targetRole: template.targetRole,
+    totalWeeks: template.totalWeeks,
+    phases: enrichedPhases,
+    generatedAt: new Date().toISOString(),
+    basedOnGapAnalysisId: params.gapAnalysisId,
+  };
+}
+
+/** Get all learning resources (optionally filtered by skill) */
+export async function getLearningResources(skill?: string): Promise<LearningResource[]> {
+  await delay(300);
+  if (!skill) return mockLearningResources;
+  return mockLearningResources.filter(
+    (r) => r.skill.toLowerCase().includes(skill.toLowerCase()) || skill.toLowerCase().includes(r.skill.toLowerCase())
+  );
+}
+
+// ==========================================
 // SALARY ESTIMATION SERVICES
 // ==========================================
 import { mockSalaryTracks, mockLocationMultipliers, USD_TO_VND_RATE } from '../data/salaries';

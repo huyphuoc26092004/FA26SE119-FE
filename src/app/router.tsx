@@ -29,6 +29,9 @@ import JobMatchPage from '../pages/candidate/JobMatchPage';
 import CvJobFitPage from '../pages/candidate/CvJobFitPage';
 import SalaryEstimationPage from '../pages/candidate/SalaryEstimationPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
+import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
+import SkillGapPage from '../pages/candidate/SkillGapPage';
+import LearningRoadmapPage from '../pages/candidate/LearningRoadmapPage';
 import { AdminDashboard, ConsultantDashboard } from '../pages/shared/RoleDashboards';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
 import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
@@ -82,12 +85,13 @@ export const router = createBrowserRouter([
               { path: 'salary-estimation', element: <SalaryEstimationPage /> },
               { path: 'career-intelligence', element: <SalaryEstimationPage /> },
               { path: 'assistant', element: <AssistantPage /> },
+              { path: 'assessment', element: <SkillAssessmentPage /> },
+              { path: 'skill-gap', element: <SkillGapPage /> },
+              { path: 'learning', element: <LearningRoadmapPage /> },
+              { path: 'learning/roadmap', element: <LearningRoadmapPage /> },
               ...placeholders([
-                'assessment',
                 'assessment/:assessmentId',
                 'assessment/:assessmentId/result',
-                'learning',
-                'learning/roadmap',
                 'consultations',
                 'consultations/new',
                 'consultations/:consultationId',
