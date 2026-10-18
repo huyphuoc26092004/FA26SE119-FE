@@ -20,6 +20,7 @@ import {
   Wallet,
   Target,
   Coins,
+  GitBranch,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -39,6 +40,7 @@ export const candidateNav: NavItem[] = [
   { label: 'Salary Estimation', translationKey: 'nav.salaryEstimation', to: '/candidate/salary-estimation', icon: Coins },
   { label: 'Career Intelligence', translationKey: 'nav.careerIntelligence', to: '/candidate/career-intelligence', icon: BrainCircuit },
   { label: 'Skill Assessment', translationKey: 'nav.skillAssessment', to: '/candidate/assessment', icon: ClipboardCheck },
+  { label: 'Skill Gap Analysis', translationKey: 'nav.skillGapAnalysis', to: '/candidate/skill-gap', icon: GitBranch },
   { label: 'Learning Roadmap', translationKey: 'nav.learningRoadmap', to: '/candidate/learning', icon: Route },
   { label: 'AI Career Assistant', translationKey: 'nav.aiCareerAssistant', to: '/candidate/assistant', icon: Bot },
   { label: 'Career Consultation', translationKey: 'nav.careerConsultation', to: '/candidate/consultations', icon: MessagesSquare },
