@@ -32,7 +32,10 @@ import AssistantPage from '../pages/candidate/AssistantPage';
 import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
 import SkillGapPage from '../pages/candidate/SkillGapPage';
 import LearningRoadmapPage from '../pages/candidate/LearningRoadmapPage';
-import { AdminDashboard, ConsultantDashboard } from '../pages/shared/RoleDashboards';
+import { AdminDashboard } from '../pages/shared/RoleDashboards';
+import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
+import ConsultationListPage from '../pages/consultant/ConsultationListPage';
+import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
 import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
 export function ProtectedRoute(){const authenticated=useAuthStore(s=>s.isAuthenticated);return authenticated?<Outlet/>:<Navigate to="/login" replace/>;}
@@ -111,10 +114,10 @@ export const router = createBrowserRouter([
             path: '/consultant',
             element: <ConsultantLayout />,
             children: [
-              { index: true, element: <ConsultantDashboard /> },
+              { index: true, element: <ConsultantDashboardPage /> },
+              { path: 'consultations', element: <ConsultationListPage /> },
+              { path: 'consultations/:id', element: <ConsultationDetailsPage /> },
               ...placeholders([
-                'consultations',
-                'consultations/:id',
                 'candidates',
                 'candidates/:candidateId',
               ]),
