@@ -36,7 +36,7 @@ import SupportPage from '../pages/candidate/SupportPage';
 import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
 import SkillGapPage from '../pages/candidate/SkillGapPage';
 import LearningRoadmapPage from '../pages/candidate/LearningRoadmapPage';
-import { AdminDashboard } from '../pages/shared/RoleDashboards';
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
@@ -44,9 +44,9 @@ import ConsultantCandidatesPage from '../pages/consultant/ConsultantCandidatesPa
 import CandidateCareerAnalysisPage from '../pages/consultant/CandidateCareerAnalysisPage';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
 import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
-export function ProtectedRoute(){const authenticated=useAuthStore(s=>s.isAuthenticated);return authenticated?<Outlet/>:<Navigate to="/login" replace/>;}
-export function RoleRoute({role}:{role:UserRole}){const current=useAuthStore(s=>s.role);return current===role?<Outlet/>:<Navigate to="/unauthorized" replace/>;}
-const placeholders=(paths:string[])=>paths.map(path=>({path,element:<PlaceholderPage/>}));
+export function ProtectedRoute() { const authenticated = useAuthStore(s => s.isAuthenticated); return authenticated ? <Outlet /> : <Navigate to="/login" replace />; }
+export function RoleRoute({ role }: { role: UserRole }) { const current = useAuthStore(s => s.role); return current === role ? <Outlet /> : <Navigate to="/unauthorized" replace />; }
+const placeholders = (paths: string[]) => paths.map(path => ({ path, element: <PlaceholderPage /> }));
 export const router = createBrowserRouter([
   {
     element: <PublicLayout />,
@@ -139,7 +139,7 @@ export const router = createBrowserRouter([
             path: '/admin',
             element: <AdminLayout />,
             children: [
-              { index: true, element: <AdminDashboard /> },
+              { index: true, element: <AdminDashboardPage /> },
               ...placeholders([
                 'users',
                 'users/:id',
