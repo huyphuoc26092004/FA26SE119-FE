@@ -33,6 +33,9 @@ import ApplicationAssistancePage from '../pages/candidate/ApplicationAssistanceP
 import SubscriptionPage from '../pages/candidate/SubscriptionPage';
 import UsagePage from '../pages/candidate/UsagePage';
 import SupportPage from '../pages/candidate/SupportPage';
+import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
+import SkillGapPage from '../pages/candidate/SkillGapPage';
+import LearningRoadmapPage from '../pages/candidate/LearningRoadmapPage';
 import { AdminDashboard, ConsultantDashboard } from '../pages/shared/RoleDashboards';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
 import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
@@ -93,12 +96,13 @@ export const router = createBrowserRouter([
               { path: 'payment', element: <SubscriptionPage /> },
               { path: 'usage', element: <UsagePage /> },
               { path: 'support', element: <SupportPage /> },
+              { path: 'assessment', element: <SkillAssessmentPage /> },
+              { path: 'skill-gap', element: <SkillGapPage /> },
+              { path: 'learning', element: <LearningRoadmapPage /> },
+              { path: 'learning/roadmap', element: <LearningRoadmapPage /> },
               ...placeholders([
-                'assessment',
                 'assessment/:assessmentId',
                 'assessment/:assessmentId/result',
-                'learning',
-                'learning/roadmap',
                 'consultations',
                 'consultations/new',
                 'consultations/:consultationId',
