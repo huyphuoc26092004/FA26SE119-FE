@@ -40,6 +40,7 @@ import {
 } from '../../mocks/services/mockService';
 import { Badge, Button, Card, EmptyState, ErrorState, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 
 export default function JobMatchPage() {
   const { jobId = '' } = useParams<{ jobId: string }>();
@@ -408,6 +409,15 @@ export default function JobMatchPage() {
               {matchData.recommendation}
             </p>
           </Card>
+
+          {/* AI Recommendation Feedback */}
+          {job && (
+            <AiRecommendationFeedbackWidget
+              targetType="match_explanation"
+              targetId={jobId}
+              targetTitle={`Giải thích khớp nối AI - ${job.title} (${job.company})`}
+            />
+          )}
         </div>
 
         {/* Right Column: Skills Comparison & External Apply Card */}

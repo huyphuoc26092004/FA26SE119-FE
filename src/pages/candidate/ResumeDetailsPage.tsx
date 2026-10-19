@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Award,
   BookOpen,
+  Bot,
   Briefcase,
   Calendar,
   Check,
@@ -23,6 +24,7 @@ import {
   Info,
   Linkedin,
   Mail,
+  MailCheck,
   MapPin,
   Phone,
   Printer,
@@ -120,6 +122,24 @@ export default function ResumeDetailsPage() {
               <Button variant="secondary">
                 <Edit3 size={15} />
                 {t('resumes.editCv')}
+              </Button>
+            </Link>
+            <Link to={`/candidate/assistant?cvId=${cv.id}`}>
+              <Button
+                variant="secondary"
+                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <Bot size={15} className="text-blue-600" />
+                Tư vấn với Trợ lý AI
+              </Button>
+            </Link>
+            <Link to={`/candidate/applications?cvId=${cv.id}`}>
+              <Button
+                variant="secondary"
+                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              >
+                <MailCheck size={15} className="text-indigo-600" />
+                Tạo Cover Letter
               </Button>
             </Link>
             <Link to={`/candidate/resumes/${cv.id}/analysis`}>

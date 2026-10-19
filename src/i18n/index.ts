@@ -91,13 +91,15 @@ export function useTranslation() {
     return fallback ?? path;
   };
 
+  const tMerged = Object.assign(t, currentTranslations) as ((path: string, fallback?: string) => string) & Translations;
+
   return {
     language,
     isVietnamese: language === 'vi',
     isEnglish: language === 'en',
     setLanguage,
     toggleLanguage,
-    t,
+    t: tMerged,
     strings: currentTranslations,
   };
 }
