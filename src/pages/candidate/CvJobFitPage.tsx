@@ -22,6 +22,7 @@ import {
   HelpCircle,
   Layers,
   Lightbulb,
+  MailCheck,
   MapPin,
   RefreshCw,
   Search,
@@ -42,6 +43,7 @@ import {
 import type { CvJobFitResult, Job, Resume } from '../../types/domain';
 import { Badge, Button, Card, EmptyState, ErrorState, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 
 export default function CvJobFitPage() {
   const { t } = useTranslation();
@@ -676,6 +678,48 @@ export default function CvJobFitPage() {
                 ))}
               </div>
             </Card>
+
+            {/* AI Assistant Deep Link Banner */}
+            <Card className="p-5 border border-blue-200 bg-gradient-to-r from-blue-50/80 via-white to-indigo-50/60 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+                  <Bot size={22} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Bạn muốn giải đáp thêm về mức độ phù hợp với công việc này?
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Trò chuyện trực tuyến với Trợ lý AI để phân tích chiến lược phỏng vấn và nhận gợi ý chỉnh sửa từng mục CV theo vị trí {currentJob?.title}.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Link
+                  to={`/candidate/applications?cvId=${currentCv?.id}&jobId=${currentJob?.id}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs px-4 py-2.5 shadow-sm transition"
+                >
+                  <MailCheck size={14} />
+                  <span>Soạn thư ứng tuyển AI</span>
+                </Link>
+                <Link
+                  to={`/candidate/assistant?cvId=${currentCv?.id}&jobId=${currentJob?.id}`}
+                  className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white hover:bg-blue-50 text-blue-700 font-bold text-xs px-4 py-2.5 shadow-2xs transition"
+                >
+                  <Sparkles size={14} className="text-blue-600" />
+                  <span>Tư vấn với Trợ lý AI</span>
+                </Link>
+              </div>
+            </Card>
+
+            {/* AI Recommendation & Match Explanation Feedback */}
+            {currentJob && currentCv && (
+              <AiRecommendationFeedbackWidget
+                targetType="match_explanation"
+                targetId={`fit-${currentCv.id}-${currentJob.id}`}
+                targetTitle={`Phân tích Fit CV [${currentCv.position}] với [${currentJob.title} - ${currentJob.company}]`}
+              />
+            )}
           </div>
         </div>
       )}

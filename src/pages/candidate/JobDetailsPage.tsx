@@ -22,6 +22,7 @@ import {
   Gift,
   GraduationCap,
   Layers,
+  MailCheck,
   MapPin,
   Share2,
   Sparkles,
@@ -40,6 +41,7 @@ import {
 } from '../../mocks/services/mockService';
 import { Badge, Button, Card, ErrorState, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 
 export default function JobDetailsPage() {
   const { jobId = '' } = useParams<{ jobId: string }>();
@@ -218,14 +220,35 @@ export default function JobDetailsPage() {
           </div>
 
           <div className="flex flex-col sm:items-end gap-2 shrink-0 w-full sm:w-auto">
-            <Button
-              variant="primary"
-              onClick={() => setRedirectModalOpen(true)}
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold border-0 shadow-sm text-xs py-2.5 px-5"
-            >
-              <ExternalLink size={15} />
-              {isApplied ? 'Mở lại nguồn nộp đơn ↗' : `Ứng tuyển trên ${externalSource.sourceName} ↗`}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {isCandidate && (
+                <>
+                  <Link
+                    to={`/candidate/assistant?jobId=${job.id}`}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs"
+                  >
+                    <Bot size={15} className="text-blue-600" />
+                    <span>Hỏi AI về việc này</span>
+                  </Link>
+
+                  <Link
+                    to={`/candidate/applications?jobId=${job.id}`}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs"
+                  >
+                    <MailCheck size={15} className="text-indigo-600" />
+                    <span>Soạn Cover Letter AI</span>
+                  </Link>
+                </>
+              )}
+              <Button
+                variant="primary"
+                onClick={() => setRedirectModalOpen(true)}
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold border-0 shadow-sm text-xs py-2.5 px-5"
+              >
+                <ExternalLink size={15} />
+                {isApplied ? 'Mở lại nguồn nộp đơn ↗' : `Ứng tuyển trên ${externalSource.sourceName} ↗`}
+              </Button>
+            </div>
             {externalSource.applicationDeadline && (
               <span className="text-[11px] text-slate-400 text-right">
                 Hạn chót: {externalSource.applicationDeadline}
@@ -375,6 +398,15 @@ export default function JobDetailsPage() {
               )}
             </div>
           </Card>
+
+          {/* AI Recommendation Feedback */}
+          {isCandidate && (
+            <AiRecommendationFeedbackWidget
+              targetType="job_recommendation"
+              targetId={job.id}
+              targetTitle={`${job.title} - ${job.company}`}
+            />
+          )}
 
           {/* External Source Application Card */}
           <Card className="border border-slate-200 p-6 shadow-sm bg-white">

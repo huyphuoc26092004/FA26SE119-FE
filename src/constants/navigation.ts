@@ -20,6 +20,7 @@ import {
   Wallet,
   Target,
   Coins,
+  MailCheck,
   GitBranch,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -37,6 +38,7 @@ export const candidateNav: NavItem[] = [
   { label: 'My CVs', translationKey: 'nav.myResumes', to: '/candidate/resumes', icon: FileText },
   { label: 'Job Discovery', translationKey: 'nav.jobDiscovery', to: '/candidate/jobs', icon: BriefcaseBusiness },
   { label: 'CV–Job Fit', translationKey: 'nav.cvJobFit', to: '/candidate/cv-job-fit', icon: Target },
+  { label: 'Application Assistance', translationKey: 'nav.applicationAssistance', to: '/candidate/applications', icon: MailCheck },
   { label: 'Salary Estimation', translationKey: 'nav.salaryEstimation', to: '/candidate/salary-estimation', icon: Coins },
   { label: 'Career Intelligence', translationKey: 'nav.careerIntelligence', to: '/candidate/career-intelligence', icon: BrainCircuit },
   { label: 'Skill Assessment', translationKey: 'nav.skillAssessment', to: '/candidate/assessment', icon: ClipboardCheck },
