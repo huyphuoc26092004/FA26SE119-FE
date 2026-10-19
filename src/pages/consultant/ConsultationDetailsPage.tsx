@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
+  ArrowRight,
   Clock,
   Video,
   ExternalLink,
@@ -552,6 +553,27 @@ export default function ConsultationDetailsPage() {
                   </Button>
                 </div>
               )}
+
+              {/* Full Career Profile & 360 Analysis Link */}
+              <div className="border-t border-slate-100 pt-3">
+                <Link
+                  to={`/consultant/candidates/${request.candidate.id}`}
+                  className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 p-3 hover:from-blue-100 hover:to-indigo-100 transition shadow-xs text-blue-900 group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-600 text-white">
+                      <Sparkles size={16} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-xs">{t('consultation.openFullAnalysis')}</p>
+                      <p className="text-[11px] text-blue-700/80">
+                        {isVietnamese ? 'Xem chi tiết CV, Audit ATS, Đánh giá kỹ năng & Gap' : 'Deep ATS Audit, Verified Skills & Gap Analysis'}
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight size={15} className="text-blue-600 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
             </div>
           </Card>
 

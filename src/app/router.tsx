@@ -36,6 +36,8 @@ import { AdminDashboard } from '../pages/shared/RoleDashboards';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
+import ConsultantCandidatesPage from '../pages/consultant/ConsultantCandidatesPage';
+import CandidateCareerAnalysisPage from '../pages/consultant/CandidateCareerAnalysisPage';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
 import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
 export function ProtectedRoute(){const authenticated=useAuthStore(s=>s.isAuthenticated);return authenticated?<Outlet/>:<Navigate to="/login" replace/>;}
@@ -117,10 +119,8 @@ export const router = createBrowserRouter([
               { index: true, element: <ConsultantDashboardPage /> },
               { path: 'consultations', element: <ConsultationListPage /> },
               { path: 'consultations/:id', element: <ConsultationDetailsPage /> },
-              ...placeholders([
-                'candidates',
-                'candidates/:candidateId',
-              ]),
+              { path: 'candidates', element: <ConsultantCandidatesPage /> },
+              { path: 'candidates/:candidateId', element: <CandidateCareerAnalysisPage /> },
             ],
           },
         ],

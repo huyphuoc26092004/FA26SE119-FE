@@ -154,3 +154,132 @@ export interface ConsultantDashboardStats {
     }[];
   }[];
 }
+
+export interface ConsultantCandidateSummary {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  avatar: string;
+  location: string;
+  currentTitle: string;
+  targetRole: string;
+  experienceLevel: string;
+  yearsOfExperience: number;
+  topSkills: string[];
+  attachedResumeId?: string;
+  attachedResumeName?: string;
+  attachedResumeScore?: number;
+  readinessLevel: 'Ready' | 'Near Ready' | 'Developing' | 'Early Stage';
+  fitScore: number;
+  assessmentSummary: {
+    topic: string;
+    score: number;
+    grade: string;
+  }[];
+  latestConsultation?: {
+    id: string;
+    status: ConsultationStatus;
+    topicLabel: string;
+    scheduledAt: string;
+  };
+}
+
+export interface CandidateCareerAnalysis {
+  candidate: ConsultationCandidate;
+  profileCompletion: number;
+  readinessLevel: 'Ready' | 'Near Ready' | 'Developing' | 'Early Stage';
+  readinessScore: number;
+  careerGoal: string;
+  expectedSalary: string;
+  availability: string;
+  employmentType: string;
+  resumeDetails: {
+    id: string;
+    name: string;
+    atsScore: number;
+    grade: string;
+    passProbability: number;
+    lastUpdated: string;
+    formattingScore: number;
+    keywordScore: number;
+    impactScore: number;
+    structureScore: number;
+    matchedKeywords: string[];
+    missingKeywords: string[];
+    strengths: string[];
+    improvements: string[];
+    workExperience: {
+      role: string;
+      company: string;
+      duration: string;
+      description: string;
+      highlights: string[];
+    }[];
+    education: {
+      school: string;
+      degree: string;
+      field: string;
+      years: string;
+      gpa?: string;
+    }[];
+    projects: {
+      name: string;
+      role: string;
+      techStack: string[];
+      description: string;
+      link?: string;
+    }[];
+  };
+  skillAssessments: {
+    topicId: string;
+    topicName: string;
+    score: number;
+    grade: string;
+    correctAnswers: number;
+    totalQuestions: number;
+    timeSpent: string;
+    completedAt: string;
+    strengths: string[];
+    weaknesses: string[];
+    consultantPrompt: string;
+  }[];
+  skillGap: {
+    targetJobTitle: string;
+    companyBenchmark: string;
+    overallFitScore: number;
+    fitLevel: 'Exceptional Fit' | 'Strong Fit' | 'Moderate Fit' | 'Growth Opportunity';
+    estimatedWeeksToReady: number;
+    skillsAnalysis: {
+      name: string;
+      category: string;
+      importance: 'critical' | 'high' | 'medium';
+      status: 'strong' | 'present' | 'gap' | 'missing';
+      candidateLevel: number;
+      requiredLevel: number;
+    }[];
+    criticalGaps: string[];
+    quickWins: string[];
+    actionRoadmap: string[];
+  };
+  salaryBenchmark: {
+    trackName: string;
+    level: string;
+    minUSD: number;
+    medianUSD: number;
+    maxUSD: number;
+    minVND: number;
+    medianVND: number;
+    maxVND: number;
+    candidateExpected: string;
+    marketVerdict: string;
+    negotiationStrategy: string;
+  };
+  consultationHistory: {
+    id: string;
+    topicLabel: string;
+    status: ConsultationStatus;
+    scheduledAt: string;
+    notes?: string;
+  }[];
+}
