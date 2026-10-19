@@ -27,7 +27,11 @@ import {
   Globe,
 } from 'lucide-react';
 import { Card, Badge, Button, Loading, ErrorState } from '../../components/ui';
-import { getCandidateCareerAnalysis } from '../../services/consultationService';
+import ConsultationAdviceBuilder from '../../components/consultation/ConsultationAdviceBuilder';
+import {
+  getCandidateCareerAnalysis,
+  saveCandidateCareerAdvice,
+} from '../../services/consultationService';
 import { useTranslation } from '../../i18n';
 
 export default function CandidateCareerAnalysisPage() {
@@ -35,7 +39,7 @@ export default function CandidateCareerAnalysisPage() {
   const navigate = useNavigate();
   const { t, isVietnamese } = useTranslation();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'ats' | 'assessment' | 'gap'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'ats' | 'assessment' | 'gap' | 'advice'>('profile');
   const [showCvModal, setShowCvModal] = useState(false);
   const [consultantNote, setConsultantNote] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
@@ -128,18 +132,30 @@ export default function CandidateCareerAnalysisPage() {
           <span>{isVietnamese ? 'Quay lại danh sách ứng viên' : 'Back to Candidates'}</span>
         </Link>
 
-        {analysis.consultationHistory.length > 0 && (
-          <Link
-            to={`/consultant/consultations/${analysis.consultationHistory[0].id}`}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200/80 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition shadow-xs"
-          >
-            <Calendar size={13} />
-            <span>
-              {isVietnamese ? 'Mở phiên tư vấn đang giao' : 'Open Assigned Consultation'} #{analysis.consultationHistory[0].id}
-            </span>
-            <ChevronRight size={13} />
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {analysis.consultantAdvice && (
+            <button
+              onClick={() => setActiveTab('advice')}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200/80 px-3 py-1.5 rounded-xl hover:bg-purple-100 transition shadow-xs cursor-pointer"
+            >
+              <Sparkles size={13} className="text-purple-600" />
+              <span>{isVietnamese ? 'Cung cấp Lời khuyên 4 Trụ Cột' : 'Provide 4-Pillar Advice'}</span>
+            </button>
+          )}
+
+          {analysis.consultationHistory.length > 0 && (
+            <Link
+              to={`/consultant/consultations/${analysis.consultationHistory[0].id}`}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200/80 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition shadow-xs"
+            >
+              <Calendar size={13} />
+              <span>
+                {isVietnamese ? 'Mở phiên tư vấn đang giao' : 'Open Assigned Consultation'} #{analysis.consultationHistory[0].id}
+              </span>
+              <ChevronRight size={13} />
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Hero Header Card */}
@@ -279,6 +295,19 @@ export default function CandidateCareerAnalysisPage() {
           <span>{t('consultation.tabSkillGapFit')}</span>
           <span className="rounded-full bg-blue-100 px-1.5 py-0.2 text-[10px] font-bold text-blue-800">
             {skillGap.overallFitScore}%
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('advice')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === 'advice'
+              ? 'border-purple-600 text-purple-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+        >
+          <Sparkles size={16} className="text-purple-600" />
+          <span>{t('consultation.tabConsultantAdvice')}</span>
+          <span className="rounded-full bg-purple-100 px-1.5 py-0.2 text-[10px] font-bold text-purple-800">
+            4 Pillars
           </span>
         </button>
       </div>
@@ -853,6 +882,21 @@ export default function CandidateCareerAnalysisPage() {
               </div>
             </Card>
           </div>
+        )}
+
+        {/* TAB 5: Provide Consultation Advice across 4 Core Pillars */}
+        {activeTab === 'advice' && analysis.consultantAdvice && (
+          <Card className="border-purple-200 shadow-xs">
+            <ConsultationAdviceBuilder
+              initialAdvice={analysis.consultantAdvice}
+              candidateName={candidate.name}
+              candidateRole={candidate.targetRole}
+              topic="CAREER_ORIENTATION"
+              onSave={async (newAdv) => {
+                await saveCandidateCareerAdvice(candidate.id, newAdv);
+              }}
+            />
+          </Card>
         )}
       </div>
 

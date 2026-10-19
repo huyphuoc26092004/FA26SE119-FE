@@ -58,6 +58,60 @@ export interface RecommendedResource {
   provider?: string;
 }
 
+// Detailed Consultation Advice across 4 Core Pillars
+export interface StarBulletImprovement {
+  id: string;
+  before: string;
+  afterStar: string;
+  note?: string;
+}
+
+export interface CvAdviceDetails {
+  summary: string;
+  formattingTips: string[];
+  starImprovements: StarBulletImprovement[];
+  missingKeywordsToInject: string[];
+  actionItems: string[];
+}
+
+export interface CareerDirectionAdviceDetails {
+  currentLevel: string;
+  targetLevel: string;
+  recommendedPositioning: string;
+  shortTermRoadmap: string[];
+  longTermRoadmap: string[];
+  strategicRecommendations: string[];
+}
+
+export interface SalaryAdviceDetails {
+  minSalary: number;
+  targetSalary: number;
+  maxSalary: number;
+  currency: string;
+  marketPercentile: string;
+  negotiationTactics: string[];
+  compensationPackageTips: string[];
+  sampleScript?: string;
+}
+
+export interface InterviewAdviceDetails {
+  overallReadiness: number; // 1-10
+  behavioralTips: string[];
+  technicalTips: string[];
+  mockInterviewFeedback: string[];
+  reverseQuestions: string[];
+  pitfallsToAvoid: string[];
+}
+
+export interface ConsultationAdvicePillars {
+  cvAdvice: CvAdviceDetails;
+  careerAdvice: CareerDirectionAdviceDetails;
+  salaryAdvice: SalaryAdviceDetails;
+  interviewAdvice: InterviewAdviceDetails;
+  lastUpdated?: string;
+  consultantName?: string;
+}
+
 export interface ConsultantFeedback {
   summary: string;
   overallRating?: number;
@@ -65,6 +119,7 @@ export interface ConsultantFeedback {
   improvements: string[];
   actionChecklist: ActionChecklistItem[];
   recommendedResources: RecommendedResource[];
+  advice?: ConsultationAdvicePillars;
   nextFollowUpDate?: string;
   submittedAt?: string;
   updatedAt?: string;
@@ -282,4 +337,5 @@ export interface CandidateCareerAnalysis {
     scheduledAt: string;
     notes?: string;
   }[];
+  consultantAdvice?: ConsultationAdvicePillars;
 }

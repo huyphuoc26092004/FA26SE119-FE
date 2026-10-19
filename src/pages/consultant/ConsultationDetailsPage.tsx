@@ -20,8 +20,6 @@ import {
   Mail,
   MapPin,
   Send,
-  Plus,
-  Trash2,
   Save,
   Star,
   Sparkles,
@@ -30,18 +28,23 @@ import {
   X,
 } from 'lucide-react';
 import { Card, Badge, Button, Loading, ErrorState } from '../../components/ui';
+import ConsultationAdviceBuilder from '../../components/consultation/ConsultationAdviceBuilder';
 import {
   getConsultationRequestById,
   updateConsultationStatus,
   saveConsultantPrivateNotes,
-  saveConsultantFeedback,
+  saveConsultationAdvice,
   sendConsultationMessage,
 } from '../../services/consultationService';
+import {
+  mockAlexAdvice,
+  mockDucAdvice,
+  generateMockConsultationAdvice,
+} from '../../mocks/data/consultations';
 import type {
   ConsultationStatus,
   ConsultationTopic,
-  ActionChecklistItem,
-  RecommendedResource,
+  ConsultationAdvicePillars,
 } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
 
@@ -65,18 +68,10 @@ export default function ConsultationDetailsPage() {
     marketReadiness: 8,
   });
 
-  // Feedback form state
-  const [feedbackSummary, setFeedbackSummary] = useState('');
-  const [strengths, setStrengths] = useState<string[]>([]);
-  const [newStrength, setNewStrength] = useState('');
-  const [improvements, setImprovements] = useState<string[]>([]);
-  const [newImprovement, setNewImprovement] = useState('');
-  const [checklist, setChecklist] = useState<ActionChecklistItem[]>([]);
-  const [newChecklistItem, setNewChecklistItem] = useState('');
-  const [feedbackInitialized, setFeedbackInitialized] = useState(false);
 
   // Discussion message input
   const [messageContent, setMessageContent] = useState('');
+  const [adviceData, setAdviceData] = useState<ConsultationAdvicePillars | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -102,42 +97,20 @@ export default function ConsultationDetailsPage() {
     setNotesInitialized(true);
   }
 
-  if (request && !feedbackInitialized) {
-    if (request.feedback) {
-      setFeedbackSummary(request.feedback.summary || '');
-      setStrengths(request.feedback.strengths || []);
-      setImprovements(request.feedback.improvements || []);
-      setChecklist(request.feedback.actionChecklist || []);
+  if (request && !adviceData) {
+    if (request.feedback?.advice) {
+      setAdviceData(request.feedback.advice);
+    } else if (request.candidate.id === '1') {
+      setAdviceData(mockAlexAdvice);
+    } else if (request.candidate.id === 'c-102') {
+      setAdviceData(mockDucAdvice);
     } else {
-      // Defaults based on topic
-      setFeedbackSummary(
-        isVietnamese
-          ? `Ứng viên ${request.candidate.name} có nền tảng tốt cho vị trí ${request.candidate.targetRole}. Đã hướng dẫn chi tiết các điểm cần hoàn thiện để nâng cao năng lực cạnh tranh.`
-          : `Candidate ${request.candidate.name} demonstrates a solid background for ${request.candidate.targetRole}. Provided detailed strategic recommendations.`
+      setAdviceData(
+        generateMockConsultationAdvice(request.candidate.name, request.candidate.targetRole, request.topic)
       );
-      setStrengths([
-        isVietnamese ? 'Nền tảng kỹ thuật và kiến trúc tốt' : 'Solid technical & architectural foundation',
-        isVietnamese ? 'Thái độ cầu tiến, chủ động chuẩn bị câu hỏi' : 'Proactive mindset & well-prepared questions',
-      ]);
-      setImprovements([
-        isVietnamese ? 'Bổ sung số liệu định lượng (STAR formula)' : 'Quantify achievements using STAR formula',
-        isVietnamese ? 'Tối ưu từ khóa kỹ thuật theo chuẩn ATS' : 'Optimize technical keywords for ATS algorithms',
-      ]);
-      setChecklist([
-        {
-          id: 'ac-def-1',
-          task: isVietnamese ? 'Viết lại 3 dự án trọng điểm theo cấu trúc STAR' : 'Rewrite 3 key projects using STAR method',
-          completed: false,
-        },
-        {
-          id: 'ac-def-2',
-          task: isVietnamese ? 'Cập nhật lại phần tóm tắt (Executive Summary) định vị rõ Senior' : 'Update executive summary positioning for Senior role',
-          completed: false,
-        },
-      ]);
     }
-    setFeedbackInitialized(true);
   }
+
 
   // Status mutation
   const statusMutation = useMutation({
@@ -160,38 +133,15 @@ export default function ConsultationDetailsPage() {
     },
   });
 
-  // Save feedback mutation
-  const feedbackMutation = useMutation({
-    mutationFn: () => {
-      const defaultResources: RecommendedResource[] = [
-        {
-          title: isVietnamese ? 'Cẩm nang Chuẩn hóa CV ATS cho Kỹ sư Công nghệ' : 'ATS Resume Blueprint for Tech Engineers',
-          type: 'Article',
-          url: 'https://careerpilot.demo/resources/ats-guide',
-          provider: 'CareerPilot Editorial',
-        },
-        {
-          title: isVietnamese ? 'Framework Phỏng vấn System Design Chuyên sâu' : 'System Design Technical Interview Mastery',
-          type: 'Course',
-          url: 'https://careerpilot.demo/resources/system-design',
-          provider: 'Engineering Academy',
-        },
-      ];
 
-      return saveConsultantFeedback(id!, {
-        summary: feedbackSummary,
-        overallRating: 9,
-        strengths,
-        improvements,
-        actionChecklist: checklist,
-        recommendedResources: request?.feedback?.recommendedResources || defaultResources,
-      });
-    },
+  // Save consultation advice mutation across 4 pillars
+  const adviceMutation = useMutation({
+    mutationFn: (newAdvice: ConsultationAdvicePillars) => saveConsultationAdvice(id!, newAdvice),
     onSuccess: (updated) => {
       queryClient.setQueryData(['consultation-detail', id], updated);
       queryClient.invalidateQueries({ queryKey: ['consultation-requests'] });
       queryClient.invalidateQueries({ queryKey: ['consultant-stats'] });
-      showToast(t('consultation.feedbackSavedSuccess'));
+      showToast(t('consultation.adviceSavedSuccess'));
     },
   });
 
@@ -212,51 +162,6 @@ export default function ConsultationDetailsPage() {
     }
   };
 
-  const handleAddStrength = () => {
-    if (newStrength.trim()) {
-      setStrengths([...strengths, newStrength.trim()]);
-      setNewStrength('');
-    }
-  };
-
-  const handleRemoveStrength = (index: number) => {
-    setStrengths(strengths.filter((_, i) => i !== index));
-  };
-
-  const handleAddImprovement = () => {
-    if (newImprovement.trim()) {
-      setImprovements([...improvements, newImprovement.trim()]);
-      setNewImprovement('');
-    }
-  };
-
-  const handleRemoveImprovement = (index: number) => {
-    setImprovements(improvements.filter((_, i) => i !== index));
-  };
-
-  const handleAddChecklist = () => {
-    if (newChecklistItem.trim()) {
-      setChecklist([
-        ...checklist,
-        {
-          id: `ac-${Date.now()}`,
-          task: newChecklistItem.trim(),
-          completed: false,
-        },
-      ]);
-      setNewChecklistItem('');
-    }
-  };
-
-  const handleToggleChecklist = (itemIndex: number) => {
-    setChecklist(
-      checklist.map((item, i) => (i === itemIndex ? { ...item, completed: !item.completed } : item))
-    );
-  };
-
-  const handleRemoveChecklist = (itemIndex: number) => {
-    setChecklist(checklist.filter((_, i) => i !== itemIndex));
-  };
 
   if (isLoading) return <Loading />;
   if (isError || !request) {
@@ -852,200 +757,21 @@ export default function ConsultationDetailsPage() {
             </div>
           </Card>
 
-          {/* Section 2: Official Consultant Feedback & Action Plan Form */}
+          {/* Section 2: Provide Consultation Advice across 4 Core Pillars */}
           <Card className="border-blue-200 shadow-xs">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles size={18} className="text-blue-600" />
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">
-                    {t('consultation.feedbackTitle')}
-                  </h2>
-                  <p className="text-[11px] text-slate-500">
-                    {t('consultation.feedbackSubtitle')}
-                  </p>
-                </div>
-              </div>
-              <Badge tone="green">Deliverable</Badge>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              {/* Summary Evaluation */}
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  {t('consultation.summaryEvaluation')}
-                </label>
-                <textarea
-                  rows={3}
-                  value={feedbackSummary}
-                  onChange={(e) => setFeedbackSummary(e.target.value)}
-                  placeholder={t('consultation.summaryPlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-800 outline-none focus:border-blue-500 transition leading-relaxed"
-                />
-              </div>
-
-              {/* Strengths List */}
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  {t('consultation.strengthsTitle')}
-                </label>
-                <div className="space-y-1.5 mb-2">
-                  {strengths.map((str, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between rounded-lg bg-emerald-50 px-2.5 py-1.5 text-emerald-900 border border-emerald-100"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                        <span>{str}</span>
-                      </span>
-                      <button
-                        onClick={() => handleRemoveStrength(idx)}
-                        className="text-emerald-600 hover:text-red-600 cursor-pointer p-0.5"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newStrength}
-                    onChange={(e) => setNewStrength(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddStrength();
-                      }
-                    }}
-                    placeholder="Thêm điểm mạnh..."
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-blue-500"
-                  />
-                  <Button variant="secondary" className="px-3 py-1.5 text-xs" onClick={handleAddStrength}>
-                    <Plus size={13} />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Improvements List */}
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  {t('consultation.improvementsTitle')}
-                </label>
-                <div className="space-y-1.5 mb-2">
-                  {improvements.map((imp, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between rounded-lg bg-amber-50 px-2.5 py-1.5 text-amber-900 border border-amber-100"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <AlertCircle size={13} className="text-amber-600 shrink-0" />
-                        <span>{imp}</span>
-                      </span>
-                      <button
-                        onClick={() => handleRemoveImprovement(idx)}
-                        className="text-amber-600 hover:text-red-600 cursor-pointer p-0.5"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newImprovement}
-                    onChange={(e) => setNewImprovement(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddImprovement();
-                      }
-                    }}
-                    placeholder="Thêm điểm cần cải thiện..."
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-blue-500"
-                  />
-                  <Button variant="secondary" className="px-3 py-1.5 text-xs" onClick={handleAddImprovement}>
-                    <Plus size={13} />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Action Checklist for Candidate */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="font-bold text-slate-700 block">
-                    {t('consultation.actionChecklistTitle')}
-                  </label>
-                  <span className="text-[11px] text-slate-400">
-                    {checklist.filter((c) => c.completed).length}/{checklist.length} hoàn thành
-                  </span>
-                </div>
-                <div className="space-y-1.5 mb-2">
-                  {checklist.map((item, idx) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-2.5"
-                    >
-                      <label className="flex items-center gap-2 cursor-pointer flex-1">
-                        <input
-                          type="checkbox"
-                          checked={item.completed}
-                          onChange={() => handleToggleChecklist(idx)}
-                          className="rounded text-blue-600"
-                        />
-                        <span
-                          className={`text-xs ${
-                            item.completed ? 'line-through text-slate-400' : 'text-slate-800'
-                          }`}
-                        >
-                          {item.task}
-                        </span>
-                      </label>
-                      <button
-                        onClick={() => handleRemoveChecklist(idx)}
-                        className="text-slate-400 hover:text-red-600 cursor-pointer p-1"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newChecklistItem}
-                    onChange={(e) => setNewChecklistItem(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddChecklist();
-                      }
-                    }}
-                    placeholder={t('consultation.addTaskPlaceholder')}
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500"
-                  />
-                  <Button variant="secondary" className="px-3 py-2 text-xs" onClick={handleAddChecklist}>
-                    <Plus size={14} />
-                    <span>{t('consultation.addTaskButton')}</span>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Submit Feedback Action */}
-              <div className="border-t border-slate-100 pt-3 flex justify-end">
-                <Button
-                  variant="primary"
-                  onClick={() => feedbackMutation.mutate()}
-                  disabled={feedbackMutation.isPending}
-                  className="gap-2 text-xs py-2.5 px-4"
-                >
-                  <CheckCircle2 size={15} />
-                  <span>{t('consultation.saveFeedbackButton')}</span>
-                </Button>
-              </div>
-            </div>
+            {adviceData && (
+              <ConsultationAdviceBuilder
+                initialAdvice={adviceData}
+                candidateName={request.candidate.name}
+                candidateRole={request.candidate.targetRole}
+                topic={request.topic}
+                onSave={async (newAdv) => {
+                  setAdviceData(newAdv);
+                  await adviceMutation.mutateAsync(newAdv);
+                }}
+                isSaving={adviceMutation.isPending}
+              />
+            )}
           </Card>
 
           {/* Section 3: Live Discussion / Message Thread */}

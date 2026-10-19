@@ -1,4 +1,10 @@
-import { mockConsultationRequests, mockConsultantStats } from '../mocks/data/consultations';
+import {
+  mockConsultationRequests,
+  mockConsultantStats,
+  mockAlexAdvice,
+  mockDucAdvice,
+  generateMockConsultationAdvice,
+} from '../mocks/data/consultations';
 import type {
   ConsultationRequest,
   ConsultationStatus,
@@ -10,6 +16,7 @@ import type {
   ConsultationMeetingInfo,
   ConsultantCandidateSummary,
   CandidateCareerAnalysis,
+  ConsultationAdvicePillars,
 } from '../types/consultation';
 
 const STORAGE_KEY = 'careerpilot-mock-consultations';
@@ -277,6 +284,98 @@ export async function saveConsultantFeedback(
 }
 
 /**
+ * Save and persist consultation advice across the 4 core pillars
+ */
+export async function saveConsultationAdvice(
+  id: string,
+  advice: ConsultationAdvicePillars
+): Promise<ConsultationRequest> {
+  await delay(300);
+  const items = getStoredConsultations();
+  const idx = items.findIndex((i) => i.id.toLowerCase() === id.toLowerCase());
+
+  if (idx === -1) throw new Error('Không tìm thấy yêu cầu tư vấn.');
+
+  const current = items[idx];
+  const now = new Date().toISOString();
+
+  const preparedAdvice: ConsultationAdvicePillars = {
+    ...advice,
+    lastUpdated: now,
+    consultantName: current.consultantName,
+  };
+
+  const existingFeedback = current.feedback;
+  const updatedFeedback: ConsultantFeedback = {
+    summary: advice.cvAdvice.summary || existingFeedback?.summary || '',
+    overallRating: existingFeedback?.overallRating || 9,
+    strengths: advice.careerAdvice.strategicRecommendations.length > 0
+      ? advice.careerAdvice.strategicRecommendations
+      : existingFeedback?.strengths || [],
+    improvements: advice.cvAdvice.actionItems.length > 0
+      ? advice.cvAdvice.actionItems
+      : existingFeedback?.improvements || [],
+    actionChecklist: advice.cvAdvice.actionItems.map((task, i) => ({
+      id: `ac-${Date.now()}-${i}`,
+      task,
+      completed: false,
+    })),
+    recommendedResources: existingFeedback?.recommendedResources || [],
+    advice: preparedAdvice,
+    updatedAt: now,
+    submittedAt: existingFeedback?.submittedAt || now,
+  };
+
+  const updated: ConsultationRequest = {
+    ...current,
+    feedback: updatedFeedback,
+    timeline: [
+      ...current.timeline,
+      {
+        id: `tl-adv-${Date.now()}`,
+        status: current.status,
+        title: 'Cập nhật Lời khuyên Tư vấn 4 Trụ Cột',
+        description: `Chuyên gia ${current.consultantName} đã hoàn thiện khuyến nghị chuyên sâu về CV, Định hướng nghề nghiệp, Lương và Kỹ năng phỏng vấn.`,
+        timestamp: now,
+        actor: current.consultantName,
+      },
+    ],
+  };
+
+  items[idx] = updated;
+  saveStoredConsultations(items);
+  return updated;
+}
+
+/**
+ * Save candidate-level career advice directly to local persistence
+ */
+export async function saveCandidateCareerAdvice(
+  candidateId: string,
+  advice: ConsultationAdvicePillars
+): Promise<ConsultationAdvicePillars> {
+  await delay(250);
+  try {
+    const key = `careerpilot-candidate-advice-${candidateId}`;
+    localStorage.setItem(key, JSON.stringify(advice));
+  } catch {
+    // ignore
+  }
+  return advice;
+}
+
+/**
+ * Generate AI-assisted advice draft tailored to candidate profile and topic
+ */
+export function generateAiConsultationAdviceDraft(
+  candidateName: string,
+  targetRole: string,
+  topic: ConsultationTopic
+): ConsultationAdvicePillars {
+  return generateMockConsultationAdvice(candidateName, targetRole, topic);
+}
+
+/**
  * Send a discussion message in the consultation thread
  */
 export async function sendConsultationMessage(
@@ -463,8 +562,30 @@ export async function getCandidateCareerAnalysis(
 
   const c = matched.candidate;
   const isAlex = c.id === '1';
+  const isDuc = c.id === 'c-102';
   const isYen = c.id === 'c-103';
   const isTung = c.id === 'c-104';
+
+  // Check stored consultation advice or fallback to realistic mock advice
+  let savedAdvice: ConsultationAdvicePillars | undefined = matched.feedback?.advice;
+  if (!savedAdvice) {
+    try {
+      const localAdviceRaw = localStorage.getItem(`careerpilot-candidate-advice-${candidateId}`);
+      if (localAdviceRaw) {
+        savedAdvice = JSON.parse(localAdviceRaw);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const defaultAdvice = isAlex
+    ? mockAlexAdvice
+    : isDuc
+    ? mockDucAdvice
+    : generateMockConsultationAdvice(c.name, c.targetRole, matched.topic);
+
+  const consultantAdvice = savedAdvice || defaultAdvice;
 
   const history = items
     .filter((i) => i.candidate.id.toLowerCase() === candidateId.toLowerCase())
@@ -673,5 +794,6 @@ export async function getCandidateCareerAnalysis(
         'Ứng viên nên tự tin chốt ở mức Base 48M – 52M VNĐ kèm gói thưởng KPI 2–3 tháng lương và ngân sách học tập (Training budget).',
     },
     consultationHistory: history,
+    consultantAdvice,
   };
 }

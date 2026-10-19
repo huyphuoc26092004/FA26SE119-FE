@@ -1,6 +1,8 @@
 import type {
   ConsultationRequest,
   ConsultantDashboardStats,
+  ConsultationAdvicePillars,
+  ConsultationTopic,
 } from '../../types/consultation';
 
 export const mockConsultationRequests: ConsultationRequest[] = [
@@ -750,3 +752,281 @@ export const mockConsultantStats: ConsultantDashboardStats = {
     },
   ],
 };
+
+export const mockAlexAdvice: ConsultationAdvicePillars = {
+  lastUpdated: '2026-10-18T10:00:00Z',
+  consultantName: 'Taylor Lee',
+  cvAdvice: {
+    summary:
+      'Hồ sơ của Alex có kiến trúc nền tảng tốt. Điểm cần tối ưu hóa ngay: Phần Executive Summary chưa làm bật năng lực dẫn dắt kỹ thuật (Tech Lead) và các bullet points dự án còn mang tính liệt kê nhiệm vụ thay vì thành tựu đo lường được.',
+    formattingTips: [
+      'Giới hạn CV trong 2 trang chuẩn ATS định dạng Single-column rõ ràng.',
+      'Dùng font chữ không chân dễ đọc (Inter, Roboto hoặc Calibri), cỡ chữ 10.5pt - 11pt.',
+      'Đưa 6 công nghệ chủ lực (React 19, TypeScript, Next.js, TanStack Query, Tailwind, Performance) lên đầu trang 1.',
+    ],
+    starImprovements: [
+      {
+        id: 'star-alex-1',
+        before: 'Phát triển các component React cho hệ thống thanh toán trực tuyến.',
+        afterStar:
+          'Tái cấu trúc 18+ core UI components bằng React 19 và Tailwind CSS, tích hợp Web Vitals giúp giảm LCP từ 3.4s xuống 1.1s, tăng tỷ lệ hoàn tất đơn hàng thêm 18.5%.',
+        note: 'Bổ sung bối cảnh công nghệ (React 19), hành động tái cấu trúc và kết quả kinh doanh tăng 18.5%.',
+      },
+      {
+        id: 'star-alex-2',
+        before: 'Làm việc với team Backend để tích hợp REST API và GraphQL.',
+        afterStar:
+          'Thiết kế Data Access Layer với TanStack Query và TypeScript, giảm 45% thời gian chờ dữ liệu mạng và loại bỏ 100% runtime type mismatches.',
+        note: 'Chứng minh tư duy kiến trúc và làm chủ độ tin cậy của mã nguồn.',
+      },
+      {
+        id: 'star-alex-3',
+        before: 'Tối ưu hóa tốc độ tải trang web và sửa lỗi giao diện.',
+        afterStar:
+          'Triển khai Dynamic Code Splitting và Modern Image Optimization, nâng điểm Google Lighthouse từ 62 lên 96/100 cho toàn bộ trang chủ.',
+        note: 'Đo lường bằng chỉ số chuẩn quốc tế Google Lighthouse.',
+      },
+    ],
+    missingKeywordsToInject: [
+      'Core Web Vitals (LCP, INP, CLS)',
+      'Module Federation / Micro-frontends',
+      'CI/CD Pipeline Integration',
+      'Server-Driven UI',
+      'TanStack Query',
+      'Design System Governance',
+    ],
+    actionItems: [
+      'Viết lại 3 dự án trọng điểm theo công thức STAR trước ngày 22/10.',
+      'Cập nhật lại phần Executive Summary định vị rõ Senior Frontend Architect.',
+      'Quét lại hệ thống ATS Scanner để nâng điểm từ 84 lên trên 90 điểm.',
+    ],
+  },
+  careerAdvice: {
+    currentLevel: 'Mid-Senior Frontend Engineer (4.5 năm)',
+    targetLevel: 'Lead Frontend Engineer / Frontend Architect',
+    recommendedPositioning:
+      'Định vị ứng viên là Frontend Architect chuyên sâu về Web Performance, High-Concurrency Web Apps và Design System quy mô lớn.',
+    shortTermRoadmap: [
+      'Tháng 1: Hoàn thiện dự án mẫu Micro-frontend (Module Federation) trên GitHub cá nhân.',
+      'Tháng 2: Luyện sâu các chủ đề System Design cho Frontend (Streaming SSR, Hydration, Edge Computing).',
+      'Tháng 3: Tham gia các buổi Mock Interview chuyên sâu và ứng tuyển vào các Tech Unicorns.',
+    ],
+    longTermRoadmap: [
+      '6 tháng: Đảm nhiệm vai trò Tech Lead dẫn dắt nhóm 4-6 kỹ sư tại doanh nghiệp công nghệ lớn.',
+      '12 tháng: Trở thành Principal / Staff Frontend Engineer với tầm ảnh hưởng về tiêu chuẩn công nghệ toàn công ty.',
+    ],
+    strategicRecommendations: [
+      'Xây dựng thương hiệu cá nhân trên LinkedIn bằng các bài viết kỹ thuật ngắn về tối ưu Web Vitals.',
+      'Đóng góp vào các thư viện mã nguồn mở React/TypeScript để làm nổi bật portfolio.',
+    ],
+  },
+  salaryAdvice: {
+    minSalary: 38000000,
+    targetSalary: 52000000,
+    maxSalary: 65000000,
+    currency: 'VNĐ',
+    marketPercentile: 'Top 15% thị trường (Senior 4-6 năm kinh nghiệm)',
+    negotiationTactics: [
+      'Sử dụng thế mạnh về React 19, Performance Optimization và chứng chỉ quốc tế để neo giá ở mức 50M - 55M VNĐ.',
+      'Đàm phán gói đãi ngộ tổng thể (Total Compensation): Lương cứng + Thưởng hiệu suất (2-3 tháng) + ESOP.',
+      'Đề xuất cam kết review lương tăng 15% sau 6 tháng nếu đạt các KPI về tối ưu Core Web Vitals.',
+    ],
+    compensationPackageTips: [
+      'Yêu cầu mức Base Salary không dưới 45.000.000 VNĐ Net.',
+      'Đàm phán phụ cấp trang thiết bị (MacBook Pro M3 Max) và chế độ làm việc Hybrid 2 ngày Remote/tuần.',
+      'Chính sách bảo hiểm sức khỏe quốc tế cao cấp cho cá nhân và gia đình.',
+    ],
+    sampleScript:
+      'Dựa trên năng lực giải quyết các bài toán tải cao và tối ưu Core Web Vitals đã được chứng minh qua các dự án thực tế, cùng với trách nhiệm dẫn dắt kỹ thuật tại vị trí này, mức lương 52.000.000 VNĐ kèm gói thưởng hiệu suất sẽ là mức đãi ngộ phù hợp để tôi đồng hành và tạo ra giá trị đột phá lâu dài cho công ty.',
+  },
+  interviewAdvice: {
+    overallReadiness: 8.5,
+    behavioralTips: [
+      'Áp dụng phương pháp STAR khi trả lời câu hỏi về giải quyết bất đồng kỹ thuật với Product Manager.',
+      'Nhấn mạnh vào tinh thần sở hữu (Ownership) và tư duy lấy người dùng làm trung tâm (User-centric).',
+      'Tuyệt đối không chỉ trích quyết định kiến trúc của công ty cũ, hãy giải thích dưới góc độ bối cảnh và sự đánh đổi (Trade-offs).',
+    ],
+    technicalTips: [
+      'Khi live-coding, luôn diễn giải to suy nghĩ (Think-out-loud) và hỏi rõ ràng các edge cases trước khi viết mã.',
+      'Nắm chắc các câu hỏi về React Fiber Reconciliation, Memoization, và State Management patterns.',
+      'Chuẩn bị kỹ phần System Design: CDN Caching, Asset Bundling, Hydration bottlenecks.',
+    ],
+    mockInterviewFeedback: [
+      'Phần giải thích kiến trúc Component rất logic, rành mạch.',
+      'Cần cải thiện tốc độ viết TypeScript types phức tạp dưới áp lực thời gian.',
+    ],
+    reverseQuestions: [
+      'Team hiện đang giải quyết bài toán nợ kỹ thuật (Technical Debt) như thế nào trong chu kỳ Sprint?',
+      'Thước đo thành công lớn nhất của vị trí Lead Frontend này sau 6 tháng đầu là gì?',
+      'Văn hóa phản biện kỹ thuật (Design Review / Code Review) trong công ty diễn ra như thế nào?',
+    ],
+    pitfallsToAvoid: [
+      'Tránh sa đà vào tranh cãi công nghệ mà quên mất mục tiêu kinh doanh của dự án.',
+      'Tránh trả lời ngắn cụt lủn không có dẫn chứng số liệu thực tế.',
+    ],
+  },
+};
+
+export const mockDucAdvice: ConsultationAdvicePillars = {
+  lastUpdated: '2026-10-17T15:00:00Z',
+  consultantName: 'Taylor Lee',
+  cvAdvice: {
+    summary:
+      'Kinh nghiệm 3.5 năm Backend Java là nền móng cực kỳ vững chắc. Cần chỉnh sửa CV để làm nổi bật sự kết hợp giữa Backend chịu tải cao và năng lực AI Engineering (RAG, Vector DB, LangChain).',
+    formattingTips: [
+      'Tạo mục "AI & LLM Projects" riêng biệt ngay phía dưới kinh nghiệm Backend.',
+      'Làm nổi bật các chỉ số độ trễ mô hình (P95 Latency), Vector indexing throughput.',
+    ],
+    starImprovements: [
+      {
+        id: 'star-duc-1',
+        before: 'Xây dựng ứng dụng chat hỏi đáp tài liệu dùng mô hình OpenAI và LangChain.',
+        afterStar:
+          'Thiết kế kiến trúc RAG với FastAPI, Qdrant Vector DB và LangChain, đạt độ trễ phản hồi < 850ms trên tập tài liệu nội bộ 500,000 trang, độ chính xác Semantic Search đạt 92%.',
+        note: 'Định lượng số trang tài liệu và độ trễ response time chuẩn production.',
+      },
+    ],
+    missingKeywordsToInject: ['RAG Architecture', 'Vector Search (Milvus/Qdrant)', 'LLMOps', 'Prompt Evaluation', 'FastAPI'],
+    actionItems: [
+      'Hoàn thiện repo PoC RAG có CI/CD và Docker Compose deploy đầy đủ trên GitHub.',
+      'Viết bài phân tích kỹ thuật về tối ưu Embedding Chunking Size trên Medium/LinkedIn.',
+    ],
+  },
+  careerAdvice: {
+    currentLevel: 'Mid-level Backend Java Developer',
+    targetLevel: 'AI Systems Engineer / LLMOps Specialist',
+    recommendedPositioning:
+      'Chuyên gia phát triển hệ thống AI ứng dụng (AI Systems / LLM Platform Engineer) với thế mạnh kiến trúc Backend vững chắc.',
+    shortTermRoadmap: [
+      'Tháng 1-2: Chinh phục mô hình Agentic AI (CrewAI, LangGraph) kết hợp bảo mật Guardrails.',
+      'Tháng 3: Xây dựng portfolio 2 dự án AI hoàn chỉnh có demo online.',
+    ],
+    longTermRoadmap: [
+      '1 năm: Trở thành Senior AI Application Architect, dẫn dắt các giải pháp GenAI doanh nghiệp.',
+    ],
+    strategicRecommendations: [
+      'Định vị là kỹ sư AI biết làm Backend quy mô lớn, đây là tệp nhân sự hiếm hoi thị trường đang săn đón.',
+    ],
+  },
+  salaryAdvice: {
+    minSalary: 32000000,
+    targetSalary: 42000000,
+    maxSalary: 55000000,
+    currency: 'VNĐ',
+    marketPercentile: 'Top 25% thị trường (Chuyển ngành có nền tảng vững)',
+    negotiationTactics: [
+      'Tập trung vào giá trị Backend Microservices đã có: công ty không cần tuyển 2 người riêng biệt (1 Backend + 1 AI).',
+      'Đề xuất mức lương sàn 38M đi kèm cam kết đánh giá lại sau 6 tháng.',
+    ],
+    compensationPackageTips: [
+      'Xin ngân sách tham dự các hội nghị AI quốc tế hoặc chi phí tài khoản OpenAI/Cloud GPU.',
+    ],
+    sampleScript:
+      'Với năng lực kết hợp vững chắc giữa Backend chịu tải cao và kiến trúc AI RAG thực chiến, tôi có thể đưa các giải pháp GenAI vào vận hành ngay mà không tốn chi phí đồng bộ giữa các team, mức lương 42.000.000 VNĐ là hợp lý với giá trị này.',
+  },
+  interviewAdvice: {
+    overallReadiness: 7.8,
+    behavioralTips: [
+      'Giải thích lý do chuyển sang AI xuất phát từ sự say mê công nghệ và mong muốn giải quyết các bài toán dữ liệu lớn hơn.',
+    ],
+    technicalTips: [
+      'Chuẩn bị kỹ phần Trade-off giữa Fine-tuning và RAG.',
+      'Nắm chắc kiến trúc Vector Indexing (HNSW vs IVF).',
+    ],
+    mockInterviewFeedback: [
+      'Tư duy Backend sắc bén, cần trau dồi thêm về các kỹ thuật đo lường ảo giác mô hình (Hallucination detection).',
+    ],
+    reverseQuestions: [
+      'Doanh nghiệp hiện đang đo lường ROI của các dự án AI triển khai nội bộ như thế nào?',
+    ],
+    pitfallsToAvoid: [
+      'Tránh lạm dụng lý thuyết toán học trừu tượng mà bỏ quên tính thực tiễn khi deploy sản phẩm.',
+    ],
+  },
+};
+
+export function generateMockConsultationAdvice(
+  candidateName: string,
+  targetRole: string,
+  topic: ConsultationTopic
+): ConsultationAdvicePillars {
+  const isSalary = topic === 'SALARY_NEGOTIATION';
+  const isInterview = topic === 'MOCK_INTERVIEW';
+
+  return {
+    lastUpdated: new Date().toISOString(),
+    consultantName: 'Taylor Lee',
+    cvAdvice: {
+      summary: `Hồ sơ của ${candidateName} có định hướng rõ nét vào vị trí ${targetRole}. Cần tiếp tục tối ưu hóa mật độ từ khóa chuẩn ngành và đưa thêm số liệu đo lường theo công thức STAR.`,
+      formattingTips: [
+        'Chuẩn hóa cấu trúc Single-column để máy quét ATS đọc dữ liệu mượt mà.',
+        'Sử dụng font chữ chuẩn quốc tế (Inter, Roboto, Arial) cỡ 10.5pt.',
+        'Đưa kỹ năng cốt lõi và các công nghệ chủ đạo lên phần đầu tiên của hồ sơ.',
+      ],
+      starImprovements: [
+        {
+          id: `star-${Date.now()}-1`,
+          before: `Thực hiện các công việc chuyên môn liên quan đến ${targetRole}.`,
+          afterStar: `Chủ trì xây dựng giải pháp trọng điểm cho vị trí ${targetRole}, cải thiện 30% hiệu năng vận hành và giảm thiểu 25% chi phí phát sinh.`,
+          note: 'Bổ sung số liệu phần trăm và hiệu quả giải quyết vấn đề.',
+        },
+      ],
+      missingKeywordsToInject: ['System Optimization', 'Agile / Scrum', 'CI/CD Automation', 'Technical Documentation'],
+      actionItems: [
+        'Rà soát và chuẩn hóa lại các thành tựu theo phương pháp STAR.',
+        'Tối ưu các tiêu đề phần theo chuẩn tiếng Anh chuyên ngành.',
+      ],
+    },
+    careerAdvice: {
+      currentLevel: 'Professional Specialist',
+      targetLevel: targetRole,
+      recommendedPositioning: `Định vị ${candidateName} là chuyên gia giàu năng lực thực thi và sở hữu tư duy giải quyết vấn đề vượt trội trong mảng ${targetRole}.`,
+      shortTermRoadmap: [
+        'Tháng 1-2: Bổ sung các chứng chỉ chuyên môn và hoàn thiện portfolio dự án thực tế.',
+        'Tháng 3: Tham gia kết nối với các nhà tuyển dụng hàng đầu trong ngành.',
+      ],
+      longTermRoadmap: [
+        '1-2 năm: Phát triển lên vai trò Lead / Chuyên gia cao cấp với tầm ảnh hưởng diện rộng.',
+      ],
+      strategicRecommendations: [
+        'Duy trì sự hiện diện chuyên nghiệp trên LinkedIn và các cộng đồng công nghệ uy tín.',
+      ],
+    },
+    salaryAdvice: {
+      minSalary: isSalary ? 45000000 : 35000000,
+      targetSalary: isSalary ? 55000000 : 45000000,
+      maxSalary: isSalary ? 70000000 : 60000000,
+      currency: 'VNĐ',
+      marketPercentile: 'Top 20% thị trường theo kinh nghiệm tương đương',
+      negotiationTactics: [
+        'Tập trung đàm phán dựa trên giá trị giải quyết vấn đề đã được kiểm chứng thực tế.',
+        'Thương lượng gói đãi ngộ toàn diện bao gồm cả thưởng KPI và phúc lợi đào tạo.',
+      ],
+      compensationPackageTips: [
+        'Yêu cầu mức lương cơ bản rõ ràng kèm các điều khoản đánh giá định kỳ sau 6 tháng.',
+      ],
+      sampleScript: `Dựa trên kinh nghiệm và đóng góp cụ thể mà tôi có thể mang lại ngay cho vị trí ${targetRole}, mức đãi ngộ khuyến nghị từ chuyên gia sẽ là nền tảng vững chắc để tôi gắn bó và cống hiến hết mình.`,
+    },
+    interviewAdvice: {
+      overallReadiness: isInterview ? 8.5 : 8.0,
+      behavioralTips: [
+        'Trả lời súc tích theo cấu trúc STAR: Bối cảnh, Thử thách, Hành động của bạn, và Kết quả.',
+        'Giữ thái độ cầu thị, tự tin và truyền tải năng lượng tích cực.',
+      ],
+      technicalTips: [
+        'Lắng nghe kỹ câu hỏi, làm rõ các giả định trước khi đưa ra giải pháp kỹ thuật.',
+        'Trình bày rõ các phương án đánh đổi (Trade-offs) giữa các cách tiếp cận.',
+      ],
+      mockInterviewFeedback: [
+        'Khả năng diễn đạt tốt, phản xạ nhanh và tư duy có hệ thống.',
+      ],
+      reverseQuestions: [
+        'Đội ngũ hiện đang đối mặt với thử thách kỹ thuật hoặc kinh doanh lớn nhất nào?',
+        'Môi trường làm việc thúc đẩy sự sáng tạo và đổi mới của nhân viên ra sao?',
+      ],
+      pitfallsToAvoid: [
+        'Tránh nói lan man hoặc không trả lời đúng trọng tâm câu hỏi của người phỏng vấn.',
+      ],
+    },
+  };
+}
