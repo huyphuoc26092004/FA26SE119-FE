@@ -40,6 +40,7 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import SubscriptionQuotaManagementPage from '../pages/admin/SubscriptionQuotaManagementPage';
+import PaymentInvoiceManagementPage from '../pages/admin/PaymentInvoiceManagementPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
@@ -146,7 +147,7 @@ export const router = createBrowserRouter([
               { path: 'users', element: <UserManagementPage /> },
               { path: 'users/:id', element: <UserDetailsPage /> },
               { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
-              { path: 'payments', element: <SubscriptionQuotaManagementPage defaultTab="payments" /> },
+              { path: 'payments', element: <PaymentInvoiceManagementPage /> },
               ...placeholders([
                 'ai',
                 'ai/prompts',

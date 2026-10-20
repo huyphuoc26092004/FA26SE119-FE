@@ -89,10 +89,10 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                       <h3 className="text-sm font-bold text-slate-900">{m.displayName}</h3>
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isHealthy
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                            : isStandby
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                              : 'bg-red-50 text-red-700 border border-red-200/60'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                          : isStandby
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                            : 'bg-red-50 text-red-700 border border-red-200/60'
                           }`}
                       >
                         <span
@@ -150,10 +150,10 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                   <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${m.currentLoadPercent > 80
-                          ? 'bg-red-500'
-                          : m.currentLoadPercent > 50
-                            ? 'bg-amber-500'
-                            : 'bg-emerald-500'
+                        ? 'bg-red-500'
+                        : m.currentLoadPercent > 50
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
                         }`}
                       style={{ width: `${m.currentLoadPercent}%` }}
                     />
@@ -423,8 +423,8 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                     <td className="py-3.5 px-4">
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isActive
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-red-50 text-red-700 border border-red-200'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-red-50 text-red-700 border border-red-200'
                           }`}
                       >
                         <span
