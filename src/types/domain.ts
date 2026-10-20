@@ -383,5 +383,6 @@ export * from './support';
 export * from './feedback';
 export * from './subscriptionManagement';
 export * from './paymentManagement';
+export * from './aiManagement';
 
 

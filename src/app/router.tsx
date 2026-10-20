@@ -41,6 +41,7 @@ import UserManagementPage from '../pages/admin/UserManagementPage';
 import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import SubscriptionQuotaManagementPage from '../pages/admin/SubscriptionQuotaManagementPage';
 import PaymentInvoiceManagementPage from '../pages/admin/PaymentInvoiceManagementPage';
+import AiManagementPage from '../pages/admin/AiManagementPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
@@ -148,12 +149,12 @@ export const router = createBrowserRouter([
               { path: 'users/:id', element: <UserDetailsPage /> },
               { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
               { path: 'payments', element: <PaymentInvoiceManagementPage /> },
+              { path: 'ai', element: <AiManagementPage defaultTab="models" /> },
+              { path: 'ai/prompts', element: <AiManagementPage defaultTab="prompts" /> },
+              { path: 'ai/embeddings', element: <AiManagementPage defaultTab="embeddings" /> },
+              { path: 'vector', element: <AiManagementPage defaultTab="embeddings" /> },
               ...placeholders([
-                'ai',
-                'ai/prompts',
-                'ai/embeddings',
                 'jobs',
-                'vector',
                 'logs',
                 'audit',
                 'notifications',
