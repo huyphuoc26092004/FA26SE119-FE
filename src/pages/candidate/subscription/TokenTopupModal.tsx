@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Zap, Check, Loader2, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import { TOKEN_TOPUP_PACKS, purchaseTokenTopup } from '../../../services/subscriptionService';
+import { X, Zap, Loader2, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { getTopupPacks, purchaseTokenTopup } from '../../../services/subscriptionService';
 import { useTranslation } from '../../../i18n';
 
 interface TokenTopupModalProps {
@@ -15,13 +15,14 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
   onSuccess,
 }) => {
   const { isVietnamese, t } = useTranslation();
-  const [selectedPackId, setSelectedPackId] = useState(TOKEN_TOPUP_PACKS[1].id);
+  const packs = getTopupPacks();
+  const [selectedPackId, setSelectedPackId] = useState(packs[1]?.id || packs[0]?.id || 'pack-300k');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   if (!isOpen) return null;
 
-  const selectedPack = TOKEN_TOPUP_PACKS.find((p) => p.id === selectedPackId) || TOKEN_TOPUP_PACKS[1];
+  const selectedPack = packs.find((p) => p.id === selectedPackId) || packs[0];
 
   const handleTopup = async () => {
     setIsProcessing(true);
@@ -97,7 +98,7 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
 
               {/* Pack list */}
               <div className="space-y-2.5">
-                {TOKEN_TOPUP_PACKS.map((pack) => {
+                {packs.map((pack) => {
                   const isSelected = selectedPackId === pack.id;
                   return (
                     <div

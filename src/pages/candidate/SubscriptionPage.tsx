@@ -25,7 +25,7 @@ import type {
   UserSubscriptionStatus,
 } from '../../types/domain';
 import {
-  SUBSCRIPTION_PLANS,
+  getSubscriptionPlans,
   getUserSubscription,
   getPaymentHistory,
 } from '../../services/subscriptionService';
@@ -42,6 +42,7 @@ export const SubscriptionPage: React.FC = () => {
   // State
   const [activeTab, setActiveTab] = useState<'plans' | 'history'>('plans');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(getSubscriptionPlans());
   const [userSubscription, setUserSubscription] = useState<UserSubscriptionStatus>(
     getUserSubscription()
   );
@@ -60,6 +61,7 @@ export const SubscriptionPage: React.FC = () => {
 
   // Refresh local data
   const refreshData = () => {
+    setPlans(getSubscriptionPlans());
     setUserSubscription(getUserSubscription());
     setTransactions(getPaymentHistory());
   };
@@ -339,7 +341,7 @@ export const SubscriptionPage: React.FC = () => {
 
           {/* Plan Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {SUBSCRIPTION_PLANS.map((plan) => (
+            {plans.map((plan) => (
               <SubscriptionPlanCard
                 key={plan.id}
                 plan={plan}
