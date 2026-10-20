@@ -37,6 +37,8 @@ import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
 import SkillGapPage from '../pages/candidate/SkillGapPage';
 import LearningRoadmapPage from '../pages/candidate/LearningRoadmapPage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import UserManagementPage from '../pages/admin/UserManagementPage';
+import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
@@ -140,9 +142,9 @@ export const router = createBrowserRouter([
             element: <AdminLayout />,
             children: [
               { index: true, element: <AdminDashboardPage /> },
+              { path: 'users', element: <UserManagementPage /> },
+              { path: 'users/:id', element: <UserDetailsPage /> },
               ...placeholders([
-                'users',
-                'users/:id',
                 'subscriptions',
                 'payments',
                 'ai',
