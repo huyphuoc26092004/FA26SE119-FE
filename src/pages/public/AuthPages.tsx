@@ -20,12 +20,55 @@ import {
   Compass,
   Check,
   ArrowLeft,
-  Info,
+  Globe,
 } from 'lucide-react';
 import { Button, Card, Input } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useTranslation } from '../../i18n';
-import type { UserRole } from '../../types/domain';
+import calmBlueWaveBg from '../../assets/calm_blue_wave_bg.jpg';
+
+// ==========================================
+// SHARED AUTH PRESENTATIONAL COMPONENTS
+// ==========================================
+
+function BrandLogo() {
+  return (
+    <Link to="/" className="inline-flex items-center gap-2.5 group">
+      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#026aa2] to-[#0ba5ec] text-white flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+        </svg>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-base font-black text-slate-900 tracking-tight">Jobie</span>
+        <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-[#026aa2]">AI</span>
+      </div>
+    </Link>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+      />
+    </svg>
+  );
+}
 
 // ==========================================
 // 1. LOGIN PAGE
@@ -45,8 +88,7 @@ export function LoginPage() {
   const login = useAuthStore((s) => s.login);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [activePersona, setActivePersona] = useState<string | null>('candidate');
-  const { t, isVietnamese } = useTranslation();
+  const { t, isVietnamese, toggleLanguage } = useTranslation();
 
   const registeredEmail = searchParams.get('registered') || searchParams.get('email');
   const resetSuccess = searchParams.get('reset') === 'success';
@@ -55,55 +97,14 @@ export function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setValue,
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: registeredEmail || 'candidate@example.com',
-      password: 'Demo123!',
+      email: registeredEmail || '',
+      password: '',
       rememberMe: true,
     },
   });
-
-  const personas = [
-    {
-      id: 'candidate',
-      role: 'CANDIDATE' as UserRole,
-      name: 'Alex Morgan',
-      email: 'candidate@example.com',
-      roleTitle: isVietnamese ? 'Ứng viên tìm việc' : 'Job Candidate',
-      badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
-      icon: UserCheck,
-      dest: '/candidate',
-    },
-    {
-      id: 'consultant',
-      role: 'CAREER_CONSULTANT' as UserRole,
-      name: 'Taylor Lee',
-      email: 'consultant@example.com',
-      roleTitle: isVietnamese ? 'Cố vấn nghề nghiệp' : 'Career Consultant',
-      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      icon: Compass,
-      dest: '/consultant',
-    },
-    {
-      id: 'admin',
-      role: 'ADMIN' as UserRole,
-      name: 'Jordan Kim',
-      email: 'admin@example.com',
-      roleTitle: isVietnamese ? 'Quản trị viên' : 'Administrator',
-      badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
-      icon: ShieldCheck,
-      dest: '/admin',
-    },
-  ];
-
-  const handleSelectPersona = (p: typeof personas[0]) => {
-    setActivePersona(p.id);
-    setValue('email', p.email, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-    setValue('password', 'Demo123!', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-    setError('');
-  };
 
   const submit = async (data: LoginForm) => {
     setError('');
@@ -119,188 +120,226 @@ export function LoginPage() {
     }
   };
 
-  return (
-    <div className="mx-auto max-w-lg px-4 py-12 sm:py-16">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-200/80 mb-3">
-          <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-          <span>Jobie AI Authentication</span>
-        </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{t('auth.welcomeBack')}</h1>
-        <p className="mt-2 text-sm text-slate-500">{t('auth.signInSubtitle')}</p>
-      </div>
+  const handleGoogleLogin = async () => {
+    setError('');
+    try {
+      await login('candidate@example.com', 'Demo123!');
+      navigate('/candidate', { replace: true });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Đăng nhập Google thất bại');
+    }
+  };
 
-      {resetSuccess && (
-        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 flex items-start gap-3 shadow-xs">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+  return (
+    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      {/* Centered Main Rounded Card */}
+      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[620px]">
+        {/* Left Column (White Form) */}
+        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-white relative z-10">
+          {/* Top Brand Logo */}
           <div>
-            <p className="font-bold">{t('auth.resetPasswordSuccessTitle', 'Đổi mật khẩu thành công!')}</p>
-            <p className="text-emerald-700 text-xs mt-0.5">
-              {t('auth.resetPasswordSuccessDesc', 'Bạn có thể đăng nhập bằng mật khẩu mới vừa cập nhật.')}
+            <BrandLogo />
+          </div>
+
+          {/* Form Content */}
+          <div className="my-auto py-4">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+              {isVietnamese ? 'Chào mừng trở lại' : 'Welcome back'}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mb-6">
+              {isVietnamese ? 'Đăng nhập để tiếp tục vào trang tổng quan của bạn.' : 'Sign in to continue to your dashboard.'}
+            </p>
+
+            {resetSuccess && (
+              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 flex items-start gap-2 shadow-xs">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">{t('auth.resetPasswordSuccessTitle', 'Đổi mật khẩu thành công!')}</p>
+                  <p className="text-emerald-700 text-[11px] mt-0.5">
+                    {t('auth.resetPasswordSuccessDesc', 'Bạn có thể đăng nhập bằng mật khẩu mới vừa cập nhật.')}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit(submit)} className="space-y-4">
+              {/* Email */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 mb-1.5 block">
+                  {isVietnamese ? 'Email' : 'Email'}
+                </label>
+                <div
+                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 sm:py-3 ${
+                    errors.email
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                  }`}
+                >
+                  <Mail className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                    {...register('email')}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-1 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {errors.email.message || t('auth.emailRequired', 'Vui lòng nhập email hợp lệ')}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 mb-1.5 block">
+                  {isVietnamese ? 'Mật khẩu' : 'Password'}
+                </label>
+                <div
+                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 sm:py-3 ${
+                    errors.password
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                  }`}
+                >
+                  <Lock className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder={isVietnamese ? 'Nhập mật khẩu của bạn' : 'Enter your password'}
+                    className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none pr-8"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-1 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {errors.password.message || t('auth.passwordRequired', 'Vui lòng nhập mật khẩu')}
+                  </p>
+                )}
+              </div>
+
+              {/* Remember me & Forgot password */}
+              <div className="flex items-center justify-between text-xs text-slate-600 pt-0.5">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded-md border-slate-300 text-[#026aa2] focus:ring-[#026aa2]"
+                    {...register('rememberMe')}
+                  />
+                  <span>{isVietnamese ? 'Ghi nhớ đăng nhập' : 'Remember me'}</span>
+                </label>
+
+                <Link
+                  to="/forgot-password"
+                  className="font-semibold text-[#026aa2] hover:underline"
+                >
+                  {isVietnamese ? 'Quên mật khẩu?' : 'Forgot password?'}
+                </Link>
+              </div>
+
+              {error && (
+                <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed text-[11px]">{error}</div>
+                </div>
+              )}
+
+              {/* Main Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3 rounded-xl sm:rounded-2xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>{isVietnamese ? 'Đang đăng nhập…' : 'Signing in…'}</span>
+                  </>
+                ) : (
+                  <span>{isVietnamese ? 'Đăng nhập' : 'Sign in'}</span>
+                )}
+              </button>
+
+              {/* Divider */}
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink mx-3 text-xs text-slate-400 font-medium">or</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              {/* Continue with Google */}
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200 hover:bg-slate-50 active:scale-[0.99] text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs"
+              >
+                <GoogleIcon />
+                <span>{isVietnamese ? 'Tiếp tục với Google' : 'Continue with Google'}</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Footer Create One */}
+          <div className="text-center text-xs text-slate-500 pt-2">
+            <span>{isVietnamese ? 'Chưa có tài khoản?' : "Don't have an account?"}</span>{' '}
+            <Link to="/register" className="font-semibold text-[#026aa2] hover:underline ml-1">
+              {isVietnamese ? 'Tạo tài khoản' : 'Create one'}
+            </Link>
+          </div>
+        </div>
+
+        {/* Right Column (Calm Blue Wave Artwork) */}
+        <div
+          className="relative bg-cover bg-center overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
+          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+        >
+          {/* Top Bar with Sign Up pill button */}
+          <div className="relative z-10 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs transition-all cursor-pointer"
+            >
+              {isVietnamese ? 'VI' : 'EN'}
+            </button>
+            <Link
+              to="/register"
+              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+            >
+              {isVietnamese ? 'Đăng ký' : 'Sign up'}
+            </Link>
+          </div>
+
+          {/* Bottom Hero Typography */}
+          <div className="relative z-10 max-w-sm mt-auto pt-8">
+            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none mb-3">
+              Welcome.
+            </h2>
+            <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">
+              {isVietnamese
+                ? 'Tất cả những gì bạn cần, ở một nơi tinh gọn và an tâm. Đăng nhập và tiếp tục hành trình sự nghiệp của bạn.'
+                : 'Everything you need, in one calm and simple place. Sign in and pick up right where you left off.'}
             </p>
           </div>
         </div>
-      )}
-
-      {/* Role Preset Quick Switcher */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            {t('auth.selectRoleQuick', 'Chọn nhanh vai trò trải nghiệm:')}
-          </label>
-          <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-            1-Click Demo
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-2.5">
-          {personas.map((p) => {
-            const Icon = p.icon;
-            const isSelected = activePersona === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => handleSelectPersona(p)}
-                className={`relative flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-blue-600 bg-blue-50/60 shadow-xs ring-2 ring-blue-500/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                }`}
-              >
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg mb-1.5 ${
-                    isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <span className="text-xs font-bold text-slate-800 line-clamp-1">{p.name}</span>
-                <span className="text-[10px] text-slate-500 line-clamp-1">{p.roleTitle}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Login Card */}
-      <Card className="p-6 sm:p-8 shadow-sm border-slate-200/90">
-        <form onSubmit={handleSubmit(submit)} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-              {t('auth.emailLabel')}
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                id="email"
-                placeholder={t('auth.emailPlaceholder', 'you@example.com')}
-                className="pl-10 text-sm"
-                {...register('email')}
-              />
-            </div>
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.email.message || t('auth.emailRequired', 'Vui lòng nhập email hợp lệ')}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                {t('auth.passwordLabel')}
-              </label>
-              <Link
-                to="/forgot-password"
-                className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                {t('auth.forgotPasswordLink')}
-              </Link>
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                className="pl-10 pr-10 text-sm"
-                {...register('password')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.password.message || t('auth.passwordRequired', 'Vui lòng nhập mật khẩu')}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-xs pt-1">
-            <label className="flex items-center gap-2 cursor-pointer text-slate-600">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                {...register('rememberMe')}
-              />
-              <span>{t('auth.rememberMe', 'Ghi nhớ đăng nhập')}</span>
-            </label>
-          </div>
-
-          {error && (
-            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 flex items-start gap-2.5">
-              <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-              <div className="leading-relaxed">{error}</div>
-            </div>
-          )}
-
-          <Button type="submit" disabled={isSubmitting} className="w-full py-3 text-sm font-bold shadow-md shadow-blue-500/10">
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                {t('auth.signingIn')}
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                {t('auth.signInButton')}
-                <ArrowRight className="h-4 w-4" />
-              </span>
-            )}
-          </Button>
-        </form>
-
-        <div className="mt-6 border-t border-slate-100 pt-5 text-center text-xs text-slate-500">
-          {t('auth.alreadyHaveAccount', 'Chưa có tài khoản?')}{' '}
-          <Link to="/register" className="font-bold text-blue-600 hover:text-blue-800 hover:underline ml-1">
-            {t('auth.createAccountLink')}
-          </Link>
-        </div>
-      </Card>
-
-      {/* Info notice */}
-      <div className="mt-5 rounded-xl border border-slate-200/80 bg-slate-100/60 p-3.5 text-xs text-slate-600 flex items-center gap-2.5">
-        <Info className="h-4 w-4 text-slate-400 shrink-0" />
-        <p>
-          {t('auth.demoPasswordInfo', 'Mật khẩu mặc định cho các tài khoản demo:')}{' '}
-          <code className="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-            Demo123!
-          </code>
-        </p>
       </div>
     </div>
   );
 }
 
 // ==========================================
-// 2. REGISTER PAGE
+// 2. REGISTER PAGE (Inverted Layout matching Image 2)
 // ==========================================
 
 const registerSchema = z
@@ -309,7 +348,6 @@ const registerSchema = z
     email: z.string().email('Email không đúng định dạng'),
     password: z.string().min(8, 'Mật khẩu phải từ 8 ký tự trở lên'),
     confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu'),
-    role: z.enum(['CANDIDATE', 'CAREER_CONSULTANT']),
     acceptTerms: z.boolean().refine((val) => val === true, {
       message: 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật',
     }),
@@ -324,15 +362,14 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export function RegisterPage() {
   const navigate = useNavigate();
   const registerAction = useAuthStore((s) => s.register);
+  const login = useAuthStore((s) => s.login);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { t, isVietnamese } = useTranslation();
+  const { t, isVietnamese, toggleLanguage } = useTranslation();
 
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -341,324 +378,282 @@ export function RegisterPage() {
       email: '',
       password: '',
       confirmPassword: '',
-      role: 'CANDIDATE',
       acceptTerms: false,
     },
   });
 
-  const selectedRole = watch('role');
-  const passwordValue = watch('password') || '';
-
-  // Calculate password strength (0-4)
-  const calculateStrength = (pass: string) => {
-    let score = 0;
-    if (pass.length >= 8) score++;
-    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score++;
-    if (/\d/.test(pass)) score++;
-    if (/[^A-Za-z0-9]/.test(pass)) score++;
-    return score;
-  };
-
-  const strength = calculateStrength(passwordValue);
-
-  const getStrengthLabel = (score: number) => {
-    switch (score) {
-      case 0:
-      case 1:
-        return { label: t('auth.strengthWeak', 'Yếu'), color: 'bg-red-500', text: 'text-red-600' };
-      case 2:
-        return { label: t('auth.strengthFair', 'Trung bình'), color: 'bg-amber-500', text: 'text-amber-600' };
-      case 3:
-        return { label: t('auth.strengthGood', 'Tốt'), color: 'bg-blue-500', text: 'text-blue-600' };
-      case 4:
-        return { label: t('auth.strengthStrong', 'Rất mạnh'), color: 'bg-emerald-500', text: 'text-emerald-600' };
-      default:
-        return { label: '', color: 'bg-slate-200', text: 'text-slate-400' };
-    }
-  };
-
-  const strengthInfo = getStrengthLabel(strength);
-
   const submit = async (data: RegisterForm) => {
     setError('');
     try {
-      const res = await registerAction(data.name, data.email, data.password, data.role);
-      // Navigate to OTP verification with email and demo code hint
+      const res = await registerAction(data.name, data.email, data.password, 'CANDIDATE');
       navigate(`/verify-otp?email=${encodeURIComponent(data.email)}&code=${res.otp}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Đăng ký thất bại. Vui lòng thử lại.');
     }
   };
 
+  const handleGoogleSignup = async () => {
+    setError('');
+    try {
+      await login('candidate@example.com', 'Demo123!');
+      navigate('/candidate', { replace: true });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Đăng ký Google thất bại');
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-xl px-4 py-12 sm:py-16">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-200/80 mb-3">
-          <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-          <span>Jobie AI Platform</span>
+    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      {/* Centered Main Rounded Card with Inverted Columns */}
+      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[660px]">
+        {/* Left Column (Calm Blue Wave Artwork - on Left!) */}
+        <div
+          className="order-2 lg:order-1 relative bg-cover bg-center overflow-hidden flex flex-col justify-start p-8 sm:p-10 lg:p-12 min-h-[320px] lg:min-h-auto"
+          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+        >
+          {/* Top Bar with Sign in pill button & Language */}
+          <div className="relative z-10 flex items-center justify-between">
+            <Link
+              to="/login"
+              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+            >
+              {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+            </Link>
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="px-2.5 py-1 rounded-full bg-white/30 hover:bg-white/40 backdrop-blur-md text-[#0c365a] font-bold text-xs transition-all cursor-pointer"
+            >
+              {isVietnamese ? 'VI' : 'EN'}
+            </button>
+          </div>
+
+          {/* Hero Typography on Wave (Matching Image 2: "Join us.") */}
+          <div className="relative z-10 max-w-xs mt-10 sm:mt-14 lg:mt-20">
+            <h1 className="text-4xl sm:text-5xl font-black text-[#0c365a] tracking-tight leading-none mb-3">
+              Join us.
+            </h1>
+            <p className="text-xs sm:text-sm text-[#18446b] leading-relaxed font-medium">
+              {isVietnamese
+                ? 'Tạo tài khoản trong chưa đầy một phút và bắt đầu khám phá.'
+                : 'Create your account in under a minute and start exploring.'}
+            </p>
+          </div>
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{t('auth.createAccountTitle')}</h1>
-        <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">{t('auth.createAccountDesc')}</p>
-      </div>
 
-      <Card className="p-6 sm:p-8 shadow-sm border-slate-200/90">
-        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
-          <span className="text-xs font-medium text-slate-500">
-            {isVietnamese ? 'Dành cho thử nghiệm nhanh:' : 'Evaluation demo helper:'}
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              setValue('name', 'Nguyễn Mai Anh');
-              setValue('email', 'maianh@example.com');
-              setValue('password', 'Demo123!');
-              setValue('confirmPassword', 'Demo123!');
-              setValue('acceptTerms', true);
-              setValue('role', 'CANDIDATE');
-              setError('');
-            }}
-            className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/80 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer flex items-center gap-1.5"
-          >
-            <Sparkles className="h-3 w-3" />
-            {isVietnamese ? 'Điền nhanh thông tin mẫu' : 'Auto-fill demo data'}
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit(submit)} className="space-y-5">
-          {/* Role Selection */}
+        {/* Right Column (White Form - on Right!) */}
+        <div className="order-1 lg:order-2 p-6 sm:p-7 lg:p-8 flex flex-col justify-between bg-white relative z-10">
+          {/* Top Brand Logo */}
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-700">
-              {t('auth.roleSelectionLabel', 'Chọn vai trò tài khoản')}
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Candidate */}
-              <button
-                type="button"
-                onClick={() => setValue('role', 'CANDIDATE')}
-                className={`flex flex-col text-left p-4 rounded-xl border transition-all cursor-pointer ${
-                  selectedRole === 'CANDIDATE'
-                    ? 'border-blue-600 bg-blue-50/70 shadow-xs ring-2 ring-blue-500/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
-                    <UserCheck className="h-4 w-4" />
-                  </div>
-                  {selectedRole === 'CANDIDATE' && (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white">
-                      <Check className="h-3 w-3" />
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-bold text-slate-900">{t('auth.roleCandidateTitle')}</span>
-                <span className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  {t('auth.roleCandidateDesc')}
-                </span>
-              </button>
-
-              {/* Consultant */}
-              <button
-                type="button"
-                onClick={() => setValue('role', 'CAREER_CONSULTANT')}
-                className={`flex flex-col text-left p-4 rounded-xl border transition-all cursor-pointer ${
-                  selectedRole === 'CAREER_CONSULTANT'
-                    ? 'border-emerald-600 bg-emerald-50/70 shadow-xs ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white">
-                    <Compass className="h-4 w-4" />
-                  </div>
-                  {selectedRole === 'CAREER_CONSULTANT' && (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white">
-                      <Check className="h-3 w-3" />
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-bold text-slate-900">{t('auth.roleConsultantTitle')}</span>
-                <span className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  {t('auth.roleConsultantDesc')}
-                </span>
-              </button>
-            </div>
+            <BrandLogo />
           </div>
 
-          {/* Full Name */}
-          <div>
-            <label htmlFor="reg-name" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-              {t('auth.nameLabel', 'Họ và tên')}
-            </label>
-            <div className="relative">
-              <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                id="reg-name"
-                placeholder={t('auth.namePlaceholder', 'Nguyễn Văn A')}
-                className="pl-10 text-sm"
-                {...register('name')}
-              />
-            </div>
-            {errors.name && (
-              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.name.message}
-              </p>
-            )}
-          </div>
+          {/* Form Content */}
+          <div className="my-auto py-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+              {isVietnamese ? 'Tạo tài khoản' : 'Create your account'}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mb-4">
+              {isVietnamese ? 'Điền thông tin của bạn để bắt đầu.' : 'Fill in your details to get started.'}
+            </p>
 
-          {/* Email */}
-          <div>
-            <label htmlFor="reg-email" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-              {t('auth.emailLabel')}
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                id="reg-email"
-                placeholder={t('auth.emailPlaceholder', 'you@example.com')}
-                className="pl-10 text-sm"
-                {...register('email')}
-              />
-            </div>
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div>
-            <label htmlFor="reg-password" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-              {t('auth.passwordLabel')}
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                id="reg-password"
-                type={showPassword ? 'text' : 'password'}
-                className="pl-10 pr-10 text-sm"
-                placeholder={isVietnamese ? 'Tối thiểu 8 ký tự' : 'Minimum 8 characters'}
-                {...register('password')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.password.message}
-              </p>
-            )}
-
-            {/* Password Strength Indicator */}
-            {passwordValue && (
-              <div className="mt-2.5">
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-slate-500 font-medium">{t('auth.passwordStrength', 'Độ mạnh:')}</span>
-                  <span className={`font-bold ${strengthInfo.text}`}>{strengthInfo.label}</span>
+            <form onSubmit={handleSubmit(submit)} className="space-y-2.5">
+              {/* Full Name */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 mb-1 block">
+                  {isVietnamese ? 'Họ và tên' : 'Full name'}
+                </label>
+                <div
+                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-1.5 sm:py-2 ${
+                    errors.name
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                  }`}
+                >
+                  <UserIcon className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                  <input
+                    id="reg-name"
+                    placeholder={isVietnamese ? 'Nguyễn Văn A' : 'Your full name'}
+                    className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                    {...register('name')}
+                  />
                 </div>
-                <div className="grid grid-cols-4 gap-1.5 h-1.5">
-                  {[1, 2, 3, 4].map((step) => (
-                    <div
-                      key={step}
-                      className={`h-full rounded-full transition-all ${
-                        strength >= step ? strengthInfo.color : 'bg-slate-100'
-                      }`}
-                    />
-                  ))}
-                </div>
+                {errors.name && (
+                  <p className="mt-0.5 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {errors.name.message}
+                  </p>
+                )}
               </div>
-            )}
+
+              {/* Email */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 mb-1 block">
+                  {isVietnamese ? 'Email' : 'Email'}
+                </label>
+                <div
+                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-1.5 sm:py-2 ${
+                    errors.email
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                  }`}
+                >
+                  <Mail className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                  <input
+                    id="reg-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                    {...register('email')}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-0.5 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 mb-1 block">
+                  {isVietnamese ? 'Mật khẩu' : 'Password'}
+                </label>
+                <div
+                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-1.5 sm:py-2 ${
+                    errors.password
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                  }`}
+                >
+                  <Lock className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                  <input
+                    id="reg-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder={isVietnamese ? 'Tối thiểu 8 ký tự' : 'At least 8 characters'}
+                    className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none pr-8"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-0.5 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 mb-1 block">
+                  {isVietnamese ? 'Xác nhận mật khẩu' : 'Confirm password'}
+                </label>
+                <div
+                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-1.5 sm:py-2 ${
+                    errors.confirmPassword
+                      ? 'border-red-400 ring-2 ring-red-100'
+                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                  <input
+                    id="reg-confirm"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder={isVietnamese ? 'Nhập lại mật khẩu' : 'Re-enter your password'}
+                    className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                    {...register('confirmPassword')}
+                  />
+                </div>
+                {errors.confirmPassword && (
+                  <p className="mt-0.5 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Terms Checkbox */}
+              <div className="pt-0.5">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 select-none">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded-md border-slate-300 text-[#026aa2] focus:ring-[#026aa2]"
+                    {...register('acceptTerms')}
+                  />
+                  <span className="leading-tight text-[11px] text-slate-600">
+                    {isVietnamese ? 'Tôi đồng ý với' : 'I agree to the'}{' '}
+                    <span className="font-semibold text-[#026aa2] underline">{isVietnamese ? 'Điều khoản dịch vụ' : 'Terms of Service'}</span> {isVietnamese ? 'và' : 'and'}{' '}
+                    <span className="font-semibold text-[#026aa2] underline">{isVietnamese ? 'Chính sách bảo mật' : 'Privacy Policy'}</span>.
+                  </span>
+                </label>
+                {errors.acceptTerms && (
+                  <p className="mt-0.5 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {errors.acceptTerms.message}
+                  </p>
+                )}
+              </div>
+
+              {error && (
+                <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-700 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed text-[11px]">{error}</div>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-2.5 sm:py-2.5 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-1.5"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>{isVietnamese ? 'Đang xử lý…' : 'Creating account…'}</span>
+                  </>
+                ) : (
+                  <span>{isVietnamese ? 'Tạo tài khoản' : 'Create account'}</span>
+                )}
+              </button>
+
+              {/* Divider */}
+              <div className="relative flex py-1 items-center">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink mx-3 text-xs text-slate-400 font-medium">or</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              {/* Sign up with Google */}
+              <button
+                type="button"
+                onClick={handleGoogleSignup}
+                className="w-full py-2 sm:py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 active:scale-[0.99] text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs"
+              >
+                <GoogleIcon />
+                <span>{isVietnamese ? 'Đăng ký với Google' : 'Sign up with Google'}</span>
+              </button>
+            </form>
           </div>
 
-          {/* Confirm Password */}
-          <div>
-            <label htmlFor="reg-confirm" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-              {t('auth.confirmPasswordLabel', 'Xác nhận mật khẩu')}
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                id="reg-confirm"
-                type={showPassword ? 'text' : 'password'}
-                className="pl-10 text-sm"
-                placeholder={t('auth.confirmPasswordPlaceholder', 'Nhập lại mật khẩu')}
-                {...register('confirmPassword')}
-              />
-            </div>
-            {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.confirmPassword.message}
-              </p>
-            )}
+          {/* Footer Link */}
+          <div className="text-center text-xs text-slate-500 pt-1.5">
+            <span>{isVietnamese ? 'Đã có tài khoản?' : 'Already have an account?'}</span>{' '}
+            <Link to="/login" className="font-semibold text-[#026aa2] hover:underline ml-1">
+              {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+            </Link>
           </div>
-
-          {/* Accept Terms */}
-          <div>
-            <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-600">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                {...register('acceptTerms')}
-              />
-              <span className="leading-relaxed">
-                {t('auth.termsAgreement', 'Tôi đồng ý với')}{' '}
-                <a href="#terms" onClick={(e) => e.preventDefault()} className="font-semibold text-blue-600 underline">
-                  {t('auth.termsLink', 'Điều khoản dịch vụ')}
-                </a>{' '}
-                &{' '}
-                <a href="#privacy" onClick={(e) => e.preventDefault()} className="font-semibold text-blue-600 underline">
-                  {t('auth.privacyLink', 'Chính sách bảo mật')}
-                </a>
-              </span>
-            </label>
-            {errors.acceptTerms && (
-              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.acceptTerms.message}
-              </p>
-            )}
-          </div>
-
-          {error && (
-            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 flex items-start gap-2.5">
-              <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-              <div className="leading-relaxed">{error}</div>
-            </div>
-          )}
-
-          <Button type="submit" disabled={isSubmitting} className="w-full py-3 text-sm font-bold shadow-md shadow-blue-500/10">
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                {t('auth.registering', 'Đang xử lý đăng ký…')}
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                {t('auth.registerButton', 'Đăng ký tài khoản')}
-                <ArrowRight className="h-4 w-4" />
-              </span>
-            )}
-          </Button>
-        </form>
-
-        <div className="mt-6 border-t border-slate-100 pt-5 text-center text-xs text-slate-500">
-          {t('auth.alreadyHaveAccount', 'Đã có tài khoản?')}{' '}
-          <Link to="/login" className="font-bold text-blue-600 hover:text-blue-800 hover:underline ml-1">
-            {t('auth.signInButton', 'Đăng nhập ngay')}
-          </Link>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -789,194 +784,201 @@ export function VerifyOtpPage() {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12 sm:py-16">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20 mb-4">
-          <ShieldCheck className="h-7 w-7" />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          {t('auth.otpTitle', 'Xác thực tài khoản (OTP)')}
-        </h1>
-        <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
-          {t('auth.otpSubtitle')}
-        </p>
-      </div>
-
-      <Card className="p-6 sm:p-8 shadow-sm border-slate-200/90">
-        {/* Email target info */}
-        <div className="mb-6 rounded-xl bg-slate-50 p-4 border border-slate-200/80 text-center">
-          <p className="text-xs text-slate-500 font-medium">{t('auth.otpSentTo', 'Mã xác thực đã được gửi tới:')}</p>
-          {isEditingEmail ? (
-            <div className="mt-2 flex items-center gap-2">
-              <Input
-                type="email"
-                value={newEmailInput}
-                onChange={(e) => setNewEmailInput(e.target.value)}
-                className="text-xs"
-              />
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setEmail(newEmailInput);
-                  setIsEditingEmail(false);
-                }}
-                className="text-xs py-1.5 px-3"
-              >
-                Lưu
-              </Button>
-            </div>
-          ) : (
-            <div className="mt-1 flex items-center justify-center gap-2">
-              <span className="font-bold text-slate-900 text-sm">{email}</span>
-              <button
-                type="button"
-                onClick={() => setIsEditingEmail(true)}
-                className="text-xs text-blue-600 hover:underline cursor-pointer font-semibold"
-              >
-                ({t('auth.otpChangeEmail', 'Đổi')})
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 6-Digit Inputs */}
-        <div className="mb-6">
-          <label className="block text-center text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">
-            {t('auth.otpLabel', 'Nhập mã OTP 6 chữ số')}
-          </label>
-          <div className="flex justify-center gap-2 sm:gap-3">
-            {otpDigits.map((digit, idx) => (
-              <input
-                key={idx}
-                ref={(el) => {
-                  inputRefs.current[idx] = el;
-                }}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleChangeDigit(idx, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(idx, e)}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  handlePasteCode(e.clipboardData.getData('text'));
-                }}
-                className={`h-12 w-11 sm:h-14 sm:w-12 text-center text-xl sm:text-2xl font-extrabold rounded-xl border transition-all outline-none ${
-                  digit
-                    ? 'border-blue-600 bg-blue-50/40 text-blue-900 ring-2 ring-blue-500/10'
-                    : 'border-slate-200 bg-white text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-                }`}
-              />
-            ))}
+    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[580px]">
+        {/* Left Column (White Form) */}
+        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-white relative z-10">
+          <div>
+            <BrandLogo />
           </div>
-        </div>
 
-        {/* Countdown & Resend */}
-        <div className="mb-6 text-center text-xs">
-          {canResend ? (
+          <div className="my-auto py-4">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+              {t('auth.otpTitle', 'Xác thực tài khoản (OTP)')}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mb-5 leading-relaxed">
+              {t('auth.otpSubtitle', 'Nhập mã xác thực 6 chữ số vừa được gửi đến email của bạn để kích hoạt tài khoản.')}
+            </p>
+
+            {/* Email target info */}
+            <div className="mb-5 rounded-xl bg-slate-50 p-3.5 border border-slate-200/80 text-center">
+              <p className="text-xs text-slate-500 font-medium">{t('auth.otpSentTo', 'Mã xác thực đã được gửi tới:')}</p>
+              {isEditingEmail ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    type="email"
+                    value={newEmailInput}
+                    onChange={(e) => setNewEmailInput(e.target.value)}
+                    className="text-xs"
+                  />
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setEmail(newEmailInput);
+                      setIsEditingEmail(false);
+                    }}
+                    className="text-xs py-1.5 px-3"
+                  >
+                    Lưu
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-1 flex items-center justify-center gap-2">
+                  <span className="font-bold text-slate-900 text-sm">{email}</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingEmail(true)}
+                    className="text-xs text-[#026aa2] hover:underline cursor-pointer font-semibold"
+                  >
+                    ({t('auth.otpChangeEmail', 'Đổi')})
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 6-Digit Inputs */}
+            <div className="mb-5">
+              <label className="block text-center text-xs font-semibold text-slate-700 mb-3">
+                {t('auth.otpLabel', 'Nhập mã OTP 6 chữ số')}
+              </label>
+              <div className="flex justify-center gap-2 sm:gap-2.5">
+                {otpDigits.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => {
+                      inputRefs.current[idx] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChangeDigit(idx, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(idx, e)}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      handlePasteCode(e.clipboardData.getData('text'));
+                    }}
+                    className={`h-12 w-11 sm:h-13 sm:w-12 text-center text-xl sm:text-2xl font-black rounded-xl border transition-all outline-none ${
+                      digit
+                        ? 'border-[#026aa2] bg-sky-50/50 text-[#026aa2] ring-2 ring-[#026aa2]/20'
+                        : 'border-slate-200 bg-white text-slate-800 focus:border-[#026aa2] focus:ring-2 focus:ring-[#026aa2]/15'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Countdown & Resend */}
+            <div className="mb-5 text-center text-xs">
+              {canResend ? (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  className="font-bold text-[#026aa2] hover:underline cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {t('auth.otpResendNow', 'Gửi lại mã OTP')}
+                </button>
+              ) : (
+                <p className="text-slate-500 font-medium">
+                  {t('auth.otpResendIn', 'Gửi lại mã sau')}{' '}
+                  <span className="font-bold text-slate-800 font-mono">
+                    {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}s
+                  </span>
+                </p>
+              )}
+
+              {resendStatus && (
+                <p className="mt-2 text-xs font-semibold text-emerald-600 animate-fade-in flex items-center justify-center gap-1">
+                  <Check className="h-3.5 w-3.5" />
+                  {resendStatus}
+                </p>
+              )}
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                <div className="leading-relaxed text-[11px]">{error}</div>
+              </div>
+            )}
+
+            {/* Success Alert */}
+            {isSuccess && (
+              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-800 flex items-center gap-2.5">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="font-bold text-sm">{t('auth.otpSuccessTitle', 'Xác thực thành công!')}</p>
+                  <p className="text-emerald-700 mt-0.5 text-xs">{t('auth.otpSuccessDesc')}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Verify Action Button */}
             <button
               type="button"
-              onClick={handleResend}
-              className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer inline-flex items-center gap-1.5"
+              onClick={() => handleVerify()}
+              disabled={isVerifying || isSuccess}
+              className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
-              {t('auth.otpResendNow', 'Gửi lại mã OTP')}
+              {isVerifying ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>{t('auth.verifyingOtp', 'Đang xác thực…')}</span>
+                </>
+              ) : (
+                <>
+                  <span>{t('auth.verifyOtpButton', 'Xác thực & Kích hoạt tài khoản')}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
-          ) : (
-            <p className="text-slate-500 font-medium">
-              {t('auth.otpResendIn', 'Gửi lại mã sau')}{' '}
-              <span className="font-bold text-slate-800 font-mono">
-                {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}s
-              </span>
-            </p>
-          )}
+          </div>
 
-          {resendStatus && (
-            <p className="mt-2 text-xs font-semibold text-emerald-600 animate-fade-in flex items-center justify-center gap-1">
-              <Check className="h-3.5 w-3.5" />
-              {resendStatus}
-            </p>
-          )}
+          <div className="text-center text-xs text-slate-500 pt-3">
+            <Link to="/login" className="font-semibold text-[#026aa2] hover:underline inline-flex items-center gap-1.5">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{t('auth.backToLogin', 'Quay lại đăng nhập')}</span>
+            </Link>
+          </div>
         </div>
 
-        {/* Error message */}
-        {error && (
-          <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 flex items-start gap-2.5">
-            <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-            <div className="leading-relaxed">{error}</div>
-          </div>
-        )}
-
-        {/* Success Alert */}
-        {isSuccess && (
-          <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800 flex items-center gap-2.5">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-            <div>
-              <p className="font-bold text-sm">{t('auth.otpSuccessTitle', 'Xác thực thành công!')}</p>
-              <p className="text-emerald-700 mt-0.5">{t('auth.otpSuccessDesc')}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Verify Action Button */}
-        <Button
-          onClick={() => handleVerify()}
-          disabled={isVerifying || isSuccess}
-          className="w-full py-3 text-sm font-bold shadow-md shadow-blue-500/10"
+        {/* Right Column (Calm Blue Wave Artwork) */}
+        <div
+          className="relative bg-cover bg-center overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
+          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
         >
-          {isVerifying ? (
-            <span className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin" />
-              {t('auth.verifyingOtp', 'Đang xác thực…')}
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              {t('auth.verifyOtpButton', 'Xác thực & Kích hoạt tài khoản')}
-              <ArrowRight className="h-4 w-4" />
-            </span>
-          )}
-        </Button>
-
-        {/* Demo Helper Box */}
-        <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-xs text-blue-900">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-bold flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-              {t('auth.otpDemoCodeHint', 'Mã OTP thử nghiệm nhanh:')}
-            </span>
-            <code className="bg-white px-2 py-0.5 rounded font-mono font-extrabold text-blue-700 border border-blue-200">
-              {demoCodeParam}
-            </code>
+          {/* Top Bar with Sign in pill button & Language */}
+          <div className="relative z-10 flex items-center justify-end gap-3">
+            <Link
+              to="/login"
+              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+            >
+              {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+            </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
-            <button
-              type="button"
-              onClick={handleFillDemoCode}
-              className="py-1.5 px-3 rounded-lg bg-blue-600 text-white font-semibold text-[11px] hover:bg-blue-700 transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
-            >
-              {t('auth.otpAutoFillDemo', 'Tự động điền 123456')}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleVerify('123456')}
-              className="py-1.5 px-3 rounded-lg bg-white border border-blue-200 text-blue-700 font-semibold text-[11px] hover:bg-blue-50 transition cursor-pointer flex items-center justify-center gap-1"
-            >
-              {t('auth.otpVerifyEmailLinkSim', 'Mô phỏng link Email')}
-            </button>
+
+          {/* Bottom Hero Typography */}
+          <div className="relative z-10 max-w-sm mt-auto pt-8">
+            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none mb-3">
+              Almost there.
+            </h2>
+            <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">
+              {isVietnamese
+                ? 'Một bước xác thực nhanh chóng để đảm bảo email chính xác và bắt đầu hành trình của bạn.'
+                : 'One quick verification step ensures your account is authentic and ready for your career milestones.'}
+            </p>
           </div>
         </div>
-
-        <div className="mt-5 text-center text-xs text-slate-500">
-          <Link to="/login" className="font-medium text-slate-600 hover:text-blue-600 inline-flex items-center gap-1">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t('auth.backToLogin', 'Quay lại đăng nhập')}
-          </Link>
-        </div>
-      </Card>
+      </div>
     </div>
   );
 }
+
+// ==========================================
+// 4. FORGOT PASSWORD PAGE
+// ==========================================
 
 // ==========================================
 // 4. FORGOT PASSWORD PAGE
@@ -993,26 +995,19 @@ export function ForgotPasswordPage() {
   const forgotPasswordAction = useAuthStore((s) => s.forgotPassword);
   const [error, setError] = useState('');
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
-  const { t, isVietnamese } = useTranslation();
+  const { t, isVietnamese, toggleLanguage } = useTranslation();
 
   const {
     register,
     handleSubmit,
     watch,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ForgotForm>({
     resolver: zodResolver(forgotSchema),
-    defaultValues: { email: 'candidate@example.com' },
+    defaultValues: { email: '' },
   });
 
   const currentEmail = watch('email');
-
-  const demoAccounts = [
-    { label: isVietnamese ? 'Ứng viên' : 'Candidate', email: 'candidate@example.com' },
-    { label: isVietnamese ? 'Cố vấn' : 'Consultant', email: 'consultant@example.com' },
-    { label: isVietnamese ? 'Quản trị' : 'Admin', email: 'admin@example.com' },
-  ];
 
   const submit = async (data: ForgotForm) => {
     setError('');
@@ -1025,139 +1020,172 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12 sm:py-16">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md shadow-amber-500/20 mb-4">
-          <KeyRound className="h-7 w-7" />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          {t('auth.forgotPasswordTitle', 'Quên mật khẩu?')}
-        </h1>
-        <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
-          {t('auth.forgotPasswordSubtitle')}
-        </p>
-      </div>
-
-      <Card className="p-6 sm:p-8 shadow-sm border-slate-200/90">
-        {recoveryCode ? (
-          <div className="space-y-5">
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
-              <div className="flex items-center gap-2 mb-2 font-bold text-emerald-800">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                <span>{t('auth.resetCodeSentNotice', 'Mã khôi phục đã được gửi tới email của bạn!')}</span>
-              </div>
-              <p className="text-xs text-emerald-700 leading-relaxed mb-4">
-                {isVietnamese
-                  ? `Mã xác minh đặt lại mật khẩu gồm 6 chữ số đã được tạo cho email ${currentEmail}.`
-                  : `A 6-digit password reset verification code has been generated for ${currentEmail}.`}
-              </p>
-              <div className="rounded-lg bg-white p-3.5 border border-emerald-200 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-600">
-                  {isVietnamese ? 'Mã OTP khôi phục demo:' : 'Demo recovery OTP:'}
-                </span>
-                <span className="font-mono text-lg font-black text-emerald-700 tracking-widest">
-                  {recoveryCode}
-                </span>
-              </div>
-            </div>
-
-            <Button
-              onClick={() =>
-                navigate(
-                  `/reset-password?email=${encodeURIComponent(currentEmail)}&code=${encodeURIComponent(
-                    recoveryCode
-                  )}`
-                )
-              }
-              className="w-full py-3 text-sm font-bold shadow-md shadow-blue-500/10"
-            >
-              <span>{t('auth.proceedToReset', 'Tiếp tục đặt lại mật khẩu')}</span>
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setRecoveryCode(null)}
-                className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
-              >
-                {isVietnamese ? 'Nhập email khác' : 'Try a different email'}
-              </button>
-            </div>
+    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[580px]">
+        {/* Left Column (White Form) */}
+        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-white relative z-10">
+          <div>
+            <BrandLogo />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit(submit)} className="space-y-4">
-            <div>
-              <label htmlFor="forgot-email" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-                {t('auth.emailLabel')}
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  id="forgot-email"
-                  placeholder={t('auth.emailPlaceholder', 'you@example.com')}
-                  className="pl-10 text-sm"
-                  {...register('email')}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
 
-            {/* Quick Demo Account Chips */}
-            <div>
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                {isVietnamese ? 'Hoặc chọn nhanh tài khoản thử nghiệm:' : 'Or choose a demo account:'}
-              </span>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {demoAccounts.map((acc) => (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    onClick={() => setValue('email', acc.email)}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition cursor-pointer"
-                  >
-                    {acc.label}: {acc.email}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="my-auto py-4">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+              {isVietnamese ? 'Quên mật khẩu?' : 'Forgot password?'}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mb-6 leading-relaxed">
+              {isVietnamese
+                ? 'Đừng lo lắng! Hãy nhập địa chỉ email tài khoản của bạn để nhận mã khôi phục mật khẩu.'
+                : "Don't worry! Enter your account email address and we'll send you a recovery code."}
+            </p>
 
-            {error && (
-              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 flex items-start gap-2.5">
-                <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                <div className="leading-relaxed">{error}</div>
-              </div>
-            )}
+            {recoveryCode ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs text-emerald-900 shadow-2xs">
+                  <div className="flex items-center gap-2 mb-1.5 font-bold text-emerald-800">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span>{isVietnamese ? 'Mã khôi phục đã được tạo!' : 'Recovery code generated!'}</span>
+                  </div>
+                  <p className="text-emerald-700 text-[11px] leading-relaxed mb-3">
+                    {isVietnamese
+                      ? `Mã xác minh đặt lại mật khẩu gồm 6 chữ số đã được tạo cho ${currentEmail}.`
+                      : `A 6-digit password reset verification code has been generated for ${currentEmail}.`}
+                  </p>
+                  <div className="rounded-xl bg-white p-3 border border-emerald-200/90 flex items-center justify-between shadow-2xs">
+                    <span className="text-xs font-semibold text-slate-600">
+                      {isVietnamese ? 'Mã OTP khôi phục:' : 'Recovery OTP:'}
+                    </span>
+                    <span className="font-mono text-lg font-black text-emerald-700 tracking-widest">
+                      {recoveryCode}
+                    </span>
+                  </div>
+                </div>
 
-            <Button type="submit" disabled={isSubmitting} className="w-full py-3 text-sm font-bold shadow-md shadow-blue-500/10">
-              {isSubmitting ? (
-                <span className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  {t('auth.sendingResetCode', 'Đang gửi mã…')}
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  {t('auth.sendResetCode', 'Gửi mã khôi phục')}
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(
+                      `/reset-password?email=${encodeURIComponent(currentEmail)}&code=${encodeURIComponent(
+                        recoveryCode
+                      )}`
+                    )
+                  }
+                  className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>{isVietnamese ? 'Tiếp tục đặt lại mật khẩu' : 'Proceed to reset password'}</span>
                   <ArrowRight className="h-4 w-4" />
-                </span>
-              )}
-            </Button>
-          </form>
-        )}
+                </button>
 
-        <div className="mt-6 border-t border-slate-100 pt-5 text-center text-xs text-slate-500">
-          <Link to="/login" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-1">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t('auth.backToLogin', 'Quay lại đăng nhập')}
-          </Link>
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setRecoveryCode(null)}
+                    className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                  >
+                    {isVietnamese ? 'Nhập email khác' : 'Try a different email'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(submit)} className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 mb-1.5 block">
+                    {isVietnamese ? 'Email tài khoản' : 'Account email'}
+                  </label>
+                  <div
+                    className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 sm:py-3 ${
+                      errors.email
+                        ? 'border-red-400 ring-2 ring-red-100'
+                        : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                    }`}
+                  >
+                    <Mail className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                    <input
+                      id="forgot-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                      {...register('email')}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="mt-1 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {error && (
+                  <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed text-[11px]">{error}</div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>{isVietnamese ? 'Đang gửi mã…' : 'Sending code…'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{isVietnamese ? 'Gửi mã khôi phục' : 'Send recovery code'}</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="text-center text-xs text-slate-500 pt-4">
+            <Link to="/login" className="font-semibold text-[#026aa2] hover:underline inline-flex items-center gap-1.5">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{isVietnamese ? 'Quay lại đăng nhập' : 'Back to sign in'}</span>
+            </Link>
+          </div>
         </div>
-      </Card>
+
+        {/* Right Column (Calm Blue Wave Artwork) */}
+        <div
+          className="relative bg-cover bg-center overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
+          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+        >
+          {/* Top Bar with Sign in pill button & Language */}
+          <div className="relative z-10 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs transition-all cursor-pointer"
+            >
+              {isVietnamese ? 'VI' : 'EN'}
+            </button>
+            <Link
+              to="/login"
+              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+            >
+              {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+            </Link>
+          </div>
+
+          {/* Bottom Hero Typography */}
+          <div className="relative z-10 max-w-sm mt-auto pt-8">
+            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none mb-3">
+              Security.
+            </h2>
+            <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">
+              {isVietnamese
+                ? 'Chúng tôi bảo vệ an toàn tối đa cho tài khoản của bạn. Chỉ vài bước đơn giản để lấy lại quyền truy cập.'
+                : 'We keep your career data safe and protected. Regain access to your account in just a few quick steps.'}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1183,10 +1211,10 @@ export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const resetPasswordAction = useAuthStore((s) => s.resetPassword);
-  const { t, isVietnamese } = useTranslation();
+  const { t, isVietnamese, toggleLanguage } = useTranslation();
 
   const emailParam = searchParams.get('email') || 'candidate@example.com';
-  const codeParam = searchParams.get('code') || '888999';
+  const codeParam = searchParams.get('code') || '';
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -1195,7 +1223,6 @@ export function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
-    setValue,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordForm>({
@@ -1249,205 +1276,234 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12 sm:py-16">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20 mb-4">
-          <KeyRound className="h-7 w-7" />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          {t('auth.resetPasswordHeader', 'Đặt lại mật khẩu mới')}
-        </h1>
-        <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
-          {t('auth.resetPasswordSubtitle')}
-        </p>
-      </div>
-
-      <Card className="p-6 sm:p-8 shadow-sm border-slate-200/90">
-        {isSuccess ? (
-          <div className="text-center space-y-4 py-3">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-              <CheckCircle2 className="h-8 w-8" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900">
-              {t('auth.resetPasswordSuccessTitle', 'Đổi mật khẩu thành công!')}
-            </h2>
-            <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
-              {t(
-                'auth.resetPasswordSuccessDesc',
-                'Mật khẩu của bạn đã được cập nhật. Bạn có thể sử dụng mật khẩu mới để đăng nhập ngay bây giờ.'
-              )}
-            </p>
-            <Button
-              onClick={() => navigate(`/login?email=${encodeURIComponent(emailParam)}&reset=success`)}
-              className="w-full py-3 text-sm font-bold mt-4 shadow-md shadow-blue-500/10"
-            >
-              <span>{t('auth.goToLogin', 'Đăng nhập ngay')}</span>
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
+    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[620px]">
+        {/* Left Column (White Form) */}
+        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-white relative z-10">
+          <div>
+            <BrandLogo />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit(submit)} className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-medium text-slate-500">
-                {isVietnamese ? 'Dành cho thử nghiệm nhanh:' : 'Evaluation demo helper:'}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setValue('otp', '888999');
-                  setValue('newPassword', 'NewPass123!');
-                  setValue('confirmNewPassword', 'NewPass123!');
-                  setError('');
-                }}
-                className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/80 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer flex items-center gap-1.5"
-              >
-                <Sparkles className="h-3 w-3" />
-                {isVietnamese ? 'Điền nhanh mật khẩu mới' : 'Auto-fill demo password'}
-              </button>
-            </div>
 
-            {/* Target email */}
-            <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200 text-xs flex items-center justify-between">
-              <span className="text-slate-500">{isVietnamese ? 'Tài khoản:' : 'Account:'}</span>
-              <span className="font-bold text-slate-800">{emailParam}</span>
-            </div>
+          <div className="my-auto py-3">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+              {isVietnamese ? 'Đặt lại mật khẩu' : 'Reset password'}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mb-5 leading-relaxed">
+              {isVietnamese
+                ? `Nhập mã xác minh và thiết lập mật khẩu mới cho tài khoản ${emailParam}.`
+                : `Enter your recovery code and set a new password for ${emailParam}.`}
+            </p>
 
-            {/* OTP Code */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="reset-otp" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  {t('auth.recoveryCodeLabel', 'Mã khôi phục (OTP)')}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setValue('otp', '888999')}
-                  className="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer"
-                >
-                  {isVietnamese ? 'Điền nhanh 888999' : 'Fill demo 888999'}
-                </button>
-              </div>
-              <div className="relative">
-                <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  id="reset-otp"
-                  maxLength={6}
-                  placeholder="888999"
-                  className="pl-10 font-mono tracking-widest text-sm"
-                  {...register('otp')}
-                />
-              </div>
-              {errors.otp && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.otp.message}
-                </p>
-              )}
-            </div>
-
-            {/* New Password */}
-            <div>
-              <label htmlFor="new-pass" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-                {t('auth.newPasswordLabel', 'Mật khẩu mới')}
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  id="new-pass"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder={isVietnamese ? 'Tối thiểu 8 ký tự' : 'Minimum 8 characters'}
-                  className="pl-10 pr-10 text-sm"
-                  {...register('newPassword')}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {errors.newPassword && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.newPassword.message}
-                </p>
-              )}
-
-              {/* Password Strength Indicator */}
-              {newPass && (
-                <div className="mt-2.5">
-                  <div className="flex items-center justify-between text-[11px] mb-1">
-                    <span className="text-slate-500 font-medium">{t('auth.passwordStrength', 'Độ mạnh:')}</span>
-                    <span className={`font-bold ${strengthInfo.text}`}>{strengthInfo.label}</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5 h-1.5">
-                    {[1, 2, 3, 4].map((step) => (
-                      <div
-                        key={step}
-                        className={`h-full rounded-full transition-all ${
-                          strength >= step ? strengthInfo.color : 'bg-slate-100'
-                        }`}
-                      />
-                    ))}
-                  </div>
+            {isSuccess ? (
+              <div className="text-center space-y-4 py-4">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                  <CheckCircle2 className="h-8 w-8" />
                 </div>
-              )}
-            </div>
-
-            {/* Confirm New Password */}
-            <div>
-              <label htmlFor="confirm-pass" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-                {t('auth.confirmNewPasswordLabel', 'Nhập lại mật khẩu mới')}
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  id="confirm-pass"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder={t('auth.confirmPasswordPlaceholder', 'Nhập lại mật khẩu')}
-                  className="pl-10 text-sm"
-                  {...register('confirmNewPassword')}
-                />
-              </div>
-              {errors.confirmNewPassword && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.confirmNewPassword.message}
+                <h2 className="text-xl font-bold text-slate-900">
+                  {t('auth.resetPasswordSuccessTitle', 'Đổi mật khẩu thành công!')}
+                </h2>
+                <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+                  {t(
+                    'auth.resetPasswordSuccessDesc',
+                    'Mật khẩu của bạn đã được cập nhật. Bạn có thể sử dụng mật khẩu mới để đăng nhập ngay bây giờ.'
+                  )}
                 </p>
-              )}
-            </div>
-
-            {error && (
-              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 flex items-start gap-2.5">
-                <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                <div className="leading-relaxed">{error}</div>
-              </div>
-            )}
-
-            <Button type="submit" disabled={isSubmitting} className="w-full py-3 text-sm font-bold shadow-md shadow-blue-500/10">
-              {isSubmitting ? (
-                <span className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  {t('auth.updatingPassword', 'Đang cập nhật…')}
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  {t('auth.updatePasswordButton', 'Cập nhật mật khẩu')}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/login?email=${encodeURIComponent(emailParam)}&reset=success`)}
+                  className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 mt-4"
+                >
+                  <span>{t('auth.goToLogin', 'Đăng nhập ngay')}</span>
                   <ArrowRight className="h-4 w-4" />
-                </span>
-              )}
-            </Button>
-          </form>
-        )}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(submit)} className="space-y-3.5">
+                {/* OTP Code */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 mb-1 block">
+                    {t('auth.recoveryCodeLabel', 'Mã khôi phục (OTP)')}
+                  </label>
+                  <div
+                    className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 ${
+                      errors.otp
+                        ? 'border-red-400 ring-2 ring-red-100'
+                        : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                    }`}
+                  >
+                    <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                    <input
+                      id="reset-otp"
+                      maxLength={6}
+                      placeholder="6 chữ số OTP"
+                      className="w-full bg-transparent text-xs sm:text-sm font-mono tracking-widest text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                      {...register('otp')}
+                    />
+                  </div>
+                  {errors.otp && (
+                    <p className="mt-1 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      {errors.otp.message}
+                    </p>
+                  )}
+                </div>
 
-        <div className="mt-6 border-t border-slate-100 pt-5 text-center text-xs text-slate-500">
-          <Link to="/login" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-1">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t('auth.backToLogin', 'Quay lại đăng nhập')}
-          </Link>
+                {/* New Password */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 mb-1 block">
+                    {t('auth.newPasswordLabel', 'Mật khẩu mới')}
+                  </label>
+                  <div
+                    className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 ${
+                      errors.newPassword
+                        ? 'border-red-400 ring-2 ring-red-100'
+                        : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                    }`}
+                  >
+                    <Lock className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                    <input
+                      id="new-pass"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={isVietnamese ? 'Tối thiểu 8 ký tự' : 'Minimum 8 characters'}
+                      className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none pr-8"
+                      {...register('newPassword')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.newPassword && (
+                    <p className="mt-1 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      {errors.newPassword.message}
+                    </p>
+                  )}
+
+                  {/* Password Strength Indicator */}
+                  {newPass && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-[11px] mb-1">
+                        <span className="text-slate-500 font-medium">{t('auth.passwordStrength', 'Độ mạnh:')}</span>
+                        <span className={`font-bold ${strengthInfo.text}`}>{strengthInfo.label}</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5 h-1.5">
+                        {[1, 2, 3, 4].map((step) => (
+                          <div
+                            key={step}
+                            className={`h-full rounded-full transition-all ${
+                              strength >= step ? strengthInfo.color : 'bg-slate-100'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirm New Password */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 mb-1 block">
+                    {t('auth.confirmNewPasswordLabel', 'Xác nhận mật khẩu mới')}
+                  </label>
+                  <div
+                    className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 ${
+                      errors.confirmNewPassword
+                        ? 'border-red-400 ring-2 ring-red-100'
+                        : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                    }`}
+                  >
+                    <Lock className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                    <input
+                      id="confirm-pass"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={isVietnamese ? 'Nhập lại mật khẩu mới' : 'Re-enter new password'}
+                      className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                      {...register('confirmNewPassword')}
+                    />
+                  </div>
+                  {errors.confirmNewPassword && (
+                    <p className="mt-1 text-[11px] text-red-600 px-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      {errors.confirmNewPassword.message}
+                    </p>
+                  )}
+                </div>
+
+                {error && (
+                  <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-700 flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed text-[11px]">{error}</div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>{t('auth.updatingPassword', 'Đang cập nhật…')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{t('auth.updatePasswordButton', 'Cập nhật mật khẩu')}</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="text-center text-xs text-slate-500 pt-3">
+            <Link to="/login" className="font-semibold text-[#026aa2] hover:underline inline-flex items-center gap-1.5">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{t('auth.backToLogin', 'Quay lại đăng nhập')}</span>
+            </Link>
+          </div>
         </div>
-      </Card>
+
+        {/* Right Column (Calm Blue Wave Artwork) */}
+        <div
+          className="relative bg-cover bg-center overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
+          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+        >
+          {/* Top Bar with Sign in pill button & Language */}
+          <div className="relative z-10 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs transition-all cursor-pointer"
+            >
+              {isVietnamese ? 'VI' : 'EN'}
+            </button>
+            <Link
+              to="/login"
+              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+            >
+              {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+            </Link>
+          </div>
+
+          {/* Bottom Hero Typography */}
+          <div className="relative z-10 max-w-sm mt-auto pt-8">
+            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none mb-3">
+              Protected.
+            </h2>
+            <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">
+              {isVietnamese
+                ? 'Thiết lập mật khẩu an toàn giúp bảo vệ tài khoản và dữ liệu cá nhân của bạn trên Jobie.'
+                : 'Setting a strong, memorable password keeps your account and career milestones completely safe.'}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

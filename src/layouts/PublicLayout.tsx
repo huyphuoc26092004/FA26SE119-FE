@@ -23,6 +23,18 @@ export default function PublicLayout() {
     return '/candidate';
   };
 
+  const isAuthPage = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/verify-otp',
+  ].includes(location.pathname);
+
+  if (isAuthPage) {
+    return <Outlet />;
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       {/* Top Navigation */}
