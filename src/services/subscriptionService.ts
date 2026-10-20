@@ -1,12 +1,11 @@
 import type {
   CheckoutParams,
-  PaymentMethodType,
-  PaymentStatus,
   PaymentTransaction,
   SubscriptionPlan,
   SubscriptionPlanId,
   UserSubscriptionStatus,
 } from '../types/domain';
+import type { AdminSubscriptionPlan, AdminTokenTopupPack } from '../types/subscriptionManagement';
 
 const SUBSCRIPTION_STORAGE_KEY = 'careerpilot-user-subscription';
 const TRANSACTIONS_STORAGE_KEY = 'careerpilot-payment-history';
@@ -117,6 +116,61 @@ export const TOKEN_TOPUP_PACKS: TokenTopupPack[] = [
   { id: 'pack-300k', name: 'Gói nạp 300K Tokens', tokens: 300000, priceVND: 129000, popular: true },
   { id: 'pack-1m', name: 'Gói nạp 1M Tokens', tokens: 1000000, priceVND: 349000 },
 ];
+
+export function getSubscriptionPlans(): SubscriptionPlan[] {
+  try {
+    const raw = localStorage.getItem('careerpilot_admin_plans');
+    if (raw) {
+      const parsed = JSON.parse(raw) as AdminSubscriptionPlan[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+          .filter((p) => p.status === 'ACTIVE')
+          .map((p) => ({
+            id: p.id as SubscriptionPlanId,
+            name: p.name,
+            badge: p.badge,
+            description: p.description,
+            monthlyPriceVND: p.monthlyPriceVND,
+            yearlyPriceVND: p.yearlyPriceVND,
+            tokenMonthlyQuota: p.tokenMonthlyQuota,
+            cvParsingLimit: p.cvParsingLimit,
+            cvJobFitLimit: p.cvJobFitLimit,
+            aiAssistantQueriesLimit: p.aiAssistantQueriesLimit,
+            coverLetterGenLimit: p.coverLetterGenLimit,
+            consultantDiscountPercent: p.consultantDiscountPercent,
+            features: p.features,
+            highlight: p.highlight,
+          }));
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return SUBSCRIPTION_PLANS;
+}
+
+export function getTopupPacks(): TokenTopupPack[] {
+  try {
+    const raw = localStorage.getItem('careerpilot_topup_packs');
+    if (raw) {
+      const parsed = JSON.parse(raw) as AdminTokenTopupPack[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+          .filter((p) => p.status === 'ACTIVE')
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            tokens: p.tokens + (p.bonusTokens || 0),
+            priceVND: p.priceVND,
+            popular: p.popular,
+          }));
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return TOKEN_TOPUP_PACKS;
+}
 
 // Initial user subscription
 function getInitialSubscription(): UserSubscriptionStatus {
@@ -291,7 +345,8 @@ export function verifyVoucherCode(code: string, baseAmount: number): VoucherVeri
 export async function createPaymentOrder(params: CheckoutParams): Promise<PaymentTransaction> {
   await delay(500);
 
-  const plan = SUBSCRIPTION_PLANS.find((p) => p.id === params.planId) || SUBSCRIPTION_PLANS[1];
+  const allPlans = getSubscriptionPlans();
+  const plan = allPlans.find((p) => p.id === params.planId) || allPlans[1] || SUBSCRIPTION_PLANS[1];
   const basePrice =
     params.billingCycle === 'yearly' ? plan.yearlyPriceVND : plan.monthlyPriceVND;
 
@@ -381,7 +436,8 @@ export function applySubscriptionUpgrade(
   planId: SubscriptionPlanId,
   cycle: 'monthly' | 'yearly' = 'monthly'
 ): UserSubscriptionStatus {
-  const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId) || SUBSCRIPTION_PLANS[1];
+  const allPlans = getSubscriptionPlans();
+  const plan = allPlans.find((p) => p.id === planId) || allPlans[1] || SUBSCRIPTION_PLANS[1];
   const current = getUserSubscription();
 
   const now = new Date();
@@ -406,7 +462,8 @@ export function applySubscriptionUpgrade(
 
 export async function purchaseTokenTopup(packId: string): Promise<UserSubscriptionStatus> {
   await delay(600);
-  const pack = TOKEN_TOPUP_PACKS.find((p) => p.id === packId) || TOKEN_TOPUP_PACKS[0];
+  const packs = getTopupPacks();
+  const pack = packs.find((p) => p.id === packId) || packs[0] || TOKEN_TOPUP_PACKS[0];
   const current = getUserSubscription();
 
   const updated: UserSubscriptionStatus = {
