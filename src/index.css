@@ -1,8 +1,68 @@
-@import "tailwindcss";
-@theme { --color-brand: #2563eb; }
-:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #17243b; background: #f6f8fc; font-synthesis: none; }
-body { margin: 0; min-width: 320px; }
-button, input, textarea, select { font: inherit; }
-button { cursor: pointer; }
-a { text-decoration: none; }
-:focus-visible { outline: 3px solid #60a5fa; outline-offset: 2px; }
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: #2457e6;
+  --color-ink: #101828;
+  --color-canvas: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-secondary: #0f766e;
+  --color-success: #0f766e;
+  --color-warning: #92400e;
+  --color-danger: #b42318;
+  --color-muted: #475467;
+
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+
+  --radius-control: 0.75rem;
+  --radius-panel: 1rem;
+
+  --shadow-panel: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 8%);
+}
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  caret-color: var(--color-brand);
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  text-decoration: none;
+}
+
+::selection {
+  background: rgb(36 87 230 / 18%);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
+}
