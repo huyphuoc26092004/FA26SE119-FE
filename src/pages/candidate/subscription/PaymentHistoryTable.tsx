@@ -77,11 +77,11 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ transa
       case 'vietqr':
         return <QrCode className="w-4 h-4 text-emerald-600" />;
       case 'momo':
-        return <Smartphone className="w-4 h-4 text-pink-600" />;
+        return <Smartphone className="w-4 h-4 text-brand-600" />;
       case 'vnpay':
-        return <QrCode className="w-4 h-4 text-blue-600" />;
+        return <QrCode className="w-4 h-4 text-brand-600" />;
       case 'credit_card':
-        return <CreditCard className="w-4 h-4 text-indigo-600" />;
+        return <CreditCard className="w-4 h-4 text-brand-600" />;
       default:
         return <CreditCard className="w-4 h-4 text-neutral-500" />;
     }
@@ -98,7 +98,7 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ transa
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isVietnamese ? 'Tìm theo mã đơn hàng, gói cước...' : 'Search order code, plan...'}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
@@ -113,7 +113,7 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ transa
               onClick={() => setFilterStatus(tab.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-xl transition ${
                 filterStatus === tab.id
-                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-sm'
+                  ? 'bg-neutral-900 text-white dark:bg-surface dark:text-neutral-900 shadow-sm'
                   : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
               }`}
             >
@@ -124,10 +124,10 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ transa
       </div>
 
       {/* Table Card */}
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
+            <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 dark:text-neutral-400 font-medium uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
               <tr>
                 <th className="py-3 px-4">{t.subscriptionPage.orderCode}</th>
                 <th className="py-3 px-4">{t.subscriptionPage.selectedPackage}</th>
@@ -149,7 +149,7 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ transa
               ) : (
                 filtered.map((txn) => (
                   <tr key={txn.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/40 transition">
-                    <td className="py-3.5 px-4 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                    <td className="py-3.5 px-4 font-mono font-medium text-neutral-900 dark:text-neutral-100">
                       {txn.orderCode}
                     </td>
                     <td className="py-3.5 px-4">
@@ -170,7 +170,7 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ transa
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-neutral-900 dark:text-neutral-100">
+                      <div className="font-medium text-neutral-900 dark:text-neutral-100">
                         {txn.finalAmountVND.toLocaleString('vi-VN')} ₫
                       </div>
                       {txn.discountAmountVND > 0 && (

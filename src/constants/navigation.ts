@@ -6,7 +6,7 @@ import {
   BrainCircuit,
   ClipboardCheck,
   Route,
-  Bot,
+  MessageSquare,
   MessagesSquare,
   CreditCard,
   Activity,
@@ -115,7 +115,7 @@ export const candidateNav: NavItem[] = [
     label: 'AI Career Assistant',
     translationKey: 'nav.aiCareerAssistant',
     to: '/candidate/assistant',
-    icon: Bot,
+    icon: MessageSquare,
     group: 'career',
   },
   {

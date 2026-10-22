@@ -3,7 +3,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Star,
-  Sparkles,
+  Lightbulb,
   CheckCircle2,
   Send,
   MessageSquare,
@@ -125,9 +125,9 @@ export const AiRecommendationFeedbackWidget: React.FC<AiRecommendationFeedbackWi
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 dark:text-neutral-100">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-900 dark:text-neutral-100">
                 <span>{isVietnamese ? 'Bạn đã đánh giá đề xuất này:' : 'Your Feedback:'}</span>
-                <span className="flex items-center gap-0.5 text-amber-500 font-bold ml-1">
+                <span className="flex items-center gap-0.5 text-amber-500 font-medium ml-1">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
@@ -140,7 +140,7 @@ export const AiRecommendationFeedbackWidget: React.FC<AiRecommendationFeedbackWi
                   ))}
                 </span>
                 <span className="text-[11px] font-semibold text-neutral-500 ml-1">
-                  ({submittedFeedback.rating === 'like' ? '👍 Hài lòng' : '👎 Chưa phù hợp'})
+                  ({submittedFeedback.rating === 'like' ? 'Hài lòng' : 'Chưa phù hợp'})
                 </span>
               </div>
               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
@@ -165,7 +165,7 @@ export const AiRecommendationFeedbackWidget: React.FC<AiRecommendationFeedbackWi
             {submittedFeedback.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white dark:bg-neutral-800 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface dark:bg-neutral-800 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
               >
                 {tag}
               </span>
@@ -178,15 +178,15 @@ export const AiRecommendationFeedbackWidget: React.FC<AiRecommendationFeedbackWi
 
   return (
     <div
-      className={`rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xs space-y-4 ${className}`}
+      className={`rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 p-5 shadow-xs space-y-4 ${className}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400 flex items-center justify-center">
-            <Sparkles className="w-4 h-4" />
+          <div className="w-7 h-7 rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-400 flex items-center justify-center">
+            <Lightbulb className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+            <h4 className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
               {isVietnamese ? 'Đánh giá đề xuất & Giải thích từ AI' : 'Rate AI Recommendation & Match'}
             </h4>
             <p className="text-[11px] text-neutral-500">
@@ -248,7 +248,7 @@ export const AiRecommendationFeedbackWidget: React.FC<AiRecommendationFeedbackWi
                 onMouseEnter={() => setHoverScore(star)}
                 onMouseLeave={() => setHoverScore(null)}
                 onClick={() => setScore(star)}
-                className="p-1 text-neutral-300 hover:scale-110 transition-transform"
+                className="p-1 text-neutral-300 transition-transform"
               >
                 <Star
                   className={`w-4 h-4 transition ${
@@ -259,7 +259,7 @@ export const AiRecommendationFeedbackWidget: React.FC<AiRecommendationFeedbackWi
             );
           })}
         </div>
-        <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
           {score === 5
             ? 'Rất xuất sắc'
             : score === 4
@@ -311,7 +311,7 @@ export const AiRecommendationFeedbackWidget: React.FC<AiRecommendationFeedbackWi
                 ? 'Góp ý chi tiết thêm để AI hiểu đúng hơn về kỳ vọng của bạn...'
                 : 'Additional thoughts or expectations...'
             }
-            className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
       )}
@@ -331,7 +331,7 @@ export const AiRecommendationFeedbackWidget: React.FC<AiRecommendationFeedbackWi
           type="button"
           onClick={() => handleSubmit()}
           disabled={isSubmitting}
-          className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white transition flex items-center gap-1.5 shadow-xs shadow-indigo-500/20"
+          className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition flex items-center gap-1.5 shadow-xs"
         >
           <Send className="w-3.5 h-3.5" />
           <span>{isVietnamese ? 'Gửi đánh giá' : 'Submit Feedback'}</span>

@@ -5,7 +5,7 @@ import {
   AlertCircle,
   ArrowRight,
   BookOpen,
-  Bot,
+  MessageSquare,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -15,7 +15,6 @@ import {
   Loader2,
   RefreshCw,
   Route,
-  Sparkles,
   Target,
   TrendingUp,
   Zap,
@@ -36,7 +35,7 @@ function statusConfig(status: SkillGapItem['status']) {
     case 'strong':
       return { color: 'bg-emerald-500', textColor: 'text-emerald-700', bgColor: 'bg-emerald-50', border: 'border-emerald-200', label: 'strong' };
     case 'present':
-      return { color: 'bg-blue-400', textColor: 'text-blue-700', bgColor: 'bg-blue-50', border: 'border-blue-200', label: 'present' };
+      return { color: 'bg-brand-400', textColor: 'text-brand-700', bgColor: 'bg-brand-50', border: 'border-brand-200', label: 'present' };
     case 'gap':
       return { color: 'bg-amber-400', textColor: 'text-amber-700', bgColor: 'bg-amber-50', border: 'border-amber-200', label: 'gap' };
     case 'missing':
@@ -48,17 +47,17 @@ function importanceColor(importance: SkillGapItem['importance']) {
   switch (importance) {
     case 'critical': return 'text-red-700 bg-red-50';
     case 'high': return 'text-amber-700 bg-amber-50';
-    case 'medium': return 'text-blue-700 bg-blue-50';
+    case 'medium': return 'text-brand-700 bg-brand-50';
     case 'low': return 'text-slate-600 bg-slate-100';
   }
 }
 
 function readinessConfig(level: SkillGapAnalysis['readinessLevel']) {
   switch (level) {
-    case 'Ready': return { from: 'from-emerald-400', to: 'to-teal-500', label: 'readyLevel' };
-    case 'Near Ready': return { from: 'from-blue-400', to: 'to-blue-600', label: 'nearReadyLevel' };
-    case 'Developing': return { from: 'from-amber-400', to: 'to-orange-500', label: 'developingLevel' };
-    case 'Early Stage': return { from: 'from-red-400', to: 'to-rose-500', label: 'earlyStageLevel' };
+    case 'Ready': return { from: 'bg-emerald-400', to: '', label: 'readyLevel' };
+    case 'Near Ready': return { from: 'bg-brand-400', to: '', label: 'nearReadyLevel' };
+    case 'Developing': return { from: 'bg-amber-400', to: '', label: 'developingLevel' };
+    case 'Early Stage': return { from: 'bg-red-400', to: '', label: 'earlyStageLevel' };
   }
 }
 
@@ -88,7 +87,7 @@ function SkillRow({ skill }: { skill: SkillGapItem }) {
           <div className="h-1.5 w-full rounded-full bg-slate-200">
             <div
               className={`h-1.5 rounded-full transition-all ${
-                (skill.candidateLevel ?? 0) >= (skill.requiredLevel ?? 0) ? 'bg-emerald-500' : 'bg-blue-400'
+                (skill.candidateLevel ?? 0) >= (skill.requiredLevel ?? 0) ? 'bg-emerald-500' : 'bg-brand-400'
               }`}
               style={{ width: `${skill.candidateLevel ?? 0}%` }}
             />
@@ -103,7 +102,7 @@ function SkillRow({ skill }: { skill: SkillGapItem }) {
         </div>
 
         {/* Status badge */}
-        <span className={`rounded-lg px-2.5 py-1 text-xs font-bold w-16 text-center ${cfg.textColor} ${cfg.bgColor}`}>
+        <span className={`rounded-lg px-2.5 py-1 text-xs font-medium w-16 text-center ${cfg.textColor} ${cfg.bgColor}`}>
           {t(`skillGap.${cfg.label}`)}
         </span>
       </div>
@@ -120,12 +119,12 @@ function CriticalGapCard({ skill }: { skill: SkillGapItem }) {
     <Card className={`border ${cfg.border} ${cfg.bgColor}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className={`text-sm font-bold ${cfg.textColor}`}>{skill.name}</p>
+          <p className={`text-sm font-medium ${cfg.textColor}`}>{skill.name}</p>
           <p className="mt-1 text-xs text-slate-500">
             {t('skillGap.gapScore')}: {skill.gapScore ?? 0} pts · {skill.category}
           </p>
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${importanceColor(skill.importance)}`}>
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${importanceColor(skill.importance)}`}>
           {t(`skillGap.${skill.importance}`)}
         </span>
       </div>
@@ -232,20 +231,20 @@ export default function SkillGapPage() {
 
       {/* Job Profile Selector */}
       <Card className="mb-6">
-        <p className="mb-3 text-sm font-bold text-slate-700">{t('skillGap.selectJobProfile')}</p>
+        <p className="mb-3 text-sm font-medium text-slate-700">{t('skillGap.selectJobProfile')}</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {profiles.map((p) => (
             <button
               key={p.id}
               id={`job-profile-${p.id}`}
               onClick={() => setSelectedProfileId(p.id)}
-              className={`rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+              className={`rounded-xl border p-4 text-left transition   ${
                 selectedProfileId === p.id
-                  ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                  : 'border-slate-200 bg-white hover:border-blue-300'
+                  ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200'
+                  : 'border-slate-200 bg-surface hover:border-brand-300'
               }`}
             >
-              <p className="text-sm font-bold text-slate-800">{p.title}</p>
+              <p className="text-sm font-medium text-slate-800">{p.title}</p>
               <p className="mt-1 text-xs text-slate-500">{p.company} · {p.level}</p>
               <p className="mt-2 text-[11px] text-slate-400">{p.requiredSkills.length} required skills</p>
             </button>
@@ -258,7 +257,7 @@ export default function SkillGapPage() {
             <p className="mb-2 text-xs font-semibold text-slate-600">{t('skillGap.candidateSkills')}:</p>
             <div className="flex flex-wrap gap-2">
               {profile.skills.slice(0, 12).map((skill) => (
-                <span key={skill} className="rounded-full bg-white border border-slate-200 px-2.5 py-1 text-xs text-slate-600 font-medium">
+                <span key={skill} className="rounded-full bg-surface border border-slate-200 px-2.5 py-1 text-xs text-slate-600 font-medium">
                   {skill}
                 </span>
               ))}
@@ -284,7 +283,7 @@ export default function SkillGapPage() {
               </>
             ) : (
               <>
-                <Sparkles size={15} />
+                <Lightbulb size={15} />
                 {t('skillGap.analyzeNow')}
               </>
             )}
@@ -296,7 +295,7 @@ export default function SkillGapPage() {
       {analyzeMutation.isPending && (
         <Card>
           <div className="flex flex-col items-center gap-3 py-10 text-slate-500">
-            <Loader2 size={32} className="animate-spin text-blue-500" />
+            <Loader2 size={32} className="animate-spin text-brand-500" />
             <p className="text-sm font-medium">{t('skillGap.analyzing')}</p>
             <p className="text-xs text-slate-400">
               Analyzing against {selectedProfile?.title} at {selectedProfile?.company}…
@@ -311,15 +310,15 @@ export default function SkillGapPage() {
           {/* Overview Cards */}
           <div className="grid gap-4 sm:grid-cols-3">
             {/* Overall Match */}
-            <Card className={`border-0 bg-gradient-to-br ${readiness?.from} ${readiness?.to} text-white`}>
+            <Card className={`border-0  ${readiness?.from} ${readiness?.to} text-white`}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold opacity-80">{t('skillGap.overallMatch')}</p>
-                  <p className="text-4xl font-black mt-1">{analysis.overallMatchScore}%</p>
+                  <p className="text-4xl font-semibold mt-1">{analysis.overallMatchScore}%</p>
                 </div>
                 <Target size={36} className="opacity-30" />
               </div>
-              <p className="mt-3 rounded-lg bg-white/20 px-3 py-1.5 text-sm font-bold text-center">
+              <p className="mt-3 rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium text-center">
                 {t(`skillGap.${readiness?.label}`)}
               </p>
             </Card>
@@ -330,7 +329,7 @@ export default function SkillGapPage() {
                 <span className="text-xs font-semibold text-slate-500">{t('skillGap.criticalGaps')}</span>
                 <AlertCircle size={18} className="text-red-400" />
               </div>
-              <p className="text-4xl font-black text-slate-900">{analysis.criticalGaps.length}</p>
+              <p className="text-4xl font-semibold text-slate-900">{analysis.criticalGaps.length}</p>
               <p className="mt-2 text-xs text-slate-500">
                 {analysis.criticalGaps.length === 0
                   ? t('skillGap.noGaps')
@@ -342,9 +341,9 @@ export default function SkillGapPage() {
             <Card>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-500">{t('skillGap.estimatedWeeks')}</span>
-                <TrendingUp size={18} className="text-blue-400" />
+                <TrendingUp size={18} className="text-brand-400" />
               </div>
-              <p className="text-4xl font-black text-slate-900">{analysis.estimatedWeeksToReady}w</p>
+              <p className="text-4xl font-semibold text-slate-900">{analysis.estimatedWeeksToReady}w</p>
               <p className="mt-2 text-xs text-slate-500">{t('skillGap.weeksToReady').replace('{n}', String(analysis.estimatedWeeksToReady))}</p>
             </Card>
           </div>
@@ -352,7 +351,7 @@ export default function SkillGapPage() {
           {/* Critical Gaps Section */}
           {analysis.criticalGaps.length > 0 && (
             <div>
-              <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+              <h2 className="mb-3 flex items-center gap-2 text-base font-medium text-slate-800">
                 <AlertCircle size={18} className="text-red-500" />
                 {t('skillGap.criticalGaps')}
               </h2>
@@ -367,7 +366,7 @@ export default function SkillGapPage() {
           {/* Quick Wins */}
           {analysis.quickWins.length > 0 && (
             <div>
-              <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+              <h2 className="mb-3 flex items-center gap-2 text-base font-medium text-slate-800">
                 <Zap size={18} className="text-amber-500" />
                 {t('skillGap.quickWins')}
               </h2>
@@ -376,7 +375,7 @@ export default function SkillGapPage() {
                   <Card key={skill.name} className="border-amber-200 bg-amber-50">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm font-bold text-amber-800">{skill.name}</p>
+                        <p className="text-sm font-medium text-amber-800">{skill.name}</p>
                         <p className="mt-1 text-xs text-amber-600">{skill.category} · Gap: {skill.gapScore} pts</p>
                       </div>
                       <Zap size={16} className="text-amber-500 flex-shrink-0" />
@@ -389,14 +388,14 @@ export default function SkillGapPage() {
 
           {/* Action Plan */}
           <Card>
-            <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-slate-800">
-              <Bot size={18} className="text-blue-600" />
+            <h2 className="mb-4 flex items-center gap-2 text-base font-medium text-slate-800">
+              <MessageSquare size={18} className="text-brand-600" />
               {t('skillGap.actionPlan')}
             </h2>
             <div className="space-y-3">
               {analysis.actionPlan.map((action, idx) => (
                 <div key={idx} className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold">
+                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-600 text-white text-xs font-medium">
                     {idx + 1}
                   </div>
                   <p className="text-sm text-slate-700 leading-relaxed">{action}</p>
@@ -408,7 +407,7 @@ export default function SkillGapPage() {
           {/* Full Skill Breakdown */}
           <div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
+              <h2 className="flex items-center gap-2 text-base font-medium text-slate-800">
                 <Layers size={18} className="text-slate-400" />
                 {t('skillGap.skillBreakdown')}
               </h2>
@@ -420,7 +419,7 @@ export default function SkillGapPage() {
                     onClick={() => setFilterCategory(cat.value)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                       filterCategory === cat.value
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-brand-600 text-white'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
@@ -442,7 +441,7 @@ export default function SkillGapPage() {
             {filteredSkills.length > 6 && (
               <button
                 onClick={() => setShowFullBreakdown(!showFullBreakdown)}
-                className="mt-3 flex items-center gap-2 text-sm font-semibold text-blue-600 hover:underline"
+                className="mt-3 flex items-center gap-2 text-sm font-semibold text-brand-600 hover:underline"
               >
                 {showFullBreakdown ? (
                   <>
@@ -458,15 +457,15 @@ export default function SkillGapPage() {
           </div>
 
           {/* CTA */}
-          <Card className="border-blue-200 bg-blue-50">
+          <Card className="border-brand-200 bg-brand-50">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-blue-600 p-2">
+                <div className="rounded-xl bg-brand-600 p-2">
                   <Route size={20} className="text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-blue-800">{t('skillGap.goToRoadmap')}</p>
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-sm font-medium text-brand-800">{t('skillGap.goToRoadmap')}</p>
+                  <p className="text-xs text-brand-600 mt-1">
                     Get a week-by-week learning plan tailored to bridge these gaps.
                   </p>
                 </div>

@@ -2,30 +2,12 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  AlertCircle,
   ArrowRight,
   Bookmark,
-  BookmarkCheck,
-  BrainCircuit,
-  BriefcaseBusiness,
-  Building2,
-  Check,
-  CheckCircle2,
   ChevronDown,
-  Clock,
-  ExternalLink,
-  Eye,
-  Filter,
-  Layers,
-  MapPin,
   RotateCcw,
   Search,
-  SlidersHorizontal,
-  Sparkles,
-  Star,
-  Target,
   X,
-  Zap,
 } from 'lucide-react';
 import {
   getJobs,
@@ -35,8 +17,14 @@ import {
   getAppliedJobIds,
 } from '../../mocks/services/mockService';
 import type { Job } from '../../types/domain';
-import { Badge, Button, Card, EmptyState, ErrorState, Input, Loading } from '../../components/ui';
+import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+
+// Design tokens (Jobie ai template): ink #14231e, accent #0b6b52, muted #5d6b65, rule #14231e/15
+const fieldBase =
+  'w-full appearance-none border-0 border-b border-ink/40 bg-transparent py-2.5 text-sm text-ink outline-none transition focus:border-brand cursor-pointer';
+const textLink =
+  'text-sm text-ink underline underline-offset-4 decoration-ink/40 transition hover:text-brand hover:decoration-brand cursor-pointer';
 
 export default function JobsPage() {
   const { t } = useTranslation();
@@ -44,7 +32,8 @@ export default function JobsPage() {
   const queryClient = useQueryClient();
   const isCandidate = locationState.pathname.startsWith('/candidate');
   const getJobDetailUrl = (id: string) => (isCandidate ? `/candidate/jobs/${id}` : `/jobs/${id}`);
-  const getJobMatchUrl = (id: string) => (isCandidate ? `/candidate/jobs/${id}/match` : `/jobs/${id}`);
+  const getJobMatchUrl = (id: string) =>
+    isCandidate ? `/candidate/jobs/${id}/match` : `/jobs/${id}`;
 
   // Tabs: 'all' | 'recommended' | 'saved'
   const [activeTab, setActiveTab] = useState<'all' | 'recommended' | 'saved'>('all');
@@ -62,7 +51,11 @@ export default function JobsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Queries
-  const { data: allJobs, isPending, isError } = useQuery({
+  const {
+    data: allJobs,
+    isPending,
+    isError,
+  } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => getJobs(),
   });
@@ -131,21 +124,16 @@ export default function JobsPage() {
 
       // Location
       const locationMatch =
-        location === 'All' ||
-        job.location.toLowerCase().includes(location.toLowerCase());
+        location === 'All' || job.location.toLowerCase().includes(location.toLowerCase());
 
       // Experience Level
-      const expMatch =
-        experienceLevel === 'All' || job.experienceLevel === experienceLevel;
+      const expMatch = experienceLevel === 'All' || job.experienceLevel === experienceLevel;
 
       // Job Type
-      const typeMatch =
-        jobType === 'All' ||
-        job.type.toLowerCase().includes(jobType.toLowerCase());
+      const typeMatch = jobType === 'All' || job.type.toLowerCase().includes(jobType.toLowerCase());
 
       // Salary Min
-      const salaryMatch =
-        !salaryMin || (job.salaryMax && job.salaryMax >= salaryMin);
+      const salaryMatch = !salaryMin || (job.salaryMax && job.salaryMax >= salaryMin);
 
       // Active tab
       let tabMatch = true;
@@ -172,19 +160,23 @@ export default function JobsPage() {
     return allJobs?.filter((j) => j.match >= 85).length || 0;
   }, [allJobs]);
 
+  const tabs: { key: 'all' | 'recommended' | 'saved'; label: string }[] = [
+    { key: 'all', label: `${t('jobs.allJobsTab')} (${allJobs?.length || 0})` },
+    { key: 'recommended', label: `${t('jobs.aiRecommendedTab')} (${recommendedCount})` },
+    { key: 'saved', label: `${t('jobs.savedJobsTab')} (${savedIds.length})` },
+  ];
+
   return (
-    <div className={!isCandidate ? "min-h-[calc(100vh-theme(spacing.18))] bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8" : ""}>
-      <div className={!isCandidate ? "mx-auto max-w-7xl" : ""}>
+    <div className={!isCandidate ? 'min-h-[calc(100vh-theme(spacing.18))] bg-canvas px-4 py-10 sm:px-8' : ''}>
+      <div className={!isCandidate ? 'mx-auto max-w-5xl' : ''}>
         {/* Toast Notification */}
         {toastMessage && (
-          <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3.5 shadow-2xl border border-slate-700 animate-fade-in max-w-lg">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 size={20} className="text-emerald-400 shrink-0" />
-              <p className="text-xs font-medium leading-relaxed">{toastMessage}</p>
-            </div>
+          <div className="fixed right-5 top-5 z-50 flex max-w-lg items-center gap-4 rounded-full bg-ink py-3 pl-6 pr-4 text-white shadow-sm animate-fade-in">
+            <p className="text-sm">{toastMessage}</p>
             <button
               onClick={() => setToastMessage(null)}
-              className="text-slate-400 hover:text-white p-1 shrink-0 cursor-pointer"
+              className="shrink-0 rounded-full p-1 text-white/60 transition hover:text-white cursor-pointer"
+              aria-label="Đóng"
             >
               <X size={16} />
             </button>
@@ -192,244 +184,165 @@ export default function JobsPage() {
         )}
 
         {/* Page Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                {t('jobs.title')}
-              </h1>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-0.5 text-xs font-bold text-blue-700 shadow-2xs">
-                <Sparkles size={13} className="text-blue-600 animate-pulse" />
-                AI Matching Engine Active
-              </span>
-            </div>
-            <p className="text-sm text-slate-500 max-w-2xl">
-              {t('jobs.subtitle')}
-            </p>
-          </div>
+        <header className="mb-10">
+          <p className="mb-3 text-sm font-medium text-brand">AI Matching Engine Active</p>
+          <h1 className="text-4xl font-light tracking-tight text-ink sm:text-5xl">
+            {t('jobs.title')}
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">{t('jobs.subtitle')}</p>
 
-          {/* Quick link to CV-Job Fit if inside Candidate workspace */}
           {isCandidate && (
-            <Link
-              to="/candidate/cv-job-fit"
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs self-start md:self-center"
-            >
-              <Target size={15} className="text-indigo-600" />
+            <Link to="/candidate/cv-job-fit" className={`${textLink} mt-5 inline-flex items-center gap-1.5`}>
               <span>Phân tích Fit CV–Job cụ thể</span>
-              <ArrowRight size={13} />
+              <ArrowRight size={14} />
             </Link>
           )}
-        </div>
+        </header>
 
-        {/* AI Recommendation Spotlight Banner */}
-        <div className="mb-7 rounded-3xl bg-gradient-to-r from-slate-950 via-indigo-950 to-blue-950 p-6 md:p-7 text-white shadow-lg border border-indigo-900/40 relative overflow-hidden">
-          <div className="absolute -right-10 -bottom-10 w-56 h-56 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute right-40 -top-10 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-            <div className="flex items-start gap-4">
-              <span className="grid h-12 w-12 md:h-14 md:w-14 shrink-0 place-items-center rounded-2xl bg-blue-500/20 border border-blue-400/30 text-blue-300 shadow-inner">
-                <BrainCircuit size={28} />
+        {/* AI recommendation: one line, no banner */}
+        <section className="mb-10 flex flex-col justify-between gap-3 border-y border-ink/15 py-5 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-base text-ink">
+              Đề xuất việc làm cá nhân hóa bởi AI Agent
+              <span className="ml-3 text-sm text-brand">
+                {recommendedCount} việc làm phù hợp cao
               </span>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                    Đề xuất việc làm cá nhân hóa bởi AI Agent
-                  </h3>
-                  <span className="rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-950 shadow-xs">
-                    {recommendedCount} việc làm phù hợp cao
-                  </span>
-                </div>
-                <p className="mt-1 text-xs sm:text-sm text-blue-200/80 max-w-2xl leading-relaxed">
-                  Hệ thống tự động so khớp ngữ nghĩa (Semantic Matching) giữa hồ sơ kỹ năng của bạn và mô tả công việc (JD), ưu tiên các vị trí có tỷ lệ phỏng vấn cao nhất.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setActiveTab('recommended')}
-              className={`shrink-0 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-md cursor-pointer flex items-center gap-2 ${
-                activeTab === 'recommended'
-                  ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
-                  : 'bg-white text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Sparkles size={14} className={activeTab === 'recommended' ? 'text-slate-950' : 'text-blue-600'} />
-              <span>
-                {activeTab === 'recommended'
-                  ? 'Đang xem đề xuất AI ✓'
-                  : 'Xem các việc làm AI đề xuất →'}
-              </span>
-            </button>
+            </p>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+              Hệ thống tự động so khớp ngữ nghĩa (Semantic Matching) giữa hồ sơ kỹ năng của bạn và
+              mô tả công việc (JD), ưu tiên các vị trí có tỷ lệ phỏng vấn cao nhất.
+            </p>
           </div>
-        </div>
+          <button
+            onClick={() => setActiveTab('recommended')}
+            className={`${textLink} shrink-0 ${activeTab === 'recommended' ? 'text-brand' : ''}`}
+          >
+            {activeTab === 'recommended' ? 'Đang xem đề xuất AI ✓' : 'Xem các việc làm AI đề xuất →'}
+          </button>
+        </section>
 
-        {/* Unified Search & Filters Card */}
-        <Card className="mb-6 p-4 md:p-5 border border-slate-200/90 bg-white shadow-2xs rounded-2xl">
-          <div className="space-y-3.5">
-            {/* Top Search Input */}
-            <div className="relative">
-              <Search size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm kiếm vị trí công việc, công nghệ (React, Node, AI...), hoặc tên công ty..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-3 pl-10 pr-9 text-xs sm:text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
-                  title="Xóa từ khóa"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-
-            {/* Bottom Multi-Criteria Dropdowns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {/* Location */}
-              <div className="relative">
-                <MapPin size={15} className="absolute left-3 top-3 text-slate-400 pointer-events-none" />
-                <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-medium text-slate-700 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none cursor-pointer"
-                >
-                  <option value="All">{t('jobs.allLocations')}</option>
-                  <option value="Ho Chi Minh">TP. Hồ Chí Minh</option>
-                  <option value="Hanoi">Hà Nội</option>
-                  <option value="Da Nang">Đà Nẵng</option>
-                  <option value="Remote">Làm việc từ xa (Remote)</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-3 text-slate-400 pointer-events-none" />
-              </div>
-
-              {/* Experience Level */}
-              <div className="relative">
-                <BriefcaseBusiness size={15} className="absolute left-3 top-3 text-slate-400 pointer-events-none" />
-                <select
-                  value={experienceLevel}
-                  onChange={(e) => setExperienceLevel(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-medium text-slate-700 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none cursor-pointer"
-                >
-                  <option value="All">Tất cả cấp bậc kinh nghiệm</option>
-                  <option value="Junior">Junior (1-2 năm)</option>
-                  <option value="Middle">Middle (2-4 năm)</option>
-                  <option value="Senior">Senior (4+ năm)</option>
-                  <option value="Lead">Lead / Architect</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-3 text-slate-400 pointer-events-none" />
-              </div>
-
-              {/* Salary Min */}
-              <div className="relative">
-                <Zap size={15} className="absolute left-3 top-3 text-slate-400 pointer-events-none" />
-                <select
-                  value={salaryMin}
-                  onChange={(e) => setSalaryMin(Number(e.target.value))}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-medium text-slate-700 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none cursor-pointer"
-                >
-                  <option value="0">Tất cả mức lương</option>
-                  <option value="1500">Từ $1,500 / tháng (~35M+)</option>
-                  <option value="2500">Từ $2,500 / tháng (~60M+)</option>
-                  <option value="3500">Từ $3,500 / tháng (~85M+)</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-3 text-slate-400 pointer-events-none" />
-              </div>
-
-              {/* Job Type */}
-              <div className="relative">
-                <Layers size={15} className="absolute left-3 top-3 text-slate-400 pointer-events-none" />
-                <select
-                  value={jobType}
-                  onChange={(e) => setJobType(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-medium text-slate-700 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none cursor-pointer"
-                >
-                  <option value="All">Tất cả hình thức làm việc</option>
-                  <option value="Full-time">Toàn thời gian (Full-time)</option>
-                  <option value="Hybrid">Linh hoạt (Hybrid)</option>
-                  <option value="Remote">Từ xa (Remote)</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-3 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Active Filters Summary / Reset */}
-            {isFilterActive && (
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                <span className="text-slate-500">
-                  Đang lọc theo các điều kiện đã chọn
-                </span>
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
-                >
-                  <RotateCcw size={13} />
-                  <span>Đặt lại tất cả bộ lọc</span>
-                </button>
-              </div>
+        {/* Search & Filters */}
+        <section className="mb-8">
+          <div className="relative">
+            <Search size={17} className="pointer-events-none absolute left-0 top-3.5 text-ink" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm kiếm vị trí công việc, công nghệ (React, Node, AI...), hoặc tên công ty..."
+              className="w-full border-0 border-b border-ink bg-transparent py-3 pl-8 pr-8 text-base text-ink outline-none placeholder:text-slate-600 focus:border-brand"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-0 top-3 p-1 text-slate-600 transition hover:text-ink cursor-pointer"
+                title="Xóa từ khóa"
+              >
+                <X size={16} />
+              </button>
             )}
           </div>
-        </Card>
 
-        {/* Tabs Row & Sorter */}
-        <div className="mb-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
-          {/* Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'all'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {t('jobs.allJobsTab')} ({allJobs?.length || 0})
-            </button>
+          <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="relative">
+              <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className={fieldBase}
+              >
+                <option value="All">{t('jobs.allLocations')}</option>
+                <option value="Ho Chi Minh">TP. Hồ Chí Minh</option>
+                <option value="Hanoi">Hà Nội</option>
+                <option value="Da Nang">Đà Nẵng</option>
+                <option value="Remote">Làm việc từ xa (Remote)</option>
+              </select>
+              <ChevronDown size={14} className="pointer-events-none absolute right-0 top-4 text-slate-600" />
+            </div>
 
-            <button
-              onClick={() => setActiveTab('recommended')}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'recommended'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Sparkles size={14} className={activeTab === 'recommended' ? 'text-amber-300' : 'text-blue-600'} />
-              <span>{t('jobs.aiRecommendedTab')} ({recommendedCount})</span>
-            </button>
+            <div className="relative">
+              <select
+                value={experienceLevel}
+                onChange={(e) => setExperienceLevel(e.target.value)}
+                className={fieldBase}
+              >
+                <option value="All">Tất cả cấp bậc kinh nghiệm</option>
+                <option value="Junior">Junior (1-2 năm)</option>
+                <option value="Middle">Middle (2-4 năm)</option>
+                <option value="Senior">Senior (4+ năm)</option>
+                <option value="Lead">Lead / Architect</option>
+              </select>
+              <ChevronDown size={14} className="pointer-events-none absolute right-0 top-4 text-slate-600" />
+            </div>
 
-            <button
-              onClick={() => setActiveTab('saved')}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'saved'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Bookmark size={14} className={activeTab === 'saved' ? 'fill-white' : 'text-slate-500'} />
-              <span>{t('jobs.savedJobsTab')} ({savedIds.length})</span>
-            </button>
+            <div className="relative">
+              <select
+                value={salaryMin}
+                onChange={(e) => setSalaryMin(Number(e.target.value))}
+                className={fieldBase}
+              >
+                <option value="0">Tất cả mức lương</option>
+                <option value="1500">Từ $1,500 / tháng (~35M+)</option>
+                <option value="2500">Từ $2,500 / tháng (~60M+)</option>
+                <option value="3500">Từ $3,500 / tháng (~85M+)</option>
+              </select>
+              <ChevronDown size={14} className="pointer-events-none absolute right-0 top-4 text-slate-600" />
+            </div>
+
+            <div className="relative">
+              <select
+                value={jobType}
+                onChange={(e) => setJobType(e.target.value)}
+                className={fieldBase}
+              >
+                <option value="All">Tất cả hình thức làm việc</option>
+                <option value="Full-time">Toàn thời gian (Full-time)</option>
+                <option value="Hybrid">Linh hoạt (Hybrid)</option>
+                <option value="Remote">Từ xa (Remote)</option>
+              </select>
+              <ChevronDown size={14} className="pointer-events-none absolute right-0 top-4 text-slate-600" />
+            </div>
           </div>
 
-          {/* Sort Dropdown & Result Count */}
-          <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-            <span className="text-xs text-slate-500 font-medium">
-              Tìm thấy <strong className="text-slate-900 font-bold">{filteredJobs.length}</strong> việc làm
-            </span>
+          {isFilterActive && (
+            <div className="mt-4 flex items-center justify-between text-sm">
+              <span className="text-slate-600">Đang lọc theo các điều kiện đã chọn</span>
+              <button type="button" onClick={resetFilters} className={`${textLink} inline-flex items-center gap-1.5`}>
+                <RotateCcw size={13} />
+                <span>Đặt lại tất cả bộ lọc</span>
+              </button>
+            </div>
+          )}
+        </section>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-400 hidden md:inline">
-                {t('jobs.sortBy')}:
-              </span>
+        {/* Tabs & Sort */}
+        <div className="flex flex-col justify-between gap-3 border-b border-ink/40 sm:flex-row sm:items-end">
+          <div className="flex items-center gap-7 overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`-mb-px whitespace-nowrap border-b-2 pb-3 text-sm transition cursor-pointer ${
+                  activeTab === tab.key
+                    ? 'border-brand font-medium text-brand'
+                    : 'border-transparent text-slate-600 hover:text-ink'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-5 pb-3 sm:justify-end">
+            <span className="text-sm text-slate-600">
+              Tìm thấy <strong className="font-medium text-ink">{filteredJobs.length}</strong>{' '}
+              việc làm
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="hidden text-sm text-slate-600 md:inline">{t('jobs.sortBy')}:</span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-slate-300 focus:outline-none cursor-pointer"
+                onChange={(e) => setSortBy(e.target.value as 'match' | 'salary' | 'newest')}
+                className="border-0 bg-transparent text-sm text-ink underline underline-offset-4 outline-none cursor-pointer"
               >
                 <option value="match">{t('jobs.sortMatchDesc')}</option>
                 <option value="salary">{t('jobs.sortSalaryDesc')}</option>
@@ -445,268 +358,164 @@ export default function JobsPage() {
         ) : isError ? (
           <ErrorState />
         ) : !filteredJobs.length ? (
-          <Card className="text-center py-14">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-blue-600 mb-4">
-              <BriefcaseBusiness size={30} />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">{t('jobs.noJobsMatch')}</h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mb-5">
-              Hãy thử điều chỉnh lại từ khóa tìm kiếm, địa điểm hoặc mức lương kỳ vọng để khám phá thêm nhiều cơ hội.
+          <div className="py-20 text-center">
+            <h3 className="text-xl font-light text-ink">{t('jobs.noJobsMatch')}</h3>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
+              Hãy thử điều chỉnh lại từ khóa tìm kiếm, địa điểm hoặc mức lương kỳ vọng để khám phá
+              thêm nhiều cơ hội.
             </p>
-            <Button
-              variant="secondary"
-              onClick={resetFilters}
-              className="text-xs inline-flex items-center gap-1.5"
-            >
+            <button type="button" onClick={resetFilters} className={`${textLink} mt-6 inline-flex items-center gap-1.5`}>
               <RotateCcw size={13} />
               <span>Đặt lại tất cả bộ lọc</span>
-            </Button>
-          </Card>
+            </button>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <ul className="divide-y divide-ink/15">
             {filteredJobs.map((job) => {
               const isSaved = savedIds.includes(job.id);
               const isApplied = appliedIds.includes(job.id);
               const externalSource = job.externalSource || {
                 sourceName: 'ITviec',
                 sourceUrl: 'https://itviec.com',
-                sourceBadgeColor: 'bg-red-50 text-red-700 border-red-200',
+                sourceBadgeColor: '',
               };
 
               return (
-                <div
-                  key={job.id}
-                  className="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-2xs hover:shadow-md hover:border-blue-300 transition-all duration-200"
-                >
-                  {/* Top Section: Header & Metadata */}
-                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                    {/* Left: Company Logo + Job Header */}
-                    <div className="flex items-start gap-4 min-w-0">
-                      <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/60 border border-slate-200/80 text-2xl shadow-2xs group-hover:scale-105 transition-transform">
-                        {job.companyLogo || '🏢'}
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <Link
-                            to={getJobDetailUrl(job.id)}
-                            className="text-base sm:text-lg font-bold text-slate-900 hover:text-blue-600 transition-colors line-clamp-1"
-                          >
-                            {job.title}
-                          </Link>
-                          {isApplied && (
-                            <span className="rounded-full bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold text-emerald-800 shrink-0">
-                              ✓ Đã ứng tuyển
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Company & Job Details Line */}
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                          <span className="font-semibold text-slate-700 flex items-center gap-1">
-                            <Building2 size={13} className="text-slate-400" />
-                            {job.company}
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <MapPin size={13} className="text-slate-400" />
-                            {job.location}
-                          </span>
-                          <span>•</span>
-                          <span className="inline-flex items-center rounded-md bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 text-xs font-bold text-emerald-700">
-                            {job.salary}
-                          </span>
-                          <span className="hidden md:inline">•</span>
-                          <span className="text-slate-400 hidden md:inline-flex items-center gap-1">
-                            <Clock size={12} /> {job.posted}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Semantic Match & Bookmark */}
-                    <div className="flex items-center gap-2.5 self-end sm:self-start shrink-0">
-                      <div className="flex items-center gap-2 rounded-xl bg-slate-50/90 border border-slate-200/80 p-1.5 pl-3">
-                        <div className="text-right">
-                          <div className="flex items-center gap-1 font-bold text-xs text-slate-900 justify-end">
-                            <Sparkles size={13} className="text-blue-600" />
-                            <span>{job.match}% Semantic Match</span>
-                          </div>
-                          <p className="text-[10px] font-medium text-slate-500">
-                            {job.match >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng cao'}
-                          </p>
-                        </div>
-                        <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs shadow-xs">
-                          {job.match}%
-                        </div>
-                      </div>
-
-                      {/* Bookmark Toggle */}
-                      <button
-                        type="button"
-                        onClick={() => toggleSaveMutation.mutate(job.id)}
-                        className={`grid h-10 w-10 place-items-center rounded-xl border transition cursor-pointer ${
-                          isSaved
-                            ? 'bg-amber-50 border-amber-300 text-amber-600'
-                            : 'bg-white border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50'
-                        }`}
-                        title={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
-                      >
-                        <Bookmark size={16} className={isSaved ? 'fill-amber-500' : ''} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Middle Section: Job Description Snippet */}
-                  <p className="mt-3.5 mb-4 text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                    {job.description}
-                  </p>
-
-                  {/* Bottom Section: Skills & Action Buttons */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 pt-3.5 border-t border-slate-100">
-                    {/* Left: Source & Skill Badges */}
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span
-                        className={`rounded-md border px-2 py-0.5 text-[11px] font-bold ${externalSource.sourceBadgeColor}`}
-                      >
-                        Nguồn: {externalSource.sourceName}
-                      </span>
-
-                      {job.skills.slice(0, 5).map((skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-md bg-slate-100 border border-slate-200/80 px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                <li key={job.id} className="py-7">
+                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_9rem]">
+                    {/* Title, company, description */}
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-baseline gap-x-3">
+                        <Link
+                          to={getJobDetailUrl(job.id)}
+                          className="text-xl font-medium text-ink transition hover:text-brand"
                         >
-                          {skill}
-                        </span>
-                      ))}
-
-                      {job.skills.length > 5 && (
-                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
-                          +{job.skills.length - 5}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Right: Actions */}
-                    <div className="flex flex-wrap items-center gap-2 self-end md:self-auto shrink-0">
-                      {/* Detail View */}
-                      <Link to={getJobDetailUrl(job.id)}>
-                        <Button variant="secondary" className="shadow-2xs text-xs py-2 px-3">
-                          <Eye size={13} />
-                          <span>Chi tiết</span>
-                        </Button>
-                      </Link>
-
-                      {/* Semantic Match Analysis */}
-                      <Link to={getJobMatchUrl(job.id)}>
-                        <Button
-                          variant="secondary"
-                          className="shadow-2xs text-xs py-2 px-3 border-blue-200 bg-blue-50/60 text-blue-700 hover:bg-blue-100 font-bold"
-                        >
-                          <Sparkles size={13} />
-                          <span>Khớp nối AI</span>
-                        </Button>
-                      </Link>
-
-                      {/* If Candidate: CV-Job Fit link */}
-                      {isCandidate && (
-                        <Link to={`/candidate/cv-job-fit?jobId=${job.id}`}>
-                          <Button
-                            variant="secondary"
-                            className="shadow-2xs text-xs py-2 px-3 border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 font-bold"
-                          >
-                            <Target size={13} />
-                            <span>So khớp CV</span>
-                          </Button>
+                          {job.title}
                         </Link>
-                      )}
+                        {isApplied && <span className="text-sm text-brand">✓ Đã ứng tuyển</span>}
+                      </div>
+                      <p className="mt-1.5 text-sm text-slate-600">
+                        {job.company} · {job.location} · {job.posted}
+                      </p>
+                      <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
+                        {job.description}
+                      </p>
+                    </div>
 
-                      {/* External Apply Button */}
-                      <Button
-                        variant="primary"
-                        onClick={() => setRedirectJob(job)}
-                        className="shadow-2xs text-xs py-2 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 font-bold"
-                      >
-                        <ExternalLink size={13} />
-                        <span>Ứng tuyển ↗</span>
-                      </Button>
+                    {/* Skills, source, salary */}
+                    <div className="min-w-0 text-sm">
+                      <p className="leading-6 text-ink">
+                        {job.skills.slice(0, 5).join(' · ')}
+                        {job.skills.length > 5 && (
+                          <span className="text-slate-600"> · +{job.skills.length - 5}</span>
+                        )}
+                      </p>
+                      <p className="mt-3 text-ink">{job.salary}</p>
+                      <p className="mt-1 text-slate-600">Nguồn: {externalSource.sourceName}</p>
+                    </div>
+
+                    {/* Match */}
+                    <div>
+                      <p className="text-3xl font-light text-brand">{job.match}%</p>
+                      <div className="mt-2 h-0.5 w-full bg-ink/10">
+                        <div className="h-full bg-brand" style={{ width: `${job.match}%` }} />
+                      </div>
+                      <p className="mt-2 text-xs text-slate-600">
+                        Semantic Match · {job.match >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng cao'}
+                      </p>
                     </div>
                   </div>
-                </div>
+
+                  {/* Actions */}
+                  <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <Link to={getJobDetailUrl(job.id)} className={textLink}>
+                      Chi tiết
+                    </Link>
+                    <Link to={getJobMatchUrl(job.id)} className={textLink}>
+                      Khớp nối AI
+                    </Link>
+                    {isCandidate && (
+                      <Link to={`/candidate/cv-job-fit?jobId=${job.id}`} className={textLink}>
+                        So khớp CV
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleSaveMutation.mutate(job.id)}
+                      className={`${textLink} inline-flex items-center gap-1.5 ${isSaved ? 'text-brand' : ''}`}
+                      title={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
+                    >
+                      <Bookmark size={14} className={isSaved ? 'fill-brand' : ''} />
+                      <span>{isSaved ? 'Đã lưu' : 'Lưu'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRedirectJob(job)}
+                      className="ml-auto inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2 text-sm text-white transition hover:bg-brand cursor-pointer"
+                    >
+                      <span>Ứng tuyển</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
 
         {/* External Application Redirect Confirmation Modal */}
         {redirectJob && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-100">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                <div className="flex items-center gap-2.5 text-blue-700">
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-100 text-blue-700">
-                    <ExternalLink size={18} />
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900">
-                    {t('jobs.redirectModalTitle')}
-                  </h3>
-                </div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 animate-fade-in">
+            <div className="w-full max-w-lg rounded-2xl bg-canvas p-7 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="text-2xl font-light text-ink">{t('jobs.redirectModalTitle')}</h3>
                 <button
                   onClick={() => setRedirectJob(null)}
-                  className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                  className="p-1 text-slate-600 transition hover:text-ink cursor-pointer"
+                  aria-label="Đóng"
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="rounded-xl bg-slate-50 p-4 border border-slate-200/80">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase">Vị trí ứng tuyển:</span>
-                    <span className="rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs font-bold text-blue-700">
-                      {redirectJob.match}% AI Match
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-900">{redirectJob.title}</h4>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    {redirectJob.company} · {redirectJob.location} · {redirectJob.salary}
-                  </p>
-                  <div className="mt-2.5 flex items-center gap-2 text-xs text-slate-500">
-                    <span>Cổng tuyển dụng nguồn:</span>
-                    <strong className="text-slate-800">
-                      {redirectJob.externalSource?.sourceName || 'ITviec'}
-                    </strong>
-                  </div>
-                </div>
+              <div className="mt-6 border-y border-ink/15 py-5">
+                <p className="text-xs text-slate-600">Vị trí ứng tuyển</p>
+                <h4 className="mt-1 text-lg font-medium text-ink">{redirectJob.title}</h4>
+                <p className="mt-1 text-sm text-slate-600">
+                  {redirectJob.company} · {redirectJob.location} · {redirectJob.salary}
+                </p>
+                <p className="mt-3 text-sm text-slate-600">
+                  Cổng tuyển dụng nguồn:{' '}
+                  <span className="text-ink">
+                    {redirectJob.externalSource?.sourceName || 'ITviec'}
+                  </span>
+                  <span className="mx-2">·</span>
+                  <span className="text-brand">{redirectJob.match}% AI Match</span>
+                </p>
+              </div>
 
-                <div className="rounded-xl bg-emerald-50/70 p-3.5 border border-emerald-200 text-emerald-900 text-xs leading-relaxed">
-                  <p className="font-semibold flex items-center gap-1.5 mb-1">
-                    <CheckCircle2 size={14} className="text-emerald-600" />
-                    Mẹo ứng tuyển từ AI:
-                  </p>
-                  Hồ sơ của bạn đạt <strong className="text-emerald-700 font-bold">{redirectJob.match}%</strong> độ tương thích với vị trí này. Hãy chuẩn bị sẵn bản CV vừa tối ưu ATS để nộp kèm trực tiếp trên website của doanh nghiệp!
-                </div>
+              <p className="mt-5 text-sm leading-6 text-slate-600">
+                <span className="text-brand">Mẹo ứng tuyển từ AI:</span> Hồ sơ của bạn đạt{' '}
+                <strong className="font-medium text-ink">{redirectJob.match}%</strong> độ tương
+                thích với vị trí này. Hãy chuẩn bị sẵn bản CV vừa tối ưu ATS để nộp kèm trực tiếp trên
+                website của doanh nghiệp!
+              </p>
 
-                <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setRedirectJob(null)}
-                    className="w-full sm:w-auto text-xs"
-                  >
-                    {t('common.cancel')}
-                  </Button>
-
-                  <Button
-                    variant="primary"
-                    onClick={() => applyMutation.mutate(redirectJob.id)}
-                    disabled={applyMutation.isPending}
-                    className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold border-0 text-xs shadow-sm"
-                  >
-                    <ExternalLink size={14} />
+              <div className="mt-7 flex items-center justify-end gap-6">
+                <button type="button" onClick={() => setRedirectJob(null)} className={textLink}>
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyMutation.mutate(redirectJob.id)}
+                  disabled={applyMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-2.5 text-sm text-white transition hover:bg-brand disabled:opacity-50 cursor-pointer"
+                >
+                  <span>
                     {applyMutation.isPending ? 'Đang chuyển hướng…' : t('jobs.confirmRedirect')}
-                  </Button>
-                </div>
+                  </span>
+                  <ArrowRight size={14} />
+                </button>
               </div>
             </div>
           </div>

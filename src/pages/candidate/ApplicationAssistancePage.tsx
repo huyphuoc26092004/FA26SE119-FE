@@ -5,7 +5,7 @@ import {
   FileText,
   Mail,
   Send,
-  Sparkles,
+  Lightbulb,
   Bookmark,
   CheckCircle2,
   AlertCircle,
@@ -230,7 +230,7 @@ export default function ApplicationAssistancePage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3 shadow-2xl border border-slate-700 animate-in fade-in max-w-lg">
+        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3 shadow-sm border border-slate-700 animate-in fade-in max-w-lg">
           <div className="flex items-center gap-2.5">
             <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
             <p className="text-xs font-semibold">{toastMessage}</p>
@@ -252,33 +252,33 @@ export default function ApplicationAssistancePage() {
         />
 
         {/* Tab switchers */}
-        <div className="flex items-center gap-1 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-2xs">
+        <div className="flex items-center gap-1 rounded-2xl border border-slate-200/90 bg-surface p-1.5 shadow-2xs">
           <button
             onClick={() => setActiveTab('editor')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium transition cursor-pointer ${
               activeTab === 'editor'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-brand-600 text-white shadow-xs'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
-            <Sparkles size={15} />
+            <Lightbulb size={15} />
             <span>{t('applicationAssistance.createTab')}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('saved')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium transition cursor-pointer ${
               activeTab === 'saved'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-brand-600 text-white shadow-xs'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <FolderArchive size={15} />
             <span>{t('applicationAssistance.savedTab')}</span>
             <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+              className={`rounded-full px-1.5 py-0.2 text-[10px] font-medium ${
                 activeTab === 'saved'
-                  ? 'bg-white text-blue-700'
+                  ? 'bg-white text-brand-700'
                   : 'bg-slate-100 text-slate-600'
               }`}
             >
@@ -300,26 +300,26 @@ export default function ApplicationAssistancePage() {
         <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
           {/* Left Column: Generator Controls Card */}
           <div className="space-y-5">
-            <Card className="p-5 border border-slate-200/90 bg-white shadow-xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3 text-sm font-bold text-slate-900">
-                <Sliders size={18} className="text-blue-600" />
+            <Card className="p-5 border border-slate-200/90 bg-surface shadow-xs space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3 text-sm font-medium text-slate-900">
+                <Sliders size={18} className="text-brand-600" />
                 <span>Cấu hình thư ứng tuyển AI</span>
               </div>
 
               {/* 1. Target Job Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Briefcase size={14} className="text-blue-600" />
+                <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
+                  <Briefcase size={14} className="text-brand-600" />
                   <span>{t('applicationAssistance.selectJob')}</span>
                 </label>
                 <select
                   value={selectedJobId}
                   onChange={(e) => setSelectedJobId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-brand-500 focus:bg-surface transition cursor-pointer"
                 >
                   {jobs.map((job) => (
                     <option key={job.id} value={job.id}>
-                      💼 {job.title} - {job.company} ({job.salary})
+                      {job.title} - {job.company} ({job.salary})
                     </option>
                   ))}
                 </select>
@@ -327,18 +327,18 @@ export default function ApplicationAssistancePage() {
 
               {/* 2. CV Reference Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <FileText size={14} className="text-indigo-600" />
+                <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
+                  <FileText size={14} className="text-brand-600" />
                   <span>{t('applicationAssistance.selectCv')}</span>
                 </label>
                 <select
                   value={selectedCvId}
                   onChange={(e) => setSelectedCvId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-brand-500 focus:bg-surface transition cursor-pointer"
                 >
                   {resumes.map((cv) => (
                     <option key={cv.id} value={cv.id}>
-                      📄 {cv.name} ({cv.atsScore}% ATS)
+                      {cv.name} ({cv.atsScore}% ATS)
                     </option>
                   ))}
                 </select>
@@ -346,7 +346,7 @@ export default function ApplicationAssistancePage() {
 
               {/* 3. Document Type */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
+                <label className="text-xs font-medium text-slate-700 block">
                   {t('applicationAssistance.contentTypeLabel')}
                 </label>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -362,8 +362,8 @@ export default function ApplicationAssistancePage() {
                       onClick={() => setContentType(item.id as ApplicationContentType)}
                       className={`rounded-xl border p-2 text-left text-xs font-semibold transition cursor-pointer ${
                         contentType === item.id
-                          ? 'border-blue-500 bg-blue-50/70 text-blue-900 shadow-2xs'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                          ? 'border-brand-500 bg-brand-50/70 text-brand-900 shadow-2xs'
+                          : 'border-slate-200 bg-surface text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
                       {item.label}
@@ -374,7 +374,7 @@ export default function ApplicationAssistancePage() {
 
               {/* 4. Tone & Style */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
+                <label className="text-xs font-medium text-slate-700 block">
                   {t('applicationAssistance.toneLabel')}
                 </label>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -390,8 +390,8 @@ export default function ApplicationAssistancePage() {
                       onClick={() => setTone(item.id as ApplicationTone)}
                       className={`rounded-xl border p-2 text-left text-xs font-semibold transition cursor-pointer ${
                         tone === item.id
-                          ? 'border-indigo-500 bg-indigo-50/70 text-indigo-900 shadow-2xs'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                          ? 'border-brand-500 bg-brand-50/70 text-brand-900 shadow-2xs'
+                          : 'border-slate-200 bg-surface text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
                       {item.label}
@@ -402,13 +402,13 @@ export default function ApplicationAssistancePage() {
 
               {/* 5. Key Value Focus */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
+                <label className="text-xs font-medium text-slate-700 block">
                   {t('applicationAssistance.focusLabel')}
                 </label>
                 <select
                   value={focus}
                   onChange={(e) => setFocus(e.target.value as ApplicationFocus)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-brand-500 focus:bg-surface transition cursor-pointer"
                 >
                   <option value="tech_depth">{t('applicationAssistance.focusTech')}</option>
                   <option value="leadership">{t('applicationAssistance.focusLeadership')}</option>
@@ -419,7 +419,7 @@ export default function ApplicationAssistancePage() {
 
               {/* 6. Language */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
+                <label className="text-xs font-medium text-slate-700 block">
                   {t('applicationAssistance.languageLabel')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -428,8 +428,8 @@ export default function ApplicationAssistancePage() {
                     onClick={() => setLanguage('Vietnamese')}
                     className={`rounded-xl border p-2 text-center text-xs font-semibold transition cursor-pointer ${
                       language === 'Vietnamese'
-                        ? 'border-blue-500 bg-blue-50 text-blue-900 font-bold'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-brand-500 bg-brand-50 text-brand-900 font-bold'
+                        : 'border-slate-200 bg-surface text-slate-600 hover:bg-slate-50'
                     }`}
                   >
                     🇻🇳 Tiếng Việt
@@ -439,8 +439,8 @@ export default function ApplicationAssistancePage() {
                     onClick={() => setLanguage('English')}
                     className={`rounded-xl border p-2 text-center text-xs font-semibold transition cursor-pointer ${
                       language === 'English'
-                        ? 'border-blue-500 bg-blue-50 text-blue-900 font-bold'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-brand-500 bg-brand-50 text-brand-900 font-bold'
+                        : 'border-slate-200 bg-surface text-slate-600 hover:bg-slate-50'
                     }`}
                   >
                     🇬🇧 English
@@ -450,7 +450,7 @@ export default function ApplicationAssistancePage() {
 
               {/* 7. Recipient Info */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
+                <label className="text-xs font-medium text-slate-700 block">
                   {t('applicationAssistance.recipientLabel')}
                 </label>
                 <input
@@ -458,7 +458,7 @@ export default function ApplicationAssistancePage() {
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   placeholder={t('applicationAssistance.recipientPlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-brand-500 focus:bg-surface transition"
                 />
               </div>
 
@@ -467,9 +467,9 @@ export default function ApplicationAssistancePage() {
                 type="button"
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs py-3 rounded-xl shadow-md shadow-blue-500/20 active:scale-[0.99] transition mt-2 cursor-pointer"
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs py-3 rounded-xl transition mt-2 cursor-pointer"
               >
-                <Sparkles size={16} />
+                <Lightbulb size={16} />
                 <span>
                   {isGenerating
                     ? t('applicationAssistance.generating')
@@ -479,12 +479,12 @@ export default function ApplicationAssistancePage() {
             </Card>
 
             {/* Quick Context Tip Box */}
-            <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 text-xs text-blue-900 space-y-2">
-              <p className="font-bold flex items-center gap-1.5">
-                <Sparkles size={14} className="text-blue-600" />
+            <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 text-xs text-brand-900 space-y-2">
+              <p className="font-medium flex items-center gap-1.5">
+                <Lightbulb size={14} className="text-brand-600" />
                 Mẹo tối ưu tỷ lệ phản hồi:
               </p>
-              <p className="text-[11px] leading-relaxed text-blue-800">
+              <p className="text-[11px] leading-relaxed text-brand-800">
                 Thư ứng tuyển có đề cập đến các con số thành tích cụ thể (STAR / Google XYZ) và giải quyết trực tiếp bài toán của doanh nghiệp giúp tăng tỷ lệ phản hồi lên <strong>gấp 3 lần</strong> so với thư mẫu chung chung.
               </p>
             </div>
@@ -525,7 +525,7 @@ export default function ApplicationAssistancePage() {
                 isSaved={!!currentDraft.isSaved}
               />
             ) : (
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+              <div className="rounded-3xl border border-dashed border-slate-300 bg-surface p-12 text-center">
                 <p className="text-sm text-slate-500">Chưa có văn bản nào được chọn.</p>
               </div>
             )}

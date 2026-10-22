@@ -53,7 +53,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'pro',
     name: 'Chuyên nghiệp (Professional Pro)',
-    badge: 'Phổ biến nhất ⭐',
+    badge: 'Phổ biến nhất',
     highlight: true,
     description: 'Dành cho ứng viên đang tích cực tìm kiếm cơ hội việc làm chất lượng cao và muốn tối ưu hóa hồ sơ không giới hạn.',
     monthlyPriceVND: 199000,
@@ -78,7 +78,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'executive',
     name: 'Cao cấp (Executive VIP)',
-    badge: 'Đặc quyền VIP 👑',
+    badge: 'Đặc quyền VIP',
     description: 'Gói giải pháp toàn diện cho Senior, Tech Lead và Quản lý với hỗ trợ 1-on-1 độc quyền từ chuyên gia hàng đầu.',
     monthlyPriceVND: 499000,
     yearlyPriceVND: 4790000, // Tiết kiệm ~20%

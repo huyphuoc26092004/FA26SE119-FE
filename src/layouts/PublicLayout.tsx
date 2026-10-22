@@ -6,13 +6,8 @@ import { Button } from '../components/ui';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import {
   ArrowRight,
-  Bot,
-  Briefcase,
-  LayoutDashboard,
-  LogIn,
   LogOut,
   Menu,
-  Sparkles,
   X,
 } from 'lucide-react';
 
@@ -58,14 +53,15 @@ export default function PublicLayout() {
     '/verify-otp',
   ].includes(location.pathname);
 
-  if (isAuthPage) {
+  // The guest trial page brings its own sidebar shell.
+  if (isAuthPage || location.pathname === '/guest-trial') {
     return <Outlet />;
   }
 
   const linkClass =
-    'inline-flex min-h-10 items-center gap-2 rounded-control px-3 text-sm font-medium transition-colors focus-visible:outline-offset-2';
-  const standardLinkClass = `${linkClass} text-slate-700 hover:bg-canvas hover:text-ink`;
-  const activeLinkClass = `${linkClass} bg-blue-50 text-brand`;
+    'inline-flex min-h-10 items-center gap-2 text-[15px] transition-colors duration-150 focus-visible:outline-offset-2';
+  const standardLinkClass = `${linkClass} text-slate-700 hover:text-brand`;
+  const activeLinkClass = `${linkClass} text-brand`;
   const isJobsPage = location.pathname.startsWith('/jobs');
 
   const openFeatureSection = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -90,14 +86,9 @@ export default function PublicLayout() {
         className={isJobsPage ? activeLinkClass : standardLinkClass}
         onClick={() => setMobileMenuOpen(false)}
       >
-        <Briefcase
-          className={`h-4 w-4 ${isJobsPage ? 'text-brand' : 'text-slate-500'}`}
-          aria-hidden="true"
-        />
         <span>{t('nav.jobDiscovery', 'Khám phá việc làm')}</span>
       </Link>
       <a href="#features" onClick={openFeatureSection} className={standardLinkClass}>
-        <Sparkles className="h-4 w-4 text-brand" aria-hidden="true" />
         <span>{t('nav.aiAgentMatching', 'Khớp nối AI Agent')}</span>
       </a>
       <Link
@@ -116,9 +107,8 @@ export default function PublicLayout() {
         <Link
           to={getRoleDashboardPath()}
           onClick={() => setMobileMenuOpen(false)}
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-control bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-offset-2"
+          className="inline-flex min-h-10 items-center justify-center gap-3 rounded-full bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-brand-800 focus-visible:outline-offset-2"
         >
-          <LayoutDashboard className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>{t('common.openWorkspace', 'Mở không gian làm việc')}</span>
           <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
         </Link>
@@ -143,13 +133,12 @@ export default function PublicLayout() {
           onClick={() => setMobileMenuOpen(false)}
           className={`${standardLinkClass} justify-center`}
         >
-          <LogIn className="h-4 w-4" aria-hidden="true" />
           {t('common.signIn', 'Đăng nhập')}
         </Link>
         <Link
           to="/register"
           onClick={() => setMobileMenuOpen(false)}
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-control bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-offset-2"
+          className="inline-flex min-h-10 items-center justify-center gap-3 rounded-full bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-brand-800 focus-visible:outline-offset-2"
         >
           {t('common.getStarted', 'Bắt đầu ngay')}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -159,22 +148,15 @@ export default function PublicLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
-      <header className="sticky top-0 z-40 border-b border-border bg-surface">
-        <div className="relative mx-auto flex h-[68px] w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
+      <header className="sticky top-0 z-40 border-b border-border bg-canvas">
+        <div className="relative mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-6 px-5 sm:px-8">
           <Link
             to="/"
-            className="group flex shrink-0 items-center gap-2.5 rounded-control focus-visible:outline-offset-4"
+            className="flex shrink-0 items-baseline gap-1 rounded-control focus-visible:outline-offset-4"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand text-white transition-colors group-hover:bg-blue-700">
-              <Bot className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-lg font-bold tracking-tight text-ink">Jobie</span>
-              <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-brand">
-                AI
-              </span>
-            </span>
+            <span className="text-2xl font-medium tracking-[-0.02em] text-ink">Jobie</span>
+            <span className="text-xs text-brand">ai</span>
           </Link>
 
           <nav
@@ -182,23 +164,18 @@ export default function PublicLayout() {
               'nav.publicNavigation',
               isVietnamese ? 'Điều hướng chính' : 'Main navigation',
             )}
-            className="hidden items-center gap-1 lg:flex"
+            className="hidden items-center gap-7 lg:flex"
           >
             {publicNavigation}
           </nav>
 
-          <div className="hidden shrink-0 items-center gap-2 xl:flex">
+          <div className="hidden shrink-0 items-center gap-4 xl:flex">
             <LanguageSwitcher />
             {isAuthenticated && user && (
-              <div className="ml-1 flex items-center gap-2.5 border-l border-border pl-3">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-blue-50 text-xs font-bold text-brand">
-                  {user.name.charAt(0)}
-                </span>
-                <span className="max-w-36">
-                  <span className="block truncate text-xs font-semibold text-ink">{user.name}</span>
-                  <span className="block text-xs text-slate-600">{getRoleLabel()}</span>
-                </span>
-              </div>
+              <span className="max-w-36 border-l border-border pl-4">
+                <span className="block truncate text-xs text-ink">{user.name}</span>
+                <span className="block text-xs text-slate-600">{getRoleLabel()}</span>
+              </span>
             )}
             {accountActions}
           </div>
@@ -207,7 +184,7 @@ export default function PublicLayout() {
             <LanguageSwitcher variant="compact" />
             <button
               type="button"
-              className="grid h-10 w-10 place-items-center rounded-control text-slate-700 transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-offset-2"
+              className="grid h-10 w-10 place-items-center rounded-full text-slate-700 transition-colors hover:bg-slate-100 hover:text-ink"
               aria-label={
                 mobileMenuOpen
                   ? t('layout.closeMenu', 'Close navigation')
@@ -228,7 +205,7 @@ export default function PublicLayout() {
           {mobileMenuOpen && (
             <div
               id="public-mobile-navigation"
-              className="absolute inset-x-0 top-full border-b border-border bg-surface px-4 py-4 shadow-panel lg:hidden sm:px-6"
+              className="absolute inset-x-0 top-full border-b border-border bg-canvas px-5 py-4 lg:hidden sm:px-8"
             >
               <nav
                 aria-label={t(
@@ -239,7 +216,7 @@ export default function PublicLayout() {
               >
                 {publicNavigation}
               </nav>
-              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-border pt-3">
                 {accountActions}
               </div>
             </div>
@@ -251,13 +228,11 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-border bg-surface py-8">
-        <div className="mx-auto flex max-w-[1600px] flex-col items-start justify-between gap-3 px-4 text-xs text-slate-600 sm:px-6 md:flex-row md:items-center xl:px-8">
+      <footer className="border-t border-border py-8">
+        <div className="mx-auto flex max-w-[1440px] flex-col items-start justify-between gap-3 px-5 text-xs text-slate-600 sm:px-8 md:flex-row md:items-center">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="font-semibold text-slate-700">
-              {t('footer.projectCode', 'Mã đồ án: FA26SE119')}
-            </span>
-            <span aria-hidden="true">•</span>
+            <span className="text-slate-700">{t('footer.projectCode', 'Mã đồ án: FA26SE119')}</span>
+            <span aria-hidden="true">·</span>
             <span>
               {t(
                 'footer.projectDescription',

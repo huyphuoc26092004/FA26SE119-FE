@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Award,
-  Bot,
+  MessageSquare,
   BrainCircuit,
   Briefcase,
   Check,
@@ -24,10 +24,9 @@ import {
   Lightbulb,
   MapPin,
   Share2,
-  Sparkles,
   Star,
   Target,
-  Wand2,
+  PenLine,
   X,
   Zap,
 } from 'lucide-react';
@@ -117,7 +116,7 @@ export default function JobMatchPage() {
       case 'Exceptional Fit':
         return 'bg-emerald-50 text-emerald-700 border-emerald-300';
       case 'Strong Fit':
-        return 'bg-blue-50 text-blue-700 border-blue-300';
+        return 'bg-brand-50 text-brand-700 border-brand-300';
       case 'Moderate Fit':
         return 'bg-amber-50 text-amber-700 border-amber-300';
       default:
@@ -142,7 +141,7 @@ export default function JobMatchPage() {
     <>
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3.5 shadow-2xl border border-slate-700 animate-fade-in max-w-lg">
+        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3.5 shadow-sm border border-slate-700 animate-fade-in max-w-lg">
           <div className="flex items-center gap-3">
             <CheckCircle2 size={20} className="text-emerald-400 shrink-0" />
             <p className="text-xs font-medium leading-relaxed">{toastMessage}</p>
@@ -158,11 +157,11 @@ export default function JobMatchPage() {
 
       {/* Breadcrumb Navigation */}
       <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/candidate/jobs" className="hover:text-blue-600 transition">
+        <Link to="/candidate/jobs" className="hover:text-brand-600 transition">
           {t('jobs.title')}
         </Link>
         <span>/</span>
-        <Link to={`/candidate/jobs/${job.id}`} className="hover:text-blue-600 transition truncate max-w-[200px]">
+        <Link to={`/candidate/jobs/${job.id}`} className="hover:text-brand-600 transition truncate max-w-[200px]">
           {job.title}
         </Link>
         <span>/</span>
@@ -185,7 +184,7 @@ export default function JobMatchPage() {
             <Button
               variant="primary"
               onClick={() => setRedirectModalOpen(true)}
-              className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white border-0 shadow-sm text-xs"
+              className="bg-brand-600 text-white border-0 shadow-sm text-xs"
             >
               <ExternalLink size={14} />
               {isApplied ? 'Đã nộp đơn (Mở lại nguồn gốc ↗)' : `Ứng tuyển trên ${externalSource.sourceName} ↗`}
@@ -195,14 +194,14 @@ export default function JobMatchPage() {
       />
 
       {/* CV Selector Bar */}
-      <Card className="mb-6 border border-slate-200/90 bg-white p-4 shadow-2xs">
+      <Card className="mb-6 border border-slate-200/90 bg-surface p-4 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-600">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600">
               <FileText size={16} />
             </span>
             <div>
-              <p className="text-xs font-bold text-slate-900">{t('jobs.selectCvToMatch')}</p>
+              <p className="text-xs font-medium text-slate-900">{t('jobs.selectCvToMatch')}</p>
               <p className="text-[11px] text-slate-500">
                 Điểm số khớp nối và phân tích kỹ năng sẽ được AI tính toán theo bản CV được chọn.
               </p>
@@ -213,7 +212,7 @@ export default function JobMatchPage() {
             <select
               value={effectiveResumeId}
               onChange={(e) => setSelectedResumeId(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer min-w-[220px]"
+              className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer min-w-[220px]"
             >
               {resumes?.map((cv) => (
                 <option key={cv.id} value={cv.id}>
@@ -228,15 +227,15 @@ export default function JobMatchPage() {
       {/* Top Hero Semantic Match Breakdown */}
       <div className="mb-7 grid gap-5 lg:grid-cols-[1.3fr_1.7fr]">
         {/* Overall Match Circle Card */}
-        <Card className="border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/40 p-6 shadow-sm flex flex-col justify-between">
+        <Card className="border border-brand-100 bg-surface p-6 shadow-sm flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative grid h-32 w-32 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 p-1.5 shadow-lg shadow-blue-500/15">
-              <div className="grid h-full w-full place-items-center rounded-full bg-white text-center">
+            <div className="relative grid h-32 w-32 shrink-0 place-items-center rounded-full bg-brand-600 p-1.5 shadow-sm">
+              <div className="grid h-full w-full place-items-center rounded-full bg-surface text-center">
                 <div>
-                  <div className="text-4xl font-black text-slate-900 tracking-tight">
+                  <div className="text-4xl font-semibold text-slate-900 tracking-tight">
                     {matchData.overallScore}%
                   </div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
                     Semantic Match
                   </div>
                 </div>
@@ -246,7 +245,7 @@ export default function JobMatchPage() {
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
                 <span
-                  className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${getFitBadgeTone(
+                  className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${getFitBadgeTone(
                     matchData.fitLevel
                   )}`}
                 >
@@ -256,7 +255,7 @@ export default function JobMatchPage() {
                   {job.type}
                 </span>
               </div>
-              <h2 className="text-lg font-bold text-slate-900">{job.title}</h2>
+              <h2 className="text-lg font-medium text-slate-900">{job.title}</h2>
               <p className="mt-0.5 text-xs text-slate-600 font-medium">
                 {job.company} · {job.salary}
               </p>
@@ -268,7 +267,7 @@ export default function JobMatchPage() {
 
           <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span className="flex items-center gap-1.5">
-              <Bot size={14} className="text-blue-600" /> Phân tích bởi FA26SE119 AI Agent
+              <MessageSquare size={14} className="text-brand-600" /> Phân tích bởi FA26SE119 AI Agent
             </span>
             <span className="font-semibold text-emerald-600">
               {matchData.overallScore >= 85 ? 'Khuyên nên ứng tuyển ngay' : 'Tiềm năng tốt'}
@@ -279,7 +278,7 @@ export default function JobMatchPage() {
         {/* 4 Dimension Progress Card */}
         <Card className="border border-slate-200/80 p-6 shadow-sm flex flex-col justify-between">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">4 Thành phần Khớp nối Ngữ nghĩa</h3>
+            <h3 className="text-sm font-medium text-slate-900">4 Thành phần Khớp nối Ngữ nghĩa</h3>
             <span className="text-xs text-slate-400">Trọng số thuật toán AI</span>
           </div>
 
@@ -288,14 +287,14 @@ export default function JobMatchPage() {
             <div>
               <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
                 <span className="flex items-center gap-1.5">
-                  <Code2 size={14} className="text-blue-600" />
+                  <Code2 size={14} className="text-brand-600" />
                   Độ khớp Kỹ năng & Công nghệ (Tech Stack)
                 </span>
-                <span className="font-bold text-blue-700">{matchData.skillsScore}%</span>
+                <span className="font-medium text-brand-700">{matchData.skillsScore}%</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
                   style={{ width: `${matchData.skillsScore}%` }}
                 />
               </div>
@@ -305,14 +304,14 @@ export default function JobMatchPage() {
             <div>
               <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
                 <span className="flex items-center gap-1.5">
-                  <Briefcase size={14} className="text-indigo-600" />
+                  <Briefcase size={14} className="text-brand-600" />
                   Kinh nghiệm làm việc & Cấp bậc (Seniority)
                 </span>
-                <span className="font-bold text-indigo-700">{matchData.experienceScore}%</span>
+                <span className="font-medium text-brand-700">{matchData.experienceScore}%</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
                   style={{ width: `${matchData.experienceScore}%` }}
                 />
               </div>
@@ -325,7 +324,7 @@ export default function JobMatchPage() {
                   <Target size={14} className="text-emerald-600" />
                   Nguyện vọng nghề nghiệp & Đãi ngộ
                 </span>
-                <span className="font-bold text-emerald-700">{matchData.salaryScore}%</span>
+                <span className="font-medium text-emerald-700">{matchData.salaryScore}%</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
@@ -339,14 +338,14 @@ export default function JobMatchPage() {
             <div>
               <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
                 <span className="flex items-center gap-1.5">
-                  <Layers size={14} className="text-purple-600" />
+                  <Layers size={14} className="text-brand-600" />
                   Lĩnh vực chuyên môn & Văn hóa (Domain Fit)
                 </span>
-                <span className="font-bold text-purple-700">{matchData.domainScore}%</span>
+                <span className="font-medium text-brand-700">{matchData.domainScore}%</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-purple-600 transition-all duration-500"
+                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
                   style={{ width: `${matchData.domainScore}%` }}
                 />
               </div>
@@ -360,12 +359,12 @@ export default function JobMatchPage() {
         {/* Left Column: Reasons, Gaps & Recommendations */}
         <div className="space-y-6">
           {/* Why You're a Strong Match */}
-          <Card className="border border-emerald-200/80 bg-white p-6 shadow-sm">
+          <Card className="border border-emerald-200/80 bg-surface p-6 shadow-sm">
             <div className="flex items-center gap-2.5 mb-4 text-emerald-800">
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
                 <CheckCircle2 size={18} />
               </span>
-              <h3 className="text-base font-bold text-slate-900">{t('jobs.whyYouMatch')}</h3>
+              <h3 className="text-base font-medium text-slate-900">{t('jobs.whyYouMatch')}</h3>
             </div>
 
             <div className="space-y-3">
@@ -379,12 +378,12 @@ export default function JobMatchPage() {
           </Card>
 
           {/* Skill Gaps & Growth Areas */}
-          <Card className="border border-amber-200/80 bg-white p-6 shadow-sm">
+          <Card className="border border-amber-200/80 bg-surface p-6 shadow-sm">
             <div className="flex items-center gap-2.5 mb-4 text-amber-800">
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-100 text-amber-700">
                 <AlertTriangle size={18} />
               </span>
-              <h3 className="text-base font-bold text-slate-900">{t('jobs.skillGaps')}</h3>
+              <h3 className="text-base font-medium text-slate-900">{t('jobs.skillGaps')}</h3>
             </div>
 
             <div className="space-y-3">
@@ -398,12 +397,12 @@ export default function JobMatchPage() {
           </Card>
 
           {/* AI Tailored Recommendation */}
-          <Card className="border border-purple-200 bg-gradient-to-br from-purple-50/50 via-white to-indigo-50/30 p-6 shadow-sm">
-            <div className="flex items-center gap-2.5 mb-3 text-purple-900">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-purple-600 text-white shadow-md">
+          <Card className="border border-brand-200 bg-brand-50/50 p-6 shadow-sm">
+            <div className="flex items-center gap-2.5 mb-3 text-brand-900">
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-600 text-white">
                 <Lightbulb size={18} />
               </span>
-              <h3 className="text-base font-bold text-slate-900">{t('jobs.aiRecommendation')}</h3>
+              <h3 className="text-base font-medium text-slate-900">{t('jobs.aiRecommendation')}</h3>
             </div>
             <p className="text-xs text-slate-700 leading-relaxed font-medium">
               {matchData.recommendation}
@@ -424,13 +423,13 @@ export default function JobMatchPage() {
         <div className="space-y-6">
           {/* Tech Stack Match vs Missing */}
           <Card className="border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 mb-3.5">
+            <h3 className="text-sm font-medium text-slate-900 mb-3.5">
               So khớp kỹ năng với yêu cầu JD
             </h3>
 
             {/* Matched Skills */}
             <div className="mb-4">
-              <p className="text-2xs font-bold uppercase tracking-wider text-emerald-700 mb-2 flex items-center gap-1">
+              <p className="text-2xs font-medium uppercase tracking-wider text-emerald-700 mb-2 flex items-center gap-1">
                 <CheckCircle2 size={13} /> Kỹ năng đã khớp ({matchData.matchedSkills.length})
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -449,7 +448,7 @@ export default function JobMatchPage() {
             {/* Missing Skills */}
             {matchData.missingSkills.length > 0 && (
               <div>
-                <p className="text-2xs font-bold uppercase tracking-wider text-amber-700 mb-2 flex items-center gap-1">
+                <p className="text-2xs font-medium uppercase tracking-wider text-amber-700 mb-2 flex items-center gap-1">
                   <AlertCircle size={13} /> Kỹ năng nhà tuyển dụng ưu tiên thêm ({matchData.missingSkills.length})
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -467,19 +466,19 @@ export default function JobMatchPage() {
           </Card>
 
           {/* External Application Box */}
-          <Card className="border border-blue-200 bg-gradient-to-br from-blue-50/30 via-white to-indigo-50/20 p-6 shadow-sm">
+          <Card className="border border-brand-200 bg-brand-50/30 p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
                 {t('jobs.sourcePortal')}
               </span>
               <span
-                className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${externalSource.sourceBadgeColor}`}
+                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${externalSource.sourceBadgeColor}`}
               >
                 {externalSource.sourceName}
               </span>
             </div>
 
-            <h4 className="text-base font-bold text-slate-900 mb-1">
+            <h4 className="text-base font-medium text-slate-900 mb-1">
               Ứng tuyển trực tiếp tại {externalSource.sourceName}
             </h4>
             <p className="text-xs text-slate-500 mb-4 leading-relaxed">
@@ -490,7 +489,7 @@ export default function JobMatchPage() {
               <Button
                 variant="primary"
                 onClick={() => setRedirectModalOpen(true)}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold border-0 shadow-sm"
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium border-0 shadow-sm"
               >
                 <ExternalLink size={15} />
                 {isApplied ? 'Mở lại nguồn tuyển dụng ↗' : `Ứng tuyển ngay trên ${externalSource.sourceName} ↗`}
@@ -498,7 +497,7 @@ export default function JobMatchPage() {
 
               <Link to={`/candidate/resumes/${effectiveResumeId}`} className="block">
                 <Button variant="secondary" className="w-full text-xs">
-                  <FileCheck2 size={14} className="text-blue-600" />
+                  <FileCheck2 size={14} className="text-brand-600" />
                   Xem lại bản CV trước khi nộp
                 </Button>
               </Link>
@@ -515,14 +514,14 @@ export default function JobMatchPage() {
 
       {/* External Application Redirect Confirmation Modal */}
       {redirectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 animate-fade-in">
+          <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <div className="flex items-center gap-2.5 text-blue-700">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-100 text-blue-700">
+              <div className="flex items-center gap-2.5 text-brand-700">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-100 text-brand-700">
                   <ExternalLink size={18} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   {t('jobs.redirectModalTitle')}
                 </h3>
               </div>
@@ -537,12 +536,12 @@ export default function JobMatchPage() {
             <div className="space-y-4">
               <div className="rounded-xl bg-slate-50 p-4 border border-slate-200/80">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-500 uppercase">Vị trí ứng tuyển:</span>
-                  <span className="rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs font-bold text-blue-700">
+                  <span className="text-xs font-medium text-slate-500 uppercase">Vị trí ứng tuyển:</span>
+                  <span className="rounded-md bg-brand-50 border border-brand-200 px-2 py-0.5 text-xs font-medium text-brand-700">
                     {matchData.overallScore}% AI Match
                   </span>
                 </div>
-                <h4 className="text-sm font-bold text-slate-900">{job.title}</h4>
+                <h4 className="text-sm font-medium text-slate-900">{job.title}</h4>
                 <p className="text-xs text-slate-600 mt-0.5">{job.company} · {job.location}</p>
                 <div className="mt-2.5 flex items-center gap-2 text-xs text-slate-500">
                   <span>Cổng tuyển dụng:</span>
@@ -555,7 +554,7 @@ export default function JobMatchPage() {
                   <CheckCircle2 size={14} className="text-emerald-600" />
                   Mẹo ứng tuyển từ AI:
                 </p>
-                Hồ sơ của bạn có độ khớp <strong className="text-emerald-700 font-bold">{matchData.overallScore}%</strong>. Hãy nhớ đính kèm bản CV vừa tối ưu chuẩn ATS để tăng cơ hội phản hồi của nhà tuyển dụng lên gấp đôi!
+                Hồ sơ của bạn có độ khớp <strong className="text-emerald-700 font-medium">{matchData.overallScore}%</strong>. Hãy nhớ đính kèm bản CV vừa tối ưu chuẩn ATS để tăng cơ hội phản hồi của nhà tuyển dụng lên gấp đôi!
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2">
@@ -571,7 +570,7 @@ export default function JobMatchPage() {
                   variant="primary"
                   onClick={() => applyMutation.mutate()}
                   disabled={applyMutation.isPending}
-                  className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold border-0 text-xs shadow-sm"
+                  className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-medium border-0 text-xs shadow-sm"
                 >
                   <ExternalLink size={14} />
                   {applyMutation.isPending ? 'Đang chuyển hướng…' : t('jobs.confirmRedirect')}

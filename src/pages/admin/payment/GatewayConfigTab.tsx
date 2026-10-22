@@ -70,12 +70,12 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
       case 'vietqr':
         return <QrCode size={24} className="text-emerald-600" />;
       case 'momo':
-        return <Wallet size={24} className="text-pink-600" />;
+        return <Wallet size={24} className="text-brand-600" />;
       case 'vnpay':
-        return <CreditCard size={24} className="text-blue-600" />;
+        return <CreditCard size={24} className="text-brand-600" />;
       case 'stripe':
       default:
-        return <CreditCard size={24} className="text-purple-600" />;
+        return <CreditCard size={24} className="text-brand-600" />;
     }
   };
 
@@ -85,7 +85,7 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-medium text-slate-900">
               Cổng thanh toán & Webhook IPN Callback
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -98,7 +98,7 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
           {gateways.map((gw) => (
             <div
               key={gw.gatewayId}
-              className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4 hover:border-slate-300 transition"
+              className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4 hover:border-slate-300 transition"
             >
               <div className="space-y-3">
                 {/* Header */}
@@ -108,10 +108,10 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
                       {getGatewayIcon(gw.gatewayId)}
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{gw.name}</h4>
+                      <h4 className="font-medium text-slate-900 text-sm">{gw.name}</h4>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium uppercase ${
                             gw.status === 'ACTIVE'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -121,7 +121,7 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
                           {gw.status}
                         </span>
                         {gw.testMode && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800">
                             SANDBOX TEST
                           </span>
                         )}
@@ -143,7 +143,7 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
                   {gw.accountNumber && (
                     <div className="flex justify-between">
                       <span className="text-slate-500">Số tài khoản:</span>
-                      <span className="font-mono font-bold text-slate-900">{gw.accountNumber}</span>
+                      <span className="font-mono font-medium text-slate-900">{gw.accountNumber}</span>
                     </div>
                   )}
                   {gw.accountName && (
@@ -202,9 +202,9 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
                 <button
                   onClick={() => handlePing(gw.gatewayId)}
                   disabled={pingingId === gw.gatewayId}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
                 >
-                  <Activity size={13} className={pingingId === gw.gatewayId ? 'animate-spin text-blue-600' : 'text-slate-500'} />
+                  <Activity size={13} className={pingingId === gw.gatewayId ? 'animate-spin text-brand-600' : 'text-slate-500'} />
                   <span>{pingingId === gw.gatewayId ? 'Đang test...' : 'Test kết nối'}</span>
                 </button>
               </div>
@@ -217,8 +217,8 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
       <div className="space-y-4 pt-4 border-t border-slate-200/80">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <ShieldCheck size={18} className="text-blue-600" />
+            <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
+              <ShieldCheck size={18} className="text-brand-600" />
               Công cụ Đối soát Sao kê Ngân hàng (Bank Reconciliation)
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -229,7 +229,7 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
           <button
             onClick={handleReconcile}
             disabled={isReconciling}
-            className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs shadow-blue-500/20 disabled:opacity-50 shrink-0"
+            className="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 shrink-0"
           >
             <RefreshCw size={14} className={isReconciling ? 'animate-spin' : ''} />
             <span>{isReconciling ? 'Đang đối soát...' : 'Tự động đối soát sao kê'}</span>
@@ -251,30 +251,30 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
         {/* Reconciliation mini-KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 text-xs">
-            <span className="text-emerald-800 font-bold block">Khớp số liệu 100%</span>
-            <p className="text-xl font-black text-emerald-700 mt-1">{matchedCount} giao dịch</p>
+            <span className="text-emerald-800 font-medium block">Khớp số liệu 100%</span>
+            <p className="text-xl font-semibold text-emerald-700 mt-1">{matchedCount} giao dịch</p>
             <p className="text-[11px] text-emerald-600 mt-0.5">Tiền ngân hàng ghi có bằng tiền hệ thống</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 text-xs">
-            <span className="text-amber-800 font-bold block">Đang chờ đối soát</span>
-            <p className="text-xl font-black text-amber-700 mt-1">{pendingCount} giao dịch</p>
+            <span className="text-amber-800 font-medium block">Đang chờ đối soát</span>
+            <p className="text-xl font-semibold text-amber-700 mt-1">{pendingCount} giao dịch</p>
             <p className="text-[11px] text-amber-600 mt-0.5">Tiền về tài khoản, chờ khớp mã đơn</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200/80 text-xs">
-            <span className="text-rose-800 font-bold block">Cảnh báo chênh lệch</span>
-            <p className="text-xl font-black text-rose-700 mt-1">{discrepancyCount} giao dịch</p>
+            <span className="text-rose-800 font-medium block">Cảnh báo chênh lệch</span>
+            <p className="text-xl font-semibold text-rose-700 mt-1">{discrepancyCount} giao dịch</p>
             <p className="text-[11px] text-rose-600 mt-0.5">Khách chuyển thừa / thiếu tiền</p>
           </div>
         </div>
 
         {/* Reconciliation Table */}
-        <div className="rounded-3xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="rounded-3xl bg-surface border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-medium tracking-wider">
                   <th className="py-3.5 px-4">Mã giao dịch Ngân hàng</th>
                   <th className="py-3.5 px-4">Mã đơn CareerPilot</th>
                   <th className="py-3.5 px-4">Khách hàng</th>
@@ -288,14 +288,14 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {reconciliations.map((rec) => (
                   <tr key={rec.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                    <td className="py-3.5 px-4 font-mono font-medium text-slate-900">
                       {rec.bankTransId}
                       <span className="block text-[10px] font-normal text-slate-400 mt-0.5">
                         {rec.settledAt}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 font-mono text-blue-700 font-semibold">
+                    <td className="py-3.5 px-4 font-mono text-brand-700 font-semibold">
                       {rec.orderCode}
                     </td>
 
@@ -307,11 +307,11 @@ export const GatewayConfigTab: React.FC<GatewayConfigTabProps> = ({
                       {rec.systemAmountVND.toLocaleString('vi-VN')} đ
                     </td>
 
-                    <td className="py-3.5 px-4 text-right font-bold text-slate-900">
+                    <td className="py-3.5 px-4 text-right font-medium text-slate-900">
                       {rec.bankAmountVND.toLocaleString('vi-VN')} đ
                     </td>
 
-                    <td className="py-3.5 px-4 text-right font-bold">
+                    <td className="py-3.5 px-4 text-right font-medium">
                       {rec.differenceVND === 0 ? (
                         <span className="text-slate-400">0 đ</span>
                       ) : rec.differenceVND > 0 ? (

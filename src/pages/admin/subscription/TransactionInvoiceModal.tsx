@@ -1,5 +1,11 @@
 import React from 'react';
-import { X, Printer, CheckCircle2, ShieldCheck, QrCode } from 'lucide-react';
+import {
+  X,
+  Printer,
+  CheckCircle2,
+  ShieldCheck,
+  QrCode,
+} from 'lucide-react';
 import type { PaymentTransaction } from '../../../types/subscription';
 
 interface TransactionInvoiceModalProps {
@@ -24,8 +30,8 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
   const vatAmount = transaction.finalAmountVND - netAmount;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-2xl my-8 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-2xl my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header actions */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 print:hidden">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
@@ -35,7 +41,7 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
+              className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
             >
               <Printer size={14} />
               <span>In hóa đơn</span>
@@ -54,7 +60,7 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
           {/* Top header */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-slate-200">
             <div>
-              <span className="text-xl font-black tracking-tight text-blue-600">
+              <span className="text-xl font-semibold tracking-tight text-brand-600">
                 CareerPilot<span className="text-slate-900">AI</span>
               </span>
               <p className="text-xs text-slate-500 mt-1 font-medium">
@@ -69,7 +75,7 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
             </div>
 
             <div className="text-left sm:text-right shrink-0">
-              <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold uppercase bg-blue-50 text-blue-700 mb-1">
+              <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-medium uppercase bg-brand-50 text-brand-700 mb-1">
                 HÓA ĐƠN GIÁ TRỊ GIA TĂNG
               </span>
               <p className="text-xs text-slate-600">
@@ -87,18 +93,18 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
           {/* Buyer details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 text-xs">
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">
+              <span className="text-[10px] uppercase font-medium tracking-wider text-slate-400 block mb-1">
                 Đơn vị nhận hóa đơn (Khách hàng)
               </span>
-              <p className="font-bold text-slate-900">{transaction.candidateName}</p>
+              <p className="font-medium text-slate-900">{transaction.candidateName}</p>
               <p className="text-slate-600 mt-0.5">Email: {transaction.candidateEmail}</p>
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">
+              <span className="text-[10px] uppercase font-medium tracking-wider text-slate-400 block mb-1">
                 Thông tin thanh toán
               </span>
               <p className="font-medium text-slate-700">
-                Phương thức: <span className="font-bold uppercase text-slate-900">{transaction.paymentMethod}</span>
+                Phương thức: <span className="font-medium uppercase text-slate-900">{transaction.paymentMethod}</span>
               </p>
               <p className="text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
                 <CheckCircle2 size={13} />
@@ -110,7 +116,7 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
           {/* Items Table */}
           <div className="rounded-2xl border border-slate-200 overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
+              <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-2.5 px-3 w-12 text-center">STT</th>
                   <th className="py-2.5 px-3">Tên hàng hóa, dịch vụ phần mềm AI</th>
@@ -134,7 +140,7 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
                   <td className="py-3 px-3 text-right font-medium text-slate-700">
                     {transaction.amountVND.toLocaleString('vi-VN')} đ
                   </td>
-                  <td className="py-3 px-3 text-right font-bold text-slate-900">
+                  <td className="py-3 px-3 text-right font-medium text-slate-900">
                     {transaction.amountVND.toLocaleString('vi-VN')} đ
                   </td>
                 </tr>
@@ -145,7 +151,7 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
                     <td className="py-2.5 px-3 font-medium" colSpan={3}>
                       Chiết khấu khuyến mại voucher: <strong>{transaction.voucherCode || 'Ưu đãi chu kỳ'}</strong>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold">
+                    <td className="py-2.5 px-3 text-right font-medium">
                       -{transaction.discountAmountVND.toLocaleString('vi-VN')} đ
                     </td>
                   </tr>
@@ -173,7 +179,7 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
                 <span>Thuế suất GTGT ({vatPercent}%):</span>
                 <span className="font-medium text-slate-900">{vatAmount.toLocaleString('vi-VN')} đ</span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-slate-200 text-sm font-black text-blue-700">
+              <div className="flex justify-between pt-2 border-t border-slate-200 text-sm font-semibold text-brand-700">
                 <span>Tổng tiền thanh toán:</span>
                 <span>{transaction.finalAmountVND.toLocaleString('vi-VN')} đ</span>
               </div>

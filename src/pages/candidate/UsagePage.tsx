@@ -8,7 +8,7 @@ import {
   Search,
   Filter,
   ArrowUpRight,
-  Sparkles,
+  Lightbulb,
   BarChart3,
   PieChart,
   CheckCircle2,
@@ -18,10 +18,9 @@ import {
   Star,
   FileText,
   Target,
-  Bot,
+  MessageSquare,
   MailCheck,
   CreditCard,
-  MessageSquare,
 } from 'lucide-react';
 import type {
   AiFeatureType,
@@ -69,15 +68,15 @@ export const UsagePage: React.FC = () => {
       case 'cv_parsing':
         return <FileText className="w-4 h-4 text-emerald-600" />;
       case 'cv_job_fit':
-        return <Target className="w-4 h-4 text-cyan-600" />;
+        return <Target className="w-4 h-4 text-brand-600" />;
       case 'assistant_chat':
-        return <Bot className="w-4 h-4 text-indigo-600" />;
+        return <MessageSquare className="w-4 h-4 text-brand-600" />;
       case 'cover_letter':
-        return <MailCheck className="w-4 h-4 text-pink-600" />;
+        return <MailCheck className="w-4 h-4 text-brand-600" />;
       case 'salary_estimation':
         return <Zap className="w-4 h-4 text-amber-500" />;
       default:
-        return <Sparkles className="w-4 h-4 text-purple-600" />;
+        return <Lightbulb className="w-4 h-4 text-brand-600" />;
     }
   };
 
@@ -101,7 +100,7 @@ export const UsagePage: React.FC = () => {
       {/* Header & Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2.5">
+          <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight flex items-center gap-3 [&>svg]:hidden">
             <Activity className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             <span>
               {isVietnamese ? 'Quản lý Mức sử dụng AI & Phản hồi' : 'AI Usage & Feedback'}
@@ -118,7 +117,7 @@ export const UsagePage: React.FC = () => {
         <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700/80 self-start md:self-auto">
           <button
             onClick={() => setActiveTab('tokens')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
               activeTab === 'tokens'
                 ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -130,7 +129,7 @@ export const UsagePage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('feedback')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
               activeTab === 'feedback'
                 ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -150,12 +149,12 @@ export const UsagePage: React.FC = () => {
         <div className="space-y-8">
           {/* Top Metrics Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+            <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
               <div className="flex items-center justify-between text-neutral-500 text-xs mb-2">
                 <span>{isVietnamese ? 'Tokens tiêu thụ trong tháng' : 'Tokens Used This Month'}</span>
                 <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
               </div>
-              <div className="text-2xl font-black text-neutral-900 dark:text-neutral-100 font-mono">
+              <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 font-mono">
                 {metrics?.totalTokensThisMonth.toLocaleString('vi-VN') || 0}
               </div>
               <p className="text-[11px] text-neutral-400 mt-1">
@@ -167,12 +166,12 @@ export const UsagePage: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+            <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
               <div className="flex items-center justify-between text-neutral-500 text-xs mb-2">
                 <span>{isVietnamese ? 'Tổng số lượt gọi AI' : 'Total AI Requests'}</span>
-                <Cpu className="w-4 h-4 text-indigo-600" />
+                <Cpu className="w-4 h-4 text-brand-600" />
               </div>
-              <div className="text-2xl font-black text-neutral-900 dark:text-neutral-100 font-mono">
+              <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 font-mono">
                 {metrics?.totalQueriesThisMonth || 0}
               </div>
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
@@ -180,31 +179,31 @@ export const UsagePage: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+            <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
               <div className="flex items-center justify-between text-neutral-500 text-xs mb-2">
                 <span>{isVietnamese ? 'Độ trễ trung bình' : 'Avg Latency'}</span>
-                <Clock className="w-4 h-4 text-blue-600" />
+                <Clock className="w-4 h-4 text-brand-600" />
               </div>
-              <div className="text-2xl font-black text-neutral-900 dark:text-neutral-100 font-mono">
+              <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 font-mono">
                 {metrics?.averageLatencyMs.toLocaleString('vi-VN') || 0}
                 <span className="text-sm font-normal text-neutral-500 ml-1">ms</span>
               </div>
               <p className="text-[11px] text-neutral-400 mt-1">Hạ tầng tối ưu hóa Gemini Pro / Flash</p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/30 dark:via-neutral-900 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800/80 shadow-xs flex flex-col justify-between">
+            <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/80 shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-1">
+                <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300 text-xs font-medium mb-1">
                   <span>Gói cước đang dùng</span>
                   <CreditCard className="w-4 h-4" />
                 </div>
-                <div className="text-base font-extrabold text-neutral-900 dark:text-neutral-100">
+                <div className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
                   Chuyên nghiệp (Pro)
                 </div>
               </div>
               <Link
                 to="/candidate/subscription"
-                className="mt-3 text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 flex items-center gap-1"
+                className="mt-3 text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 flex items-center gap-1"
               >
                 <span>Nâng cấp hoặc Nạp Token →</span>
               </Link>
@@ -213,10 +212,10 @@ export const UsagePage: React.FC = () => {
 
           {/* Breakdown by Feature Progress */}
           {metrics && metrics.featureDistribution.length > 0 && (
-            <div className="p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs space-y-4">
+            <div className="p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 shadow-xs space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                     <PieChart className="w-4 h-4 text-emerald-600" />
                     <span>{isVietnamese ? 'Phân bổ tiêu thụ Token theo tính năng' : 'Token Usage by Feature'}</span>
                   </h3>
@@ -254,7 +253,7 @@ export const UsagePage: React.FC = () => {
                         {item.featureName}
                       </span>
                     </div>
-                    <div className="text-sm font-bold font-mono text-neutral-900 dark:text-neutral-100">
+                    <div className="text-sm font-medium font-mono text-neutral-900 dark:text-neutral-100">
                       {item.tokens.toLocaleString('vi-VN')}
                       <span className="text-[10px] font-normal text-neutral-400 ml-1">({item.percentage}%)</span>
                     </div>
@@ -279,7 +278,7 @@ export const UsagePage: React.FC = () => {
                       ? 'Tìm kiếm theo mô tả tác vụ, model AI...'
                       : 'Search action description, AI model...'
                   }
-                  className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -296,7 +295,7 @@ export const UsagePage: React.FC = () => {
                     onClick={() => setSelectedFeature(tab.id)}
                     className={`px-3 py-1.5 text-xs font-medium rounded-xl transition ${
                       selectedFeature === tab.id
-                        ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-sm'
+                        ? 'bg-neutral-900 text-white dark:bg-surface dark:text-neutral-900 shadow-sm'
                         : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
                     }`}
                   >
@@ -306,10 +305,10 @@ export const UsagePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-xs">
+            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 dark:text-neutral-400 font-medium uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
                     <tr>
                       <th className="py-3 px-4">Thời gian</th>
                       <th className="py-3 px-4">Tính năng / Tác vụ</th>
@@ -356,7 +355,7 @@ export const UsagePage: React.FC = () => {
                             {item.promptTokens.toLocaleString('vi-VN')} / {item.completionTokens.toLocaleString('vi-VN')}
                           </td>
                           <td className="py-3 px-4">
-                            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400">
                               {item.totalTokens.toLocaleString('vi-VN')}
                             </span>
                           </td>
@@ -383,21 +382,21 @@ export const UsagePage: React.FC = () => {
         <div className="space-y-6">
           {/* Summary stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+            <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
               <span className="text-xs text-neutral-500 block mb-1">
                 {isVietnamese ? 'Tổng số đánh giá đã gửi' : 'Total Feedbacks Given'}
               </span>
-              <div className="text-2xl font-black text-neutral-900 dark:text-neutral-100">
+              <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
                 {totalFeedbackCount}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+            <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
               <span className="text-xs text-neutral-500 block mb-1">
                 {isVietnamese ? 'Điểm đánh giá trung bình' : 'Avg Rating Score'}
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-black text-amber-500">{avgFeedbackScore}</span>
+                <span className="text-2xl font-semibold text-amber-500">{avgFeedbackScore}</span>
                 <span className="text-xs text-neutral-400">/ 5.0</span>
                 <div className="flex text-amber-400">
                   {[...Array(5)].map((_, i) => (
@@ -407,11 +406,11 @@ export const UsagePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+            <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
               <span className="text-xs text-neutral-500 block mb-1">
                 {isVietnamese ? 'Tỷ lệ đánh giá Phù hợp (Like)' : 'Positive Match Ratio'}
               </span>
-              <div className="flex items-center gap-2 text-emerald-600 font-black text-2xl">
+              <div className="flex items-center gap-2 text-emerald-600 font-semibold text-2xl">
                 <ThumbsUp className="w-5 h-5 fill-current" />
                 <span>{likePercentage}%</span>
               </div>
@@ -420,18 +419,18 @@ export const UsagePage: React.FC = () => {
 
           {/* Feedback Items List */}
           <div className="space-y-3">
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-indigo-600" />
+            <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-brand-600" />
               <span>{isVietnamese ? 'Nhật ký đánh giá đề xuất việc làm & Khớp nối' : 'Recommendation Feedback Log'}</span>
             </h3>
 
             {feedbackList.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-400">
+              <div className="p-12 text-center rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 text-neutral-400">
                 <ThumbsUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>{isVietnamese ? 'Bạn chưa gửi đánh giá nào cho các đề xuất việc làm' : 'No recommendation feedback recorded yet'}</p>
                 <Link
                   to="/candidate/jobs"
-                  className="mt-3 inline-block text-xs font-bold text-emerald-600 hover:text-emerald-700"
+                  className="mt-3 inline-block text-xs font-medium text-emerald-600 hover:text-emerald-700"
                 >
                   Khám phá việc làm & đánh giá ngay →
                 </Link>
@@ -440,13 +439,13 @@ export const UsagePage: React.FC = () => {
               feedbackList.map((fb) => (
                 <div
                   key={fb.id}
-                  className="p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs space-y-3"
+                  className="p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 shadow-xs space-y-3"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             fb.rating === 'like'
                               ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400'
                               : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-400'
@@ -466,7 +465,7 @@ export const UsagePage: React.FC = () => {
                           ))}
                         </div>
                       </div>
-                      <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                      <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         {fb.targetTitle}
                       </h4>
                       <p className="text-[11px] text-neutral-400 mt-0.5 font-mono">{fb.createdAt}</p>
@@ -474,7 +473,7 @@ export const UsagePage: React.FC = () => {
 
                     <Link
                       to={fb.targetType === 'job_recommendation' ? `/candidate/jobs/${fb.targetId}` : `/candidate/cv-job-fit`}
-                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 shrink-0"
+                      className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1 shrink-0"
                     >
                       <span>Xem lại đối sánh</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />

@@ -15,7 +15,7 @@ import {
   Plus,
   Save,
   Sliders,
-  Sparkles,
+  Lightbulb,
   Trash2,
   Trophy,
   User,
@@ -440,14 +440,14 @@ export default function EditResumePage() {
 
       <form onSubmit={handleSave} className="space-y-6 max-w-4xl animate-fade-in">
         {/* SECTION PICKER */}
-        <Card className="border-blue-200 bg-gradient-to-r from-blue-50/50 via-white to-indigo-50/40">
+        <Card className="border-brand-200 bg-brand-50/50">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-600 text-white">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-600 text-white">
                 <Sliders size={15} />
               </span>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-medium text-slate-900">
                   Tùy chọn mục bổ sung cho CV
                 </h3>
                 <p className="text-2xs text-slate-500">
@@ -455,7 +455,7 @@ export default function EditResumePage() {
                 </p>
               </div>
             </div>
-            <span className="text-2xs font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-full">
+            <span className="text-2xs font-semibold text-brand-700 bg-brand-100/70 px-2 py-0.5 rounded-full">
               {Object.values(enabledSections).filter(Boolean).length}/6 mục đang chọn
             </span>
           </div>
@@ -467,15 +467,15 @@ export default function EditResumePage() {
               onClick={() => toggleSection('projects')}
               className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 enabledSections.projects
-                  ? 'border-blue-500 bg-blue-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
+                  : 'border-slate-200 bg-surface hover:border-slate-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
                 <span
                   className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
                     enabledSections.projects
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-slate-100 text-slate-500'
                   }`}
                 >
@@ -484,7 +484,7 @@ export default function EditResumePage() {
                 <div
                   className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
                     enabledSections.projects
-                      ? 'bg-blue-600 border-blue-600 text-white'
+                      ? 'bg-brand-600 border-brand-600 text-white'
                       : 'border-slate-300 bg-white'
                   }`}
                 >
@@ -492,7 +492,7 @@ export default function EditResumePage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Dự án nổi bật</p>
+                <p className="text-xs font-medium text-slate-900">Dự án nổi bật</p>
                 <p className="text-2xs text-slate-500 mt-0.5">Gắn link Demo / GitHub</p>
               </div>
             </button>
@@ -503,15 +503,15 @@ export default function EditResumePage() {
               onClick={() => toggleSection('certifications')}
               className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 enabledSections.certifications
-                  ? 'border-purple-500 bg-purple-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
+                  : 'border-slate-200 bg-surface hover:border-slate-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
                 <span
                   className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
                     enabledSections.certifications
-                      ? 'bg-purple-600 text-white'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-slate-100 text-slate-500'
                   }`}
                 >
@@ -520,7 +520,7 @@ export default function EditResumePage() {
                 <div
                   className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
                     enabledSections.certifications
-                      ? 'bg-purple-600 border-purple-600 text-white'
+                      ? 'bg-brand-600 border-brand-600 text-white'
                       : 'border-slate-300 bg-white'
                   }`}
                 >
@@ -528,7 +528,7 @@ export default function EditResumePage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Chứng chỉ & Bằng</p>
+                <p className="text-xs font-medium text-slate-900">Chứng chỉ & Bằng</p>
                 <p className="text-2xs text-slate-500 mt-0.5">Chứng chỉ xác thực</p>
               </div>
             </button>
@@ -540,7 +540,7 @@ export default function EditResumePage() {
               className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 enabledSections.interests
                   ? 'border-rose-500 bg-rose-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  : 'border-slate-200 bg-surface hover:border-slate-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
@@ -564,7 +564,7 @@ export default function EditResumePage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Sở thích cá nhân</p>
+                <p className="text-xs font-medium text-slate-900">Sở thích cá nhân</p>
                 <p className="text-2xs text-slate-500 mt-0.5">Văn hóa & cá tính</p>
               </div>
             </button>
@@ -576,7 +576,7 @@ export default function EditResumePage() {
               className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 enabledSections.languages
                   ? 'border-amber-500 bg-amber-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  : 'border-slate-200 bg-surface hover:border-slate-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
@@ -600,7 +600,7 @@ export default function EditResumePage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Ngoại ngữ</p>
+                <p className="text-xs font-medium text-slate-900">Ngoại ngữ</p>
                 <p className="text-2xs text-slate-500 mt-0.5">Trình độ & chứng chỉ</p>
               </div>
             </button>
@@ -612,7 +612,7 @@ export default function EditResumePage() {
               className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 enabledSections.awards
                   ? 'border-emerald-500 bg-emerald-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  : 'border-slate-200 bg-surface hover:border-slate-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
@@ -636,7 +636,7 @@ export default function EditResumePage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Giải thưởng</p>
+                <p className="text-xs font-medium text-slate-900">Giải thưởng</p>
                 <p className="text-2xs text-slate-500 mt-0.5">Thành tích & vinh danh</p>
               </div>
             </button>
@@ -647,15 +647,15 @@ export default function EditResumePage() {
               onClick={() => toggleSection('references')}
               className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                 enabledSections.references
-                  ? 'border-cyan-500 bg-cyan-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
+                  : 'border-slate-200 bg-surface hover:border-slate-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
                 <span
                   className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
                     enabledSections.references
-                      ? 'bg-cyan-600 text-white'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-slate-100 text-slate-500'
                   }`}
                 >
@@ -664,7 +664,7 @@ export default function EditResumePage() {
                 <div
                   className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
                     enabledSections.references
-                      ? 'bg-cyan-600 border-cyan-600 text-white'
+                      ? 'bg-brand-600 border-brand-600 text-white'
                       : 'border-slate-300 bg-white'
                   }`}
                 >
@@ -672,7 +672,7 @@ export default function EditResumePage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Người tham chiếu</p>
+                <p className="text-xs font-medium text-slate-900">Người tham chiếu</p>
                 <p className="text-2xs text-slate-500 mt-0.5">Bảo chứng uy tín</p>
               </div>
             </button>
@@ -682,10 +682,10 @@ export default function EditResumePage() {
         {/* Section 1: Basic Info */}
         <Card>
           <div className="border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-50 text-blue-600">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
               <User size={15} />
             </span>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-medium text-slate-900">
               Thông tin chung & Liên hệ
             </h3>
           </div>
@@ -746,7 +746,7 @@ export default function EditResumePage() {
                 rows={3}
                 value={formData.summary || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, summary: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none focus:border-blue-500"
+                className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -759,9 +759,9 @@ export default function EditResumePage() {
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-600">
                 <Wrench size={15} />
               </span>
-              <h3 className="text-base font-bold text-slate-900">Kỹ năng chuyên môn</h3>
+              <h3 className="text-base font-medium text-slate-900">Kỹ năng chuyên môn</h3>
             </div>
-            <span className="text-xs font-bold text-blue-600">
+            <span className="text-xs font-medium text-brand-600">
               {formData.skills?.length || 0} kỹ năng
             </span>
           </div>
@@ -788,7 +788,7 @@ export default function EditResumePage() {
             {formData.skills?.map((s) => (
               <span
                 key={s}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs"
               >
                 <span>{s}</span>
                 <button
@@ -810,7 +810,7 @@ export default function EditResumePage() {
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
                 <Briefcase size={15} />
               </span>
-              <h3 className="text-base font-bold text-slate-900">Kinh nghiệm làm việc</h3>
+              <h3 className="text-base font-medium text-slate-900">Kinh nghiệm làm việc</h3>
             </div>
             <Button
               type="button"
@@ -844,7 +844,7 @@ export default function EditResumePage() {
                       value={exp.role}
                       onChange={(e) => handleUpdateExperience(idx, 'role', e.target.value)}
                       placeholder="Chức danh"
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                   <div>
@@ -853,7 +853,7 @@ export default function EditResumePage() {
                       value={exp.company}
                       onChange={(e) => handleUpdateExperience(idx, 'company', e.target.value)}
                       placeholder="Tên công ty"
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                   <div>
@@ -862,7 +862,7 @@ export default function EditResumePage() {
                       value={exp.startDate}
                       onChange={(e) => handleUpdateExperience(idx, 'startDate', e.target.value)}
                       placeholder="MM/YYYY"
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                   <div>
@@ -871,7 +871,7 @@ export default function EditResumePage() {
                       value={exp.endDate}
                       onChange={(e) => handleUpdateExperience(idx, 'endDate', e.target.value)}
                       placeholder="Hiện tại"
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                 </div>
@@ -884,7 +884,7 @@ export default function EditResumePage() {
                     rows={2}
                     value={exp.description}
                     onChange={(e) => handleUpdateExperience(idx, 'description', e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500"
+                    className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
                   />
                 </div>
               </div>
@@ -896,10 +896,10 @@ export default function EditResumePage() {
         <Card>
           <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                 <GraduationCap size={15} />
               </span>
-              <h3 className="text-base font-bold text-slate-900">Học vấn & Bằng cấp</h3>
+              <h3 className="text-base font-medium text-slate-900">Học vấn & Bằng cấp</h3>
             </div>
             <Button
               type="button"
@@ -933,7 +933,7 @@ export default function EditResumePage() {
                       value={edu.school}
                       onChange={(e) => handleUpdateEducation(idx, 'school', e.target.value)}
                       placeholder="Tên trường học"
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                   <div>
@@ -942,7 +942,7 @@ export default function EditResumePage() {
                       value={edu.degree}
                       onChange={(e) => handleUpdateEducation(idx, 'degree', e.target.value)}
                       placeholder="Bằng cấp"
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                   <div>
@@ -955,7 +955,7 @@ export default function EditResumePage() {
                         handleUpdateEducation(idx, 'endDate', parts[1]?.trim());
                       }}
                       placeholder="2016 - 2020"
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                   <div>
@@ -964,7 +964,7 @@ export default function EditResumePage() {
                       value={edu.gpa || ''}
                       onChange={(e) => handleUpdateEducation(idx, 'gpa', e.target.value)}
                       placeholder="3.6 / 4.0"
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                 </div>
@@ -975,13 +975,13 @@ export default function EditResumePage() {
 
         {/* Section 5: Projects */}
         {enabledSections.projects && (
-          <Card className="border-blue-100">
+          <Card className="border-brand-100">
             <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                   <FolderGit2 size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   Dự án nổi bật (Key Projects)
                 </h3>
               </div>
@@ -1026,7 +1026,7 @@ export default function EditResumePage() {
                         value={proj.name}
                         onChange={(e) => handleUpdateProject(idx, 'name', e.target.value)}
                         placeholder="Tên dự án"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1035,7 +1035,7 @@ export default function EditResumePage() {
                         value={proj.role || ''}
                         onChange={(e) => handleUpdateProject(idx, 'role', e.target.value)}
                         placeholder="Vai trò"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
 
@@ -1048,14 +1048,14 @@ export default function EditResumePage() {
                           value={proj.link || ''}
                           onChange={(e) => handleUpdateProject(idx, 'link', e.target.value)}
                           placeholder="https://github.com/... hoặc https://my-demo.com"
-                          className="bg-white font-mono text-xs"
+                          className="bg-surface font-mono text-xs"
                         />
                         {proj.link && (
                           <a
                             href={proj.link}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 shrink-0 rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 border border-blue-200 transition"
+                            className="inline-flex items-center gap-1 shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100 border border-brand-200 transition"
                           >
                             <ExternalLink size={13} /> Mở xem thử
                           </a>
@@ -1084,7 +1084,7 @@ export default function EditResumePage() {
                           )
                         }
                         placeholder="React, TypeScript, Node.js"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                   </div>
@@ -1098,7 +1098,7 @@ export default function EditResumePage() {
                       value={proj.description}
                       onChange={(e) => handleUpdateProject(idx, 'description', e.target.value)}
                       placeholder="Mô tả công việc và thành tựu trong dự án..."
-                      className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
                     />
                   </div>
                 </div>
@@ -1109,13 +1109,13 @@ export default function EditResumePage() {
 
         {/* Section 6: Certifications */}
         {enabledSections.certifications && (
-          <Card className="border-purple-100">
+          <Card className="border-brand-100">
             <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-purple-50 text-purple-600">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                   <Award size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   Chứng chỉ & Chứng nhận (Certifications)
                 </h3>
               </div>
@@ -1160,7 +1160,7 @@ export default function EditResumePage() {
                         value={cert.name}
                         onChange={(e) => handleUpdateCertification(idx, 'name', e.target.value)}
                         placeholder="Tên chứng chỉ"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1169,7 +1169,7 @@ export default function EditResumePage() {
                         value={cert.issuer}
                         onChange={(e) => handleUpdateCertification(idx, 'issuer', e.target.value)}
                         placeholder="Tổ chức cấp"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1178,7 +1178,7 @@ export default function EditResumePage() {
                         value={cert.date}
                         onChange={(e) => handleUpdateCertification(idx, 'date', e.target.value)}
                         placeholder="Năm cấp"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1187,7 +1187,7 @@ export default function EditResumePage() {
                         value={cert.link || ''}
                         onChange={(e) => handleUpdateCertification(idx, 'link', e.target.value)}
                         placeholder="https://..."
-                        className="bg-white font-mono text-xs"
+                        className="bg-surface font-mono text-xs"
                       />
                     </div>
                   </div>
@@ -1205,7 +1205,7 @@ export default function EditResumePage() {
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-rose-50 text-rose-600">
                   <Heart size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   Sở thích & Điểm mạnh cá nhân (Interests)
                 </h3>
               </div>
@@ -1264,7 +1264,7 @@ export default function EditResumePage() {
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-600">
                   <Globe size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">Ngoại ngữ (Languages)</h3>
+                <h3 className="text-base font-medium text-slate-900">Ngoại ngữ (Languages)</h3>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1297,7 +1297,7 @@ export default function EditResumePage() {
                       value={lang.name}
                       onChange={(e) => handleUpdateLanguage(idx, 'name', e.target.value)}
                       placeholder="Tiếng Anh, Tiếng Nhật..."
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                   <div className="flex-1">
@@ -1306,7 +1306,7 @@ export default function EditResumePage() {
                       value={lang.level}
                       onChange={(e) => handleUpdateLanguage(idx, 'level', e.target.value)}
                       placeholder="Thành thạo, IELTS 7.5..."
-                      className="bg-white"
+                      className="bg-surface"
                     />
                   </div>
                   <button
@@ -1331,7 +1331,7 @@ export default function EditResumePage() {
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
                   <Trophy size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">Giải thưởng & Thành tựu</h3>
+                <h3 className="text-base font-medium text-slate-900">Giải thưởng & Thành tựu</h3>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1374,7 +1374,7 @@ export default function EditResumePage() {
                         value={award.title}
                         onChange={(e) => handleUpdateAward(idx, 'title', e.target.value)}
                         placeholder="Giải thưởng"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1383,7 +1383,7 @@ export default function EditResumePage() {
                         value={award.issuer}
                         onChange={(e) => handleUpdateAward(idx, 'issuer', e.target.value)}
                         placeholder="Đơn vị cấp"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -1392,7 +1392,7 @@ export default function EditResumePage() {
                         value={award.year}
                         onChange={(e) => handleUpdateAward(idx, 'year', e.target.value)}
                         placeholder="2023"
-                        className="bg-white max-w-xs"
+                        className="bg-surface max-w-xs"
                       />
                     </div>
                   </div>
@@ -1404,13 +1404,13 @@ export default function EditResumePage() {
 
         {/* Section 10: References */}
         {enabledSections.references && (
-          <Card className="border-cyan-100">
+          <Card className="border-brand-100">
             <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-cyan-50 text-cyan-600">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                   <Users size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">Người tham chiếu (References)</h3>
+                <h3 className="text-base font-medium text-slate-900">Người tham chiếu (References)</h3>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1453,7 +1453,7 @@ export default function EditResumePage() {
                         value={refItem.fullName}
                         onChange={(e) => handleUpdateReference(idx, 'fullName', e.target.value)}
                         placeholder="Họ và tên"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1462,7 +1462,7 @@ export default function EditResumePage() {
                         value={refItem.position}
                         onChange={(e) => handleUpdateReference(idx, 'position', e.target.value)}
                         placeholder="Chức vụ tại công ty"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1471,7 +1471,7 @@ export default function EditResumePage() {
                         value={refItem.email || ''}
                         onChange={(e) => handleUpdateReference(idx, 'email', e.target.value)}
                         placeholder="Email"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1480,7 +1480,7 @@ export default function EditResumePage() {
                         value={refItem.phone || ''}
                         onChange={(e) => handleUpdateReference(idx, 'phone', e.target.value)}
                         placeholder="SĐT"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                   </div>
@@ -1491,7 +1491,7 @@ export default function EditResumePage() {
         )}
 
         {/* Sticky Actions Bar */}
-        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-md border border-slate-200">
+        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-sm border border-slate-200">
           <span className="text-xs text-slate-500">
             Lưu các cập nhật để đồng bộ điểm chuẩn ATS và hồ sơ ứng tuyển.
           </span>

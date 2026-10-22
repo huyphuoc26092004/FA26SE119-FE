@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { X, Settings, Check } from 'lucide-react';
+import {
+  X,
+  Settings,
+  Check,
+} from 'lucide-react';
 import type { PaymentGatewayConfig } from '../../../types/paymentManagement';
 
 interface EditGatewayModalProps {
@@ -67,16 +71,16 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-xl my-8 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-xl my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-2.5 text-slate-800">
-            <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
+            <div className="p-2 rounded-xl bg-brand-100 text-brand-700">
               <Settings size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-sm">Cấu hình Cổng thanh toán</h3>
+              <h3 className="font-medium text-sm">Cấu hình Cổng thanh toán</h3>
               <p className="text-[11px] text-slate-500">{gateway.name}</p>
             </div>
           </div>
@@ -98,7 +102,7 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as PaymentGatewayConfig['status'])}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
               >
                 <option value="ACTIVE">Hoạt động bình thường (ACTIVE)</option>
                 <option value="MAINTENANCE">Đang bảo trì (MAINTENANCE)</option>
@@ -118,7 +122,7 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
                     onChange={(e) => setTestMode(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600" />
                 </label>
                 <span className="text-xs text-slate-600 font-medium">
                   {testMode ? 'Bật Sandbox Test' : 'Chạy thật (Production)'}
@@ -139,7 +143,7 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
                 min={0}
                 value={feePercent}
                 onChange={(e) => setFeePercent(Number(e.target.value))}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
 
@@ -153,7 +157,7 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
                 min={0}
                 value={fixedFeeVND}
                 onChange={(e) => setFixedFeeVND(Number(e.target.value))}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
           </div>
@@ -161,7 +165,7 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
           {/* Account/Bank specifics */}
           {gateway.gatewayId === 'vietqr' && (
             <div className="space-y-3 pt-2 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-800 block">
+              <span className="text-xs font-medium text-slate-800 block">
                 Thông tin Tài khoản Ngân hàng nhận tiền Napas 24/7
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -173,7 +177,7 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
                     type="text"
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 font-mono font-bold"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 font-mono font-medium"
                   />
                 </div>
                 <div>
@@ -195,7 +199,7 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
                     type="text"
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 font-bold"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 font-medium"
                   />
                 </div>
               </div>
@@ -254,7 +258,7 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
             <button
               type="submit"
               disabled={isSaving}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition shadow-xs shadow-blue-500/20 disabled:opacity-50 flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
             >
               <Check size={14} />
               <span>{isSaving ? 'Đang lưu...' : 'Lưu cấu hình cổng'}</span>

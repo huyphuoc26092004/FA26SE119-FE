@@ -202,13 +202,13 @@ export function getUsageSummaryMetrics(): UsageSummaryMetrics {
 
   // Breakdown by feature
   const featureConfig: Record<AiFeatureType, { name: string; color: string }> = {
-    cv_parsing: { name: 'Phân tích CV ATS', color: '#10b981' }, // emerald
-    cv_job_fit: { name: 'Khớp nối CV–Job Fit', color: '#06b6d4' }, // cyan
-    assistant_chat: { name: 'Trợ lý sự nghiệp AI', color: '#6366f1' }, // indigo
-    cover_letter: { name: 'Tạo Cover Letter', color: '#ec4899' }, // pink
-    salary_estimation: { name: 'Ước tính lương', color: '#f59e0b' }, // amber
-    mock_interview: { name: 'Luyện phỏng vấn STAR', color: '#8b5cf6' }, // purple
-    learning_roadmap: { name: 'Lộ trình học tập', color: '#3b82f6' }, // blue
+    cv_parsing: { name: 'Phân tích CV ATS', color: '#1f5f4c' },
+    cv_job_fit: { name: 'Khớp nối CV–Job Fit', color: '#3f7864' },
+    assistant_chat: { name: 'Trợ lý sự nghiệp AI', color: '#6a9482' },
+    cover_letter: { name: 'Tạo Cover Letter', color: '#96b6a6' },
+    salary_estimation: { name: 'Ước tính lương', color: '#a97d2c' },
+    mock_interview: { name: 'Luyện phỏng vấn STAR', color: '#535b55' },
+    learning_roadmap: { name: 'Lộ trình học tập', color: '#979e97' },
   };
 
   const featureMap = new Map<AiFeatureType, { tokens: number; count: number }>();
@@ -224,7 +224,7 @@ export function getUsageSummaryMetrics(): UsageSummaryMetrics {
   const featureDistribution: FeatureUsageDistribution[] = Array.from(
     featureMap.entries()
   ).map(([feat, data]) => {
-    const cfg = featureConfig[feat] || { name: feat, color: '#94a3b8' };
+    const cfg = featureConfig[feat] || { name: feat, color: '#c3c8c0' };
     return {
       feature: feat,
       featureName: cfg.name,

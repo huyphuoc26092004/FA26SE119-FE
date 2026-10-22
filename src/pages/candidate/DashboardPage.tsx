@@ -9,7 +9,7 @@ import {
   Clock,
   Edit3,
   MapPin,
-  Sparkles,
+  Lightbulb,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -75,7 +75,7 @@ export default function DashboardPage() {
 
       {/* Overview Stat Cards */}
       <div className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Link to="/candidate/profile" className="block transition-transform hover:-translate-y-0.5">
+        <Link to="/candidate/profile" className="block transition-transform">
           <StatCard
             label={t('dashboard.profileCompletion')}
             value={`${profileCompletion}%`}
@@ -83,7 +83,7 @@ export default function DashboardPage() {
             icon={<Target size={20} />}
           />
         </Link>
-        <Link to="/candidate/resumes" className="block transition-transform hover:-translate-y-0.5">
+        <Link to="/candidate/resumes" className="block transition-transform">
           <StatCard
             label={t('dashboard.myResumesCount')}
             value={String(resumes?.length || 3)}
@@ -91,7 +91,7 @@ export default function DashboardPage() {
             icon={<FileText size={20} />}
           />
         </Link>
-        <Link to="/candidate/jobs" className="block transition-transform hover:-translate-y-0.5">
+        <Link to="/candidate/jobs" className="block transition-transform">
           <StatCard
             label={t('dashboard.recommendedJobsCount')}
             value="24"
@@ -112,14 +112,14 @@ export default function DashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">
           {/* Thông tin nghề nghiệp & Nguyện vọng (Career Snapshot) */}
-          <Card className="border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/30">
+          <Card className="border border-brand-100 bg-surface">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-100 text-blue-700">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-100 text-brand-700">
                     <Target size={16} />
                   </span>
-                  <h2 className="text-base font-bold text-slate-900">
+                  <h2 className="text-base font-medium text-slate-900">
                     {t('dashboard.careerSnapshot')}
                   </h2>
                 </div>
@@ -137,23 +137,23 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-2xs">
+              <div className="rounded-xl border border-slate-100 bg-surface p-3.5 shadow-2xs">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {t('dashboard.targetRoleLabel')}
                 </p>
-                <p className="mt-1 font-bold text-slate-900 text-sm">
+                <p className="mt-1 font-medium text-slate-900 text-sm">
                   {profile?.targetPosition || 'Senior Frontend Engineer'}
                 </p>
-                <span className="mt-1.5 inline-block rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                <span className="mt-1.5 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
                   {profile?.experienceLevel || 'Senior Level'}
                 </span>
               </div>
 
-              <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-2xs">
+              <div className="rounded-xl border border-slate-100 bg-surface p-3.5 shadow-2xs">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {t('dashboard.expectedSalaryLabel')}
                 </p>
-                <p className="mt-1 font-bold text-emerald-600 text-sm">
+                <p className="mt-1 font-medium text-emerald-600 text-sm">
                   {profile?.expectedSalary ||
                     (profile?.salaryMin
                       ? `${profile.salaryMin.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`
@@ -164,7 +164,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-2xs">
+              <div className="rounded-xl border border-slate-100 bg-surface p-3.5 shadow-2xs">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {t('dashboard.workTypeLabel')}
                 </p>
@@ -200,7 +200,7 @@ export default function DashboardPage() {
 
               <Link
                 to="/candidate/profile"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
               >
                 {t('profile.viewProfile')} →
               </Link>
@@ -211,7 +211,7 @@ export default function DashboardPage() {
           <Card>
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">
+                <h2 className="text-lg font-medium text-slate-900">
                   {t('dashboard.recommendedForYou')}
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -219,7 +219,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <Link
-                className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                className="flex items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700"
                 to="/candidate/jobs"
               >
                 {t('dashboard.viewAllJobs')} <ArrowRight size={15} />
@@ -239,11 +239,11 @@ export default function DashboardPage() {
                     className="flex items-center justify-between gap-3 py-4 first:pt-0 last:pb-0 hover:bg-slate-50/60 px-2 rounded-xl transition group"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50 font-bold text-blue-700 group-hover:bg-blue-600 group-hover:text-white transition">
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 font-medium text-brand-700 group-hover:bg-brand-600 group-hover:text-white transition">
                         {job.company.charAt(0)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition">
+                        <p className="font-semibold text-slate-900 truncate group-hover:text-brand-600 transition">
                           {job.title}
                         </p>
                         <p className="mt-0.5 text-xs text-slate-500 truncate">
@@ -258,7 +258,7 @@ export default function DashboardPage() {
                       </Badge>
                       <ArrowUpRight
                         size={17}
-                        className="text-slate-400 group-hover:text-blue-600 transition"
+                        className="text-slate-400 group-hover:text-brand-600 transition"
                       />
                     </div>
                   </Link>
@@ -269,7 +269,7 @@ export default function DashboardPage() {
 
           {/* Hoạt động gần đây (Recent Activities) */}
           <Card>
-            <h2 className="mb-4 text-lg font-bold text-slate-900">{t('dashboard.recentActivity')}</h2>
+            <h2 className="mb-4 text-lg font-medium text-slate-900">{t('dashboard.recentActivity')}</h2>
             <div className="space-y-3">
               {recentActivities.map((act) => (
                 <div
@@ -291,10 +291,10 @@ export default function DashboardPage() {
         <div className="space-y-6">
           {/* Hồ sơ nghề nghiệp (Profile Completion) */}
           <Card>
-            <h2 className="text-lg font-bold text-slate-900">{t('dashboard.careerProfileCard')}</h2>
+            <h2 className="text-lg font-medium text-slate-900">{t('dashboard.careerProfileCard')}</h2>
             <p className="mt-1 text-sm text-slate-500">{t('dashboard.careerProfileCardDesc')}</p>
             <div className="mt-5 flex items-end justify-between">
-              <span className="text-3xl font-extrabold text-slate-900">
+              <span className="text-3xl font-semibold text-slate-900">
                 {profileCompletion}%
               </span>
               <span className="text-xs text-slate-500">
@@ -303,14 +303,14 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500"
+                className="h-full rounded-full bg-brand-600 transition-all duration-500"
                 style={{ width: `${profileCompletion}%` }}
               />
             </div>
             <div className="mt-5 flex items-center justify-between pt-4 border-t border-slate-100">
               <Link
                 to="/candidate/profile"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
               >
                 {t('dashboard.viewProfileLink')} <ArrowRight size={15} />
               </Link>
@@ -326,15 +326,15 @@ export default function DashboardPage() {
           {/* CV & Đánh giá ATS (CV Performance) */}
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-900">{t('dashboard.cvPerformance')}</h2>
+              <h2 className="text-lg font-medium text-slate-900">{t('dashboard.cvPerformance')}</h2>
               <Badge tone="green">{t('dashboard.atsScoreReady')}</Badge>
             </div>
             <div className="flex items-center gap-4">
-              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-white text-2xl font-black text-slate-800 shadow-sm">
+              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-surface text-2xl font-semibold text-slate-800 shadow-sm">
                 {bestResume?.atsScore ?? 88}
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-slate-800 text-sm">
+                <p className="font-medium text-slate-800 text-sm">
                   {t('dashboard.atsScoreLabel')}
                 </p>
                 <p className="mt-1 text-xs text-slate-500 truncate">
@@ -348,9 +348,9 @@ export default function DashboardPage() {
             <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
               <Link
                 to={`/candidate/resumes/${bestResume?.id || 'cv-1'}/analysis`}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
               >
-                Phân tích & Cải thiện AI ✨ <ArrowRight size={13} />
+                Phân tích & Cải thiện AI <ArrowRight size={13} />
               </Link>
               <Link
                 to="/candidate/resumes"
@@ -364,14 +364,14 @@ export default function DashboardPage() {
           {/* Lộ trình học tập (Learning Roadmap) */}
           <Card>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={16} className="text-blue-600" />
-              <h2 className="text-lg font-bold text-slate-900">
+              <Lightbulb size={16} className="text-brand-600" />
+              <h2 className="text-lg font-medium text-slate-900">
                 {t('dashboard.learningRoadmapCard')}
               </h2>
             </div>
             <p className="text-sm text-slate-500">{t('dashboard.learningRoadmapSubtitle')}</p>
             <div className="mt-4 h-2 rounded-full bg-slate-100">
-              <div className="h-full w-2/5 rounded-full bg-blue-600" />
+              <div className="h-full w-2/5 rounded-full bg-brand-600" />
             </div>
             <p className="mt-2 text-xs text-slate-500">{t('dashboard.stagesComplete')}</p>
           </Card>

@@ -21,7 +21,7 @@ import {
   RefreshCw,
   Save,
   ScanText,
-  Sparkles,
+  Lightbulb,
   Trash2,
   Upload,
   X,
@@ -211,10 +211,10 @@ export default function UploadResumePage() {
         <div className="space-y-8 max-w-4xl mx-auto animate-fade-in">
           {/* Drag & Drop Area */}
           <div
-            className={`rounded-2xl border-2 border-dashed p-10 text-center transition-all cursor-pointer bg-white shadow-2xs ${
+            className={`rounded-2xl border-2 border-dashed p-10 text-center transition-all cursor-pointer bg-surface shadow-2xs ${
               dragOver
-                ? 'border-blue-500 bg-blue-50/50 scale-[1.01]'
-                : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50/50'
+                ? 'border-brand-500 bg-brand-50/50 scale-[1.01]'
+                : 'border-slate-300 hover:border-brand-400 hover:bg-slate-50/50'
             }`}
             onDragOver={(e: React.DragEvent) => {
               e.preventDefault();
@@ -231,10 +231,10 @@ export default function UploadResumePage() {
               accept=".pdf,.docx,.doc"
               className="hidden"
             />
-            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
+            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600 shadow-sm">
               <FileUp size={32} />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1">{t('resumes.dropCvHere')}</h3>
+            <h3 className="text-lg font-medium text-slate-800 mb-1">{t('resumes.dropCvHere')}</h3>
             <p className="text-xs text-slate-400 mb-5">{t('resumes.supportedFormats')}</p>
             <Button variant="primary" type="button" className="shadow-xs">
               <FolderOpen size={16} />
@@ -245,8 +245,8 @@ export default function UploadResumePage() {
           {/* Sample CV Presets for instant testing */}
           <div>
             <div className="mb-3">
-              <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <Sparkles size={16} className="text-amber-500" />
+              <h4 className="font-medium text-slate-900 text-sm flex items-center gap-2">
+                <Lightbulb size={16} className="text-amber-500" />
                 {t('resumes.samplePresetsTitle')}
               </h4>
               <p className="text-xs text-slate-500">{t('resumes.samplePresetsDesc')}</p>
@@ -257,26 +257,26 @@ export default function UploadResumePage() {
                 <div
                   key={preset.name}
                   onClick={() => handleStartParsing(preset.name, preset.size)}
-                  className="group flex flex-col justify-between p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-400 hover:shadow-sm cursor-pointer transition"
+                  className="group flex flex-col justify-between p-4 rounded-xl border border-slate-200/80 bg-surface hover:border-brand-400 hover:shadow-sm cursor-pointer transition"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                      <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600">
                         <FileText size={18} />
                       </span>
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-2xs font-semibold text-slate-600">
                         {preset.badge}
                       </span>
                     </div>
-                    <p className="font-semibold text-xs text-slate-800 line-clamp-1 group-hover:text-blue-600 transition">
+                    <p className="font-semibold text-xs text-slate-800 line-clamp-1 group-hover:text-brand-600 transition">
                       {preset.label}
                     </p>
                     <p className="text-2xs text-slate-400 mt-1 truncate">{preset.name}</p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-2xs text-blue-600 font-semibold">
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-2xs text-brand-600 font-semibold">
                     <span>{t('resumes.useSamplePreset')}</span>
-                    <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight size={13} className="transition-transform" />
                   </div>
                 </div>
               ))}
@@ -287,16 +287,16 @@ export default function UploadResumePage() {
 
       {/* STEP 2: AI PARSING IN PROGRESS SIMULATION */}
       {flowState === 'parsing' && (
-        <Card className="max-w-2xl mx-auto my-8 p-8 text-center animate-fade-in border-blue-100 shadow-md">
-          <div className="relative mx-auto mb-6 grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg">
+        <Card className="max-w-2xl mx-auto my-8 p-8 text-center animate-fade-in border-brand-100">
+          <div className="relative mx-auto mb-6 grid h-20 w-20 place-items-center rounded-3xl bg-brand-600 text-white shadow-sm">
             <Cpu size={36} className="animate-pulse" />
             <span className="absolute -top-1 -right-1 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white" />
             </span>
           </div>
 
-          <h3 className="text-xl font-extrabold text-slate-900 mb-1">
+          <h3 className="text-xl font-semibold text-slate-900 mb-1">
             {t('resumes.parsingInProgress')}
           </h3>
           <p className="text-xs text-slate-500 mb-6">
@@ -319,7 +319,7 @@ export default function UploadResumePage() {
                   key={s.step}
                   className={`flex items-center gap-3 p-2.5 rounded-xl transition ${
                     isCurrent
-                      ? 'bg-blue-50 border border-blue-200 text-blue-900 font-semibold'
+                      ? 'bg-brand-50 border border-brand-200 text-brand-900 font-semibold'
                       : isDone
                       ? 'text-slate-700'
                       : 'text-slate-400 opacity-60'
@@ -328,7 +328,7 @@ export default function UploadResumePage() {
                   {isDone ? (
                     <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
                   ) : isCurrent ? (
-                    <Loader2 size={18} className="animate-spin text-blue-600 shrink-0" />
+                    <Loader2 size={18} className="animate-spin text-brand-600 shrink-0" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border border-slate-300 shrink-0" />
                   )}
@@ -344,21 +344,21 @@ export default function UploadResumePage() {
       {flowState === 'review' && (
         <form onSubmit={handleConfirmAndSave} className="space-y-6 animate-fade-in">
           {/* AI Banner Verification Notice */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-600 p-5 text-white shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-brand-700 p-5 text-white">
             <div className="flex items-start sm:items-center gap-3.5">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/20 backdrop-blur-md text-amber-300 border border-white/30">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/20 text-amber-300 border border-white/30">
                 <BrainCircuit size={24} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold">
+                  <h3 className="text-base font-medium">
                     AI đã bóc tách thông tin thành công!
                   </h3>
-                  <span className="rounded-full bg-emerald-400/90 text-slate-900 px-2.5 py-0.5 text-xs font-black">
+                  <span className="rounded-full bg-emerald-400/90 text-slate-900 px-2.5 py-0.5 text-xs font-semibold">
                     {extractedData.extractedMeta?.confidenceScore ?? 96}% Chính xác
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs text-blue-100 max-w-2xl leading-relaxed">
+                <p className="mt-0.5 text-xs text-brand-100 max-w-2xl leading-relaxed">
                   Vui lòng kiểm tra và chỉnh sửa lại các thông tin do AI tự động bóc tách từ tệp CV tải lên dưới đây trước khi lưu vào hệ thống.
                 </p>
               </div>
@@ -383,7 +383,7 @@ export default function UploadResumePage() {
               {/* Basic Info Card */}
               <Card>
                 <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
-                  <h4 className="font-bold text-slate-900 text-sm">
+                  <h4 className="font-medium text-slate-900 text-sm">
                     1. Thông tin chung & Liên hệ trích xuất
                   </h4>
                   <Badge tone="blue">AI Extracted</Badge>
@@ -483,7 +483,7 @@ export default function UploadResumePage() {
                       onChange={(e) =>
                         setExtractedData((prev) => ({ ...prev, summary: e.target.value }))
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none focus:border-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500"
                     />
                   </div>
                 </div>
@@ -493,14 +493,14 @@ export default function UploadResumePage() {
               <Card>
                 <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm">
+                    <h4 className="font-medium text-slate-900 text-sm">
                       2. Kỹ năng chuyên môn trích xuất
                     </h4>
                     <p className="text-xs text-slate-400">
                       Bấm vào dấu × để xoá kỹ năng nhận diện sai, hoặc gõ để thêm kỹ năng còn thiếu.
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-blue-600">
+                  <span className="text-xs font-medium text-brand-600">
                     {extractedData.skills?.length || 0} kỹ năng
                   </span>
                 </div>
@@ -533,13 +533,13 @@ export default function UploadResumePage() {
                   {extractedData.skills?.map((skill) => (
                     <span
                       key={skill}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/60 px-3 py-1.5 text-xs font-semibold text-blue-900"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/60 px-3 py-1.5 text-xs font-semibold text-brand-900"
                     >
                       <span>{skill}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveSkill(skill)}
-                        className="text-blue-500 hover:text-red-600 transition cursor-pointer"
+                        className="text-brand-500 hover:text-red-600 transition cursor-pointer"
                       >
                         <X size={14} />
                       </button>
@@ -552,7 +552,7 @@ export default function UploadResumePage() {
               <Card>
                 <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm">
+                    <h4 className="font-medium text-slate-900 text-sm">
                       3. Kinh nghiệm làm việc trích xuất
                     </h4>
                     <p className="text-xs text-slate-400">
@@ -595,7 +595,7 @@ export default function UploadResumePage() {
                               handleUpdateExperience(idx, 'role', e.target.value)
                             }
                             placeholder="Vị trí công việc"
-                            className="bg-white"
+                            className="bg-surface"
                           />
                         </div>
                         <div>
@@ -608,7 +608,7 @@ export default function UploadResumePage() {
                               handleUpdateExperience(idx, 'company', e.target.value)
                             }
                             placeholder="Tên công ty"
-                            className="bg-white"
+                            className="bg-surface"
                           />
                         </div>
                         <div>
@@ -621,7 +621,7 @@ export default function UploadResumePage() {
                               handleUpdateExperience(idx, 'startDate', e.target.value)
                             }
                             placeholder="MM/YYYY"
-                            className="bg-white"
+                            className="bg-surface"
                           />
                         </div>
                         <div>
@@ -634,7 +634,7 @@ export default function UploadResumePage() {
                               handleUpdateExperience(idx, 'endDate', e.target.value)
                             }
                             placeholder="MM/YYYY hoặc Hiện tại"
-                            className="bg-white"
+                            className="bg-surface"
                           />
                         </div>
                       </div>
@@ -649,7 +649,7 @@ export default function UploadResumePage() {
                           onChange={(e) =>
                             handleUpdateExperience(idx, 'description', e.target.value)
                           }
-                          className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500"
+                          className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
                         />
                       </div>
                     </div>
@@ -661,17 +661,17 @@ export default function UploadResumePage() {
             {/* Right: AI Insights & File Metadata */}
             <div className="space-y-6">
               {/* ATS Estimation Card */}
-              <Card className="border-emerald-200 bg-gradient-to-br from-white to-emerald-50/40">
+              <Card className="border-emerald-200 bg-surface">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-slate-900 text-sm">Điểm ATS ước tính</h4>
+                  <h4 className="font-medium text-slate-900 text-sm">Điểm ATS ước tính</h4>
                   <Badge tone="green">Đạt chuẩn ATS</Badge>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="grid h-16 w-16 place-items-center rounded-2xl border-4 border-emerald-400 bg-white text-2xl font-black text-slate-900 shadow-sm">
+                  <div className="grid h-16 w-16 place-items-center rounded-2xl border-4 border-emerald-400 bg-surface text-2xl font-semibold text-slate-900 shadow-sm">
                     {extractedData.atsScore ?? 92}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 text-sm">Độ sẵn sàng rất cao</p>
+                    <p className="font-medium text-slate-800 text-sm">Độ sẵn sàng rất cao</p>
                     <p className="mt-0.5 text-xs text-slate-500">
                       Tương thích tốt với hệ thống sàng lọc tự động hiện đại.
                     </p>
@@ -689,14 +689,14 @@ export default function UploadResumePage() {
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Định lượng thành tích:</span>
-                    <span className="font-semibold text-blue-600">88%</span>
+                    <span className="font-semibold text-brand-600">88%</span>
                   </div>
                 </div>
               </Card>
 
               {/* Extraction Metadata Card */}
               <Card>
-                <h4 className="font-bold text-slate-900 text-sm mb-3">Thông tin tệp bóc tách</h4>
+                <h4 className="font-medium text-slate-900 text-sm mb-3">Thông tin tệp bóc tách</h4>
                 <div className="space-y-2.5 text-xs text-slate-600">
                   <div className="flex justify-between py-1 border-b border-slate-50">
                     <span className="text-slate-400">Tên tệp gốc:</span>
@@ -718,13 +718,13 @@ export default function UploadResumePage() {
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
                     <span className="text-slate-400">Mô hình AI:</span>
-                    <span className="font-semibold text-indigo-600">Gemini OCR & Semantic Parser</span>
+                    <span className="font-semibold text-brand-600">Gemini OCR & Semantic Parser</span>
                   </div>
                 </div>
 
                 {extractedData.extractedMeta?.extractionWarnings && (
                   <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-2xs space-y-1">
-                    <div className="font-bold flex items-center gap-1.5">
+                    <div className="font-medium flex items-center gap-1.5">
                       <AlertCircle size={13} />
                       Ghi chú từ AI Agent:
                     </div>
@@ -739,7 +739,7 @@ export default function UploadResumePage() {
                   <button
                     type="button"
                     onClick={() => setShowRawText(!showRawText)}
-                    className="text-xs text-blue-600 hover:underline font-semibold flex items-center gap-1"
+                    className="text-xs text-brand-600 hover:underline font-semibold flex items-center gap-1"
                   >
                     <ScanText size={13} />
                     {showRawText ? 'Ẩn văn bản thô bóc tách' : 'Xem văn bản thô bóc tách'}
@@ -755,7 +755,7 @@ export default function UploadResumePage() {
           </div>
 
           {/* Sticky Bottom Actions Bar */}
-          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-md border border-slate-200">
+          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-sm border border-slate-200">
             <span className="text-xs text-slate-500">
               Kiểm tra kỹ các thông tin trước khi xác nhận lưu bản CV.
             </span>

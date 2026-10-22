@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import HomePageRefined from './HomePageRefined';
 import {
-  Sparkles,
+  Lightbulb,
   ArrowRight,
   ShieldCheck,
   BrainCircuit,
-  Bot,
+  MessageSquare,
   Upload,
   Briefcase,
   CheckCircle2,
@@ -17,7 +18,6 @@ import {
   TrendingUp,
   FileText,
 } from 'lucide-react';
-import { useTranslation } from '../../i18n';
 
 // ─── FAQ data ──────────────────────────────────────────────────────────────
 const faqs = [
@@ -58,8 +58,7 @@ const stats = [
   { value: '10+', label: 'Tính năng AI tích hợp' },
 ];
 
-export default function HomePage() {
-  const { t } = useTranslation();
+export function LegacyHomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
@@ -71,35 +70,82 @@ export default function HomePage() {
         <div className="hp-blob hp-blob-3" />
 
         <div className="hp-container hp-hero-inner">
-          <div className="hp-badge">
-            <Sparkles className="hp-badge-icon" />
-            <span>Đồ án Tốt nghiệp ĐH FPT • FA26SE119</span>
-          </div>
+          <div className="hp-hero-grid">
+            <div className="hp-hero-copy">
+              <div className="hp-badge">
+                <Lightbulb className="hp-badge-icon" aria-hidden="true" />
+                <span>Đồ án Tốt nghiệp ĐH FPT • FA26SE119</span>
+              </div>
 
-          <h1 className="hp-hero-h1">
-            Đúng người, đúng việc.
-            <br />
-            <span className="hp-gradient-text">AI Agent</span> làm phần còn lại.
-          </h1>
+              <h1 className="hp-hero-h1">
+                Đúng người, đúng việc.
+                <br />
+                <span className="hp-gradient-text">AI Agent</span> làm phần còn lại.
+              </h1>
 
-          <p className="hp-hero-sub">
-            Nền tảng khớp nối CV thông minh — phân tích ngữ nghĩa sâu, gợi ý lộ trình nghề nghiệp
-            và đồng hành phát triển cùng bạn mỗi bước đường.
-          </p>
+              <p className="hp-hero-sub">
+                Nền tảng khớp nối CV thông minh — phân tích ngữ nghĩa sâu, gợi ý lộ trình nghề
+                nghiệp và đồng hành phát triển cùng bạn mỗi bước đường.
+              </p>
 
-          <div className="hp-hero-ctas">
-            <Link to="/register">
-              <button className="hp-btn-primary">
-                Bắt đầu miễn phí
-                <ArrowRight className="hp-btn-icon" />
-              </button>
-            </Link>
-            <Link to="/guest-trial">
-              <button className="hp-btn-secondary">
-                <Zap className="hp-btn-icon" />
-                Trải nghiệm ngay
-              </button>
-            </Link>
+              <div className="hp-hero-ctas">
+                <Link to="/register">
+                  <button className="hp-btn-primary">
+                    Bắt đầu miễn phí
+                    <ArrowRight className="hp-btn-icon" aria-hidden="true" />
+                  </button>
+                </Link>
+                <Link to="/guest-trial">
+                  <button className="hp-btn-secondary">
+                    <Zap className="hp-btn-icon" aria-hidden="true" />
+                    Trải nghiệm ngay
+                  </button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="hp-product-preview" aria-label="Minh họa kết quả AI khớp nối công việc">
+              <div className="hp-preview-topbar">
+                <span className="hp-preview-brand">
+                  <Lightbulb aria-hidden="true" /> Jobie AI
+                </span>
+                <span className="hp-preview-status">
+                  <span /> AI đang phân tích
+                </span>
+              </div>
+              <div className="hp-preview-body">
+                <div className="hp-preview-score">
+                  <div>
+                    <p>Độ phù hợp của bạn</p>
+                    <strong>94%</strong>
+                    <span>+12% so với CV trước</span>
+                  </div>
+                  <div className="hp-score-orbit">
+                    <CheckCircle2 aria-hidden="true" />
+                  </div>
+                </div>
+                <div className="hp-preview-job">
+                  <span className="hp-preview-company">A</span>
+                  <div>
+                    <strong>Senior Frontend Engineer</strong>
+                    <p>Acme Studio · Hồ Chí Minh</p>
+                  </div>
+                  <span className="hp-preview-match">94% khớp</span>
+                </div>
+                <div className="hp-preview-insight">
+                  <BarChart3 aria-hidden="true" />
+                  <span>
+                    AI nhận diện <b>8 kỹ năng nổi bật</b> phù hợp với vị trí này.
+                  </span>
+                </div>
+              </div>
+              <div className="hp-preview-float hp-preview-float-top">
+                <Lightbulb aria-hidden="true" /> Gợi ý mới
+              </div>
+              <div className="hp-preview-float hp-preview-float-bottom">
+                <Briefcase aria-hidden="true" /> 24 việc phù hợp
+              </div>
+            </div>
           </div>
 
           <div className="hp-stats-row">
@@ -168,12 +214,42 @@ export default function HomePage() {
 
           <div className="hp-features-grid">
             {[
-              { icon: <FileText />, title: 'Đọc hiểu CV bằng AI', desc: 'Tự động trích xuất kỹ năng, kinh nghiệm, học vấn và chứng chỉ từ mọi định dạng CV.', color: 'blue' },
-              { icon: <BrainCircuit />, title: 'Khớp nối theo ngữ nghĩa', desc: 'Sử dụng embedding vector để hiểu ngữ cảnh, không chỉ tìm từ khóa máy móc.', color: 'violet' },
-              { icon: <BarChart3 />, title: 'Điểm phù hợp minh bạch', desc: 'Hiển thị điểm số cụ thể từng tiêu chí: kỹ năng, kinh nghiệm, học vấn và yêu cầu.', color: 'emerald' },
-              { icon: <TrendingUp />, title: 'Gợi ý cải thiện CV', desc: 'Chỉ rõ kỹ năng còn thiếu, đề xuất từ khóa ATS và cách diễn đạt tối ưu hơn.', color: 'orange' },
-              { icon: <Bot />, title: 'Trợ lý tự động', desc: 'AI Agent hỏi đáp về thị trường lương, bí quyết phỏng vấn và lộ trình học.', color: 'pink' },
-              { icon: <Star />, title: 'Theo dõi và thông báo', desc: 'Nhận thông báo khi có việc làm mới phù hợp hoặc nhà tuyển dụng xem hồ sơ của bạn.', color: 'cyan' },
+              {
+                icon: <FileText />,
+                title: 'Đọc hiểu CV bằng AI',
+                desc: 'Tự động trích xuất kỹ năng, kinh nghiệm, học vấn và chứng chỉ từ mọi định dạng CV.',
+                color: 'blue',
+              },
+              {
+                icon: <BrainCircuit />,
+                title: 'Khớp nối theo ngữ nghĩa',
+                desc: 'Sử dụng embedding vector để hiểu ngữ cảnh, không chỉ tìm từ khóa máy móc.',
+                color: 'violet',
+              },
+              {
+                icon: <BarChart3 />,
+                title: 'Điểm phù hợp minh bạch',
+                desc: 'Hiển thị điểm số cụ thể từng tiêu chí: kỹ năng, kinh nghiệm, học vấn và yêu cầu.',
+                color: 'emerald',
+              },
+              {
+                icon: <TrendingUp />,
+                title: 'Gợi ý cải thiện CV',
+                desc: 'Chỉ rõ kỹ năng còn thiếu, đề xuất từ khóa ATS và cách diễn đạt tối ưu hơn.',
+                color: 'orange',
+              },
+              {
+                icon: <MessageSquare />,
+                title: 'Trợ lý tự động',
+                desc: 'AI Agent hỏi đáp về thị trường lương, bí quyết phỏng vấn và lộ trình học.',
+                color: 'pink',
+              },
+              {
+                icon: <Star />,
+                title: 'Theo dõi và thông báo',
+                desc: 'Nhận thông báo khi có việc làm mới phù hợp hoặc nhà tuyển dụng xem hồ sơ của bạn.',
+                color: 'cyan',
+              },
             ].map((f, i) => (
               <div key={i} className={`hp-feat-card hp-feat-card-${f.color}`}>
                 <div className={`hp-feat-icon hp-feat-icon-${f.color}`}>{f.icon}</div>
@@ -190,15 +266,15 @@ export default function HomePage() {
         <div className="hp-container hp-agent-inner">
           <div className="hp-agent-copy">
             <span className="hp-agent-eyebrow">
-              <Bot className="hp-agent-eyebrow-icon" />
+              <MessageSquare className="hp-agent-eyebrow-icon" />
               AI Agent
             </span>
             <h2 className="hp-agent-title">
               Không chỉ tìm kiếm. AI Agent suy luận và hành động giúp bạn.
             </h2>
             <p className="hp-agent-sub">
-              Thay vì chỉ tìm kiếm, AI Agent hiểu ngữ cảnh nghề nghiệp của bạn, chủ động phân
-              tích và đưa ra hành động cụ thể.
+              Thay vì chỉ tìm kiếm, AI Agent hiểu ngữ cảnh nghề nghiệp của bạn, chủ động phân tích
+              và đưa ra hành động cụ thể.
             </p>
             <Link to="/guest-trial">
               <button className="hp-btn-white">
@@ -210,10 +286,26 @@ export default function HomePage() {
 
           <div className="hp-agent-list">
             {[
-              { n: '01', title: 'Đọc hiểu hồ sơ AI', desc: 'Phân tích ngữ nghĩa sâu, nhận diện điểm mạnh và định hướng nghề nghiệp.' },
-              { n: '02', title: 'Hiểu yêu cầu tin tuyển dụng', desc: 'Tách biệt yêu cầu bắt buộc/ưu tiên, phân tích văn hóa doanh nghiệp.' },
-              { n: '03', title: 'Chẩn đoán và gợi ý', desc: 'Cho biết khoảng cách kỹ năng cụ thể và lộ trình thu hẹp khoảng cách đó.' },
-              { n: '04', title: 'Đề xuất hành động cụ thể', desc: 'Gợi ý khóa học, dự án thực hành và cách điều chỉnh CV theo từng JD.' },
+              {
+                n: '01',
+                title: 'Đọc hiểu hồ sơ AI',
+                desc: 'Phân tích ngữ nghĩa sâu, nhận diện điểm mạnh và định hướng nghề nghiệp.',
+              },
+              {
+                n: '02',
+                title: 'Hiểu yêu cầu tin tuyển dụng',
+                desc: 'Tách biệt yêu cầu bắt buộc/ưu tiên, phân tích văn hóa doanh nghiệp.',
+              },
+              {
+                n: '03',
+                title: 'Chẩn đoán và gợi ý',
+                desc: 'Cho biết khoảng cách kỹ năng cụ thể và lộ trình thu hẹp khoảng cách đó.',
+              },
+              {
+                n: '04',
+                title: 'Đề xuất hành động cụ thể',
+                desc: 'Gợi ý khóa học, dự án thực hành và cách điều chỉnh CV theo từng JD.',
+              },
             ].map((item, i) => (
               <div key={i} className="hp-agent-item">
                 <span className="hp-agent-num">{item.n}</span>
@@ -241,7 +333,9 @@ export default function HomePage() {
                   Ứng viên
                 </div>
                 <h3 className="hp-dual-title">Tìm việc phù hợp mà không mất hàng giờ lọc tìm</h3>
-                <p className="hp-dual-sub">Dù bạn mới ra trường hay đang tìm cơ hội thăng tiến, AI giúp bạn nổi bật đúng chỗ.</p>
+                <p className="hp-dual-sub">
+                  Dù bạn mới ra trường hay đang tìm cơ hội thăng tiến, AI giúp bạn nổi bật đúng chỗ.
+                </p>
               </div>
               <ul className="hp-dual-list">
                 {candidateFeatures.map((f, i) => (
@@ -266,7 +360,9 @@ export default function HomePage() {
                   Nhà tuyển dụng
                 </div>
                 <h3 className="hp-dual-title">Sàng lọc hồ sơ nhanh hơn, chọn đúng ứng viên hơn</h3>
-                <p className="hp-dual-sub">Thay vì đọc hàng trăm CV thủ công, để AI lọc và xếp hạng theo mức phù hợp thực sự.</p>
+                <p className="hp-dual-sub">
+                  Thay vì đọc hàng trăm CV thủ công, để AI lọc và xếp hạng theo mức phù hợp thực sự.
+                </p>
               </div>
               <ul className="hp-dual-list">
                 {recruiterFeatures.map((f, i) => (
@@ -296,11 +392,22 @@ export default function HomePage() {
           <div className="hp-faq-list">
             {faqs.map((faq, i) => (
               <div key={i} className="hp-faq-item">
-                <button className="hp-faq-q" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                <button
+                  className="hp-faq-q"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                  aria-controls={`faq-answer-${i}`}
+                >
                   <span>{faq.q}</span>
-                  <ChevronDown className={`hp-faq-chevron ${openFaq === i ? 'hp-faq-chevron-open' : ''}`} />
+                  <ChevronDown
+                    className={`hp-faq-chevron ${openFaq === i ? 'hp-faq-chevron-open' : ''}`}
+                  />
                 </button>
-                {openFaq === i && <div className="hp-faq-a">{faq.a}</div>}
+                {openFaq === i && (
+                  <div id={`faq-answer-${i}`} className="hp-faq-a">
+                    {faq.a}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -319,7 +426,9 @@ export default function HomePage() {
                 Sẵn sàng để AI Agent tìm việc cùng bạn?
               </p>
               <h2 className="hp-cta-title">
-                Tải CV lên và nhận gợi ý việc làm<br />phù hợp trong vài giây.
+                Tải CV lên và nhận gợi ý việc làm
+                <br />
+                phù hợp trong vài giây.
               </h2>
               <p className="hp-cta-sub">Miễn phí. Không cần thẻ tín dụng. Bắt đầu ngay hôm nay.</p>
               <div className="hp-cta-btns">
@@ -482,8 +591,90 @@ export default function HomePage() {
           .hp-stat-item { min-width:80px; }
           .hp-stat-value { font-size:1.4rem; }
         }
+
+        /* AI-native polish: semantic indigo/cyan accents, quieter surfaces and motion. */
+        .hp-root { color:#211b3d; background:#faf9ff; }
+        .hp-gradient-text { background:linear-gradient(120deg,#6d3bea 0%,#7c3aed 48%,#0891b2 100%); -webkit-background-clip:text; background-clip:text; }
+        .hp-hero { background:radial-gradient(circle at 15% 5%,#ede9fe 0,transparent 30rem),radial-gradient(circle at 88% 55%,#cffafe 0,transparent 28rem),linear-gradient(160deg,#fcfbff 0%,#f7f5ff 100%); }
+        .hp-blob-1 { background:radial-gradient(circle,#8b5cf6 0%,transparent 70%); }
+        .hp-blob-2 { background:radial-gradient(circle,#0891b2 0%,transparent 70%); }
+        .hp-badge { color:#6d3bea; border-color:#ddd6fe; box-shadow:0 8px 28px rgba(91,53,190,.09); }
+        .hp-badge-icon { color:#6d3bea; }
+        .hp-btn-primary { background:linear-gradient(135deg,#6d3bea 0%,#7c3aed 52%,#0891b2 140%); box-shadow:0 10px 25px rgba(109,59,234,.28); }
+        .hp-btn-primary:hover { box-shadow:0 14px 32px rgba(109,59,234,.36); }
+        .hp-btn-secondary { border-color:#e7e3f5; color:#342d50; }
+        .hp-section-eyebrow { color:#6d3bea; }
+        .hp-section-title { color:#211b3d; }
+        .hp-feat-card, .hp-step, .hp-faq-item { border-color:#e7e3f5; }
+        .hp-agent-section { background:linear-gradient(125deg,#21164d 0%,#4c1d95 52%,#0e7490 140%); }
+        .hp-dual-candidate { background:linear-gradient(160deg,#f5f3ff 0%,#ecfeff 100%); border-color:#ddd6fe; }
+        .hp-cta-banner { background:linear-gradient(125deg,#3b1a85 0%,#6d3bea 48%,#0e7490 130%); box-shadow:0 18px 45px rgba(76,29,149,.2); }
+        .hp-faq-q:focus-visible { outline:3px solid #6d3bea; outline-offset:-3px; }
+        .hp-hero { min-height:auto; padding:clamp(72px,10vw,132px) 0 56px; }
+        .hp-hero-inner { display:block; }
+        .hp-hero-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(400px,.9fr); align-items:center; gap:clamp(40px,7vw,96px); }
+        .hp-hero-copy { display:flex; flex-direction:column; align-items:flex-start; gap:24px; }
+        .hp-hero-copy .hp-hero-h1, .hp-hero-copy .hp-hero-sub { text-align:left; }
+        .hp-hero-copy .hp-hero-sub { max-width:560px; }
+        .hp-hero-copy .hp-hero-ctas { justify-content:flex-start; }
+        .hp-stats-row { max-width:none; margin-top:clamp(48px,7vw,76px); padding-top:28px; }
+        .hp-stat-item { min-width:0; }
+        .hp-product-preview { position:relative; width:min(100%,500px); justify-self:end; border:1px solid rgba(255,255,255,.9); border-radius:24px; background:rgba(255,255,255,.78); box-shadow:0 28px 80px rgba(76,29,149,.18), 0 4px 18px rgba(15,23,42,.06); overflow:visible; backdrop-filter:blur(16px); }
+        .hp-preview-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid #ede9fe; color:#312e52; font-size:12px; font-weight:700; }
+        .hp-preview-brand, .hp-preview-status { display:inline-flex; align-items:center; gap:6px; }
+        .hp-preview-brand svg { width:15px; color:#6d3bea; }
+        .hp-preview-status { color:#0f766e; font-size:11px; font-weight:700; }
+        .hp-preview-status span { width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 0 4px #d1fae5; }
+        .hp-preview-body { display:grid; gap:14px; padding:18px; }
+        .hp-preview-score { display:flex; align-items:center; justify-content:space-between; padding:20px; border-radius:17px; color:#fff; background:linear-gradient(135deg,#45218f 0%,#6d3bea 58%,#0e7490 135%); }
+        .hp-preview-score p, .hp-preview-score span { margin:0; font-size:11px; color:#ddd6fe; }
+        .hp-preview-score strong { display:block; margin:2px 0; font-size:40px; line-height:1; letter-spacing:-.06em; }
+        .hp-score-orbit { display:grid; width:56px; height:56px; place-items:center; border:5px solid rgba(255,255,255,.28); border-top-color:#fff; border-radius:50%; }
+        .hp-score-orbit svg { width:24px; height:24px; }
+        .hp-preview-job { display:flex; align-items:center; gap:11px; padding:14px; border:1px solid #e9e5f6; border-radius:15px; background:#fff; }
+        .hp-preview-company { display:grid; width:34px; height:34px; flex:0 0 auto; place-items:center; border-radius:11px; color:#fff; background:linear-gradient(145deg,#6d3bea,#0891b2); font-size:14px; font-weight:800; }
+        .hp-preview-job div { min-width:0; flex:1; }
+        .hp-preview-job strong { display:block; overflow:hidden; color:#211b3d; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+        .hp-preview-job p { margin:3px 0 0; color:#6b6680; font-size:10px; }
+        .hp-preview-match { flex:0 0 auto; border-radius:999px; padding:5px 7px; color:#08735e; background:#ecfdf5; font-size:10px; font-weight:800; }
+        .hp-preview-insight { display:flex; align-items:flex-start; gap:9px; padding:12px 14px; border-radius:13px; color:#5e5874; background:#f5f3ff; font-size:11px; line-height:1.5; }
+        .hp-preview-insight svg { width:17px; flex:0 0 auto; color:#6d3bea; }
+        .hp-preview-insight b { color:#372d62; }
+        .hp-preview-float { position:absolute; display:flex; align-items:center; gap:6px; border:1px solid #e7e3f5; border-radius:11px; padding:9px 11px; color:#3c315f; background:rgba(255,255,255,.93); box-shadow:0 10px 26px rgba(55,34,110,.13); font-size:11px; font-weight:750; white-space:nowrap; }
+        .hp-preview-float svg { width:14px; color:#6d3bea; }
+        .hp-preview-float-top { top:18%; left:-48px; }
+        .hp-preview-float-bottom { right:-36px; bottom:14%; }
+        .hp-step, .hp-feat-card { box-shadow:0 1px 2px rgba(38,24,79,.03); }
+        .hp-step:hover, .hp-feat-card:hover { border-color:#d8cdf8; box-shadow:0 16px 38px rgba(76,29,149,.10); }
+        .hp-dual-card { box-shadow:0 8px 30px rgba(76,29,149,.05); }
+        @media(max-width:960px) {
+          .hp-hero-grid { grid-template-columns:1fr; max-width:680px; margin:0 auto; }
+          .hp-hero-copy { align-items:center; }
+          .hp-hero-copy .hp-hero-h1, .hp-hero-copy .hp-hero-sub { text-align:center; }
+          .hp-hero-copy .hp-hero-ctas { justify-content:center; }
+          .hp-product-preview { justify-self:center; }
+        }
+        @media(max-width:640px) {
+          .hp-container { padding:0 20px; }
+          .hp-hero { padding-top:64px; }
+          .hp-hero-copy { gap:20px; }
+          .hp-hero-h1 { font-size:clamp(2.45rem,12vw,3.35rem); }
+          .hp-hero-ctas, .hp-hero-ctas a, .hp-hero-ctas button { width:100%; }
+          .hp-hero-ctas button { justify-content:center; }
+          .hp-product-preview { border-radius:20px; }
+          .hp-preview-float { display:none; }
+          .hp-preview-score strong { font-size:35px; }
+          .hp-stats-row { display:grid; grid-template-columns:repeat(2,1fr); gap:20px 0; }
+          .hp-stat-item:nth-child(2) { border-right:none; }
+        }
+        @media (prefers-reduced-motion: reduce) { .hp-root *, .hp-root *::before, .hp-root *::after { transition-duration:.01ms !important; animation-duration:.01ms !important; } }
       `}</style>
     </div>
   );
 }
 
+export default function HomePage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  return <HomePageRefined openFaq={openFaq} setOpenFaq={setOpenFaq} />;
+}

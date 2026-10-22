@@ -395,7 +395,7 @@ export default function SubscriptionQuotaManagementPage({
     <div className="space-y-8 animate-fade-in pb-16">
       {/* Toast notification banner */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-xl animate-fade-in">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-sm animate-fade-in">
           <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -405,11 +405,11 @@ export default function SubscriptionQuotaManagementPage({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-sm">
+            <span className="p-2.5 rounded-2xl bg-brand-600 text-white shadow-sm">
               <CreditCard size={22} />
             </span>
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
+              <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight">
                 {isVietnamese ? 'Quản lý Gói cước & Hạn mức' : 'Subscription & Quota Management'}
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -425,7 +425,7 @@ export default function SubscriptionQuotaManagementPage({
         <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto">
           <button
             onClick={handleExportFullConfig}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
             title="Xuất file backup cấu hình hệ thống"
           >
             <Download size={14} />
@@ -434,7 +434,7 @@ export default function SubscriptionQuotaManagementPage({
 
           <button
             onClick={handleRefreshAll}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
             title="Làm mới toàn bộ dữ liệu"
           >
             <RefreshCw size={14} />
@@ -446,7 +446,7 @@ export default function SubscriptionQuotaManagementPage({
               setSelectedPlanForEdit(null);
               setIsPlanModalOpen(true);
             }}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+            className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs"
           >
             <Plus size={15} />
             <span>{isVietnamese ? 'Thêm gói cước' : 'Add Plan'}</span>
@@ -457,27 +457,27 @@ export default function SubscriptionQuotaManagementPage({
       {/* Top Aggregated KPI Stats */}
       {overview && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4.5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+          <div className="p-4.5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
             <span className="text-[11px] font-semibold text-slate-500 block mb-1">
               Doanh thu định kỳ (MRR)
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl md:text-2xl font-black text-slate-900">
+              <span className="text-xl md:text-2xl font-semibold text-slate-900">
                 {(overview.totalMrrVND / 1000000).toFixed(1)}M
               </span>
-              <span className="text-xs font-bold text-slate-500">VND</span>
+              <span className="text-xs font-medium text-slate-500">VND</span>
             </div>
             <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">
               +14.8% tăng trưởng
             </span>
           </div>
 
-          <div className="p-4.5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+          <div className="p-4.5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
             <span className="text-[11px] font-semibold text-slate-500 block mb-1">
               Thuê bao đang kích hoạt
             </span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl md:text-2xl font-black text-blue-700">
+              <span className="text-xl md:text-2xl font-semibold text-brand-700">
                 {overview.activeSubscribers.toLocaleString()}
               </span>
               <span className="text-xs text-slate-500">user</span>
@@ -487,12 +487,12 @@ export default function SubscriptionQuotaManagementPage({
             </span>
           </div>
 
-          <div className="p-4.5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+          <div className="p-4.5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
             <span className="text-[11px] font-semibold text-slate-500 block mb-1">
               Mức sử dụng Token tháng
             </span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl md:text-2xl font-black text-amber-600">
+              <span className="text-xl md:text-2xl font-semibold text-amber-600">
                 {overview.tokenUtilizationPercent}%
               </span>
               <span className="text-xs text-slate-400">hạn ngạch</span>
@@ -503,12 +503,12 @@ export default function SubscriptionQuotaManagementPage({
             </span>
           </div>
 
-          <div className="p-4.5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+          <div className="p-4.5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
             <span className="text-[11px] font-semibold text-slate-500 block mb-1">
               Lưu lượng API (24h)
             </span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl md:text-2xl font-black text-emerald-700">
+              <span className="text-xl md:text-2xl font-semibold text-emerald-700">
                 {overview.apiRequestsToday.toLocaleString()}
               </span>
               <span className="text-xs text-slate-400">reqs</span>
@@ -524,22 +524,22 @@ export default function SubscriptionQuotaManagementPage({
       <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200/80 self-start overflow-x-auto max-w-full">
         <button
           onClick={() => handleTabChange('plans')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'plans'
               ? 'bg-white text-slate-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <CreditCard size={15} className="text-blue-600" />
+          <CreditCard size={15} className="text-brand-600" />
           <span>{isVietnamese ? 'Quản lý Gói cước (Plans)' : 'Subscription Plans'}</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-bold">
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-medium">
             {plans.length}
           </span>
         </button>
 
         <button
           onClick={() => handleTabChange('tokens')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'tokens'
               ? 'bg-white text-slate-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
@@ -551,19 +551,19 @@ export default function SubscriptionQuotaManagementPage({
 
         <button
           onClick={() => handleTabChange('api')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'api'
               ? 'bg-white text-slate-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Cpu size={15} className="text-indigo-600" />
+          <Cpu size={15} className="text-brand-600" />
           <span>{isVietnamese ? 'Cổng API & Rate Limits' : 'API Gateway & Rate Limits'}</span>
         </button>
 
         <button
           onClick={() => handleTabChange('payments')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'payments'
               ? 'bg-white text-slate-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
@@ -572,7 +572,7 @@ export default function SubscriptionQuotaManagementPage({
           <Wallet size={15} className="text-emerald-600" />
           <span>{isVietnamese ? 'Giao dịch & Hóa đơn' : 'Payments & Invoices'}</span>
           {overview && overview.pendingTransactionsCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-white font-bold animate-pulse">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-white font-medium animate-pulse">
               {overview.pendingTransactionsCount} chờ duyệt
             </span>
           )}

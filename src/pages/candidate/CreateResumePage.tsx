@@ -16,7 +16,7 @@ import {
   Plus,
   Save,
   Sliders,
-  Sparkles,
+  Lightbulb,
   Trash2,
   Trophy,
   User,
@@ -586,14 +586,14 @@ export default function CreateResumePage() {
         {/* Form Sections */}
         <div className="space-y-6">
           {/* SECTION PICKER / CHECKLIST */}
-          <Card className="border-blue-200 bg-gradient-to-r from-blue-50/50 via-white to-indigo-50/40">
+          <Card className="border-brand-200 bg-brand-50/50">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-600 text-white">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-600 text-white">
                   <Sliders size={15} />
                 </span>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-medium text-slate-900">
                     Tùy chọn mục bổ sung cho CV
                   </h3>
                   <p className="text-2xs text-slate-500">
@@ -601,7 +601,7 @@ export default function CreateResumePage() {
                   </p>
                 </div>
               </div>
-              <span className="text-2xs font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-full">
+              <span className="text-2xs font-semibold text-brand-700 bg-brand-100/70 px-2 py-0.5 rounded-full">
                 {Object.values(enabledSections).filter(Boolean).length}/6 mục đang chọn
               </span>
             </div>
@@ -613,15 +613,15 @@ export default function CreateResumePage() {
                 onClick={() => toggleSection('projects')}
                 className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                   enabledSections.projects
-                    ? 'border-blue-500 bg-blue-50/80 shadow-2xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
+                    : 'border-slate-200 bg-surface hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span
                     className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
                       enabledSections.projects
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-brand-600 text-white'
                         : 'bg-slate-100 text-slate-500'
                     }`}
                   >
@@ -630,7 +630,7 @@ export default function CreateResumePage() {
                   <div
                     className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
                       enabledSections.projects
-                        ? 'bg-blue-600 border-blue-600 text-white'
+                        ? 'bg-brand-600 border-brand-600 text-white'
                         : 'border-slate-300 bg-white'
                     }`}
                   >
@@ -638,7 +638,7 @@ export default function CreateResumePage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Dự án nổi bật</p>
+                  <p className="text-xs font-medium text-slate-900">Dự án nổi bật</p>
                   <p className="text-2xs text-slate-500 mt-0.5">Gắn link Demo / GitHub</p>
                 </div>
               </button>
@@ -649,15 +649,15 @@ export default function CreateResumePage() {
                 onClick={() => toggleSection('certifications')}
                 className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                   enabledSections.certifications
-                    ? 'border-purple-500 bg-purple-50/80 shadow-2xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
+                    : 'border-slate-200 bg-surface hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span
                     className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
                       enabledSections.certifications
-                        ? 'bg-purple-600 text-white'
+                        ? 'bg-brand-600 text-white'
                         : 'bg-slate-100 text-slate-500'
                     }`}
                   >
@@ -666,7 +666,7 @@ export default function CreateResumePage() {
                   <div
                     className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
                       enabledSections.certifications
-                        ? 'bg-purple-600 border-purple-600 text-white'
+                        ? 'bg-brand-600 border-brand-600 text-white'
                         : 'border-slate-300 bg-white'
                     }`}
                   >
@@ -674,7 +674,7 @@ export default function CreateResumePage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Chứng chỉ & Bằng</p>
+                  <p className="text-xs font-medium text-slate-900">Chứng chỉ & Bằng</p>
                   <p className="text-2xs text-slate-500 mt-0.5">Chứng chỉ xác thực</p>
                 </div>
               </button>
@@ -686,7 +686,7 @@ export default function CreateResumePage() {
                 className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                   enabledSections.interests
                     ? 'border-rose-500 bg-rose-50/80 shadow-2xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    : 'border-slate-200 bg-surface hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
@@ -710,7 +710,7 @@ export default function CreateResumePage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Sở thích cá nhân</p>
+                  <p className="text-xs font-medium text-slate-900">Sở thích cá nhân</p>
                   <p className="text-2xs text-slate-500 mt-0.5">Văn hóa & cá tính</p>
                 </div>
               </button>
@@ -722,7 +722,7 @@ export default function CreateResumePage() {
                 className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                   enabledSections.languages
                     ? 'border-amber-500 bg-amber-50/80 shadow-2xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    : 'border-slate-200 bg-surface hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
@@ -746,7 +746,7 @@ export default function CreateResumePage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Ngoại ngữ</p>
+                  <p className="text-xs font-medium text-slate-900">Ngoại ngữ</p>
                   <p className="text-2xs text-slate-500 mt-0.5">Trình độ & chứng chỉ</p>
                 </div>
               </button>
@@ -758,7 +758,7 @@ export default function CreateResumePage() {
                 className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                   enabledSections.awards
                     ? 'border-emerald-500 bg-emerald-50/80 shadow-2xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    : 'border-slate-200 bg-surface hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
@@ -782,7 +782,7 @@ export default function CreateResumePage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Giải thưởng</p>
+                  <p className="text-xs font-medium text-slate-900">Giải thưởng</p>
                   <p className="text-2xs text-slate-500 mt-0.5">Thành tích & vinh danh</p>
                 </div>
               </button>
@@ -793,15 +793,15 @@ export default function CreateResumePage() {
                 onClick={() => toggleSection('references')}
                 className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                   enabledSections.references
-                    ? 'border-cyan-500 bg-cyan-50/80 shadow-2xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
+                    : 'border-slate-200 bg-surface hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span
                     className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
                       enabledSections.references
-                        ? 'bg-cyan-600 text-white'
+                        ? 'bg-brand-600 text-white'
                         : 'bg-slate-100 text-slate-500'
                     }`}
                   >
@@ -810,7 +810,7 @@ export default function CreateResumePage() {
                   <div
                     className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
                       enabledSections.references
-                        ? 'bg-cyan-600 border-cyan-600 text-white'
+                        ? 'bg-brand-600 border-brand-600 text-white'
                         : 'border-slate-300 bg-white'
                     }`}
                   >
@@ -818,7 +818,7 @@ export default function CreateResumePage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Người tham chiếu</p>
+                  <p className="text-xs font-medium text-slate-900">Người tham chiếu</p>
                   <p className="text-2xs text-slate-500 mt-0.5">Bảo chứng uy tín</p>
                 </div>
               </button>
@@ -829,10 +829,10 @@ export default function CreateResumePage() {
           <Card>
             <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                   <User size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   1. Thông tin bản CV & Liên hệ
                 </h3>
               </div>
@@ -871,7 +871,7 @@ export default function CreateResumePage() {
                 <select
                   value={formData.language || 'English'}
                   onChange={(e) => setFormData((prev) => ({ ...prev, language: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
                 >
                   <option value="English">English (Tiếng Anh)</option>
                   <option value="Vietnamese">Tiếng Việt (Vietnamese)</option>
@@ -934,7 +934,7 @@ export default function CreateResumePage() {
                   value={formData.summary || ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, summary: e.target.value }))}
                   placeholder="Mô tả ngắn gọn về kinh nghiệm, thế mạnh công nghệ và giá trị bạn mang lại cho doanh nghiệp…"
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500"
                 />
               </div>
             </div>
@@ -947,7 +947,7 @@ export default function CreateResumePage() {
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
                   <Briefcase size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   2. Kinh nghiệm làm việc (Work Experience)
                 </h3>
               </div>
@@ -986,7 +986,7 @@ export default function CreateResumePage() {
                         value={exp.role}
                         onChange={(e) => handleUpdateExperience(idx, 'role', e.target.value)}
                         placeholder="Ví dụ: Senior Frontend Engineer"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -997,7 +997,7 @@ export default function CreateResumePage() {
                         value={exp.company}
                         onChange={(e) => handleUpdateExperience(idx, 'company', e.target.value)}
                         placeholder="Ví dụ: Nexus Tech Global"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1008,7 +1008,7 @@ export default function CreateResumePage() {
                         value={exp.startDate}
                         onChange={(e) => handleUpdateExperience(idx, 'startDate', e.target.value)}
                         placeholder="03/2022"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1019,7 +1019,7 @@ export default function CreateResumePage() {
                         value={exp.endDate}
                         onChange={(e) => handleUpdateExperience(idx, 'endDate', e.target.value)}
                         placeholder="Hiện tại hoặc MM/YYYY"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                   </div>
@@ -1033,7 +1033,7 @@ export default function CreateResumePage() {
                       value={exp.description}
                       onChange={(e) => handleUpdateExperience(idx, 'description', e.target.value)}
                       placeholder="Mô tả công việc và các số liệu thành tích cụ thể..."
-                      className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
                     />
                   </div>
                 </div>
@@ -1045,10 +1045,10 @@ export default function CreateResumePage() {
           <Card>
             <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                   <GraduationCap size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   3. Học vấn & Bằng cấp (Education)
                 </h3>
               </div>
@@ -1087,7 +1087,7 @@ export default function CreateResumePage() {
                         value={edu.school}
                         onChange={(e) => handleUpdateEducation(idx, 'school', e.target.value)}
                         placeholder="Ví dụ: Đại học Bách Khoa"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1098,7 +1098,7 @@ export default function CreateResumePage() {
                         value={edu.degree}
                         onChange={(e) => handleUpdateEducation(idx, 'degree', e.target.value)}
                         placeholder="Ví dụ: Cử nhân Khoa học Máy tính"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1113,7 +1113,7 @@ export default function CreateResumePage() {
                           handleUpdateEducation(idx, 'endDate', parts[1]?.trim());
                         }}
                         placeholder="2016 - 2020"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div>
@@ -1124,7 +1124,7 @@ export default function CreateResumePage() {
                         value={edu.gpa || ''}
                         onChange={(e) => handleUpdateEducation(idx, 'gpa', e.target.value)}
                         placeholder="Ví dụ: 3.6 / 4.0 (Giỏi)"
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                   </div>
@@ -1140,11 +1140,11 @@ export default function CreateResumePage() {
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-600">
                   <Wrench size={15} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   4. Kỹ năng chuyên môn (Skills & Tools)
                 </h3>
               </div>
-              <span className="text-xs font-bold text-blue-600">
+              <span className="text-xs font-medium text-brand-600">
                 {formData.skills?.length || 0} kỹ năng
               </span>
             </div>
@@ -1186,7 +1186,7 @@ export default function CreateResumePage() {
                       className={`rounded-md px-2.5 py-1 text-2xs font-medium transition cursor-pointer ${
                         has
                           ? 'bg-slate-100 text-slate-400'
-                          : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          : 'bg-brand-50 text-brand-700 hover:bg-brand-100'
                       }`}
                     >
                       + {skill}
@@ -1201,7 +1201,7 @@ export default function CreateResumePage() {
               {formData.skills?.map((s) => (
                 <span
                   key={s}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs"
                 >
                   <span>{s}</span>
                   <button
@@ -1218,14 +1218,14 @@ export default function CreateResumePage() {
 
           {/* DYNAMIC SECTION 5: DỰ ÁN NỔI BẬT (PROJECTS WITH RECRUITER LINK) */}
           {enabledSections.projects && (
-            <Card className="border-blue-100">
+            <Card className="border-brand-100">
               <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                     <FolderGit2 size={15} />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
                       5. Dự án nổi bật (Key Projects)
                       <span className="text-2xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
                         +9 điểm ATS & Gắn link
@@ -1254,8 +1254,8 @@ export default function CreateResumePage() {
                 </div>
               </div>
 
-              <div className="mb-4 rounded-xl bg-blue-50/60 p-3 text-2xs text-blue-800 border border-blue-100 flex items-start gap-2">
-                <Sparkles size={14} className="text-blue-600 shrink-0 mt-0.5" />
+              <div className="mb-4 rounded-xl bg-brand-50/60 p-3 text-2xs text-brand-800 border border-brand-100 flex items-start gap-2">
+                <Lightbulb size={14} className="text-brand-600 shrink-0 mt-0.5" />
                 <span>
                   <strong>Mẹo phỏng vấn:</strong> Hãy gắn đường dẫn (link) trang web live demo hoặc
                   kho lưu trữ GitHub của dự án. Nhà tuyển dụng có thể nhấp trực tiếp vào xem sản phẩm
@@ -1287,7 +1287,7 @@ export default function CreateResumePage() {
                           value={proj.name}
                           onChange={(e) => handleUpdateProject(idx, 'name', e.target.value)}
                           placeholder="Ví dụ: AI Career Intelligence Portal"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div>
@@ -1298,7 +1298,7 @@ export default function CreateResumePage() {
                           value={proj.role || ''}
                           onChange={(e) => handleUpdateProject(idx, 'role', e.target.value)}
                           placeholder="Ví dụ: Lead Frontend Developer / Contributor"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
 
@@ -1312,14 +1312,14 @@ export default function CreateResumePage() {
                             value={proj.link || ''}
                             onChange={(e) => handleUpdateProject(idx, 'link', e.target.value)}
                             placeholder="https://github.com/username/project hoặc https://my-demo-app.com"
-                            className="bg-white font-mono text-xs"
+                            className="bg-surface font-mono text-xs"
                           />
                           {proj.link && (
                             <a
                               href={proj.link}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 shrink-0 rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 border border-blue-200 transition"
+                              className="inline-flex items-center gap-1 shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100 border border-brand-200 transition"
                             >
                               <ExternalLink size={13} />
                               Mở xem thử
@@ -1349,7 +1349,7 @@ export default function CreateResumePage() {
                             )
                           }
                           placeholder="React, TypeScript, Tailwind CSS, REST APIs"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                     </div>
@@ -1363,7 +1363,7 @@ export default function CreateResumePage() {
                         value={proj.description}
                         onChange={(e) => handleUpdateProject(idx, 'description', e.target.value)}
                         placeholder="Nêu tóm tắt mục tiêu dự án, giải pháp kỹ thuật và kết quả (VD: phục vụ 10,000+ người dùng, tăng tốc độ xử lý 40%)..."
-                        className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500"
+                        className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
                       />
                     </div>
                   </div>
@@ -1383,16 +1383,16 @@ export default function CreateResumePage() {
 
           {/* DYNAMIC SECTION 6: CHỨNG CHỈ & BẰNG CẤP (CERTIFICATIONS) */}
           {enabledSections.certifications && (
-            <Card className="border-purple-100">
+            <Card className="border-brand-100">
               <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-purple-50 text-purple-600">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                     <Award size={15} />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
                       6. Chứng chỉ & Chứng nhận (Certifications)
-                      <span className="text-2xs font-semibold bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full border border-purple-200">
+                      <span className="text-2xs font-semibold bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full border border-brand-200">
                         +5 điểm ATS
                       </span>
                     </h3>
@@ -1443,7 +1443,7 @@ export default function CreateResumePage() {
                           value={cert.name}
                           onChange={(e) => handleUpdateCertification(idx, 'name', e.target.value)}
                           placeholder="Ví dụ: AWS Certified Solutions Architect"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div>
@@ -1454,7 +1454,7 @@ export default function CreateResumePage() {
                           value={cert.issuer}
                           onChange={(e) => handleUpdateCertification(idx, 'issuer', e.target.value)}
                           placeholder="Ví dụ: Amazon Web Services / Meta"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div>
@@ -1465,7 +1465,7 @@ export default function CreateResumePage() {
                           value={cert.date}
                           onChange={(e) => handleUpdateCertification(idx, 'date', e.target.value)}
                           placeholder="Ví dụ: 2023 hoặc 08/2023"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div>
@@ -1477,14 +1477,14 @@ export default function CreateResumePage() {
                             value={cert.link || ''}
                             onChange={(e) => handleUpdateCertification(idx, 'link', e.target.value)}
                             placeholder="https://credly.com/badges/..."
-                            className="bg-white font-mono text-xs"
+                            className="bg-surface font-mono text-xs"
                           />
                           {cert.link && (
                             <a
                               href={cert.link}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 shrink-0 rounded-xl bg-purple-50 px-2.5 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 border border-purple-200 transition"
+                              className="inline-flex items-center gap-1 shrink-0 rounded-xl bg-brand-50 px-2.5 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100 border border-brand-200 transition"
                             >
                               <ExternalLink size={12} />
                             </a>
@@ -1516,7 +1516,7 @@ export default function CreateResumePage() {
                     <Heart size={15} />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
                       7. Sở thích & Điểm mạnh cá nhân (Interests)
                     </h3>
                   </div>
@@ -1613,7 +1613,7 @@ export default function CreateResumePage() {
                     <Globe size={15} />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
                       8. Trình độ ngoại ngữ (Languages)
                       <span className="text-2xs font-semibold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
                         +3 điểm ATS
@@ -1656,7 +1656,7 @@ export default function CreateResumePage() {
                         value={lang.name}
                         onChange={(e) => handleUpdateLanguage(idx, 'name', e.target.value)}
                         placeholder="Tiếng Anh, Tiếng Nhật, Tiếng Trung..."
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <div className="flex-1">
@@ -1667,7 +1667,7 @@ export default function CreateResumePage() {
                         value={lang.level}
                         onChange={(e) => handleUpdateLanguage(idx, 'level', e.target.value)}
                         placeholder="Bản ngữ, Thành thạo (C1), IELTS 7.5, JLPT N2..."
-                        className="bg-white"
+                        className="bg-surface"
                       />
                     </div>
                     <button
@@ -1702,7 +1702,7 @@ export default function CreateResumePage() {
                     <Trophy size={15} />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
                       9. Giải thưởng & Thành tựu (Awards & Honors)
                       <span className="text-2xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
                         +2 điểm ATS
@@ -1755,7 +1755,7 @@ export default function CreateResumePage() {
                           value={award.title}
                           onChange={(e) => handleUpdateAward(idx, 'title', e.target.value)}
                           placeholder="Ví dụ: Giải Nhất Hackathon Web AI"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div>
@@ -1766,7 +1766,7 @@ export default function CreateResumePage() {
                           value={award.issuer}
                           onChange={(e) => handleUpdateAward(idx, 'issuer', e.target.value)}
                           placeholder="Ví dụ: Google Developers / Bộ GD&ĐT"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div className="sm:col-span-2">
@@ -1777,7 +1777,7 @@ export default function CreateResumePage() {
                           value={award.year}
                           onChange={(e) => handleUpdateAward(idx, 'year', e.target.value)}
                           placeholder="2023"
-                          className="bg-white max-w-xs"
+                          className="bg-surface max-w-xs"
                         />
                       </div>
                     </div>
@@ -1791,7 +1791,7 @@ export default function CreateResumePage() {
                         value={award.description || ''}
                         onChange={(e) => handleUpdateAward(idx, 'description', e.target.value)}
                         placeholder="Mô tả cuộc thi, số lượng đội tham gia hoặc điểm nổi bật của giải pháp..."
-                        className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500"
+                        className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
                       />
                     </div>
                   </div>
@@ -1811,14 +1811,14 @@ export default function CreateResumePage() {
 
           {/* DYNAMIC SECTION 10: NGƯỜI THAM CHIẾU (REFERENCES) */}
           {enabledSections.references && (
-            <Card className="border-cyan-100">
+            <Card className="border-brand-100">
               <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-cyan-50 text-cyan-600">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
                     <Users size={15} />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
                       10. Người tham chiếu (References)
                     </h3>
                   </div>
@@ -1868,7 +1868,7 @@ export default function CreateResumePage() {
                           value={refItem.fullName}
                           onChange={(e) => handleUpdateReference(idx, 'fullName', e.target.value)}
                           placeholder="Ví dụ: Trần Minh Đức"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div>
@@ -1879,7 +1879,7 @@ export default function CreateResumePage() {
                           value={refItem.position}
                           onChange={(e) => handleUpdateReference(idx, 'position', e.target.value)}
                           placeholder="Ví dụ: Engineering Director tại Nexus Tech"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div>
@@ -1890,7 +1890,7 @@ export default function CreateResumePage() {
                           value={refItem.email || ''}
                           onChange={(e) => handleUpdateReference(idx, 'email', e.target.value)}
                           placeholder="duc.tran@company.com"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                       <div>
@@ -1901,7 +1901,7 @@ export default function CreateResumePage() {
                           value={refItem.phone || ''}
                           onChange={(e) => handleUpdateReference(idx, 'phone', e.target.value)}
                           placeholder="(+84) 903 888 999"
-                          className="bg-white"
+                          className="bg-surface"
                         />
                       </div>
                     </div>
@@ -1923,10 +1923,10 @@ export default function CreateResumePage() {
 
         {/* Right: Live ATS Score Preview & Dynamic Checklist */}
         <div className="space-y-6">
-          <Card className="border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/40 sticky top-24">
+          <Card className="border-brand-100 bg-surface sticky top-24">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                <Sparkles size={16} className="text-amber-500" />
+              <h4 className="font-medium text-slate-900 text-sm flex items-center gap-1.5">
+                <Lightbulb size={16} className="text-amber-500" />
                 Ước tính điểm chuẩn ATS
               </h4>
               <Badge tone={estimatedScore >= 80 ? 'green' : 'amber'}>
@@ -1935,11 +1935,11 @@ export default function CreateResumePage() {
             </div>
 
             <div className="my-5 flex items-center gap-4">
-              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-white text-3xl font-black text-slate-800 shadow-sm">
+              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-surface text-3xl font-semibold text-slate-800 shadow-sm">
                 {estimatedScore}
               </div>
               <div>
-                <p className="font-bold text-slate-800 text-sm">Điểm tối ưu hóa CV</p>
+                <p className="font-medium text-slate-800 text-sm">Điểm tối ưu hóa CV</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   Cập nhật theo thời gian thực dựa trên các trường thông tin và mục bổ sung bạn vừa chọn.
                 </p>

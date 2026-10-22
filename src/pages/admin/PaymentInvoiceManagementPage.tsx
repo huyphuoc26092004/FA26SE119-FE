@@ -208,24 +208,24 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
     <div className="min-h-screen bg-slate-50/60 pb-16 font-sans">
       {/* Toast notification */}
       {toastMsg && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-semibold shadow-2xl animate-slide-left border border-slate-800">
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-semibold shadow-sm animate-slide-left border border-slate-800">
           <CheckCircle2 size={16} className="text-emerald-400" />
           <span>{toastMsg}</span>
         </div>
       )}
 
       {/* Top Header */}
-      <div className="bg-white border-b border-slate-200/80 sticky top-0 z-20 backdrop-blur-md bg-white/90">
+      <div className="bg-surface border-b border-slate-200/80 sticky top-0 z-20 bg-white/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
                 <span>Quản trị hệ thống</span>
                 <span>/</span>
-                <span className="text-blue-600 font-bold">Thanh toán & Hóa đơn VAT</span>
+                <span className="text-brand-600 font-medium">Thanh toán & Hóa đơn VAT</span>
               </div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-                <Wallet className="text-blue-600" size={26} />
+              <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight flex items-center gap-3 [&>svg]:hidden">
+                <Wallet className="text-brand-600" size={26} />
                 Quản lý Giao dịch Thanh toán & Hóa đơn
               </h1>
               <p className="text-xs text-slate-500 mt-1">
@@ -237,9 +237,9 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
               >
-                <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-blue-600' : ''} />
+                <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-brand-600' : ''} />
                 <span>{isRefreshing ? 'Đang đồng bộ...' : 'Đồng bộ dữ liệu'}</span>
               </button>
             </div>
@@ -249,16 +249,16 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
           <div className="flex items-center gap-2 mt-6 overflow-x-auto border-b border-slate-200 -mb-px">
             <button
               onClick={() => setActiveTab('transactions')}
-              className={`px-4 py-3 text-xs font-bold transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
+              className={`px-4 py-3 text-xs font-medium transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
                 activeTab === 'transactions'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50/40'
+                  ? 'border-brand-600 text-brand-600 bg-brand-50/40'
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
               }`}
             >
               <Wallet size={15} />
               <span>Giao dịch thanh toán</span>
               {pendingCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500 text-white animate-pulse">
                   {pendingCount}
                 </span>
               )}
@@ -266,9 +266,9 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
 
             <button
               onClick={() => setActiveTab('invoices')}
-              className={`px-4 py-3 text-xs font-bold transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
+              className={`px-4 py-3 text-xs font-medium transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
                 activeTab === 'invoices'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50/40'
+                  ? 'border-brand-600 text-brand-600 bg-brand-50/40'
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
               }`}
             >
@@ -281,9 +281,9 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
 
             <button
               onClick={() => setActiveTab('gateways')}
-              className={`px-4 py-3 text-xs font-bold transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
+              className={`px-4 py-3 text-xs font-medium transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
                 activeTab === 'gateways'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50/40'
+                  ? 'border-brand-600 text-brand-600 bg-brand-50/40'
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
               }`}
             >
@@ -293,9 +293,9 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
 
             <button
               onClick={() => setActiveTab('tax')}
-              className={`px-4 py-3 text-xs font-bold transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
+              className={`px-4 py-3 text-xs font-medium transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
                 activeTab === 'tax'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50/40'
+                  ? 'border-brand-600 text-brand-600 bg-brand-50/40'
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
               }`}
             >
@@ -310,7 +310,7 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {isLoading ? (
           <div className="py-24 text-center">
-            <RefreshCw size={32} className="animate-spin text-blue-600 mx-auto mb-3" />
+            <RefreshCw size={32} className="animate-spin text-brand-600 mx-auto mb-3" />
             <p className="text-xs font-semibold text-slate-600">Đang nạp dữ liệu thanh toán & hóa đơn...</p>
           </div>
         ) : (

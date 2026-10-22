@@ -704,11 +704,11 @@ export const mockConsultantStats: ConsultantDashboardStats = {
   completionRate: 96,
   todaySessionsCount: 2,
   topicDistribution: [
-    { topic: 'CV_REVIEW', label: 'Tối ưu hóa CV & ATS', count: 5, percentage: 42, color: 'bg-blue-500' },
+    { topic: 'CV_REVIEW', label: 'Tối ưu hóa CV & ATS', count: 5, percentage: 42, color: 'bg-brand-500' },
     { topic: 'MOCK_INTERVIEW', label: 'Phỏng vấn thử chuyên sâu', count: 3, percentage: 25, color: 'bg-emerald-500' },
     { topic: 'CAREER_ORIENTATION', label: 'Định hướng & Chuyển ngành', count: 2, percentage: 17, color: 'bg-amber-500' },
-    { topic: 'SALARY_NEGOTIATION', label: 'Định giá & Đàm phán lương', count: 1, percentage: 8, color: 'bg-purple-500' },
-    { topic: 'SKILL_ROADMAP', label: 'Lộ trình kỹ năng & Gap', count: 1, percentage: 8, color: 'bg-pink-500' },
+    { topic: 'SALARY_NEGOTIATION', label: 'Định giá & Đàm phán lương', count: 1, percentage: 8, color: 'bg-brand-500' },
+    { topic: 'SKILL_ROADMAP', label: 'Lộ trình kỹ năng & Gap', count: 1, percentage: 8, color: 'bg-brand-500' },
   ],
   weeklySchedule: [
     {

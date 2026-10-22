@@ -70,21 +70,21 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
     <div className="space-y-6">
       {/* KPI Cards Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500">Tổng số gói cước</span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <div className="p-2 rounded-xl bg-brand-50 text-brand-600">
               <Layers size={16} />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">{totalPlansCount}</span>
+            <span className="text-2xl font-semibold text-slate-900">{totalPlansCount}</span>
             <span className="text-xs text-slate-500 font-medium">({activePlansCount} đang bán)</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Bao gồm các gói Starter, Pro, VIP & Enterprise</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500">Người dùng đăng ký gói</span>
             <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
@@ -92,29 +92,29 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-emerald-700">{totalSubscribers.toLocaleString()}</span>
+            <span className="text-2xl font-semibold text-emerald-700">{totalSubscribers.toLocaleString()}</span>
             <span className="text-xs text-emerald-600 font-semibold">+12.4% MoM</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Ứng viên & đối tác có thuê bao hoạt động</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500">Doanh thu định kỳ (MRR)</span>
-            <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
+            <div className="p-2 rounded-xl bg-brand-50 text-brand-600">
               <DollarSign size={16} />
             </div>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-black text-purple-700">
+            <span className="text-2xl font-semibold text-brand-700">
               {(totalMrrVND / 1000000).toFixed(1)}M
             </span>
-            <span className="text-xs font-bold text-purple-600">VND</span>
+            <span className="text-xs font-medium text-brand-600">VND</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Tương đương {(totalMrrVND * 12 / 1000000000).toFixed(2)}B VND ARR / năm</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500">Doanh thu trung bình (ARPU)</span>
             <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
@@ -122,17 +122,17 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
             </div>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-black text-amber-700">
+            <span className="text-2xl font-semibold text-amber-700">
               {totalSubscribers > 0 ? Math.round(totalMrrVND / totalSubscribers).toLocaleString('vi-VN') : 0}
             </span>
-            <span className="text-xs font-bold text-amber-600">đ/user</span>
+            <span className="text-xs font-medium text-amber-600">đ/user</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Hiệu suất chuyển đổi nâng cấp Pro/VIP cao</p>
         </div>
       </div>
 
       {/* Action & Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Search box */}
           <div className="relative flex-1 min-w-[220px]">
@@ -142,7 +142,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo tên gói, mô tả, quyền lợi..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3.5 py-2 text-xs focus:bg-white focus:border-blue-500 focus:outline-hidden"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3.5 py-2 text-xs focus:bg-surface focus:border-brand-500 focus:outline-hidden"
             />
           </div>
 
@@ -175,14 +175,14 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
           <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200/60 text-slate-500">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-2xs' : 'hover:text-slate-800'}`}
+              className={`p-1.5 rounded-lg transition ${viewMode === 'grid' ? 'bg-white text-brand-600 shadow-2xs' : 'hover:text-slate-800'}`}
               title="Xem dạng thẻ"
             >
               <LayoutGrid size={15} />
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-2xs' : 'hover:text-slate-800'}`}
+              className={`p-1.5 rounded-lg transition ${viewMode === 'table' ? 'bg-white text-brand-600 shadow-2xs' : 'hover:text-slate-800'}`}
               title="Xem dạng bảng"
             >
               <List size={15} />
@@ -191,7 +191,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
 
           <button
             onClick={onOpenAddPlan}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+            className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs"
           >
             <Plus size={15} />
             <span>Tạo gói cước mới</span>
@@ -209,16 +209,16 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-3xl border bg-white flex flex-col justify-between overflow-hidden transition-all duration-300 shadow-2xs hover:shadow-md ${
+                className={`relative rounded-3xl border bg-surface flex flex-col justify-between overflow-hidden transition-all duration-300 shadow-2xs  ${
                   plan.highlight
-                    ? 'border-blue-400 ring-2 ring-blue-500/20'
+                    ? 'border-brand-400 ring-2 ring-brand-500/20'
                     : 'border-slate-200/80 hover:border-slate-300'
                 } ${!isActive ? 'opacity-80 bg-slate-50/50' : ''}`}
               >
                 {/* Top highlight bar */}
                 {plan.highlight && (
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center py-1 text-[11px] font-bold tracking-wide uppercase">
-                    ⭐ Gói được đề xuất hàng đầu
+                  <div className="bg-brand-600 text-white text-center py-1 text-[11px] font-medium tracking-wide uppercase">
+                    Gói được đề xuất hàng đầu
                   </div>
                 )}
 
@@ -226,7 +226,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                   {/* Badges & Status */}
                   <div className="flex items-center justify-between gap-2">
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
                         isActive
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
                           : isDraft
@@ -243,7 +243,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                     </span>
 
                     {plan.badge && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200/60">
                         {plan.badge}
                       </span>
                     )}
@@ -251,14 +251,14 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
 
                   {/* Title & Desc */}
                   <div>
-                    <h3 className="text-base font-bold text-slate-900">{plan.name}</h3>
+                    <h3 className="text-base font-medium text-slate-900">{plan.name}</h3>
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2">{plan.description}</p>
                   </div>
 
                   {/* Pricing Box */}
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-black text-slate-900">
+                      <span className="text-2xl font-semibold text-slate-900">
                         {plan.monthlyPriceVND === 0
                           ? 'Miễn phí'
                           : `${(plan.monthlyPriceVND / 1000).toLocaleString('vi-VN')}k`}
@@ -270,18 +270,18 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                     {plan.yearlyPriceVND > 0 && (
                       <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1">
                         <span>Theo năm: {plan.yearlyPriceVND.toLocaleString('vi-VN')} đ</span>
-                        <span className="font-bold text-emerald-600">-21%</span>
+                        <span className="font-medium text-emerald-600">-21%</span>
                       </div>
                     )}
                   </div>
 
                   {/* Token Quota Badge */}
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/60 text-xs font-semibold text-blue-900">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-brand-50/70 border border-brand-200/60 text-xs font-semibold text-brand-900">
                     <div className="flex items-center gap-1.5">
-                      <Zap size={14} className="text-blue-600" />
+                      <Zap size={14} className="text-brand-600" />
                       <span>Hạn ngạch AI:</span>
                     </div>
-                    <span className="font-bold text-blue-700">
+                    <span className="font-medium text-brand-700">
                       {plan.tokenMonthlyQuota.toLocaleString()} Tokens/tháng
                     </span>
                   </div>
@@ -290,31 +290,31 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                   <div className="space-y-1.5 text-xs text-slate-600">
                     <div className="flex items-center justify-between py-0.5 border-b border-slate-100">
                       <span className="text-slate-500">Trích xuất CV ATS:</span>
-                      <span className="font-bold text-slate-800">
+                      <span className="font-medium text-slate-800">
                         {plan.cvParsingLimit === 'unlimited' ? 'Không giới hạn' : `${plan.cvParsingLimit} CV/tháng`}
                       </span>
                     </div>
                     <div className="flex items-center justify-between py-0.5 border-b border-slate-100">
                       <span className="text-slate-500">Đối sánh Job Fit:</span>
-                      <span className="font-bold text-slate-800">
+                      <span className="font-medium text-slate-800">
                         {plan.cvJobFitLimit === 'unlimited' ? 'Không giới hạn' : `${plan.cvJobFitLimit} lượt/tháng`}
                       </span>
                     </div>
                     <div className="flex items-center justify-between py-0.5 border-b border-slate-100">
                       <span className="text-slate-500">API Rate Limit:</span>
-                      <span className="font-bold text-slate-800">
+                      <span className="font-medium text-slate-800">
                         {plan.apiRateLimitRPM} RPM · {(plan.apiRateLimitTPM / 1000).toFixed(0)}k TPM
                       </span>
                     </div>
                     <div className="flex items-center justify-between py-0.5">
                       <span className="text-slate-500">Giảm giá tư vấn 1-1:</span>
-                      <span className="font-bold text-emerald-600">{plan.consultantDiscountPercent}%</span>
+                      <span className="font-medium text-emerald-600">{plan.consultantDiscountPercent}%</span>
                     </div>
                   </div>
 
                   {/* Feature Bullets snippet */}
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                    <span className="text-[10px] uppercase font-medium text-slate-400 block tracking-wider">
                       Quyền lợi tiêu biểu ({plan.features.length})
                     </span>
                     {plan.features.slice(0, 3).map((feat, i) => (
@@ -335,14 +335,14 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => onOpenEditPlan(plan)}
-                      className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-white transition"
+                      className="p-1.5 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-surface transition"
                       title="Chỉnh sửa gói"
                     >
                       <Edit size={14} />
                     </button>
                     <button
                       onClick={() => onDuplicatePlan(plan.id)}
-                      className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-white transition"
+                      className="p-1.5 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-surface transition"
                       title="Nhân bản gói"
                     >
                       <Copy size={14} />
@@ -360,7 +360,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                     </button>
                     <button
                       onClick={() => setPlanToDelete(plan)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-white transition"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-surface transition"
                       title="Xóa gói"
                     >
                       <Trash2 size={14} />
@@ -375,10 +375,10 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
 
       {/* Table View */}
       {viewMode === 'table' && (
-        <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-2xs">
+        <div className="rounded-2xl border border-slate-200/80 bg-surface overflow-hidden shadow-2xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
+              <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Tên gói cước</th>
                   <th className="py-3 px-4">Trạng thái</th>
@@ -394,10 +394,10 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                 {filteredPlans.map((plan) => (
                   <tr key={plan.id} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <div className="font-medium text-slate-900 flex items-center gap-1.5">
                         <span>{plan.name}</span>
                         {plan.badge && (
-                          <span className="px-2 py-0.2 rounded-full text-[9px] font-bold bg-blue-50 text-blue-700">
+                          <span className="px-2 py-0.2 rounded-full text-[9px] font-medium bg-brand-50 text-brand-700">
                             {plan.badge}
                           </span>
                         )}
@@ -406,7 +406,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                     </td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
                           plan.status === 'ACTIVE'
                             ? 'bg-emerald-50 text-emerald-700'
                             : plan.status === 'DRAFT'
@@ -434,7 +434,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                         {plan.yearlyPriceVND > 0 ? `${plan.yearlyPriceVND.toLocaleString('vi-VN')} đ/năm` : '—'}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-blue-700">
+                    <td className="py-3.5 px-4 font-medium text-brand-700">
                       {plan.tokenMonthlyQuota.toLocaleString()}
                     </td>
                     <td className="py-3.5 px-4 text-slate-700">
@@ -443,21 +443,21 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                     <td className="py-3.5 px-4 font-semibold text-slate-800">
                       {plan.activeSubscribersCount.toLocaleString()}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-purple-700">
+                    <td className="py-3.5 px-4 font-medium text-brand-700">
                       {plan.mrrVND.toLocaleString('vi-VN')} đ
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => onOpenEditPlan(plan)}
-                          className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition"
+                          className="p-1.5 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-slate-100 transition"
                           title="Chỉnh sửa"
                         >
                           <Edit size={14} />
                         </button>
                         <button
                           onClick={() => onDuplicatePlan(plan.id)}
-                          className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition"
+                          className="p-1.5 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-slate-100 transition"
                           title="Nhân bản"
                         >
                           <Copy size={14} />
@@ -481,9 +481,9 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
 
       {/* Delete Confirmation Modal */}
       {planToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-4">
-            <h3 className="text-base font-bold text-slate-900">Xác nhận xóa gói cước?</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in">
+          <div className="relative w-full max-w-md bg-surface rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <h3 className="text-base font-medium text-slate-900">Xác nhận xóa gói cước?</h3>
             <p className="text-xs text-slate-600">
               Bạn có chắc chắn muốn xóa gói <strong>{planToDelete.name}</strong>? Các người dùng đang sử dụng gói này sẽ vẫn được duy trì đến hết kỳ thanh toán.
             </p>
@@ -496,7 +496,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs"
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-medium transition shadow-xs"
               >
                 Xóa gói cước
               </button>

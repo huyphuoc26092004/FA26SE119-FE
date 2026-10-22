@@ -3,7 +3,7 @@ import {
   User,
   FileText,
   Briefcase,
-  Sparkles,
+  Lightbulb,
   CheckCircle2,
   AlertCircle,
   ExternalLink,
@@ -34,23 +34,23 @@ export function ContextInspectorModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl border border-slate-200"
+        className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl bg-surface p-6 shadow-sm border border-slate-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
-              <Sparkles size={22} />
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-600 text-white">
+              <Lightbulb size={22} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-lg font-medium text-slate-900">
                 {isVietnamese ? 'Dữ liệu ngữ cảnh thời gian thực của AI' : 'Active AI Context Inspector'}
               </h3>
               <p className="text-xs text-slate-500">
@@ -74,8 +74,8 @@ export function ContextInspectorModal({
           {/* Section 1: Candidate Profile */}
           <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4">
             <div className="flex items-center gap-2 mb-3">
-              <User size={18} className="text-blue-600" />
-              <h4 className="text-sm font-bold text-slate-800">
+              <User size={18} className="text-brand-600" />
+              <h4 className="text-sm font-medium text-slate-800">
                 {isVietnamese ? '1. Hồ sơ ứng viên cơ bản' : '1. Candidate Profile Context'}
               </h4>
               <Badge tone="blue">
@@ -124,7 +124,7 @@ export function ContextInspectorModal({
                   {profile.skills.map((s) => (
                     <span
                       key={s}
-                      className="rounded-md bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200 shadow-2xs"
+                      className="rounded-md bg-surface px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200 shadow-2xs"
                     >
                       {s}
                     </span>
@@ -138,15 +138,15 @@ export function ContextInspectorModal({
           <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <FileText size={18} className="text-indigo-600" />
-                <h4 className="text-sm font-bold text-slate-800">
+                <FileText size={18} className="text-brand-600" />
+                <h4 className="text-sm font-medium text-slate-800">
                   {isVietnamese ? '2. Bản CV đang đính kèm' : '2. Attached Resume Context'}
                 </h4>
               </div>
               {selectedCv && (
                 <Link
                   to={`/candidate/resumes/${selectedCv.id}`}
-                  className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                  className="text-xs font-semibold text-brand-600 hover:underline flex items-center gap-1"
                 >
                   {isVietnamese ? 'Xem CV' : 'View CV'} <ExternalLink size={12} />
                 </Link>
@@ -155,42 +155,42 @@ export function ContextInspectorModal({
 
             {selectedCv ? (
               <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-slate-200">
+                <div className="flex items-center justify-between bg-surface rounded-xl p-3 border border-slate-200">
                   <div>
-                    <h5 className="font-bold text-slate-900 text-sm">{selectedCv.name}</h5>
+                    <h5 className="font-medium text-slate-900 text-sm">{selectedCv.name}</h5>
                     <p className="text-slate-500">
                       {selectedCv.position} · {selectedCv.language}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">ATS Score</span>
-                    <span className="text-lg font-black text-blue-600">{selectedCv.atsScore}/100</span>
+                    <span className="text-[10px] uppercase font-medium text-slate-400 block">ATS Score</span>
+                    <span className="text-lg font-semibold text-brand-600">{selectedCv.atsScore}/100</span>
                   </div>
                 </div>
 
                 {selectedCv.atsBreakdown && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                    <div className="rounded-lg bg-white p-2 border border-slate-200">
+                    <div className="rounded-lg bg-surface p-2 border border-slate-200">
                       <span className="text-[10px] text-slate-400 block">Định dạng</span>
-                      <span className="font-bold text-slate-800">
+                      <span className="font-medium text-slate-800">
                         {selectedCv.atsBreakdown.formatting}%
                       </span>
                     </div>
-                    <div className="rounded-lg bg-white p-2 border border-slate-200">
+                    <div className="rounded-lg bg-surface p-2 border border-slate-200">
                       <span className="text-[10px] text-slate-400 block">Từ khóa</span>
-                      <span className="font-bold text-slate-800">
+                      <span className="font-medium text-slate-800">
                         {selectedCv.atsBreakdown.keywords}%
                       </span>
                     </div>
-                    <div className="rounded-lg bg-white p-2 border border-slate-200">
+                    <div className="rounded-lg bg-surface p-2 border border-slate-200">
                       <span className="text-[10px] text-slate-400 block">Định lượng</span>
-                      <span className="font-bold text-slate-800">
+                      <span className="font-medium text-slate-800">
                         {selectedCv.atsBreakdown.impactMetrics}%
                       </span>
                     </div>
-                    <div className="rounded-lg bg-white p-2 border border-slate-200">
+                    <div className="rounded-lg bg-surface p-2 border border-slate-200">
                       <span className="text-[10px] text-slate-400 block">Cấu trúc</span>
-                      <span className="font-bold text-slate-800">
+                      <span className="font-medium text-slate-800">
                         {selectedCv.atsBreakdown.structure}%
                       </span>
                     </div>
@@ -205,7 +205,7 @@ export function ContextInspectorModal({
                     {selectedCv.skills?.map((s) => (
                       <span
                         key={s}
-                        className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-100"
+                        className="rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700 border border-brand-100"
                       >
                         {s}
                       </span>
@@ -214,7 +214,7 @@ export function ContextInspectorModal({
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl bg-white p-3 border border-slate-200/80 text-xs text-slate-500 flex items-center gap-2">
+              <div className="rounded-xl bg-surface p-3 border border-slate-200/80 text-xs text-slate-500 flex items-center gap-2">
                 <AlertCircle size={15} className="text-amber-500 shrink-0" />
                 <span>
                   {isVietnamese
@@ -230,14 +230,14 @@ export function ContextInspectorModal({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Briefcase size={18} className="text-emerald-600" />
-                <h4 className="text-sm font-bold text-slate-800">
+                <h4 className="text-sm font-medium text-slate-800">
                   {isVietnamese ? '3. Việc làm mục tiêu đang đính kèm' : '3. Target Job Opportunity'}
                 </h4>
               </div>
               {selectedJob && (
                 <Link
                   to={`/candidate/jobs/${selectedJob.id}`}
-                  className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                  className="text-xs font-semibold text-brand-600 hover:underline flex items-center gap-1"
                 >
                   {isVietnamese ? 'Xem việc làm' : 'View Job'} <ExternalLink size={12} />
                 </Link>
@@ -246,17 +246,17 @@ export function ContextInspectorModal({
 
             {selectedJob ? (
               <div className="space-y-3 text-xs">
-                <div className="flex items-start justify-between bg-white rounded-xl p-3 border border-slate-200">
+                <div className="flex items-start justify-between bg-surface rounded-xl p-3 border border-slate-200">
                   <div>
-                    <h5 className="font-bold text-slate-900 text-sm">{selectedJob.title}</h5>
+                    <h5 className="font-medium text-slate-900 text-sm">{selectedJob.title}</h5>
                     <p className="text-slate-600 font-medium">{selectedJob.company}</p>
                     <p className="text-slate-400 mt-0.5">
                       {selectedJob.location} · {selectedJob.type}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-emerald-600 block">{selectedJob.salary}</span>
-                    <span className="text-[10px] text-blue-600 font-semibold mt-1 inline-block bg-blue-50 px-2 py-0.5 rounded-full">
+                    <span className="font-medium text-emerald-600 block">{selectedJob.salary}</span>
+                    <span className="text-[10px] text-brand-600 font-semibold mt-1 inline-block bg-brand-50 px-2 py-0.5 rounded-full">
                       Match: {selectedJob.match}%
                     </span>
                   </div>
@@ -279,7 +279,7 @@ export function ContextInspectorModal({
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl bg-white p-3 border border-slate-200/80 text-xs text-slate-500 flex items-center gap-2">
+              <div className="rounded-xl bg-surface p-3 border border-slate-200/80 text-xs text-slate-500 flex items-center gap-2">
                 <AlertCircle size={15} className="text-slate-400 shrink-0" />
                 <span>
                   {isVietnamese

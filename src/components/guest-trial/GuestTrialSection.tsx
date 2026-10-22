@@ -1,17 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Briefcase,
-  FileText,
-  Sparkles,
-  Bot,
-  Layers,
-  ArrowRight,
-  X,
-  CheckCircle2,
-  Lock,
-  UserCheck,
-} from 'lucide-react';
+import { ArrowRight, X, CheckCircle2, UserCheck } from 'lucide-react';
+import { LanguageSwitcher } from '../common/LanguageSwitcher';
 import { GuestJobsTab } from './GuestJobsTab';
 import { GuestCvDemoTab } from './GuestCvDemoTab';
 import { GuestAiBuilderTab } from './GuestAiBuilderTab';
@@ -46,127 +36,159 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
   const tabs = [
     {
       id: 'jobs' as const,
-      icon: Briefcase,
-      label: isVietnamese ? 'Duyệt Việc Làm' : 'Browse Public Jobs',
-      badge: isVietnamese ? 'Công khai' : 'Public',
-      badgeTone: 'bg-blue-100 text-blue-700',
+      label: isVietnamese ? 'Duyệt việc làm' : 'Browse jobs',
+      hint: isVietnamese ? 'Công khai, không cần đăng nhập' : 'Public, no sign-in needed',
     },
     {
       id: 'resumes' as const,
-      icon: FileText,
-      label: isVietnamese ? 'Xem CV Demo' : 'Demo CV Showcase',
-      badge: 'ATS 90+',
-      badgeTone: 'bg-emerald-100 text-emerald-700',
+      label: isVietnamese ? 'Xem CV demo' : 'Demo CVs',
+      hint: isVietnamese ? 'Mẫu chuẩn ATS, điểm 90+' : 'ATS-ready samples, 90+ score',
     },
     {
       id: 'builder' as const,
-      icon: Sparkles,
-      label: isVietnamese ? 'AI Resume Builder' : 'AI Resume Builder',
-      badge: isVietnamese ? 'Mẫu cơ bản' : 'Basic Templates',
-      badgeTone: 'bg-purple-100 text-purple-700',
+      label: 'AI Resume Builder',
+      hint: isVietnamese ? 'Tạo CV với các mẫu cơ bản' : 'Build a CV from basic templates',
     },
     {
       id: 'chat' as const,
-      icon: Bot,
-      label: isVietnamese ? 'Trò Chuyện Với AI' : 'AI Assistant Chat',
-      badge: isVietnamese ? '3 lượt hỏi thử' : '3 Free Queries',
-      badgeTone: 'bg-amber-100 text-amber-700',
+      label: isVietnamese ? 'Trò chuyện với AI' : 'Chat with the assistant',
+      hint: isVietnamese ? '3 lượt hỏi thử' : '3 free questions',
     },
   ];
 
-  return (
-    <section id="guest-trial" className={`scroll-mt-24 ${isStandalone ? 'mt-4' : 'mt-24'}`}>
-      {/* Section Header */}
-      <div className="text-center max-w-3xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-200/80 px-4 py-1.5 text-xs font-semibold text-blue-700 mb-4 shadow-2xs">
-          <Sparkles size={14} className="text-blue-600" />
-          <span>
-            {isVietnamese
-              ? 'Guest Trial · Trải nghiệm dùng thử dành cho Khách'
-              : 'Guest Trial · Instant hands-on access for visitors'}
-          </span>
-        </div>
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-          {isVietnamese ? (
-            <>
-              Dùng thử không cần tài khoản,{' '}
-              <span className="text-blue-600">trải nghiệm sức mạnh AI</span>
-            </>
-          ) : (
-            <>
-              Try core features without sign-up,{' '}
-              <span className="text-blue-600">powered by AI</span>
-            </>
-          )}
-        </h2>
-        <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-          {isVietnamese
-            ? 'Khám phá các việc làm công khai, xem bản phân tích CV mẫu chuẩn ATS, tự tay tạo CV bằng AI với các mẫu cơ bản và trò chuyện trực tiếp cùng trợ lý nghề nghiệp.'
-            : 'Explore public jobs, inspect ATS-optimized demo CVs, create your resume with AI using basic templates, and test our intelligent career assistant.'}
-        </p>
-      </div>
-
-      {/* Modern Trial Workspace Container */}
-      <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-xl backdrop-blur-md sm:p-6 lg:p-8">
-        {/* Navigation Tabs Bar */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-4 mb-6">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-                }`}
-              >
-                <Icon size={16} />
-                <span>{tab.label}</span>
+  const tabList = (
+    <div>
+      <p className="pb-3 text-[13px] text-slate-600">
+        {isVietnamese ? 'Bốn thứ bạn có thể thử' : 'Four things you can try'}
+      </p>
+      <div role="tablist" className="border-b border-border">
+        {tabs.map((tab, index) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(tab.id)}
+              className="group flex w-full items-baseline gap-3 border-t border-border py-3.5 text-left"
+            >
+              <span className={`w-5 shrink-0 text-xs tabular-nums ${isActive ? 'text-brand' : 'text-slate-600'}`}>
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className="min-w-0">
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                    isActive ? 'bg-white/20 text-white' : tab.badgeTone
+                  className={`block text-[16px] transition-colors ${
+                    isActive ? 'text-brand' : 'text-slate-800 group-hover:text-brand'
                   }`}
                 >
-                  {tab.badge}
+                  {tab.label}
                 </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tab Content Display */}
-        <div className="min-h-[500px]">
-          {activeTab === 'jobs' && <GuestJobsTab />}
-          {activeTab === 'resumes' && (
-            <GuestCvDemoTab onSelectTemplateForBuilder={handleSelectTemplateForBuilder} />
-          )}
-          {activeTab === 'builder' && (
-            <GuestAiBuilderTab
-              initialTemplate={builderTemplate}
-              initialData={builderInitialData}
-              onOpenSaveModal={() => setShowSaveModal(true)}
-            />
-          )}
-          {activeTab === 'chat' && (
-            <GuestAiChatTab onOpenSaveModal={() => setShowSaveModal(true)} />
-          )}
-        </div>
+                <span className="mt-0.5 block text-[13px] leading-5 text-slate-600">{tab.hint}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
+    </div>
+  );
+
+  const content = (
+    <div className="min-h-[500px]">
+      {activeTab === 'jobs' && <GuestJobsTab />}
+      {activeTab === 'resumes' && (
+        <GuestCvDemoTab onSelectTemplateForBuilder={handleSelectTemplateForBuilder} />
+      )}
+      {activeTab === 'builder' && (
+        <GuestAiBuilderTab
+          initialTemplate={builderTemplate}
+          initialData={builderInitialData}
+          onOpenSaveModal={() => setShowSaveModal(true)}
+        />
+      )}
+      {activeTab === 'chat' && <GuestAiChatTab onOpenSaveModal={() => setShowSaveModal(true)} />}
+    </div>
+  );
+
+  const heading = (
+    <header className="mb-14">
+      <p className="text-sm text-brand">
+        {isVietnamese ? 'Trải nghiệm dùng thử dành cho khách' : 'Guest trial for visitors'}
+      </p>
+      <h1 className="mt-5 text-4xl font-normal leading-[1.12] tracking-[-0.025em] text-ink sm:text-5xl lg:text-[3.6rem]">
+        {isVietnamese ? (
+          <>
+            Dùng thử không cần tài khoản,
+            <br />
+            <span className="text-brand">trải nghiệm sức mạnh AI.</span>
+          </>
+        ) : (
+          <>
+            Try it without an account,
+            <br />
+            <span className="text-brand">see what it can do.</span>
+          </>
+        )}
+      </h1>
+      <p className="mt-7 max-w-[600px] text-[17px] leading-8 text-slate-700">
+        {isVietnamese
+          ? 'Xem việc làm công khai, đọc bản phân tích CV mẫu, tự tạo CV bằng AI và trò chuyện với trợ lý nghề nghiệp.'
+          : 'Browse public jobs, read a sample CV analysis, build a CV and chat with the career assistant.'}
+      </p>
+    </header>
+  );
+
+  return (
+    <section id="guest-trial" className="scroll-mt-24">
+      {isStandalone ? (
+        <div className="min-h-screen lg:grid lg:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="border-b border-border px-6 py-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:px-8 lg:py-10">
+            <Link to="/" className="flex items-baseline gap-1 text-ink">
+              <span className="text-[28px] font-medium tracking-[-0.02em]">Jobie</span>
+              <span className="text-xs text-brand">ai</span>
+            </Link>
+            <div className="mt-10 flex-1 overflow-y-auto">{tabList}</div>
+            <div className="mt-8">
+              <Link
+                to="/register"
+                className="flex min-h-12 items-center justify-between rounded-full bg-ink px-6 text-[15px] font-medium text-white transition-colors hover:bg-brand-800"
+              >
+                {t('common.getStarted', isVietnamese ? 'Bắt đầu ngay' : 'Get started')}
+                <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+              <div className="mt-4 flex items-center justify-between text-[15px]">
+                <Link to="/login" className="text-slate-700 transition-colors hover:text-brand">
+                  {t('common.signIn', isVietnamese ? 'Đăng nhập' : 'Sign in')}
+                </Link>
+                <LanguageSwitcher className="-mr-2" />
+              </div>
+            </div>
+          </aside>
+          <div className="min-w-0 px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
+            {heading}
+            {content}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-24">
+          {heading}
+          <div className="grid gap-10 lg:grid-cols-[260px_minmax(0,1fr)]">
+            {tabList}
+            {content}
+          </div>
+        </div>
+      )}
 
       {/* Modal Prompt to Register / Login */}
       {showSaveModal && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
           onClick={() => setShowSaveModal(false)}
         >
           <div
-            className="relative w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl"
+            className="relative w-full max-w-lg rounded-3xl bg-surface p-6 sm:p-8 shadow-sm"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -178,14 +200,10 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
             </button>
 
             <div className="text-center">
-              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md">
-                <Sparkles size={28} />
-              </div>
-
-              <h3 className="mt-4 text-xl font-bold text-slate-900 sm:text-2xl">
+              <h3 className="text-2xl font-normal text-ink">
                 {isVietnamese
-                  ? 'Mở Khoá Toàn Bộ Quyền Năng AI'
-                  : 'Unlock Full AI Career Capabilities'}
+                  ? 'Lưu lại và dùng đầy đủ tính năng'
+                  : 'Save your work and unlock every feature'}
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">
                 {isVietnamese
@@ -231,7 +249,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
 
             <div className="flex flex-col gap-2.5">
               <Link to="/register" className="w-full">
-                <Button className="w-full py-3 text-sm font-bold bg-blue-600 hover:bg-blue-700">
+                <Button className="w-full py-3 text-sm">
                   <UserCheck size={16} />
                   {isVietnamese ? 'Tạo tài khoản miễn phí' : 'Create Free Account'}
                 </Button>

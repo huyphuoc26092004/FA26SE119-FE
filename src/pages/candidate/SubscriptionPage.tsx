@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   Zap,
-  Sparkles,
+  Lightbulb,
   Crown,
   Check,
   ChevronDown,
   ChevronUp,
   FileText,
   Target,
-  Bot,
+  MessageSquare,
   MailCheck,
   Calendar,
   ShieldCheck,
@@ -121,7 +121,7 @@ export const SubscriptionPage: React.FC = () => {
       {/* Page Title & Navigation Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2.5">
+          <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight flex items-center gap-3 [&>svg]:hidden">
             <CreditCard className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             <span>{t.subscriptionPage.title}</span>
           </h1>
@@ -134,19 +134,19 @@ export const SubscriptionPage: React.FC = () => {
         <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700/80 self-start md:self-auto">
           <button
             onClick={() => setActiveTab('plans')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
               activeTab === 'plans'
                 ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <Lightbulb className="w-4 h-4 text-emerald-600" />
             <span>{isVietnamese ? 'Gói cước & Hạn mức' : 'Plans & Quota'}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
               activeTab === 'history'
                 ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -165,11 +165,11 @@ export const SubscriptionPage: React.FC = () => {
       {activeTab === 'plans' ? (
         <div className="space-y-8">
           {/* Active Subscription & Quota Card */}
-          <div className="relative rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-neutral-900 dark:to-neutral-900 p-6 md:p-8 shadow-sm overflow-hidden">
+          <div className="relative rounded-3xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/30 p-6 md:p-8 shadow-sm overflow-hidden">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-neutral-200/60 dark:border-neutral-800">
               <div>
                 <div className="flex items-center gap-2.5 mb-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-sm flex items-center gap-1.5">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-600 text-white shadow-sm flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span>{t.subscriptionPage.currentPlanBadge}: {userSubscription.planName}</span>
                   </span>
@@ -179,7 +179,7 @@ export const SubscriptionPage: React.FC = () => {
                       : t.subscriptionPage.billingMonthly}
                   </span>
                 </div>
-                <h2 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                <h2 className="text-xl md:text-2xl font-medium text-neutral-900 dark:text-neutral-100">
                   {t.subscriptionPage.activeQuotaTitle}
                 </h2>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 flex items-center gap-1.5">
@@ -194,14 +194,14 @@ export const SubscriptionPage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => setIsQuotaRulesOpen(true)}
-                  className="px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-700/60 transition flex items-center gap-1.5 shadow-xs"
+                  className="px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-surface dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-700/60 transition flex items-center gap-1.5 shadow-xs"
                 >
                   <Info className="w-4 h-4 text-neutral-500" />
                   <span>{t.subscriptionPage.viewQuotaRulesBtn}</span>
                 </button>
                 <button
                   onClick={() => setIsTopupOpen(true)}
-                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm shadow-amber-500/20"
+                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
                 >
                   <PlusCircle className="w-4 h-4" />
                   <span>{t.subscriptionPage.topupTokensBtn}</span>
@@ -213,12 +213,12 @@ export const SubscriptionPage: React.FC = () => {
             <div className="pt-6 space-y-6">
               <div>
                 <div className="flex justify-between items-baseline mb-2">
-                  <div className="flex items-center gap-1.5 text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-neutral-900 dark:text-neutral-100">
                     <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
                     <span>AI Tokens</span>
                   </div>
                   <div className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                    <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+                    <span className="font-medium text-neutral-900 dark:text-neutral-100 font-mono">
                       {userSubscription.tokensUsed.toLocaleString('vi-VN')}
                     </span>{' '}
                     / {userSubscription.tokenLimit.toLocaleString('vi-VN')} Tokens ({tokenPercentage}%)
@@ -232,7 +232,7 @@ export const SubscriptionPage: React.FC = () => {
                         ? 'bg-rose-500'
                         : tokenPercentage > 70
                         ? 'bg-amber-500'
-                        : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                        : ' bg-emerald-500 '
                     }`}
                     style={{ width: `${tokenPercentage}%` }}
                   />
@@ -253,45 +253,45 @@ export const SubscriptionPage: React.FC = () => {
 
               {/* Counter breakdown widgets */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
+                <div className="p-3.5 rounded-2xl bg-surface dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
                   <div className="flex items-center justify-between text-neutral-500 text-xs mb-1.5">
                     <span>{t.subscriptionPage.cvParsingQuota}</span>
                     <FileText className="w-4 h-4 text-emerald-600" />
                   </div>
-                  <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+                  <div className="text-lg font-medium text-neutral-900 dark:text-neutral-100 font-mono">
                     {userSubscription.cvParsedCount}
                     <span className="text-xs font-normal text-neutral-400"> / {t.subscriptionPage.unlimited}</span>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
+                <div className="p-3.5 rounded-2xl bg-surface dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
                   <div className="flex items-center justify-between text-neutral-500 text-xs mb-1.5">
                     <span>{t.subscriptionPage.jobFitQuota}</span>
                     <Target className="w-4 h-4 text-teal-600" />
                   </div>
-                  <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+                  <div className="text-lg font-medium text-neutral-900 dark:text-neutral-100 font-mono">
                     {userSubscription.cvJobFitCount}
                     <span className="text-xs font-normal text-neutral-400"> / {t.subscriptionPage.unlimited}</span>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
+                <div className="p-3.5 rounded-2xl bg-surface dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
                   <div className="flex items-center justify-between text-neutral-500 text-xs mb-1.5">
                     <span>{t.subscriptionPage.aiAssistantQuota}</span>
-                    <Bot className="w-4 h-4 text-indigo-600" />
+                    <MessageSquare className="w-4 h-4 text-brand-600" />
                   </div>
-                  <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+                  <div className="text-lg font-medium text-neutral-900 dark:text-neutral-100 font-mono">
                     {userSubscription.aiQueriesCount}
                     <span className="text-xs font-normal text-neutral-400"> / {t.subscriptionPage.unlimited}</span>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
+                <div className="p-3.5 rounded-2xl bg-surface dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
                   <div className="flex items-center justify-between text-neutral-500 text-xs mb-1.5">
                     <span>{t.subscriptionPage.coverLetterQuota}</span>
-                    <MailCheck className="w-4 h-4 text-pink-600" />
+                    <MailCheck className="w-4 h-4 text-brand-600" />
                   </div>
-                  <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+                  <div className="text-lg font-medium text-neutral-900 dark:text-neutral-100 font-mono">
                     {userSubscription.coverLettersGeneratedCount}
                     <span className="text-xs font-normal text-neutral-400"> / {t.subscriptionPage.unlimited}</span>
                   </div>
@@ -302,7 +302,7 @@ export const SubscriptionPage: React.FC = () => {
 
           {/* Pricing Plans Section Header & Toggle */}
           <div className="text-center space-y-3 pt-6">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">
+            <h2 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
               {t.subscriptionPage.planComparisonTitle}
             </h2>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto">
@@ -314,7 +314,7 @@ export const SubscriptionPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setBillingCycle('monthly')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                className={`px-4 py-2 rounded-xl text-xs font-medium transition ${
                   billingCycle === 'monthly'
                     ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
                     : 'text-neutral-600 dark:text-neutral-400'
@@ -325,14 +325,14 @@ export const SubscriptionPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setBillingCycle('yearly')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 ${
                   billingCycle === 'yearly'
                     ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
                     : 'text-neutral-600 dark:text-neutral-400'
                 }`}
               >
                 <span>{t.subscriptionPage.billingYearly}</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
                   {t.subscriptionPage.savePercent}
                 </span>
               </button>
@@ -353,9 +353,9 @@ export const SubscriptionPage: React.FC = () => {
           </div>
 
           {/* Detailed Feature Comparison Table */}
-          <div className="rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-sm pt-6">
+          <div className="rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 overflow-hidden shadow-sm pt-6">
             <div className="px-6 pb-4">
-              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+              <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
                 {isVietnamese ? 'Ma trận so sánh tính năng chi tiết' : 'Detailed Feature Comparison Matrix'}
               </h3>
               <p className="text-xs text-neutral-500">
@@ -371,10 +371,10 @@ export const SubscriptionPage: React.FC = () => {
                   <tr>
                     <th className="py-3 px-6">Tính năng / Quyền lợi</th>
                     <th className="py-3 px-4 text-center">Khởi đầu (Free)</th>
-                    <th className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold">
+                    <th className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400 font-medium">
                       Chuyên nghiệp (Pro)
                     </th>
-                    <th className="py-3 px-4 text-center text-indigo-600 dark:text-indigo-400 font-bold">
+                    <th className="py-3 px-4 text-center text-brand-600 dark:text-brand-400 font-medium">
                       Cao cấp (Executive VIP)
                     </th>
                   </tr>
@@ -383,38 +383,38 @@ export const SubscriptionPage: React.FC = () => {
                   <tr>
                     <td className="py-3.5 px-6 font-semibold">AI Tokens hàng tháng</td>
                     <td className="py-3.5 px-4 text-center font-mono">20,000</td>
-                    <td className="py-3.5 px-4 text-center font-mono font-bold text-emerald-600">250,000</td>
-                    <td className="py-3.5 px-4 text-center font-mono font-bold text-indigo-600">1,000,000</td>
+                    <td className="py-3.5 px-4 text-center font-mono font-medium text-emerald-600">250,000</td>
+                    <td className="py-3.5 px-4 text-center font-mono font-medium text-brand-600">1,000,000</td>
                   </tr>
                   <tr>
                     <td className="py-3.5 px-6 font-semibold">Số lượng CV lưu trữ & Phân tích ATS</td>
                     <td className="py-3.5 px-4 text-center">Tối đa 3 bản</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-emerald-600">Không giới hạn</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-indigo-600">Không giới hạn</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-emerald-600">Không giới hạn</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Không giới hạn</td>
                   </tr>
                   <tr>
                     <td className="py-3.5 px-6 font-semibold">Lượt phân tích CV–Job Fit</td>
                     <td className="py-3.5 px-4 text-center">5 lượt / tháng</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-emerald-600">Không giới hạn</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-indigo-600">Không giới hạn</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-emerald-600">Không giới hạn</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Không giới hạn</td>
                   </tr>
                   <tr>
                     <td className="py-3.5 px-6 font-semibold">Trợ lý AI sự nghiệp (Chatbot tương tác)</td>
                     <td className="py-3.5 px-4 text-center">15 tin nhắn / tháng</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-emerald-600">Không giới hạn</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-indigo-600">Không giới hạn</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-emerald-600">Không giới hạn</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Không giới hạn</td>
                   </tr>
                   <tr>
                     <td className="py-3.5 px-6 font-semibold">Tạo Cover Letter & Email ứng tuyển</td>
                     <td className="py-3.5 px-4 text-center">5 bản / tháng</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-emerald-600">Không giới hạn</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-indigo-600">Không giới hạn</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-emerald-600">Không giới hạn</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Không giới hạn</td>
                   </tr>
                   <tr>
                     <td className="py-3.5 px-6 font-semibold">Ưu đãi khi đặt lịch Cố vấn 1-on-1</td>
                     <td className="py-3.5 px-4 text-center text-neutral-400">—</td>
                     <td className="py-3.5 px-4 text-center font-semibold text-emerald-600">Giảm 15%</td>
-                    <td className="py-3.5 px-4 text-center font-semibold text-indigo-600">
+                    <td className="py-3.5 px-4 text-center font-semibold text-brand-600">
                       Tặng 1 buổi/quý (Trị giá 600k)
                     </td>
                   </tr>
@@ -422,19 +422,19 @@ export const SubscriptionPage: React.FC = () => {
                     <td className="py-3.5 px-6 font-semibold">Huy hiệu "Ứng viên nổi bật" (Featured)</td>
                     <td className="py-3.5 px-4 text-center text-neutral-400">—</td>
                     <td className="py-3.5 px-4 text-center text-neutral-400">—</td>
-                    <td className="py-3.5 px-4 text-center text-indigo-600 font-bold">Có đặc quyền 👑</td>
+                    <td className="py-3.5 px-4 text-center text-brand-600 font-medium">Có đặc quyền</td>
                   </tr>
                   <tr>
                     <td className="py-3.5 px-6 font-semibold">Báo cáo mức lương theo công ty (Intelligence)</td>
                     <td className="py-3.5 px-4 text-center">Cơ bản</td>
                     <td className="py-3.5 px-4 text-center">Nâng cao</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-indigo-600">Toàn diện + Dự báo</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Toàn diện + Dự báo</td>
                   </tr>
                   <tr>
                     <td className="py-3.5 px-6 font-semibold">Hỗ trợ khách hàng ưu tiên 24/7</td>
                     <td className="py-3.5 px-4 text-center">Tiêu chuẩn</td>
                     <td className="py-3.5 px-4 text-center">Ưu tiên (trong 4h)</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-indigo-600">Chuyên viên hỗ trợ riêng 24/7</td>
+                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Chuyên viên hỗ trợ riêng 24/7</td>
                   </tr>
                 </tbody>
               </table>
@@ -443,7 +443,7 @@ export const SubscriptionPage: React.FC = () => {
 
           {/* FAQs Accordion */}
           <div className="space-y-4 pt-6">
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+            <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-emerald-600" />
               <span>{isVietnamese ? 'Câu hỏi thường gặp về Gói cước & Thanh toán' : 'Frequently Asked Questions'}</span>
             </h3>
@@ -454,7 +454,7 @@ export const SubscriptionPage: React.FC = () => {
                 return (
                   <div
                     key={index}
-                    className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden"
+                    className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 overflow-hidden"
                   >
                     <button
                       type="button"

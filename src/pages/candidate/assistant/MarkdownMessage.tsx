@@ -30,7 +30,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
         return (
           <code
             key={index}
-            className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono font-medium text-blue-700 border border-slate-200/60"
+            className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono font-medium text-brand-700 border border-slate-200/60"
           >
             {part.slice(1, -1)}
           </code>
@@ -93,7 +93,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
       renderedElements.push(
         <h3
           key={lineIndex}
-          className="mt-3.5 mb-1.5 text-base font-bold text-slate-900 flex items-center gap-1.5"
+          className="mt-3.5 mb-1.5 text-base font-medium text-slate-900 flex items-center gap-1.5"
         >
           {renderFormattedText(trimmed.replace('### ', ''))}
         </h3>
@@ -107,7 +107,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
       renderedElements.push(
         <h4
           key={lineIndex}
-          className="mt-2.5 mb-1 text-sm font-bold text-slate-800"
+          className="mt-2.5 mb-1 text-sm font-medium text-slate-800"
         >
           {renderFormattedText(trimmed.replace('#### ', ''))}
         </h4>
@@ -121,7 +121,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
       renderedElements.push(
         <blockquote
           key={lineIndex}
-          className="my-2 rounded-r-xl border-l-3 border-blue-500 bg-blue-50/50 py-2 px-3 text-xs sm:text-sm italic text-slate-700 leading-relaxed"
+          className="my-2 rounded-r-xl border-l-3 border-brand-500 bg-brand-50/50 py-2 px-3 text-xs sm:text-sm italic text-slate-700 leading-relaxed"
         >
           {renderFormattedText(trimmed.replace('> ', ''))}
         </blockquote>
@@ -153,7 +153,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
       const text = trimmed.slice(2);
       currentList.push(
         <li key={lineIndex} className="flex items-start gap-2 text-sm">
-          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-600 shrink-0" />
+          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-brand-600 shrink-0" />
           <span>{renderFormattedText(text)}</span>
         </li>
       );

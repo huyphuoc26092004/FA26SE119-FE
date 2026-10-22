@@ -1,5 +1,15 @@
 import React from 'react';
-import { X, HelpCircle, Zap, ShieldCheck, Info, FileText, Target, Bot, MailCheck } from 'lucide-react';
+import {
+  X,
+  HelpCircle,
+  Zap,
+  ShieldCheck,
+  Info,
+  FileText,
+  Target,
+  MessageSquare,
+  MailCheck,
+} from 'lucide-react';
 import { useTranslation } from '../../../i18n';
 
 interface TokenQuotaRulesModalProps {
@@ -32,7 +42,7 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
     {
       feature: isVietnamese ? 'Hỏi đáp cùng Trợ lý sự nghiệp AI' : 'AI Career Assistant Query',
       tokens: '~800 – 1,500 Tokens',
-      icon: <Bot className="w-4 h-4 text-indigo-600" />,
+      icon: <MessageSquare className="w-4 h-4 text-brand-600" />,
       desc: isVietnamese
         ? 'Giải đáp thắc mắc lộ trình, tư vấn chiến lược lương thưởng với ngữ cảnh hồ sơ cá nhân.'
         : 'Context-aware advice on career roadmap, salary negotiations, and interview guidance.',
@@ -40,7 +50,7 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
     {
       feature: isVietnamese ? 'Soạn Cover Letter / Email ứng tuyển' : 'Cover Letter & Email Generator',
       tokens: '~1,200 – 2,000 Tokens',
-      icon: <MailCheck className="w-4 h-4 text-pink-600" />,
+      icon: <MailCheck className="w-4 h-4 text-brand-600" />,
       desc: isVietnamese
         ? 'Tạo thư xin việc cá nhân hóa, định dạng chuẩn quốc tế và tinh chỉnh giọng điệu bằng AI.'
         : 'Tailored application letter generation, diagnostic quality checks, and tone refinement.',
@@ -48,8 +58,8 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-2xl my-8 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-2xl my-8 bg-surface dark:bg-neutral-900 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40">
           <div className="flex items-center gap-2">
@@ -57,7 +67,7 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
               <Zap className="w-5 h-5 fill-emerald-500" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+              <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
                 {t.subscriptionPage.viewQuotaRulesBtn}
               </h3>
               <p className="text-xs text-neutral-500">
@@ -79,7 +89,7 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
           <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 flex items-start gap-3">
             <Info className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
             <div className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
-              <span className="font-bold text-emerald-800 dark:text-emerald-300">
+              <span className="font-medium text-emerald-800 dark:text-emerald-300">
                 {isVietnamese ? 'Token là gì?' : 'What are AI Tokens?'}
               </span>{' '}
               {isVietnamese
@@ -90,7 +100,7 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
 
           {/* Table of Consumption */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+            <h4 className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
               {isVietnamese ? 'Định mức tiêu hao ước tính cho từng tác vụ:' : 'Estimated consumption per action:'}
             </h4>
             <div className="space-y-2.5">
@@ -100,11 +110,11 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
                   className="p-3.5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/40 dark:bg-neutral-850 flex items-start justify-between gap-4"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-xl bg-white dark:bg-neutral-800 shadow-xs border border-neutral-200/60 dark:border-neutral-700 shrink-0">
+                    <div className="p-2 rounded-xl bg-surface dark:bg-neutral-800 shadow-xs border border-neutral-200/60 dark:border-neutral-700 shrink-0">
                       {rule.icon}
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                      <div className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
                         {rule.feature}
                       </div>
                       <div className="text-[11px] text-neutral-500 mt-0.5 leading-normal">
@@ -113,7 +123,7 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-400">
+                    <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-medium font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-400">
                       {rule.tokens}
                     </span>
                   </div>
@@ -126,8 +136,8 @@ export const TokenQuotaRulesModal: React.FC<TokenQuotaRulesModalProps> = ({ isOp
           <div className="pt-2 text-xs text-neutral-500 border-t border-neutral-100 dark:border-neutral-800">
             <p>
               {isVietnamese
-                ? '💡 Mẹo: Khi cần phân tích tài liệu dài hoặc nhiều hồ sơ cùng lúc, bạn có thể nạp thêm gói Tokens mở rộng mà không cần nâng cấp gói định kỳ.'
-                : '💡 Tip: When analyzing large batches of resumes, you can top-up additional token packs anytime without changing your monthly tier.'}
+                ? 'Mẹo: Khi cần phân tích tài liệu dài hoặc nhiều hồ sơ cùng lúc, bạn có thể nạp thêm gói Tokens mở rộng mà không cần nâng cấp gói định kỳ.'
+                : 'Tip: When analyzing large batches of resumes, you can top-up additional token packs anytime without changing your monthly tier.'}
             </p>
           </div>
         </div>

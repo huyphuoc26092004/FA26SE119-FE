@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { X, Check, Zap, AlertCircle, RefreshCw, PlusCircle, UserCheck } from 'lucide-react';
+import {
+  X,
+  Check,
+  Zap,
+  AlertCircle,
+  RefreshCw,
+  PlusCircle,
+  UserCheck,
+} from 'lucide-react';
 import type { GrantUserTokensPayload } from '../../../types/subscriptionManagement';
 
 interface UserTokenGrantModalProps {
@@ -69,8 +77,8 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-lg my-8 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-lg my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-3">
@@ -78,7 +86,7 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
               <Zap size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-lg font-medium text-slate-900">
                 Cấp phát Token & Hạn ngạch tùy chỉnh
               </h2>
               <p className="text-xs text-slate-500">
@@ -115,7 +123,7 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 placeholder="Alex Morgan"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
               />
             </div>
 
@@ -129,7 +137,7 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
                 value={userEmail}
                 onChange={(e) => setUserEmail(e.target.value)}
                 placeholder="candidate@example.com"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
               />
             </div>
           </div>
@@ -158,11 +166,11 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
                 onClick={() => setGrantType('CUSTOM_QUOTA')}
                 className={`p-3 rounded-xl border text-center transition flex flex-col items-center gap-1 text-xs font-semibold ${
                   grantType === 'CUSTOM_QUOTA'
-                    ? 'border-blue-500 bg-blue-50 text-blue-900 ring-2 ring-blue-500/20'
+                    ? 'border-brand-500 bg-brand-50 text-brand-900 ring-2 ring-brand-500/20'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <Zap size={16} className="text-blue-600" />
+                <Zap size={16} className="text-brand-600" />
                 <span>Hạn mức tháng</span>
               </button>
 
@@ -195,7 +203,7 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
                   required
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden font-bold text-amber-700"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden font-medium text-amber-700"
                 />
                 <span className="text-[11px] text-slate-400 mt-1 block">
                   {amount.toLocaleString()} Tokens
@@ -209,7 +217,7 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
                 <select
                   value={expiresInDays}
                   onChange={(e) => setExpiresInDays(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
                 >
                   <option value={7}>7 ngày (Khẩn cấp)</option>
                   <option value={30}>30 ngày (1 tháng)</option>
@@ -238,7 +246,7 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ghi rõ lý do đền bù, thưởng ứng viên VIP hoặc chiến dịch chăm sóc..."
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
             />
           </div>
 
@@ -254,7 +262,7 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50 transition"
+            className="px-4 py-2 rounded-xl border border-slate-200 bg-surface text-slate-600 text-xs font-semibold hover:bg-slate-50 transition"
           >
             Hủy
           </button>
@@ -262,7 +270,7 @@ export const UserTokenGrantModal: React.FC<UserTokenGrantModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+            className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
           >
             {isSubmitting ? (
               <span>Đang xử lý...</span>

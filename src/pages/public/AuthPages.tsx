@@ -15,7 +15,7 @@ import {
   KeyRound,
   RefreshCw,
   AlertCircle,
-  Sparkles,
+  Lightbulb,
   UserCheck,
   Compass,
   Check,
@@ -25,7 +25,6 @@ import {
 import { Button, Card, Input } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useTranslation } from '../../i18n';
-import calmBlueWaveBg from '../../assets/calm_blue_wave_bg.jpg';
 
 // ==========================================
 // SHARED AUTH PRESENTATIONAL COMPONENTS
@@ -33,16 +32,9 @@ import calmBlueWaveBg from '../../assets/calm_blue_wave_bg.jpg';
 
 function BrandLogo() {
   return (
-    <Link to="/" className="inline-flex items-center gap-2.5 group">
-      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#026aa2] to-[#0ba5ec] text-white flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-        </svg>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="text-base font-black text-slate-900 tracking-tight">Jobie</span>
-        <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-[#026aa2]">AI</span>
-      </div>
+    <Link to="/" className="inline-flex items-baseline gap-1 text-ink">
+      <span className="text-2xl font-medium tracking-[-0.02em]">Jobie</span>
+      <span className="text-xs text-brand">ai</span>
     </Link>
   );
 }
@@ -131,11 +123,11 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+    <div className="min-h-screen bg-canvas py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
       {/* Centered Main Rounded Card */}
-      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[620px]">
+      <div className="max-w-[1020px] w-full rounded-panel bg-surface overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-border min-h-[620px]">
         {/* Left Column (White Form) */}
-        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-white relative z-10">
+        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-surface relative z-10">
           {/* Top Brand Logo */}
           <div>
             <BrandLogo />
@@ -143,7 +135,7 @@ export function LoginPage() {
 
           {/* Form Content */}
           <div className="my-auto py-4">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+            <h1 className="text-3xl sm:text-4xl font-normal text-ink tracking-tight mb-1">
               {isVietnamese ? 'Chào mừng trở lại' : 'Welcome back'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mb-6">
@@ -154,7 +146,7 @@ export function LoginPage() {
               <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 flex items-start gap-2 shadow-xs">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold">{t('auth.resetPasswordSuccessTitle', 'Đổi mật khẩu thành công!')}</p>
+                  <p className="font-medium">{t('auth.resetPasswordSuccessTitle', 'Đổi mật khẩu thành công!')}</p>
                   <p className="text-emerald-700 text-[11px] mt-0.5">
                     {t('auth.resetPasswordSuccessDesc', 'Bạn có thể đăng nhập bằng mật khẩu mới vừa cập nhật.')}
                   </p>
@@ -169,10 +161,10 @@ export function LoginPage() {
                   {isVietnamese ? 'Email' : 'Email'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 sm:py-3 ${
+                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 sm:py-3 ${
                     errors.email
                       ? 'border-red-400 ring-2 ring-red-100'
-                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                      : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                   }`}
                 >
                   <Mail className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -198,10 +190,10 @@ export function LoginPage() {
                   {isVietnamese ? 'Mật khẩu' : 'Password'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 sm:py-3 ${
+                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 sm:py-3 ${
                     errors.password
                       ? 'border-red-400 ring-2 ring-red-100'
-                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                      : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                   }`}
                 >
                   <Lock className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -234,7 +226,7 @@ export function LoginPage() {
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded-md border-slate-300 text-[#026aa2] focus:ring-[#026aa2]"
+                    className="h-4 w-4 rounded-md border-slate-300 text-brand focus:ring-brand"
                     {...register('rememberMe')}
                   />
                   <span>{isVietnamese ? 'Ghi nhớ đăng nhập' : 'Remember me'}</span>
@@ -242,7 +234,7 @@ export function LoginPage() {
 
                 <Link
                   to="/forgot-password"
-                  className="font-semibold text-[#026aa2] hover:underline"
+                  className="font-semibold text-brand hover:underline"
                 >
                   {isVietnamese ? 'Quên mật khẩu?' : 'Forgot password?'}
                 </Link>
@@ -259,7 +251,7 @@ export function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 rounded-xl sm:rounded-2xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                className="w-full py-3 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
               >
                 {isSubmitting ? (
                   <>
@@ -282,7 +274,7 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="w-full py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200 hover:bg-slate-50 active:scale-[0.99] text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs"
+                className="w-full py-2.5 sm:py-3 rounded-full border border-slate-300 hover:border-ink text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs"
               >
                 <GoogleIcon />
                 <span>{isVietnamese ? 'Tiếp tục với Google' : 'Continue with Google'}</span>
@@ -293,7 +285,7 @@ export function LoginPage() {
           {/* Footer Create One */}
           <div className="text-center text-xs text-slate-500 pt-2">
             <span>{isVietnamese ? 'Chưa có tài khoản?' : "Don't have an account?"}</span>{' '}
-            <Link to="/register" className="font-semibold text-[#026aa2] hover:underline ml-1">
+            <Link to="/register" className="font-semibold text-brand hover:underline ml-1">
               {isVietnamese ? 'Tạo tài khoản' : 'Create one'}
             </Link>
           </div>
@@ -301,21 +293,20 @@ export function LoginPage() {
 
         {/* Right Column (Calm Blue Wave Artwork) */}
         <div
-          className="relative bg-cover bg-center overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
-          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+          className="relative overflow-hidden bg-brand-900 flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
         >
           {/* Top Bar with Sign Up pill button */}
           <div className="relative z-10 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={toggleLanguage}
-              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white font-medium text-xs transition-all cursor-pointer"
             >
               {isVietnamese ? 'VI' : 'EN'}
             </button>
             <Link
               to="/register"
-              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+              className="px-5 py-2 rounded-full bg-surface hover:bg-slate-50 text-brand font-semibold text-xs transition-all"
             >
               {isVietnamese ? 'Đăng ký' : 'Sign up'}
             </Link>
@@ -323,7 +314,7 @@ export function LoginPage() {
 
           {/* Bottom Hero Typography */}
           <div className="relative z-10 max-w-sm mt-auto pt-8">
-            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none mb-3">
+            <h2 className="text-4xl sm:text-5xl font-normal text-white tracking-tight leading-none mb-4">
               Welcome.
             </h2>
             <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">
@@ -403,26 +394,25 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+    <div className="min-h-screen bg-canvas py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
       {/* Centered Main Rounded Card with Inverted Columns */}
-      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[660px]">
+      <div className="max-w-[1020px] w-full rounded-panel bg-surface overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[660px]">
         {/* Left Column (Calm Blue Wave Artwork - on Left!) */}
         <div
-          className="order-2 lg:order-1 relative bg-cover bg-center overflow-hidden flex flex-col justify-start p-8 sm:p-10 lg:p-12 min-h-[320px] lg:min-h-auto"
-          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+          className="order-2 lg:order-1 relative overflow-hidden bg-brand-900 flex flex-col justify-start p-8 sm:p-10 lg:p-12 min-h-[320px] lg:min-h-auto"
         >
           {/* Top Bar with Sign in pill button & Language */}
           <div className="relative z-10 flex items-center justify-between">
             <Link
               to="/login"
-              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+              className="px-5 py-2 rounded-full bg-surface hover:bg-slate-50 text-brand font-semibold text-xs transition-all"
             >
               {isVietnamese ? 'Đăng nhập' : 'Sign in'}
             </Link>
             <button
               type="button"
               onClick={toggleLanguage}
-              className="px-2.5 py-1 rounded-full bg-white/30 hover:bg-white/40 backdrop-blur-md text-[#0c365a] font-bold text-xs transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white text-white font-medium text-xs transition-all cursor-pointer"
             >
               {isVietnamese ? 'VI' : 'EN'}
             </button>
@@ -430,10 +420,10 @@ export function RegisterPage() {
 
           {/* Hero Typography on Wave (Matching Image 2: "Join us.") */}
           <div className="relative z-10 max-w-xs mt-10 sm:mt-14 lg:mt-20">
-            <h1 className="text-4xl sm:text-5xl font-black text-[#0c365a] tracking-tight leading-none mb-3">
+            <h1 className="text-4xl sm:text-5xl font-normal text-white tracking-tight leading-none mb-4">
               Join us.
             </h1>
-            <p className="text-xs sm:text-sm text-[#18446b] leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-white/80 leading-relaxed font-medium">
               {isVietnamese
                 ? 'Tạo tài khoản trong chưa đầy một phút và bắt đầu khám phá.'
                 : 'Create your account in under a minute and start exploring.'}
@@ -442,7 +432,7 @@ export function RegisterPage() {
         </div>
 
         {/* Right Column (White Form - on Right!) */}
-        <div className="order-1 lg:order-2 p-6 sm:p-7 lg:p-8 flex flex-col justify-between bg-white relative z-10">
+        <div className="order-1 lg:order-2 p-6 sm:p-7 lg:p-8 flex flex-col justify-between bg-surface relative z-10">
           {/* Top Brand Logo */}
           <div>
             <BrandLogo />
@@ -450,7 +440,7 @@ export function RegisterPage() {
 
           {/* Form Content */}
           <div className="my-auto py-1">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+            <h1 className="text-3xl sm:text-4xl font-normal text-ink tracking-tight mb-1">
               {isVietnamese ? 'Tạo tài khoản' : 'Create your account'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mb-4">
@@ -464,10 +454,10 @@ export function RegisterPage() {
                   {isVietnamese ? 'Họ và tên' : 'Full name'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-1.5 sm:py-2 ${
+                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-1.5 sm:py-2 ${
                     errors.name
                       ? 'border-red-400 ring-2 ring-red-100'
-                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                      : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                   }`}
                 >
                   <UserIcon className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -492,10 +482,10 @@ export function RegisterPage() {
                   {isVietnamese ? 'Email' : 'Email'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-1.5 sm:py-2 ${
+                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-1.5 sm:py-2 ${
                     errors.email
                       ? 'border-red-400 ring-2 ring-red-100'
-                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                      : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                   }`}
                 >
                   <Mail className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -521,10 +511,10 @@ export function RegisterPage() {
                   {isVietnamese ? 'Mật khẩu' : 'Password'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-1.5 sm:py-2 ${
+                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-1.5 sm:py-2 ${
                     errors.password
                       ? 'border-red-400 ring-2 ring-red-100'
-                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                      : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                   }`}
                 >
                   <Lock className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -558,10 +548,10 @@ export function RegisterPage() {
                   {isVietnamese ? 'Xác nhận mật khẩu' : 'Confirm password'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-1.5 sm:py-2 ${
+                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-1.5 sm:py-2 ${
                     errors.confirmPassword
                       ? 'border-red-400 ring-2 ring-red-100'
-                      : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                      : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -586,13 +576,13 @@ export function RegisterPage() {
                 <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 select-none">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded-md border-slate-300 text-[#026aa2] focus:ring-[#026aa2]"
+                    className="h-4 w-4 rounded-md border-slate-300 text-brand focus:ring-brand"
                     {...register('acceptTerms')}
                   />
                   <span className="leading-tight text-[11px] text-slate-600">
                     {isVietnamese ? 'Tôi đồng ý với' : 'I agree to the'}{' '}
-                    <span className="font-semibold text-[#026aa2] underline">{isVietnamese ? 'Điều khoản dịch vụ' : 'Terms of Service'}</span> {isVietnamese ? 'và' : 'and'}{' '}
-                    <span className="font-semibold text-[#026aa2] underline">{isVietnamese ? 'Chính sách bảo mật' : 'Privacy Policy'}</span>.
+                    <span className="font-semibold text-brand underline">{isVietnamese ? 'Điều khoản dịch vụ' : 'Terms of Service'}</span> {isVietnamese ? 'và' : 'and'}{' '}
+                    <span className="font-semibold text-brand underline">{isVietnamese ? 'Chính sách bảo mật' : 'Privacy Policy'}</span>.
                   </span>
                 </label>
                 {errors.acceptTerms && (
@@ -614,7 +604,7 @@ export function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 sm:py-2.5 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-1.5"
+                className="w-full py-2.5 sm:py-2.5 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-1.5"
               >
                 {isSubmitting ? (
                   <>
@@ -637,7 +627,7 @@ export function RegisterPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignup}
-                className="w-full py-2 sm:py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 active:scale-[0.99] text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs"
+                className="w-full py-2 sm:py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs"
               >
                 <GoogleIcon />
                 <span>{isVietnamese ? 'Đăng ký với Google' : 'Sign up with Google'}</span>
@@ -648,7 +638,7 @@ export function RegisterPage() {
           {/* Footer Link */}
           <div className="text-center text-xs text-slate-500 pt-1.5">
             <span>{isVietnamese ? 'Đã có tài khoản?' : 'Already have an account?'}</span>{' '}
-            <Link to="/login" className="font-semibold text-[#026aa2] hover:underline ml-1">
+            <Link to="/login" className="font-semibold text-brand hover:underline ml-1">
               {isVietnamese ? 'Đăng nhập' : 'Sign in'}
             </Link>
           </div>
@@ -784,16 +774,16 @@ export function VerifyOtpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
-      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[580px]">
+    <div className="min-h-screen bg-canvas py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      <div className="max-w-[1020px] w-full rounded-panel bg-surface overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[580px]">
         {/* Left Column (White Form) */}
-        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-white relative z-10">
+        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-surface relative z-10">
           <div>
             <BrandLogo />
           </div>
 
           <div className="my-auto py-4">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+            <h1 className="text-3xl sm:text-4xl font-normal text-ink tracking-tight mb-1">
               {t('auth.otpTitle', 'Xác thực tài khoản (OTP)')}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mb-5 leading-relaxed">
@@ -824,11 +814,11 @@ export function VerifyOtpPage() {
                 </div>
               ) : (
                 <div className="mt-1 flex items-center justify-center gap-2">
-                  <span className="font-bold text-slate-900 text-sm">{email}</span>
+                  <span className="font-medium text-slate-900 text-sm">{email}</span>
                   <button
                     type="button"
                     onClick={() => setIsEditingEmail(true)}
-                    className="text-xs text-[#026aa2] hover:underline cursor-pointer font-semibold"
+                    className="text-xs text-brand hover:underline cursor-pointer font-semibold"
                   >
                     ({t('auth.otpChangeEmail', 'Đổi')})
                   </button>
@@ -858,10 +848,10 @@ export function VerifyOtpPage() {
                       e.preventDefault();
                       handlePasteCode(e.clipboardData.getData('text'));
                     }}
-                    className={`h-12 w-11 sm:h-13 sm:w-12 text-center text-xl sm:text-2xl font-black rounded-xl border transition-all outline-none ${
+                    className={`h-12 w-11 sm:h-13 sm:w-12 text-center text-xl sm:text-2xl font-semibold rounded-xl border transition-all outline-none ${
                       digit
-                        ? 'border-[#026aa2] bg-sky-50/50 text-[#026aa2] ring-2 ring-[#026aa2]/20'
-                        : 'border-slate-200 bg-white text-slate-800 focus:border-[#026aa2] focus:ring-2 focus:ring-[#026aa2]/15'
+                        ? 'border-brand bg-brand-50/50 text-brand ring-2 ring-brand/20'
+                        : 'border-slate-200 bg-surface text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/15'
                     }`}
                   />
                 ))}
@@ -874,7 +864,7 @@ export function VerifyOtpPage() {
                 <button
                   type="button"
                   onClick={handleResend}
-                  className="font-bold text-[#026aa2] hover:underline cursor-pointer inline-flex items-center gap-1.5"
+                  className="font-medium text-brand hover:underline cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   {t('auth.otpResendNow', 'Gửi lại mã OTP')}
@@ -882,7 +872,7 @@ export function VerifyOtpPage() {
               ) : (
                 <p className="text-slate-500 font-medium">
                   {t('auth.otpResendIn', 'Gửi lại mã sau')}{' '}
-                  <span className="font-bold text-slate-800 font-mono">
+                  <span className="font-medium text-slate-800 font-mono">
                     {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}s
                   </span>
                 </p>
@@ -909,7 +899,7 @@ export function VerifyOtpPage() {
               <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-800 flex items-center gap-2.5">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
                 <div>
-                  <p className="font-bold text-sm">{t('auth.otpSuccessTitle', 'Xác thực thành công!')}</p>
+                  <p className="font-medium text-sm">{t('auth.otpSuccessTitle', 'Xác thực thành công!')}</p>
                   <p className="text-emerald-700 mt-0.5 text-xs">{t('auth.otpSuccessDesc')}</p>
                 </div>
               </div>
@@ -920,7 +910,7 @@ export function VerifyOtpPage() {
               type="button"
               onClick={() => handleVerify()}
               disabled={isVerifying || isSuccess}
-              className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full py-3 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {isVerifying ? (
                 <>
@@ -937,7 +927,7 @@ export function VerifyOtpPage() {
           </div>
 
           <div className="text-center text-xs text-slate-500 pt-3">
-            <Link to="/login" className="font-semibold text-[#026aa2] hover:underline inline-flex items-center gap-1.5">
+            <Link to="/login" className="font-semibold text-brand hover:underline inline-flex items-center gap-1.5">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>{t('auth.backToLogin', 'Quay lại đăng nhập')}</span>
             </Link>
@@ -946,14 +936,13 @@ export function VerifyOtpPage() {
 
         {/* Right Column (Calm Blue Wave Artwork) */}
         <div
-          className="relative bg-cover bg-center overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
-          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+          className="relative overflow-hidden bg-brand-900 flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
         >
           {/* Top Bar with Sign in pill button & Language */}
           <div className="relative z-10 flex items-center justify-end gap-3">
             <Link
               to="/login"
-              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+              className="px-5 py-2 rounded-full bg-surface hover:bg-slate-50 text-brand font-semibold text-xs transition-all"
             >
               {isVietnamese ? 'Đăng nhập' : 'Sign in'}
             </Link>
@@ -961,7 +950,7 @@ export function VerifyOtpPage() {
 
           {/* Bottom Hero Typography */}
           <div className="relative z-10 max-w-sm mt-auto pt-8">
-            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none mb-3">
+            <h2 className="text-4xl sm:text-5xl font-normal text-white tracking-tight leading-none mb-4">
               Almost there.
             </h2>
             <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">
@@ -1020,16 +1009,16 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
-      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[580px]">
+    <div className="min-h-screen bg-canvas py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      <div className="max-w-[1020px] w-full rounded-panel bg-surface overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[580px]">
         {/* Left Column (White Form) */}
-        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-white relative z-10">
+        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-surface relative z-10">
           <div>
             <BrandLogo />
           </div>
 
           <div className="my-auto py-4">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+            <h1 className="text-3xl sm:text-4xl font-normal text-ink tracking-tight mb-1">
               {isVietnamese ? 'Quên mật khẩu?' : 'Forgot password?'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mb-6 leading-relaxed">
@@ -1041,7 +1030,7 @@ export function ForgotPasswordPage() {
             {recoveryCode ? (
               <div className="space-y-4">
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs text-emerald-900 shadow-2xs">
-                  <div className="flex items-center gap-2 mb-1.5 font-bold text-emerald-800">
+                  <div className="flex items-center gap-2 mb-1.5 font-medium text-emerald-800">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                     <span>{isVietnamese ? 'Mã khôi phục đã được tạo!' : 'Recovery code generated!'}</span>
                   </div>
@@ -1050,11 +1039,11 @@ export function ForgotPasswordPage() {
                       ? `Mã xác minh đặt lại mật khẩu gồm 6 chữ số đã được tạo cho ${currentEmail}.`
                       : `A 6-digit password reset verification code has been generated for ${currentEmail}.`}
                   </p>
-                  <div className="rounded-xl bg-white p-3 border border-emerald-200/90 flex items-center justify-between shadow-2xs">
+                  <div className="rounded-xl bg-surface p-3 border border-emerald-200/90 flex items-center justify-between shadow-2xs">
                     <span className="text-xs font-semibold text-slate-600">
                       {isVietnamese ? 'Mã OTP khôi phục:' : 'Recovery OTP:'}
                     </span>
-                    <span className="font-mono text-lg font-black text-emerald-700 tracking-widest">
+                    <span className="font-mono text-lg font-semibold text-emerald-700 tracking-widest">
                       {recoveryCode}
                     </span>
                   </div>
@@ -1069,7 +1058,7 @@ export function ForgotPasswordPage() {
                       )}`
                     )
                   }
-                  className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>{isVietnamese ? 'Tiếp tục đặt lại mật khẩu' : 'Proceed to reset password'}</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1092,10 +1081,10 @@ export function ForgotPasswordPage() {
                     {isVietnamese ? 'Email tài khoản' : 'Account email'}
                   </label>
                   <div
-                    className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 sm:py-3 ${
+                    className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 sm:py-3 ${
                       errors.email
                         ? 'border-red-400 ring-2 ring-red-100'
-                        : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                        : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                     }`}
                   >
                     <Mail className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -1125,7 +1114,7 @@ export function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                  className="w-full py-3 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -1144,7 +1133,7 @@ export function ForgotPasswordPage() {
           </div>
 
           <div className="text-center text-xs text-slate-500 pt-4">
-            <Link to="/login" className="font-semibold text-[#026aa2] hover:underline inline-flex items-center gap-1.5">
+            <Link to="/login" className="font-semibold text-brand hover:underline inline-flex items-center gap-1.5">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>{isVietnamese ? 'Quay lại đăng nhập' : 'Back to sign in'}</span>
             </Link>
@@ -1153,21 +1142,20 @@ export function ForgotPasswordPage() {
 
         {/* Right Column (Calm Blue Wave Artwork) */}
         <div
-          className="relative bg-cover bg-center overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
-          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+          className="relative overflow-hidden bg-brand-900 flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
         >
           {/* Top Bar with Sign in pill button & Language */}
           <div className="relative z-10 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={toggleLanguage}
-              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white font-medium text-xs transition-all cursor-pointer"
             >
               {isVietnamese ? 'VI' : 'EN'}
             </button>
             <Link
               to="/login"
-              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+              className="px-5 py-2 rounded-full bg-surface hover:bg-slate-50 text-brand font-semibold text-xs transition-all"
             >
               {isVietnamese ? 'Đăng nhập' : 'Sign in'}
             </Link>
@@ -1175,7 +1163,7 @@ export function ForgotPasswordPage() {
 
           {/* Bottom Hero Typography */}
           <div className="relative z-10 max-w-sm mt-auto pt-8">
-            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none mb-3">
+            <h2 className="text-4xl sm:text-5xl font-normal text-white tracking-tight leading-none mb-4">
               Security.
             </h2>
             <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">
@@ -1255,7 +1243,7 @@ export function ResetPasswordPage() {
       case 2:
         return { label: t('auth.strengthFair', 'Trung bình'), color: 'bg-amber-500', text: 'text-amber-600' };
       case 3:
-        return { label: t('auth.strengthGood', 'Tốt'), color: 'bg-blue-500', text: 'text-blue-600' };
+        return { label: t('auth.strengthGood', 'Tốt'), color: 'bg-brand-500', text: 'text-brand-600' };
       case 4:
         return { label: t('auth.strengthStrong', 'Rất mạnh'), color: 'bg-emerald-500', text: 'text-emerald-600' };
       default:
@@ -1276,16 +1264,16 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#edf4f9] py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
-      <div className="max-w-[1020px] w-full rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl shadow-blue-900/10 overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[620px]">
+    <div className="min-h-screen bg-canvas py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      <div className="max-w-[1020px] w-full rounded-panel bg-surface overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-border min-h-[620px]">
         {/* Left Column (White Form) */}
-        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-white relative z-10">
+        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-surface relative z-10">
           <div>
             <BrandLogo />
           </div>
 
           <div className="my-auto py-3">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+            <h1 className="text-3xl sm:text-4xl font-normal text-ink tracking-tight mb-1">
               {isVietnamese ? 'Đặt lại mật khẩu' : 'Reset password'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mb-5 leading-relaxed">
@@ -1299,7 +1287,7 @@ export function ResetPasswordPage() {
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                   <CheckCircle2 className="h-8 w-8" />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900">
+                <h2 className="text-xl font-medium text-slate-900">
                   {t('auth.resetPasswordSuccessTitle', 'Đổi mật khẩu thành công!')}
                 </h2>
                 <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
@@ -1311,7 +1299,7 @@ export function ResetPasswordPage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/login?email=${encodeURIComponent(emailParam)}&reset=success`)}
-                  className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 mt-4"
+                  className="w-full py-3 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 mt-4"
                 >
                   <span>{t('auth.goToLogin', 'Đăng nhập ngay')}</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1325,10 +1313,10 @@ export function ResetPasswordPage() {
                     {t('auth.recoveryCodeLabel', 'Mã khôi phục (OTP)')}
                   </label>
                   <div
-                    className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 ${
+                    className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 ${
                       errors.otp
                         ? 'border-red-400 ring-2 ring-red-100'
-                        : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                        : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                     }`}
                   >
                     <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -1354,10 +1342,10 @@ export function ResetPasswordPage() {
                     {t('auth.newPasswordLabel', 'Mật khẩu mới')}
                   </label>
                   <div
-                    className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 ${
+                    className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 ${
                       errors.newPassword
                         ? 'border-red-400 ring-2 ring-red-100'
-                        : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                        : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                     }`}
                   >
                     <Lock className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -1388,7 +1376,7 @@ export function ResetPasswordPage() {
                     <div className="mt-2">
                       <div className="flex items-center justify-between text-[11px] mb-1">
                         <span className="text-slate-500 font-medium">{t('auth.passwordStrength', 'Độ mạnh:')}</span>
-                        <span className={`font-bold ${strengthInfo.text}`}>{strengthInfo.label}</span>
+                        <span className={`font-medium ${strengthInfo.text}`}>{strengthInfo.label}</span>
                       </div>
                       <div className="grid grid-cols-4 gap-1.5 h-1.5">
                         {[1, 2, 3, 4].map((step) => (
@@ -1410,10 +1398,10 @@ export function ResetPasswordPage() {
                     {t('auth.confirmNewPasswordLabel', 'Xác nhận mật khẩu mới')}
                   </label>
                   <div
-                    className={`relative flex items-center rounded-xl border transition-all bg-white px-3.5 py-2.5 ${
+                    className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 ${
                       errors.confirmNewPassword
                         ? 'border-red-400 ring-2 ring-red-100'
-                        : 'border-slate-200/90 focus-within:border-[#026aa2] focus-within:ring-2 focus-within:ring-[#026aa2]/15'
+                        : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
                     }`}
                   >
                     <Lock className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -1443,7 +1431,7 @@ export function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 rounded-xl bg-[#026aa2] hover:bg-[#025a8b] active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-[#026aa2]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                  className="w-full py-3 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -1462,7 +1450,7 @@ export function ResetPasswordPage() {
           </div>
 
           <div className="text-center text-xs text-slate-500 pt-3">
-            <Link to="/login" className="font-semibold text-[#026aa2] hover:underline inline-flex items-center gap-1.5">
+            <Link to="/login" className="font-semibold text-brand hover:underline inline-flex items-center gap-1.5">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>{t('auth.backToLogin', 'Quay lại đăng nhập')}</span>
             </Link>
@@ -1471,21 +1459,20 @@ export function ResetPasswordPage() {
 
         {/* Right Column (Calm Blue Wave Artwork) */}
         <div
-          className="relative bg-cover bg-center overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
-          style={{ backgroundImage: `url(${calmBlueWaveBg})` }}
+          className="relative overflow-hidden bg-brand-900 flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
         >
           {/* Top Bar with Sign in pill button & Language */}
           <div className="relative z-10 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={toggleLanguage}
-              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white font-medium text-xs transition-all cursor-pointer"
             >
               {isVietnamese ? 'VI' : 'EN'}
             </button>
             <Link
               to="/login"
-              className="px-5 py-2 rounded-full bg-white hover:bg-slate-50 text-[#026aa2] font-semibold text-xs shadow-md shadow-blue-900/10 transition-all"
+              className="px-5 py-2 rounded-full bg-surface hover:bg-slate-50 text-brand font-semibold text-xs transition-all"
             >
               {isVietnamese ? 'Đăng nhập' : 'Sign in'}
             </Link>
@@ -1493,7 +1480,7 @@ export function ResetPasswordPage() {
 
           {/* Bottom Hero Typography */}
           <div className="relative z-10 max-w-sm mt-auto pt-8">
-            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none mb-3">
+            <h2 className="text-4xl sm:text-5xl font-normal text-white tracking-tight leading-none mb-4">
               Protected.
             </h2>
             <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-normal">

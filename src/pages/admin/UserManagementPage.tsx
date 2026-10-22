@@ -26,7 +26,7 @@ import {
   Mail,
   MapPin,
   Clock,
-  Sparkles,
+  Lightbulb,
   ArrowRight,
   UserCheck,
   UserX,
@@ -349,14 +349,14 @@ export default function UserManagementPage() {
     switch (role) {
       case 'ADMIN':
         return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 border border-rose-200">
             <ShieldAlert size={12} />
             <span>Admin</span>
           </span>
         );
       case 'CAREER_CONSULTANT':
         return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-bold text-purple-700 border border-purple-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 border border-brand-200">
             <ShieldCheck size={12} />
             <span>Consultant</span>
           </span>
@@ -364,7 +364,7 @@ export default function UserManagementPage() {
       case 'CANDIDATE':
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700 border border-brand-200">
             <Users size={12} />
             <span>Candidate</span>
           </span>
@@ -376,21 +376,21 @@ export default function UserManagementPage() {
     switch (status) {
       case 'ACTIVE':
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>{isVietnamese ? 'Hoạt động' : 'Active'}</span>
           </span>
         );
       case 'SUSPENDED':
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 border border-red-200">
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 border border-red-200">
             <Lock size={10} />
             <span>{isVietnamese ? 'Bị khóa' : 'Suspended'}</span>
           </span>
         );
       case 'PENDING':
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 border border-amber-200">
             <Clock size={10} />
             <span>{isVietnamese ? 'Chờ kích hoạt' : 'Pending'}</span>
           </span>
@@ -405,7 +405,7 @@ export default function UserManagementPage() {
     <div className="space-y-6">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-xl animate-fade-in border border-slate-700">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-sm animate-fade-in border border-slate-700">
           <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -413,7 +413,7 @@ export default function UserManagementPage() {
 
       {/* Breadcrumb Navigation */}
       <nav className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/admin" className="hover:text-blue-600 transition">
+        <Link to="/admin" className="hover:text-brand-600 transition">
           {isVietnamese ? 'Bảng điều khiển Admin' : 'Admin Dashboard'}
         </Link>
         <span>/</span>
@@ -435,9 +435,9 @@ export default function UserManagementPage() {
             <button
               onClick={() => refetch()}
               disabled={isFetching}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
-              <RefreshCw size={14} className={isFetching ? 'animate-spin text-blue-600' : ''} />
+              <RefreshCw size={14} className={isFetching ? 'animate-spin text-brand-600' : ''} />
               <span>{isVietnamese ? 'Làm mới' : 'Refresh'}</span>
             </button>
 
@@ -464,7 +464,7 @@ export default function UserManagementPage() {
           label={isVietnamese ? 'Tổng Người Dùng' : 'Total Users'}
           value={counts.total.toLocaleString()}
           detail={isVietnamese ? `${counts.active} đang hoạt động` : `${counts.active} active accounts`}
-          icon={<Users size={20} className="text-blue-600" />}
+          icon={<Users size={20} className="text-brand-600" />}
         />
         <StatCard
           label={isVietnamese ? 'Ứng Viên (Candidates)' : 'Candidates'}
@@ -476,7 +476,7 @@ export default function UserManagementPage() {
           label={isVietnamese ? 'Cố Vấn (Consultants)' : 'Career Consultants'}
           value={counts.consultants.toLocaleString()}
           detail={isVietnamese ? 'Chuyên gia nhân sự' : 'Verified career mentors'}
-          icon={<ShieldCheck size={20} className="text-purple-600" />}
+          icon={<ShieldCheck size={20} className="text-brand-600" />}
         />
         <StatCard
           label={isVietnamese ? 'Quản Trị Viên (Admins)' : 'Administrators'}
@@ -507,7 +507,7 @@ export default function UserManagementPage() {
                   ? 'Tìm theo tên, email, số điện thoại, ID hoặc vị trí...'
                   : 'Search by name, email, phone, ID, or headline...'
               }
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-10 pr-9 text-xs sm:text-sm outline-none transition focus:border-blue-500 focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-10 pr-9 text-xs sm:text-sm outline-none transition focus:border-brand-500 focus:bg-surface"
             />
             {searchQuery && (
               <button
@@ -524,7 +524,7 @@ export default function UserManagementPage() {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value as UserRole | 'ALL')}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-blue-500 cursor-pointer"
+              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
             >
               <option value="ALL">{isVietnamese ? 'Tất cả vai trò' : 'All Roles'}</option>
               <option value="CANDIDATE">Ứng viên (Candidate)</option>
@@ -538,7 +538,7 @@ export default function UserManagementPage() {
             <select
               value={selectedPlan}
               onChange={(e) => setSelectedPlan(e.target.value as UserSubscriptionTier | 'ALL')}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-blue-500 cursor-pointer"
+              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
             >
               <option value="ALL">{isVietnamese ? 'Tất cả gói cước' : 'All Plans'}</option>
               <option value="free">Khởi đầu (Free)</option>
@@ -554,7 +554,7 @@ export default function UserManagementPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-blue-500 cursor-pointer"
+              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
             >
               <option value="newest">{isVietnamese ? 'Mới nhất' : 'Newest'}</option>
               <option value="oldest">{isVietnamese ? 'Cũ nhất' : 'Oldest'}</option>
@@ -569,7 +569,7 @@ export default function UserManagementPage() {
           <button
             onClick={() => setSelectedStatus('ALL')}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${selectedStatus === 'ALL'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-brand-600 text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
           >
@@ -626,7 +626,7 @@ export default function UserManagementPage() {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
             <Filter size={24} />
           </div>
-          <h3 className="text-base font-bold text-slate-900">
+          <h3 className="text-base font-medium text-slate-900">
             {isVietnamese ? 'Không tìm thấy người dùng phù hợp' : 'No users match criteria'}
           </h3>
           <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
@@ -661,7 +661,7 @@ export default function UserManagementPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase tracking-wider font-bold text-[11px]">
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase tracking-wider font-medium text-[11px]">
                   <th className="py-3 px-4">Tài Khoản & Hồ Sơ</th>
                   <th className="py-3 px-3">Vai Trò (Role)</th>
                   <th className="py-3 px-3">Trạng Thái</th>
@@ -692,7 +692,7 @@ export default function UserManagementPage() {
                             <div className="flex items-center gap-1.5">
                               <Link
                                 to={`/admin/users/${u.id}`}
-                                className="font-bold text-slate-900 text-sm hover:text-blue-600 transition truncate"
+                                className="font-medium text-slate-900 text-sm hover:text-brand-600 transition truncate"
                               >
                                 {u.name}
                               </Link>
@@ -735,7 +735,7 @@ export default function UserManagementPage() {
 
                       {/* Plan */}
                       <td className="py-3.5 px-3">
-                        <span className="font-bold text-slate-800 block text-xs">{u.planName}</span>
+                        <span className="font-medium text-slate-800 block text-xs">{u.planName}</span>
                         <span className="text-[10px] text-slate-400">
                           Quota: {(u.tokenMonthlyQuota / 1000).toFixed(0)}k tokens
                         </span>
@@ -745,14 +745,14 @@ export default function UserManagementPage() {
                       <td className="py-3.5 px-3">
                         <div className="w-28 space-y-1">
                           <div className="flex justify-between text-[10px]">
-                            <span className="font-mono font-bold text-slate-800">
+                            <span className="font-mono font-medium text-slate-800">
                               {(u.tokensUsedThisMonth / 1000).toFixed(1)}k
                             </span>
                             <span className="text-slate-400">{tokenUsagePercent}%</span>
                           </div>
                           <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
                             <div
-                              className={`h-full rounded-full ${tokenUsagePercent > 85 ? 'bg-red-500' : tokenUsagePercent > 50 ? 'bg-amber-500' : 'bg-blue-600'
+                              className={`h-full rounded-full ${tokenUsagePercent > 85 ? 'bg-red-500' : tokenUsagePercent > 50 ? 'bg-amber-500' : 'bg-brand-600'
                                 }`}
                               style={{ width: `${tokenUsagePercent}%` }}
                             />
@@ -763,7 +763,7 @@ export default function UserManagementPage() {
                       {/* Verified */}
                       <td className="py-3.5 px-3">
                         {u.isVerified ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                             <CheckCircle2 size={12} className="text-emerald-600" />
                             <span>Đã xác minh</span>
                           </span>
@@ -787,7 +787,7 @@ export default function UserManagementPage() {
                           {/* Quick Inspect Modal */}
                           <button
                             onClick={() => setQuickInspectUser(u)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                            className="rounded-lg p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
                             title="Xem nhanh chi tiết"
                           >
                             <Eye size={15} />
@@ -796,7 +796,7 @@ export default function UserManagementPage() {
                           {/* Full Page Link */}
                           <Link
                             to={`/admin/users/${u.id}`}
-                            className="rounded-lg p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                            className="rounded-lg p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
                             title="Mở trang chi tiết tài khoản"
                           >
                             <ArrowRight size={15} />
@@ -805,7 +805,7 @@ export default function UserManagementPage() {
                           {/* Edit User */}
                           <button
                             onClick={() => openEditModal(u)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition cursor-pointer"
+                            className="rounded-lg p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
                             title="Chỉnh sửa thông tin"
                           >
                             <Edit size={15} />
@@ -814,7 +814,7 @@ export default function UserManagementPage() {
                           {/* Role & Permissions */}
                           <button
                             onClick={() => openRoleModal(u)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 transition cursor-pointer"
+                            className="rounded-lg p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
                             title="Phân quyền vai trò (Roles)"
                           >
                             <Shield size={15} />
@@ -860,12 +860,12 @@ export default function UserManagementPage() {
       {/* MODAL 1: CREATE NEW USER                                                  */}
       {/* ========================================================================= */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl my-8 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
+          <div className="w-full max-w-xl rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <UserPlus size={20} className="text-blue-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+                <UserPlus size={20} className="text-brand-600" />
+                <h3 className="text-lg font-medium text-slate-900">
                   {isVietnamese ? 'Tạo Tài Khoản Người Dùng Mới' : 'Create New User Account'}
                 </h3>
               </div>
@@ -886,7 +886,7 @@ export default function UserManagementPage() {
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Họ và tên *
                   </label>
                   <input
@@ -895,11 +895,11 @@ export default function UserManagementPage() {
                     value={createForm.name}
                     onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                     placeholder="Ví dụ: Nguyễn Văn A"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Địa chỉ Email *
                   </label>
                   <input
@@ -908,14 +908,14 @@ export default function UserManagementPage() {
                     value={createForm.email}
                     onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                     placeholder="email@example.com"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Số điện thoại
                   </label>
                   <input
@@ -923,11 +923,11 @@ export default function UserManagementPage() {
                     value={createForm.phone}
                     onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
                     placeholder="0912 345 678"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Mật khẩu ban đầu
                   </label>
                   <input
@@ -935,14 +935,14 @@ export default function UserManagementPage() {
                     value={createForm.initialPassword}
                     onChange={(e) => setCreateForm({ ...createForm, initialPassword: e.target.value })}
                     placeholder="password123"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500 font-mono"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Vai trò (Role) *
                   </label>
                   <select
@@ -957,7 +957,7 @@ export default function UserManagementPage() {
                             : 'pro';
                       setCreateForm({ ...createForm, role, planId });
                     }}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500 bg-white cursor-pointer font-bold"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer font-medium"
                   >
                     <option value="CANDIDATE">Ứng viên (Candidate)</option>
                     <option value="CAREER_CONSULTANT">Cố vấn (Consultant)</option>
@@ -966,13 +966,13 @@ export default function UserManagementPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Gói dịch vụ
                   </label>
                   <select
                     value={createForm.planId}
                     onChange={(e) => setCreateForm({ ...createForm, planId: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500 bg-white cursor-pointer"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer"
                   >
                     <option value="free">Khởi đầu Free (20k tokens)</option>
                     <option value="pro">Chuyên nghiệp Pro (250k tokens)</option>
@@ -983,13 +983,13 @@ export default function UserManagementPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Trạng thái kích hoạt
                   </label>
                   <select
                     value={createForm.status}
                     onChange={(e) => setCreateForm({ ...createForm, status: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500 bg-white cursor-pointer"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer"
                   >
                     <option value="ACTIVE">Hoạt động ngay (Active)</option>
                     <option value="PENDING">Chờ xác thực OTP (Pending)</option>
@@ -999,7 +999,7 @@ export default function UserManagementPage() {
               </div>
 
               <div>
-                <label className="font-bold text-slate-800 block mb-1">
+                <label className="font-medium text-slate-800 block mb-1">
                   Chức danh / Tiêu đề nghề nghiệp
                 </label>
                 <input
@@ -1007,12 +1007,12 @@ export default function UserManagementPage() {
                   value={createForm.headline}
                   onChange={(e) => setCreateForm({ ...createForm, headline: e.target.value })}
                   placeholder="Ví dụ: Senior Backend Engineer / HR Consultant"
-                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-800 block mb-1">
+                <label className="font-medium text-slate-800 block mb-1">
                   Ghi chú nội bộ dành cho Quản trị viên
                 </label>
                 <textarea
@@ -1020,7 +1020,7 @@ export default function UserManagementPage() {
                   value={createForm.notes}
                   onChange={(e) => setCreateForm({ ...createForm, notes: e.target.value })}
                   placeholder="Ghi chú về nguồn gốc tài khoản, lý do tạo hoặc các yêu cầu hỗ trợ..."
-                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500 leading-relaxed"
+                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 leading-relaxed"
                 />
               </div>
 
@@ -1045,12 +1045,12 @@ export default function UserManagementPage() {
       {/* MODAL 2: EDIT USER ACCOUNT                                                */}
       {/* ========================================================================= */}
       {userToEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl my-8 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
+          <div className="w-full max-w-xl rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Edit size={20} className="text-indigo-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+                <Edit size={20} className="text-brand-600" />
+                <h3 className="text-lg font-medium text-slate-900">
                   Chỉnh Sửa Tài Khoản: {userToEdit.name} (#{userToEdit.id})
                 </h3>
               </div>
@@ -1071,7 +1071,7 @@ export default function UserManagementPage() {
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Họ và tên *
                   </label>
                   <input
@@ -1079,11 +1079,11 @@ export default function UserManagementPage() {
                     required
                     value={editForm.name || ''}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-indigo-500"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Địa chỉ Email *
                   </label>
                   <input
@@ -1091,32 +1091,32 @@ export default function UserManagementPage() {
                     required
                     value={editForm.email || ''}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-indigo-500"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Số điện thoại
                   </label>
                   <input
                     type="text"
                     value={editForm.phone || ''}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-indigo-500"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Gói dịch vụ
                   </label>
                   <select
                     value={editForm.planId}
                     onChange={(e) => setEditForm({ ...editForm, planId: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-indigo-500 bg-white cursor-pointer"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer"
                   >
                     <option value="free">Khởi đầu Free</option>
                     <option value="pro">Chuyên nghiệp Pro</option>
@@ -1127,13 +1127,13 @@ export default function UserManagementPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Trạng thái tài khoản
                   </label>
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-indigo-500 bg-white cursor-pointer"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer"
                   >
                     <option value="ACTIVE">Hoạt động (Active)</option>
                     <option value="PENDING">Chờ kích hoạt (Pending)</option>
@@ -1144,38 +1144,38 @@ export default function UserManagementPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Địa điểm làm việc
                   </label>
                   <input
                     type="text"
                     value={editForm.location || ''}
                     onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-indigo-500"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-800 block mb-1">
+                  <label className="font-medium text-slate-800 block mb-1">
                     Chức danh / Headline
                   </label>
                   <input
                     type="text"
                     value={editForm.headline || ''}
                     onChange={(e) => setEditForm({ ...editForm, headline: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-indigo-500"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-800 block mb-1">
+                <label className="font-medium text-slate-800 block mb-1">
                   Ghi chú quản trị
                 </label>
                 <textarea
                   rows={2}
                   value={editForm.notes || ''}
                   onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-indigo-500"
+                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                 />
               </div>
 
@@ -1184,7 +1184,7 @@ export default function UserManagementPage() {
                   type="button"
                   onClick={() => resetPasswordMutation.mutate(userToEdit.id)}
                   disabled={resetPasswordMutation.isPending}
-                  className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline cursor-pointer font-semibold"
+                  className="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:underline cursor-pointer font-semibold"
                 >
                   <RefreshCw size={13} />
                   <span>Đặt lại mật khẩu về mặc định</span>
@@ -1208,11 +1208,11 @@ export default function UserManagementPage() {
       {/* MODAL 3: LOCK / UNLOCK USER MODAL                                         */}
       {/* ========================================================================= */}
       {userToLock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2 text-red-600">
               {userToLock.status === 'SUSPENDED' ? <Unlock size={24} /> : <Lock size={24} />}
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-lg font-medium text-slate-900">
                 {userToLock.status === 'SUSPENDED'
                   ? 'Mở Khóa Tài Khoản Người Dùng'
                   : 'Xác Nhận Khóa Tài Khoản Người Dùng'}
@@ -1227,7 +1227,7 @@ export default function UserManagementPage() {
 
             {userToLock.status !== 'SUSPENDED' && (
               <div>
-                <label className="font-bold text-slate-800 text-xs block mb-1">
+                <label className="font-medium text-slate-800 text-xs block mb-1">
                   Lý do khóa tài khoản (Audit Reason) *
                 </label>
                 <textarea
@@ -1271,12 +1271,12 @@ export default function UserManagementPage() {
       {/* MODAL 4: ROLE ASSIGNMENT & PERMISSIONS MATRIX                             */}
       {/* ========================================================================= */}
       {userToRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl my-8 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Shield size={20} className="text-purple-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+                <Shield size={20} className="text-brand-600" />
+                <h3 className="text-lg font-medium text-slate-900">
                   Phân Quyền & Vai Trò: {userToRole.name}
                 </h3>
               </div>
@@ -1291,7 +1291,7 @@ export default function UserManagementPage() {
             <div className="space-y-4 text-xs text-slate-700">
               {/* Select Role */}
               <div>
-                <label className="font-bold text-slate-900 text-sm block mb-1">
+                <label className="font-medium text-slate-900 text-sm block mb-1">
                   1. Chọn Vai Trò Hệ Thống (System Role)
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -1304,11 +1304,11 @@ export default function UserManagementPage() {
                         setSelectedPermissions(getDefaultPermissionsForRole(role));
                       }}
                       className={`rounded-xl border p-3 text-left transition cursor-pointer ${newAssignedRole === role
-                          ? 'border-purple-600 bg-purple-50/70 shadow-xs'
+                          ? 'border-brand-600 bg-brand-50/70 shadow-xs'
                           : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100'
                         }`}
                     >
-                      <span className="font-bold text-slate-900 block text-xs">
+                      <span className="font-medium text-slate-900 block text-xs">
                         {role === 'ADMIN'
                           ? 'Quản Trị Viên (Admin)'
                           : role === 'CAREER_CONSULTANT'
@@ -1330,7 +1330,7 @@ export default function UserManagementPage() {
               {/* Permissions Checklist */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="font-bold text-slate-900 text-sm">
+                  <label className="font-medium text-slate-900 text-sm">
                     2. Ma Trận Quyền Hạn Chi Tiết ({selectedPermissions.length}/{ALL_SYSTEM_PERMISSIONS.length})
                   </label>
                   <button
@@ -1338,7 +1338,7 @@ export default function UserManagementPage() {
                     onClick={() =>
                       setSelectedPermissions(ALL_SYSTEM_PERMISSIONS.map((p) => p.key))
                     }
-                    className="text-purple-600 hover:underline font-semibold text-[11px]"
+                    className="text-brand-600 hover:underline font-semibold text-[11px]"
                   >
                     Chọn tất cả quyền
                   </button>
@@ -1351,8 +1351,8 @@ export default function UserManagementPage() {
                       <label
                         key={p.key}
                         className={`flex items-start gap-2.5 rounded-lg border p-2.5 cursor-pointer transition ${isChecked
-                            ? 'border-purple-300 bg-purple-50/50'
-                            : 'border-slate-200 bg-white hover:bg-slate-50'
+                            ? 'border-brand-300 bg-brand-50/50'
+                            : 'border-slate-200 bg-surface hover:bg-slate-50'
                           }`}
                       >
                         <input
@@ -1365,10 +1365,10 @@ export default function UserManagementPage() {
                               setSelectedPermissions(selectedPermissions.filter((k) => k !== p.key));
                             }
                           }}
-                          className="mt-0.5 rounded accent-purple-600"
+                          className="mt-0.5 rounded accent-brand-600"
                         />
                         <div className="min-w-0">
-                          <p className="font-bold text-slate-900 text-xs">{p.name}</p>
+                          <p className="font-medium text-slate-900 text-xs">{p.name}</p>
                           <p className="text-[10px] text-slate-500">{p.description}</p>
                         </div>
                       </label>
@@ -1392,7 +1392,7 @@ export default function UserManagementPage() {
                   })
                 }
                 disabled={roleMutation.isPending}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-brand-600 hover:bg-brand-700"
               >
                 {roleMutation.isPending ? 'Đang cập nhật...' : 'Lưu Phân Quyền'}
               </Button>
@@ -1405,12 +1405,12 @@ export default function UserManagementPage() {
       {/* MODAL 5: QUICK INSPECT USER PROFILE                                       */}
       {/* ========================================================================= */}
       {quickInspectUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl my-8 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Users size={20} className="text-blue-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+                <Users size={20} className="text-brand-600" />
+                <h3 className="text-lg font-medium text-slate-900">
                   Hồ Sơ Người Dùng: {quickInspectUser.name}
                 </h3>
               </div>
@@ -1423,7 +1423,7 @@ export default function UserManagementPage() {
             </div>
 
             <div className="space-y-4 text-xs text-slate-700">
-              <div className="flex items-start gap-3.5 rounded-2xl bg-blue-50/60 p-4 border border-blue-100">
+              <div className="flex items-start gap-3.5 rounded-2xl bg-brand-50/60 p-4 border border-brand-100">
                 <img
                   src={quickInspectUser.avatar}
                   alt={quickInspectUser.name}
@@ -1431,7 +1431,7 @@ export default function UserManagementPage() {
                 />
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-slate-900 text-base">{quickInspectUser.name}</h4>
+                    <h4 className="font-medium text-slate-900 text-base">{quickInspectUser.name}</h4>
                     {getRoleBadge(quickInspectUser.role)}
                     {getStatusBadge(quickInspectUser.status)}
                   </div>
@@ -1454,7 +1454,7 @@ export default function UserManagementPage() {
                 </div>
                 <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Token Tháng Này</span>
-                  <strong className="text-purple-700 text-sm">
+                  <strong className="text-brand-700 text-sm">
                     {quickInspectUser.tokensUsedThisMonth.toLocaleString()} /{' '}
                     {(quickInspectUser.tokenMonthlyQuota / 1000).toFixed(0)}k
                   </strong>
@@ -1469,7 +1469,7 @@ export default function UserManagementPage() {
 
               {/* Recent activities preview */}
               <div>
-                <span className="font-bold text-slate-900 uppercase tracking-wider text-[11px] block mb-1.5">
+                <span className="font-medium text-slate-900 uppercase tracking-wider text-[11px] block mb-1.5">
                   Lịch Sử Hoạt Động Gần Nhất
                 </span>
                 <div className="space-y-1.5">
@@ -1513,11 +1513,11 @@ export default function UserManagementPage() {
       {/* MODAL 6: DELETE CONFIRMATION                                              */}
       {/* ========================================================================= */}
       {userToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2 text-red-600">
               <AlertTriangle size={24} />
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-lg font-medium text-slate-900">
                 Xác Nhận Xóa Tài Khoản Vĩnh Viễn
               </h3>
             </div>

@@ -1,5 +1,15 @@
 import React from 'react';
-import { X, Printer, Download, CheckCircle2, Building2, User, Calendar, CreditCard, ShieldCheck } from 'lucide-react';
+import {
+  X,
+  Printer,
+  Download,
+  CheckCircle2,
+  Building2,
+  User,
+  Calendar,
+  CreditCard,
+  ShieldCheck,
+} from 'lucide-react';
 import type { PaymentTransaction } from '../../../types/domain';
 import { useTranslation } from '../../../i18n';
 
@@ -38,12 +48,12 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto print:p-0 print:bg-white">
-      <div className="relative w-full max-w-2xl my-8 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col print:border-none print:shadow-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 animate-fade-in overflow-y-auto print:p-0 print:bg-surface">
+      <div className="relative w-full max-w-2xl my-8 bg-surface dark:bg-neutral-900 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col print:border-none print:shadow-none">
         {/* Top bar (hidden in print) */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40 print:hidden">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+            <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
               {t.subscriptionPage.viewInvoice}
             </span>
             <span className="font-mono text-xs px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
@@ -68,15 +78,15 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
         </div>
 
         {/* Printable Invoice Container */}
-        <div className="p-8 space-y-6 text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900">
+        <div className="p-8 space-y-6 text-neutral-900 dark:text-neutral-100 bg-surface dark:bg-neutral-900">
           {/* Invoice Header */}
           <div className="flex justify-between items-start border-b border-neutral-200 dark:border-neutral-800 pb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs">
+                <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-medium text-xs">
                   CP
                 </div>
-                <h3 className="text-lg font-extrabold tracking-tight">CAREERPILOT AI JSC</h3>
+                <h3 className="text-lg font-semibold tracking-tight">CAREERPILOT AI JSC</h3>
               </div>
               <p className="text-xs text-neutral-500">Mã số thuế: 0317894562</p>
               <p className="text-xs text-neutral-500">Tòa nhà Innovation Hub, Phố Duy Tân, Cầu Giấy, Hà Nội</p>
@@ -85,7 +95,7 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
 
             {/* Stamp / Status */}
             <div className="text-right flex flex-col items-end">
-              <span className="px-3.5 py-1 text-xs font-black tracking-widest text-emerald-700 bg-emerald-100 dark:bg-emerald-950/70 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 rounded-md rotate-[-3deg] uppercase shadow-sm">
+              <span className="px-3.5 py-1 text-xs font-semibold tracking-widest text-emerald-700 bg-emerald-100 dark:bg-emerald-950/70 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 rounded-md rotate-[-3deg] uppercase shadow-sm">
                 {t.subscriptionPage.invoicePaidBadge}
               </span>
               <p className="mt-2 text-xs font-mono text-neutral-500">HDDT-{transaction.orderCode}</p>
@@ -98,7 +108,7 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
           {/* Customer & Transaction Info */}
           <div className="grid grid-cols-2 gap-6 text-xs">
             <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800 space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-400 block mb-1">
                 {t.subscriptionPage.customerInfo}
               </span>
               <div className="font-semibold text-sm">{transaction.candidateName}</div>
@@ -107,7 +117,7 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
             </div>
 
             <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800 space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-400 block mb-1">
                 Chi tiết thanh toán
               </span>
               <div className="flex justify-between">
@@ -130,7 +140,7 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
           {/* Line items table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold uppercase text-[10px] tracking-wider">
+              <thead className="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-2.5 px-3 rounded-l-lg">STT</th>
                   <th className="py-2.5 px-3">Dịch vụ / Gói thuê bao</th>
@@ -162,7 +172,7 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
                       ? `-${transaction.discountAmountVND.toLocaleString('vi-VN')} ₫`
                       : '0 ₫'}
                   </td>
-                  <td className="py-3 px-3 text-right font-bold text-neutral-900 dark:text-neutral-100">
+                  <td className="py-3 px-3 text-right font-medium text-neutral-900 dark:text-neutral-100">
                     {transaction.finalAmountVND.toLocaleString('vi-VN')} ₫
                   </td>
                 </tr>
@@ -187,9 +197,9 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
                 <span>Thuế GTGT (VAT 8%):</span>
                 <span>Đã bao gồm trong giá</span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-neutral-200 dark:border-neutral-700 font-bold text-sm">
+              <div className="flex justify-between pt-2 border-t border-neutral-200 dark:border-neutral-700 font-medium text-sm">
                 <span>Tổng tiền thanh toán:</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base">
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-base">
                   {transaction.finalAmountVND.toLocaleString('vi-VN')} ₫
                 </span>
               </div>

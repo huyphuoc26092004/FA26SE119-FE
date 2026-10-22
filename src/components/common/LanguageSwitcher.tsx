@@ -2,7 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '../../i18n';
 import type { Language } from '../../i18n/types';
 import { cn } from '../../utils/cn';
-import { Globe, ChevronDown, Check } from 'lucide-react';
+import {
+  ChevronDown,
+  Check,
+} from 'lucide-react';
 
 // Pixel-perfect SVG Flags for 100% cross-platform consistency
 export const FlagVN: React.FC<{ className?: string }> = ({ className = 'w-4 h-3' }) => (
@@ -108,7 +111,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     return (
       <div
         className={cn(
-          'inline-flex items-center rounded-xl bg-slate-100/90 p-0.5 border border-slate-200/80 shadow-2xs backdrop-blur-xs',
+          'inline-flex items-center gap-1 text-sm',
           className
         )}
       >
@@ -120,14 +123,11 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               type="button"
               onClick={() => setLanguage(item.code)}
               className={cn(
-                'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer',
-                active
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                'rounded-full px-2 py-1 text-sm transition-colors duration-150 cursor-pointer',
+                active ? 'text-brand underline underline-offset-4' : 'text-slate-600 hover:text-ink'
               )}
               title={item.nativeName}
             >
-              {item.flag}
               <span>{item.label}</span>
             </button>
           );
@@ -143,12 +143,11 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         type="button"
         onClick={toggleLanguage}
         className={cn(
-          'group flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white/90 px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer',
+          'flex min-h-9 items-center rounded-full px-2 text-sm text-slate-700 transition-colors hover:text-brand cursor-pointer',
           className
         )}
         title={language === 'en' ? 'Chuyển sang Tiếng Việt' : 'Switch to English'}
       >
-        {currentOption.flag}
         <span>{currentOption.label}</span>
       </button>
     );
@@ -163,23 +162,14 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         className={cn(
-          'group flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer',
-          isOpen
-            ? 'border-blue-500 bg-blue-50/50 text-blue-700 ring-2 ring-blue-500/20 shadow-xs'
-            : 'border-slate-200/90 bg-white/90 text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 shadow-2xs'
+          'flex min-h-9 items-center gap-1.5 rounded-full px-2 text-sm transition-colors duration-150 cursor-pointer',
+          isOpen ? 'text-brand' : 'text-slate-700 hover:text-brand'
         )}
         title={language === 'en' ? 'Change language (Chuyển ngôn ngữ)' : 'Đổi ngôn ngữ'}
       >
-        <Globe className="h-3.5 w-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
-        <span className="flex items-center gap-1.5">
-          {currentOption.flag}
-          <span className="font-bold tracking-tight">{currentOption.label}</span>
-        </span>
+        <span>{currentOption.nativeName}</span>
         <ChevronDown
-          className={cn(
-            'h-3 w-3 text-slate-400 transition-transform duration-200',
-            isOpen && 'rotate-180 text-blue-600'
-          )}
+          className={cn('h-3.5 w-3.5 text-slate-500 transition-transform duration-150', isOpen && 'rotate-180')}
         />
       </button>
 
@@ -187,13 +177,10 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       {isOpen && (
         <div
           role="listbox"
-          className="absolute right-0 mt-1.5 w-48 origin-top-right rounded-xl border border-slate-200/90 bg-white/98 p-1.5 shadow-xl ring-1 ring-slate-900/5 backdrop-blur-md z-50 animate-in fade-in-0 zoom-in-95 duration-150"
+          className="absolute right-0 mt-1.5 w-48 origin-top-right rounded-panel border border-border bg-surface p-1 shadow-lg z-50"
         >
-          <div className="px-2.5 py-1.5 mb-1 border-b border-slate-100 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              {isVietnamese ? 'Chọn ngôn ngữ' : 'Select language'}
-            </span>
-            <span className="text-[10px] text-blue-600 font-medium">Jobie AI</span>
+          <div className="mb-1 border-b border-slate-200 px-2.5 py-1.5 text-[11px] text-slate-500">
+            {isVietnamese ? 'Chọn ngôn ngữ' : 'Select language'}
           </div>
 
           <div className="space-y-0.5">
@@ -212,29 +199,19 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                   className={cn(
                     'w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition-colors cursor-pointer group text-left',
                     isSelected
-                      ? 'bg-blue-50 text-blue-700 font-semibold'
+                      ? 'bg-brand-50 text-brand-700 font-semibold'
                       : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
                   )}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="shrink-0">{item.flag}</span>
                     <div className="flex flex-col min-w-0">
                       <span className="truncate">{item.nativeName}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 ml-2">
-                    <span
-                      className={cn(
-                        'rounded px-1.5 py-0.2 text-[9px] font-bold tracking-wider uppercase',
-                        isSelected
-                          ? 'bg-blue-200/60 text-blue-800'
-                          : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
-                      )}
-                    >
-                      {item.label}
-                    </span>
-                    {isSelected && <Check className="h-3.5 w-3.5 text-blue-600 shrink-0" />}
+                    <span className="text-[11px] text-slate-500">{item.label}</span>
+                    {isSelected && <Check className="h-3.5 w-3.5 text-brand-600 shrink-0" />}
                   </div>
                 </button>
               );
