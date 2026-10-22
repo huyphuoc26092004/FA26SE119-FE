@@ -12,17 +12,12 @@ import {
   CheckCircle2,
   ArrowRight,
   ShieldCheck,
-  KeyRound,
   RefreshCw,
   AlertCircle,
-  Lightbulb,
-  UserCheck,
-  Compass,
   Check,
   ArrowLeft,
-  Globe,
 } from 'lucide-react';
-import { Button, Card, Input } from '../../components/ui';
+import { Button, Input } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useTranslation } from '../../i18n';
 
@@ -36,6 +31,79 @@ function BrandLogo() {
       <span className="text-2xl font-medium tracking-[-0.02em]">Jobie</span>
       <span className="text-xs text-brand">ai</span>
     </Link>
+  );
+}
+
+function AuthPageShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { isVietnamese, toggleLanguage } = useTranslation();
+
+  return (
+    <div className="min-h-screen bg-[#f2f3ef] text-[#17201c] md:grid md:grid-cols-2">
+      <aside className="relative hidden min-h-screen flex-col justify-center bg-[#12241e] px-10 py-12 text-[#f2f3ef] md:flex lg:px-[9%]">
+        <Link to="/" aria-label="Jobie home" className="absolute left-10 top-7 inline-flex items-baseline gap-1 text-xl font-medium tracking-[-0.03em] text-white lg:left-[9%]">
+          Jobie<span className="text-[10px] text-[#8ed0b8]">ai</span>
+        </Link>
+        <div className="mx-auto w-full max-w-[430px]">
+          <h2 className="max-w-[390px] text-[2.5rem] font-normal leading-[1.05] tracking-[-0.045em] lg:text-[2.8rem]">
+            {isVietnamese ? (
+              <>Tìm việc đúng.<br /><span className="text-[#8ed0b8]">Phát triển đúng hướng.</span></>
+            ) : (
+              <>Find the right work.<br /><span className="text-[#8ed0b8]">Grow with direction.</span></>
+            )}
+          </h2>
+          <p className="mt-5 max-w-[330px] text-xs leading-5 text-[#c2d1ca]">
+            {isVietnamese
+              ? 'Nền tảng AI Agent giúp bạn hoàn thiện CV, tìm việc phù hợp và có lộ trình nghề nghiệp rõ ràng.'
+              : 'An AI Agent platform to strengthen your CV, find a fitting role, and build a clear career path.'}
+          </p>
+          <ul className="mt-7 divide-y divide-[#31443c] border-y border-[#31443c] text-xs text-[#e0e8e3]">
+            {[
+              isVietnamese ? 'Khớp CV với việc làm bằng AI Agent' : 'Match your CV to jobs with AI Agents',
+              isVietnamese ? 'Điểm ATS và gợi ý chỉnh sửa tức thì' : 'ATS scoring with instant improvement tips',
+              isVietnamese ? 'Lộ trình học dựa trên JD bạn ứng tuyển' : 'Learning paths tailored to your target role',
+            ].map((benefit, index) => (
+              <li key={benefit} className="flex min-h-10 items-center gap-4 py-2">
+                <span className="text-[9px] tabular-nums text-[#91a79c]">0{index + 1}</span>
+                <span>{benefit}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="absolute bottom-7 left-10 text-[9px] text-[#aebfb6] lg:left-[9%]">
+          {isVietnamese ? 'Mã đồ án: FA26SE119 · Đồ án Tốt nghiệp Đại học FPT' : 'FA26SE119 · FPT University Capstone'}
+        </p>
+      </aside>
+
+      <section className="flex min-h-screen flex-col">
+        <header className="flex items-center justify-between gap-3 px-4 py-5 sm:px-8 md:justify-end md:px-7">
+          <Link to="/" aria-label="Jobie home" className="inline-flex items-baseline gap-1 text-xl font-medium tracking-[-0.03em] md:hidden">
+            Jobie<span className="text-[10px] text-[#1f5f4c]">ai</span>
+          </Link>
+          <nav aria-label={isVietnamese ? 'Điều hướng phụ' : 'Secondary navigation'} className="flex items-center gap-3 whitespace-nowrap text-[10px] text-[#53615b] sm:gap-6 sm:text-xs md:gap-5 md:text-[9px]">
+            <Link to="/guest-trial" className="hidden underline underline-offset-4 hover:text-[#1f5f4c] sm:inline">
+              {isVietnamese ? 'Dùng thử không cần tài khoản' : 'Try without an account'}
+            </Link>
+            <Link to="/" className="underline underline-offset-4 hover:text-[#1f5f4c]">
+              {isVietnamese ? '← Trang chủ' : '← Home'}
+            </Link>
+            <button type="button" onClick={toggleLanguage} className="underline underline-offset-4 hover:text-[#1f5f4c]">
+              {isVietnamese ? 'Tiếng Việt' : 'English'}
+            </button>
+          </nav>
+        </header>
+
+        <main className="flex flex-1 items-center justify-center px-5 pb-8 sm:px-8 md:pb-12">
+          <div className="my-auto w-full max-w-[270px]">{children}</div>
+        </main>
+        <footer className="px-5 pb-5 text-center text-[9px] leading-4 text-[#53615b] md:hidden">
+          {isVietnamese ? 'Mã đồ án: FA26SE119 · Đồ án Tốt nghiệp Đại học FPT' : 'FA26SE119 · FPT University Capstone'}
+        </footer>
+      </section>
+    </div>
   );
 }
 
@@ -123,22 +191,24 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-canvas py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
-      {/* Centered Main Rounded Card */}
-      <div className="max-w-[1020px] w-full rounded-panel bg-surface overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-border min-h-[620px]">
-        {/* Left Column (White Form) */}
-        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-surface relative z-10">
+    <AuthPageShell>
+      <div className="w-full max-w-[300px]">
+        <div className="w-full">
+        <div className="flex flex-col">
           {/* Top Brand Logo */}
-          <div>
+          <div className="hidden">
             <BrandLogo />
           </div>
 
           {/* Form Content */}
-          <div className="my-auto py-4">
-            <h1 className="text-3xl sm:text-4xl font-normal text-ink tracking-tight mb-1">
-              {isVietnamese ? 'Chào mừng trở lại' : 'Welcome back'}
+          <div className="py-2">
+            <h1 className="text-left text-[1.9rem] font-normal leading-[1.12] tracking-[-0.04em] text-[#17201c]">
+              {isVietnamese ? 'Chào mừng trở lại.' : 'Welcome back.'}
+              <span className="mt-1 block text-[#1f5f4c]">
+                {isVietnamese ? 'Tiếp tục hành trình.' : 'Pick up where you left off.'}
+              </span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mb-6">
+            <p className="mb-6 mt-3 text-left text-xs leading-5 text-[#53615b]">
               {isVietnamese ? 'Đăng nhập để tiếp tục vào trang tổng quan của bạn.' : 'Sign in to continue to your dashboard.'}
             </p>
 
@@ -154,14 +224,14 @@ export function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit(submit)} className="space-y-4">
+            <form onSubmit={handleSubmit(submit)} className="auth-page-form max-w-[360px] space-y-4">
               {/* Email */}
               <div>
                 <label className="text-xs font-semibold text-slate-700 mb-1.5 block">
                   {isVietnamese ? 'Email' : 'Email'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 sm:py-3 ${
+                  className={`auth-input-wrap relative flex items-center border-b transition-all bg-transparent px-0 py-0.5 ${
                     errors.email
                       ? 'border-red-400 ring-2 ring-red-100'
                       : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
@@ -190,7 +260,7 @@ export function LoginPage() {
                   {isVietnamese ? 'Mật khẩu' : 'Password'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 sm:py-3 ${
+                  className={`auth-input-wrap relative flex items-center border-b transition-all bg-transparent px-0 py-0.5 ${
                     errors.password
                       ? 'border-red-400 ring-2 ring-red-100'
                       : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
@@ -251,39 +321,41 @@ export function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                className="mt-2 flex w-full items-center justify-between gap-3 rounded-full bg-[#17241f] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1f5f4c] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSubmitting ? (
                   <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>{isVietnamese ? 'Đang đăng nhập…' : 'Signing in…'}</span>
+                    <span className="flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>{isVietnamese ? 'Đang đăng nhập…' : 'Signing in…'}</span>
+                    </span>
+                    <span className="h-4 w-4" />
                   </>
                 ) : (
-                  <span>{isVietnamese ? 'Đăng nhập' : 'Sign in'}</span>
+                  <>
+                    <span>{isVietnamese ? 'Đăng nhập' : 'Sign in'}</span>
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </>
                 )}
               </button>
 
               {/* Divider */}
-              <div className="relative flex py-2 items-center">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink mx-3 text-xs text-slate-400 font-medium">or</span>
-                <div className="flex-grow border-t border-slate-200"></div>
+              <div className="text-xs text-slate-600">
+                {isVietnamese ? 'Hoặc đăng nhập với' : 'Or continue with'}{' '}
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  className="inline-flex items-center gap-1 font-medium text-[#1f5f4c] underline underline-offset-4 hover:text-[#17241f]"
+                >
+                  <GoogleIcon />
+                  Google
+                </button>
               </div>
-
-              {/* Continue with Google */}
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                className="w-full py-2.5 sm:py-3 rounded-full border border-slate-300 hover:border-ink text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs"
-              >
-                <GoogleIcon />
-                <span>{isVietnamese ? 'Tiếp tục với Google' : 'Continue with Google'}</span>
-              </button>
             </form>
           </div>
 
           {/* Footer Create One */}
-          <div className="text-center text-xs text-slate-500 pt-2">
+          <div className="mt-6 max-w-[360px] border-y border-[#d9ddd7] py-4 text-left text-xs text-slate-600">
             <span>{isVietnamese ? 'Chưa có tài khoản?' : "Don't have an account?"}</span>{' '}
             <Link to="/register" className="font-semibold text-brand hover:underline ml-1">
               {isVietnamese ? 'Tạo tài khoản' : 'Create one'}
@@ -292,9 +364,7 @@ export function LoginPage() {
         </div>
 
         {/* Right Column (Calm Blue Wave Artwork) */}
-        <div
-          className="relative overflow-hidden bg-brand-900 flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
-        >
+        <div className="hidden">
           {/* Top Bar with Sign Up pill button */}
           <div className="relative z-10 flex items-center justify-end gap-3">
             <button
@@ -323,9 +393,10 @@ export function LoginPage() {
                 : 'Everything you need, in one calm and simple place. Sign in and pick up right where you left off.'}
             </p>
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </AuthPageShell>
   );
 }
 
@@ -356,7 +427,8 @@ export function RegisterPage() {
   const login = useAuthStore((s) => s.login);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { t, isVietnamese, toggleLanguage } = useTranslation();
+  const [registrationRole, setRegistrationRole] = useState<'CANDIDATE' | 'CAREER_CONSULTANT'>('CANDIDATE');
+  const { isVietnamese } = useTranslation();
 
   const {
     register,
@@ -376,7 +448,7 @@ export function RegisterPage() {
   const submit = async (data: RegisterForm) => {
     setError('');
     try {
-      const res = await registerAction(data.name, data.email, data.password, 'CANDIDATE');
+      const res = await registerAction(data.name, data.email, data.password, registrationRole);
       navigate(`/verify-otp?email=${encodeURIComponent(data.email)}&code=${res.otp}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Đăng ký thất bại. Vui lòng thử lại.');
@@ -386,75 +458,83 @@ export function RegisterPage() {
   const handleGoogleSignup = async () => {
     setError('');
     try {
-      await login('candidate@example.com', 'Demo123!');
-      navigate('/candidate', { replace: true });
+      const isRecruiter = registrationRole === 'CAREER_CONSULTANT';
+      await login(isRecruiter ? 'consultant@example.com' : 'candidate@example.com', 'Demo123!');
+      navigate(isRecruiter ? '/consultant' : '/candidate', { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Đăng ký Google thất bại');
     }
   };
 
   return (
-    <div className="min-h-screen bg-canvas py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
-      {/* Centered Main Rounded Card with Inverted Columns */}
-      <div className="max-w-[1020px] w-full rounded-panel bg-surface overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[660px]">
-        {/* Left Column (Calm Blue Wave Artwork - on Left!) */}
-        <div
-          className="order-2 lg:order-1 relative overflow-hidden bg-brand-900 flex flex-col justify-start p-8 sm:p-10 lg:p-12 min-h-[320px] lg:min-h-auto"
-        >
-          {/* Top Bar with Sign in pill button & Language */}
-          <div className="relative z-10 flex items-center justify-between">
-            <Link
-              to="/login"
-              className="px-5 py-2 rounded-full bg-surface hover:bg-slate-50 text-brand font-semibold text-xs transition-all"
-            >
-              {isVietnamese ? 'Đăng nhập' : 'Sign in'}
-            </Link>
+    <AuthPageShell>
+      <div className="w-full max-w-[300px]">
+      <div className="w-full">
+        {/* Registration form */}
+        <div className="w-full p-0 flex flex-col bg-transparent">
+          {/* Form Content */}
+          <div className="py-2">
+            <p className="mb-3 text-[10px] font-medium text-[#1f5f4c]">
+              {isVietnamese ? 'Đăng ký' : 'Create account'}
+            </p>
+            <h1 className="text-left text-[1.9rem] font-normal leading-[1.08] tracking-[-0.04em] text-[#17201c]">
+              {isVietnamese ? 'Tạo tài khoản.' : 'Create your account.'}
+              <span className="block text-[#08785d]">
+                {isVietnamese ? 'Đúng người, đúng việc.' : 'The right people, the right fit.'}
+              </span>
+            </h1>
+            <p className="mb-5 mt-3 text-left text-[11px] leading-5 text-[#53615b]">
+              {isVietnamese ? 'Chọn vai trò của bạn và bắt đầu trong vài phút.' : 'Choose your role and get started in minutes.'}
+            </p>
+
             <button
               type="button"
-              onClick={toggleLanguage}
-              className="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white text-white font-medium text-xs transition-all cursor-pointer"
+              onClick={handleGoogleSignup}
+              className="flex min-h-[34px] w-full items-center justify-center gap-2 rounded-full border border-[#53615b] bg-transparent px-4 text-[10px] font-medium text-[#26332c] transition-colors hover:bg-white/60"
             >
-              {isVietnamese ? 'VI' : 'EN'}
+              {isVietnamese ? 'Đăng ký bằng Google' : 'Sign up with Google'}
             </button>
-          </div>
 
-          {/* Hero Typography on Wave (Matching Image 2: "Join us.") */}
-          <div className="relative z-10 max-w-xs mt-10 sm:mt-14 lg:mt-20">
-            <h1 className="text-4xl sm:text-5xl font-normal text-white tracking-tight leading-none mb-4">
-              Join us.
-            </h1>
-            <p className="text-xs sm:text-sm text-white/80 leading-relaxed font-medium">
-              {isVietnamese
-                ? 'Tạo tài khoản trong chưa đầy một phút và bắt đầu khám phá.'
-                : 'Create your account in under a minute and start exploring.'}
-            </p>
-          </div>
-        </div>
+            <div className="my-3 flex items-center gap-3 text-[9px] text-[#758078]">
+              <span className="h-px flex-1 bg-[#d9ddd7]" />
+              <span>{isVietnamese ? 'hoặc dùng email' : 'or continue with email'}</span>
+              <span className="h-px flex-1 bg-[#d9ddd7]" />
+            </div>
 
-        {/* Right Column (White Form - on Right!) */}
-        <div className="order-1 lg:order-2 p-6 sm:p-7 lg:p-8 flex flex-col justify-between bg-surface relative z-10">
-          {/* Top Brand Logo */}
-          <div>
-            <BrandLogo />
-          </div>
+            <div className="mb-2 border-b border-[#aeb7b0]">
+              <p className="mb-1 text-[10px] text-[#53615b]">
+                {isVietnamese ? 'Bạn đăng ký với tư cách' : 'I am joining as'}
+              </p>
+              <div className="flex gap-5" role="group" aria-label={isVietnamese ? 'Chọn vai trò' : 'Choose a role'}>
+                {([
+                  ['CANDIDATE', isVietnamese ? 'Ứng viên' : 'Candidate'],
+                  ['CAREER_CONSULTANT', isVietnamese ? 'Nhà tuyển dụng' : 'Recruiter'],
+                ] as const).map(([role, label]) => (
+                  <button
+                    key={role}
+                    type="button"
+                    aria-pressed={registrationRole === role}
+                    onClick={() => setRegistrationRole(role)}
+                    className={`border-b-2 px-0 pb-1.5 text-[10px] transition-colors ${
+                      registrationRole === role
+                        ? 'border-[#1f5f4c] text-[#1f5f4c]'
+                        : 'border-transparent text-[#53615b] hover:text-[#1f5f4c]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          {/* Form Content */}
-          <div className="my-auto py-1">
-            <h1 className="text-3xl sm:text-4xl font-normal text-ink tracking-tight mb-1">
-              {isVietnamese ? 'Tạo tài khoản' : 'Create your account'}
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mb-4">
-              {isVietnamese ? 'Điền thông tin của bạn để bắt đầu.' : 'Fill in your details to get started.'}
-            </p>
-
-            <form onSubmit={handleSubmit(submit)} className="space-y-2.5">
+            <form onSubmit={handleSubmit(submit)} className="auth-page-form w-full space-y-3">
               {/* Full Name */}
               <div>
                 <label className="text-xs font-semibold text-slate-700 mb-1 block">
                   {isVietnamese ? 'Họ và tên' : 'Full name'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-1.5 sm:py-2 ${
+                  className={`auth-input-wrap relative flex items-center border-b transition-all bg-transparent px-0 py-0.5 ${
                     errors.name
                       ? 'border-red-400 ring-2 ring-red-100'
                       : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
@@ -482,7 +562,7 @@ export function RegisterPage() {
                   {isVietnamese ? 'Email' : 'Email'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-1.5 sm:py-2 ${
+                  className={`auth-input-wrap relative flex items-center border-b transition-all bg-transparent px-0 py-0.5 ${
                     errors.email
                       ? 'border-red-400 ring-2 ring-red-100'
                       : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
@@ -511,7 +591,7 @@ export function RegisterPage() {
                   {isVietnamese ? 'Mật khẩu' : 'Password'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-1.5 sm:py-2 ${
+                  className={`auth-input-wrap relative flex items-center border-b transition-all bg-transparent px-0 py-0.5 ${
                     errors.password
                       ? 'border-red-400 ring-2 ring-red-100'
                       : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
@@ -548,7 +628,7 @@ export function RegisterPage() {
                   {isVietnamese ? 'Xác nhận mật khẩu' : 'Confirm password'}
                 </label>
                 <div
-                  className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-1.5 sm:py-2 ${
+                  className={`auth-input-wrap relative flex items-center border-b transition-all bg-transparent px-0 py-0.5 ${
                     errors.confirmPassword
                       ? 'border-red-400 ring-2 ring-red-100'
                       : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
@@ -579,10 +659,10 @@ export function RegisterPage() {
                     className="h-4 w-4 rounded-md border-slate-300 text-brand focus:ring-brand"
                     {...register('acceptTerms')}
                   />
-                  <span className="leading-tight text-[11px] text-slate-600">
+                  <span className="leading-tight text-[10px] text-slate-700">
                     {isVietnamese ? 'Tôi đồng ý với' : 'I agree to the'}{' '}
-                    <span className="font-semibold text-brand underline">{isVietnamese ? 'Điều khoản dịch vụ' : 'Terms of Service'}</span> {isVietnamese ? 'và' : 'and'}{' '}
-                    <span className="font-semibold text-brand underline">{isVietnamese ? 'Chính sách bảo mật' : 'Privacy Policy'}</span>.
+                    <span className="underline underline-offset-2">{isVietnamese ? 'Điều khoản sử dụng' : 'Terms of Use'}</span> {isVietnamese ? 'và' : 'and'}{' '}
+                    <span className="underline underline-offset-2">{isVietnamese ? 'Chính sách bảo mật' : 'Privacy Policy'}</span>.
                   </span>
                 </label>
                 {errors.acceptTerms && (
@@ -604,47 +684,41 @@ export function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 sm:py-2.5 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-1.5"
+                className="mt-1 flex min-h-[34px] w-full items-center justify-between gap-3 rounded-full bg-[#12241e] px-4 py-2 text-[10px] font-medium text-white transition-colors hover:bg-[#1f5f4c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f5f4c] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSubmitting ? (
                   <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>{isVietnamese ? 'Đang xử lý…' : 'Creating account…'}</span>
+                    <span className="flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>{isVietnamese ? 'Đang xử lý…' : 'Creating account…'}</span>
+                    </span>
+                    <span className="h-4 w-4" />
                   </>
                 ) : (
-                  <span>{isVietnamese ? 'Tạo tài khoản' : 'Create account'}</span>
+                  <>
+                    <span>{isVietnamese ? 'Tạo tài khoản' : 'Create account'}</span>
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </>
                 )}
               </button>
 
               {/* Divider */}
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink mx-3 text-xs text-slate-400 font-medium">or</span>
-                <div className="flex-grow border-t border-slate-200"></div>
-              </div>
-
-              {/* Sign up with Google */}
-              <button
-                type="button"
-                onClick={handleGoogleSignup}
-                className="w-full py-2 sm:py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs"
-              >
-                <GoogleIcon />
-                <span>{isVietnamese ? 'Đăng ký với Google' : 'Sign up with Google'}</span>
-              </button>
             </form>
           </div>
 
           {/* Footer Link */}
-          <div className="text-center text-xs text-slate-500 pt-1.5">
-            <span>{isVietnamese ? 'Đã có tài khoản?' : 'Already have an account?'}</span>{' '}
-            <Link to="/login" className="font-semibold text-brand hover:underline ml-1">
-              {isVietnamese ? 'Đăng nhập' : 'Sign in'}
-            </Link>
+          <div className="mt-4 max-w-[300px] text-left text-[10px] text-slate-600">
+            <span>
+              {isVietnamese ? 'Đã có tài khoản?' : 'Already have an account?'}{' '}
+              <Link to="/login" className="font-semibold text-brand hover:underline">
+                {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+              </Link>
+            </span>
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </AuthPageShell>
   );
 }
 
@@ -984,7 +1058,7 @@ export function ForgotPasswordPage() {
   const forgotPasswordAction = useAuthStore((s) => s.forgotPassword);
   const [error, setError] = useState('');
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
-  const { t, isVietnamese, toggleLanguage } = useTranslation();
+  const { isVietnamese, toggleLanguage } = useTranslation();
 
   const {
     register,
@@ -1009,19 +1083,23 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-canvas py-8 sm:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
-      <div className="max-w-[1020px] w-full rounded-panel bg-surface overflow-hidden grid grid-cols-1 lg:grid-cols-2 border border-slate-100 min-h-[580px]">
+    <AuthPageShell>
+      <div className="w-full max-w-[300px]">
+      <div className="w-full">
         {/* Left Column (White Form) */}
-        <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-surface relative z-10">
-          <div>
+        <div className="w-full p-0 flex flex-col bg-transparent">
+          <div className="hidden">
             <BrandLogo />
           </div>
 
-          <div className="my-auto py-4">
-            <h1 className="text-3xl sm:text-4xl font-normal text-ink tracking-tight mb-1">
-              {isVietnamese ? 'Quên mật khẩu?' : 'Forgot password?'}
+          <div className="py-2">
+            <h1 className="text-left text-[1.9rem] font-normal leading-[1.12] tracking-[-0.04em] text-[#17201c]">
+              {isVietnamese ? 'Quên mật khẩu?' : 'Forgot your password?'}
+              <span className="mt-1 block text-[#1f5f4c]">
+                {isVietnamese ? 'Lấy lại quyền truy cập.' : 'Regain access securely.'}
+              </span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mb-6 leading-relaxed">
+            <p className="mb-6 mt-3 text-left text-xs leading-5 text-[#53615b]">
               {isVietnamese
                 ? 'Đừng lo lắng! Hãy nhập địa chỉ email tài khoản của bạn để nhận mã khôi phục mật khẩu.'
                 : "Don't worry! Enter your account email address and we'll send you a recovery code."}
@@ -1075,13 +1153,13 @@ export function ForgotPasswordPage() {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit(submit)} className="space-y-4">
+              <form onSubmit={handleSubmit(submit)} className="auth-page-form max-w-[280px] space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-700 mb-1.5 block">
                     {isVietnamese ? 'Email tài khoản' : 'Account email'}
                   </label>
                   <div
-                    className={`relative flex items-center rounded-xl border transition-all bg-surface px-3.5 py-2.5 sm:py-3 ${
+                    className={`auth-input-wrap relative flex items-center border-b transition-all bg-transparent px-0 py-0.5 ${
                       errors.email
                         ? 'border-red-400 ring-2 ring-red-100'
                         : 'border-slate-200/90 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15'
@@ -1114,12 +1192,15 @@ export function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 rounded-full bg-ink hover:bg-brand-800 text-white font-medium text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                  className="mt-2 flex w-full items-center justify-between gap-3 rounded-full bg-[#17241f] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1f5f4c] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSubmitting ? (
                     <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>{isVietnamese ? 'Đang gửi mã…' : 'Sending code…'}</span>
+                      <span className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>{isVietnamese ? 'Đang gửi mã…' : 'Sending code…'}</span>
+                      </span>
+                      <span className="h-4 w-4" />
                     </>
                   ) : (
                     <>
@@ -1132,7 +1213,7 @@ export function ForgotPasswordPage() {
             )}
           </div>
 
-          <div className="text-center text-xs text-slate-500 pt-4">
+          <div className="mt-6 max-w-[360px] border-y border-[#d9ddd7] py-4 text-left text-xs text-slate-600">
             <Link to="/login" className="font-semibold text-brand hover:underline inline-flex items-center gap-1.5">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>{isVietnamese ? 'Quay lại đăng nhập' : 'Back to sign in'}</span>
@@ -1141,9 +1222,7 @@ export function ForgotPasswordPage() {
         </div>
 
         {/* Right Column (Calm Blue Wave Artwork) */}
-        <div
-          className="relative overflow-hidden bg-brand-900 flex flex-col justify-between p-8 sm:p-10 lg:p-12 text-white min-h-[320px] lg:min-h-auto"
-        >
+        <div className="hidden">
           {/* Top Bar with Sign in pill button & Language */}
           <div className="relative z-10 flex items-center justify-end gap-3">
             <button
@@ -1172,9 +1251,10 @@ export function ForgotPasswordPage() {
                 : 'We keep your career data safe and protected. Regain access to your account in just a few quick steps.'}
             </p>
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </AuthPageShell>
   );
 }
 
