@@ -4,5 +4,8 @@ import App from './app/App';
 import { useAuthStore } from './stores/authStore';
 import './index.css';
 import './styles/ccv-buttons.css';
+import './styles/ccv-app.css';
+import { IS_APP } from './utils/platform';
+if (IS_APP) document.documentElement.classList.add('ccv-app');
 useAuthStore.getState().restoreSession();
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);

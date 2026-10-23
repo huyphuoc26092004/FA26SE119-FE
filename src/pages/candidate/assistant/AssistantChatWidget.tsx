@@ -820,6 +820,7 @@ export function AssistantChatWidget() {
         onClick={() => (open ? closePanel() : setOpen(true))}
         aria-expanded={open}
         aria-label={open ? c.close : c.open}
+        data-app-float
         className={`fixed bottom-6 right-6 z-40 h-14 items-center gap-3 rounded-full bg-ink text-white shadow-[0_12px_32px_-12px_rgba(23,32,28,0.5)] transition-colors hover:bg-brand-800 ${
           open ? 'hidden w-14 justify-center sm:flex' : 'flex w-14 justify-center sm:w-auto sm:pl-5 sm:pr-6'
         }`}

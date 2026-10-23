@@ -242,6 +242,7 @@ export function Toast({ message }: { message: string | null }) {
   return (
     <div
       role="status"
+      data-app-float
       className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-full bg-ink px-5 py-3 text-sm text-white sm:left-auto sm:right-6 sm:translate-x-0"
     >
       <Check size={15} className="shrink-0 text-mint" />
