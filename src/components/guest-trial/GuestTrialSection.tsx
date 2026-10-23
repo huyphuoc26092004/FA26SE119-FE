@@ -5,12 +5,13 @@ import { LanguageSwitcher } from '../common/LanguageSwitcher';
 import { GuestJobsTab } from './GuestJobsTab';
 import { GuestCvDemoTab } from './GuestCvDemoTab';
 import { GuestAiBuilderTab } from './GuestAiBuilderTab';
-import { GuestAiChatTab } from './GuestAiChatTab';
+import { GuestAiChatWidget } from './GuestAiChatTab';
 import type { DemoCvData } from './guestTrialData';
 import { Button } from '../ui';
 import { useTranslation } from '../../i18n';
+import { CcvLogo } from '../brand/CcvLogo';
 
-export type GuestTrialTab = 'jobs' | 'resumes' | 'builder' | 'chat';
+export type GuestTrialTab = 'jobs' | 'resumes' | 'builder';
 
 export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boolean } = {}) {
   const { t, isVietnamese } = useTranslation();
@@ -49,19 +50,14 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
       label: 'AI Resume Builder',
       hint: isVietnamese ? 'Tạo CV với các mẫu cơ bản' : 'Build a CV from basic templates',
     },
-    {
-      id: 'chat' as const,
-      label: isVietnamese ? 'Trò chuyện với AI' : 'Chat with the assistant',
-      hint: isVietnamese ? '3 lượt hỏi thử' : '3 free questions',
-    },
   ];
 
   const tabList = (
     <div>
       <p className="pb-4 text-sm text-slate-600">
-        {isVietnamese ? 'Bốn thứ bạn có thể thử' : 'Four things you can try'}
+        {isVietnamese ? 'Ba thứ bạn có thể thử' : 'Three things you can try'}
       </p>
-      <div role="tablist" className="grid grid-cols-2 gap-x-5 border-b border-border lg:block">
+      <div role="tablist" className="grid grid-cols-3 gap-x-4 border-b border-border lg:block">
         {tabs.map((tab, index) => {
           const isActive = activeTab === tab.id;
           return (
@@ -80,13 +76,13 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
               </span>
               <span className="min-w-0">
                 <span
-                  className={`block text-lg transition-colors ${
+                  className={`block text-base transition-colors sm:text-lg ${
                     isActive ? 'text-brand' : 'text-slate-800 group-hover:text-brand'
                   }`}
                 >
                   {tab.label}
                 </span>
-                <span className="mt-1 block text-sm leading-snug text-slate-600">{tab.hint}</span>
+                <span className="mt-1 hidden text-sm leading-snug text-slate-600 sm:block">{tab.hint}</span>
               </span>
             </button>
           );
@@ -108,7 +104,6 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
           onOpenSaveModal={() => setShowSaveModal(true)}
         />
       )}
-      {activeTab === 'chat' && <GuestAiChatTab onOpenSaveModal={() => setShowSaveModal(true)} />}
     </div>
   );
 
@@ -149,15 +144,14 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
       {isStandalone ? (
         <div className="min-h-screen lg:grid lg:grid-cols-[clamp(18.5rem,21vw,28rem)_minmax(0,1fr)]">
           <aside className="border-b border-border px-6 py-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:px-[clamp(1.5rem,2vw,2.5rem)] lg:py-10">
-            <Link to="/" className="flex items-baseline gap-1 text-ink">
-              <span className="text-3xl font-medium tracking-[-0.02em]">Jobie</span>
-              <span className="text-sm text-brand">ai</span>
+            <Link to="/" aria-label="CCV" className="inline-flex">
+              <CcvLogo height={40} />
             </Link>
             <div className="mt-10 flex-1 overflow-y-auto">{tabList}</div>
             <div className="mt-8">
               <Link
                 to="/register"
-                className="flex min-h-12 items-center justify-between rounded-full bg-ink px-6 text-base font-medium text-white transition-colors hover:bg-brand-800"
+                className="btn btn-p btn-m min-h-12 w-full justify-between!"
               >
                 {t('common.getStarted', isVietnamese ? 'Bắt đầu ngay' : 'Get started')}
                 <ArrowRight size={18} aria-hidden="true" />
@@ -186,6 +180,9 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
           </div>
         </div>
       )}
+
+      {/* Floating assistant chat, available from every tab */}
+      <GuestAiChatWidget onOpenSaveModal={() => setShowSaveModal(true)} />
 
       {/* Modal Prompt to Register / Login */}
       {showSaveModal && (
