@@ -1,3 +1,43 @@
 import { Link } from 'react-router-dom';
-export function UnauthorizedPage(){return <div className="grid min-h-screen place-items-center bg-slate-50 p-5"><div className="text-center"><p className="text-6xl font-bold text-blue-600">403</p><h1 className="mt-4 text-2xl font-bold">Access denied</h1><p className="mt-2 text-slate-500">You don't have permission to view this page.</p><Link to="/" className="mt-6 inline-block font-semibold text-blue-600">Back to home →</Link></div></div>}
-export function NotFoundPage(){return <div className="grid min-h-screen place-items-center bg-slate-50 p-5"><div className="text-center"><p className="text-6xl font-bold text-blue-600">404</p><h1 className="mt-4 text-2xl font-bold">Page not found</h1><p className="mt-2 text-slate-500">The page you're looking for doesn't exist.</p><Link to="/" className="mt-6 inline-block font-semibold text-blue-600">Back to home →</Link></div></div>}
+import { useTranslation } from '../../i18n';
+import { LanguageSwitcher } from '../../components/common/LanguageSwitcher';
+
+export function UnauthorizedPage() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="relative grid min-h-screen place-items-center bg-slate-50 p-5">
+      <div className="absolute top-6 right-6">
+        <LanguageSwitcher />
+      </div>
+      <div className="text-center">
+        <p className="text-6xl font-medium text-brand-600">403</p>
+        <h1 className="mt-4 text-2xl font-medium text-slate-900">{t('errors.accessDenied')}</h1>
+        <p className="mt-2 text-slate-500">{t('errors.accessDeniedDesc')}</p>
+        <Link to="/" className="mt-6 inline-block font-semibold text-brand-600 hover:text-brand-700">
+          {t('errors.backToHome')}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export function NotFoundPage() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="relative grid min-h-screen place-items-center bg-slate-50 p-5">
+      <div className="absolute top-6 right-6">
+        <LanguageSwitcher />
+      </div>
+      <div className="text-center">
+        <p className="text-6xl font-medium text-brand-600">404</p>
+        <h1 className="mt-4 text-2xl font-medium text-slate-900">{t('errors.pageNotFound')}</h1>
+        <p className="mt-2 text-slate-500">{t('errors.pageNotFoundDesc')}</p>
+        <Link to="/" className="mt-6 inline-block font-semibold text-brand-600 hover:text-brand-700">
+          {t('errors.backToHome')}
+        </Link>
+      </div>
+    </div>
+  );
+}

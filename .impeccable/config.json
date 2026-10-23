@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-22T13:24:30.582Z",
+        "reason": "User specified preserving the existing Inter font configuration for the approved design system."
+      }
+    ]
+  }
+}

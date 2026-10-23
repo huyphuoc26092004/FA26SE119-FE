@@ -1,5 +1,28 @@
-import { useState } from 'react';
-import { Bot, Send, Sparkles } from 'lucide-react';
-import { Button, Card, Input, PageTitle } from '../../components/ui';
-type Message={role:'USER'|'ASSISTANT';text:string};
-export default function AssistantPage(){const [messages,setMessages]=useState<Message[]>([{role:'ASSISTANT',text:'Hi! I’m your demo career assistant. Ask me about your CV, skills, or job search.'}]);const [input,setInput]=useState('');const [typing,setTyping]=useState(false);const send=async(text=input)=>{if(!text.trim()||typing)return;setMessages(old=>[...old,{role:'USER',text}]);setInput('');setTyping(true);await new Promise(r=>setTimeout(r,650));setMessages(old=>[...old,{role:'ASSISTANT',text:'This is a mock response. In the next phase, this feature will connect to the AI service through a dedicated API module.'}]);setTyping(false);};return <><PageTitle title="AI Career Assistant" subtitle="Explore your career questions in a safe demo environment."/><Card className="mx-auto max-w-4xl"><div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-4 text-sm font-semibold"><Bot size={20} className="text-blue-600"/> Career Assistant <span className="ml-auto rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700">Mock mode</span></div><div className="flex h-[380px] flex-col gap-4 overflow-y-auto py-3" aria-live="polite">{messages.map((message,i)=><div key={i} className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${message.role==='USER'?'ml-auto bg-blue-600 text-white':'bg-slate-100 text-slate-700'}`}>{message.text}</div>)}{typing&&<p className="text-sm text-slate-400">Assistant is typing…</p>}</div><div className="mb-4 flex flex-wrap gap-2">{['How can I improve my CV?','What skills am I missing?','What salary should I expect?'].map(prompt=><button key={prompt} onClick={()=>void send(prompt)} className="rounded-full border border-slate-200 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50"><Sparkles size={12} className="mr-1 inline"/>{prompt}</button>)}</div><form onSubmit={e=>{e.preventDefault();void send();}} className="flex gap-2"><label className="flex-1"><span className="sr-only">Your message</span><Input value={input} onChange={e=>setInput(e.target.value)} placeholder="Ask a career question…"/></label><Button disabled={typing||!input.trim()} aria-label="Send message"><Send size={18}/></Button></form></Card></>}
+import { useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { requestAssistantChat } from './assistant/assistantChatBus';
+
+// The assistant now lives in the floating chat (bottom-right, mounted in CandidateLayout).
+// This route stays so old links like /candidate/assistant?jobId=… keep working: it opens the
+// chat with that context, then returns to the page the user came from.
+export default function AssistantPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const handled = useRef(false);
+
+  useEffect(() => {
+    if (handled.current) return;
+    handled.current = true;
+
+    requestAssistantChat({
+      cvId: searchParams.get('cvId') || searchParams.get('resumeId') || undefined,
+      jobId: searchParams.get('jobId') || undefined,
+    });
+
+    const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (historyIndex > 0) navigate(-1);
+    else navigate('/candidate', { replace: true });
+  }, [navigate, searchParams]);
+
+  return null;
+}

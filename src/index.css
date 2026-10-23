@@ -1,8 +1,201 @@
-@import "tailwindcss";
-@theme { --color-brand: #2563eb; }
-:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #17243b; background: #f6f8fc; font-synthesis: none; }
-body { margin: 0; min-width: 320px; }
-button, input, textarea, select { font: inherit; }
-button { cursor: pointer; }
-a { text-decoration: none; }
-:focus-visible { outline: 3px solid #60a5fa; outline-offset: 2px; }
+@import 'tailwindcss';
+
+/* The app ships a single light theme; dark: utilities only apply under an explicit .dark class. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Minimal, editorial theme: light neutral canvas, one dark-green accent,
+ * thin dividers instead of heavy shadows, restrained typography.
+ */
+@theme {
+  --color-brand: #1f5f4c;
+  --color-ink: #17201c;
+  --color-canvas: #f3f4f0;
+  --color-surface: #fbfbf9;
+  --color-border: #dcdfd8;
+  --color-secondary: #3f5a50;
+  --color-success: #2f6b4f;
+  --color-warning: #8a5a12;
+  --color-danger: #a33a2c;
+  --color-muted: #5d6660;
+  --color-night: #14231e;
+  --color-mint: #9fd3bc;
+
+  /* Accent scale (used where pages previously used blue / indigo / violet). */
+  --color-brand-50: #eff4f1;
+  --color-brand-100: #dde8e2;
+  --color-brand-200: #bfd3c8;
+  --color-brand-300: #96b6a6;
+  --color-brand-400: #6a9482;
+  --color-brand-500: #3f7864;
+  --color-brand-600: #2a6754;
+  --color-brand-700: #1f5f4c;
+  --color-brand-800: #1a4c3e;
+  --color-brand-900: #163f34;
+  --color-brand-950: #0c241d;
+
+  /* Neutral scale with a faint green tint, replacing the bluish slate. */
+  --color-slate-50: #f6f7f4;
+  --color-slate-100: #eceee9;
+  --color-slate-200: #dcdfd8;
+  --color-slate-300: #c3c8c0;
+  --color-slate-400: #979e97;
+  --color-slate-500: #6f7771;
+  --color-slate-600: #535b55;
+  --color-slate-700: #3c443f;
+  --color-slate-800: #262d29;
+  --color-slate-900: #18201c;
+  --color-slate-950: #0e1411;
+
+  /* Muted success greens so status colours sit with the accent. */
+  --color-emerald-50: #eef5f0;
+  --color-emerald-100: #dbeadf;
+  --color-emerald-200: #b9d6c1;
+  --color-emerald-300: #8fbc9c;
+  --color-emerald-400: #5f9c71;
+  --color-emerald-500: #3f8356;
+  --color-emerald-600: #2f6b4f;
+  --color-emerald-700: #285b43;
+  --color-emerald-800: #214a37;
+  --color-emerald-900: #1b3d2e;
+  --color-emerald-950: #0f2219;
+  --color-teal-50: #eef5f0;
+  --color-teal-100: #dbeadf;
+  --color-teal-200: #b9d6c1;
+  --color-teal-300: #8fbc9c;
+  --color-teal-400: #5f9c71;
+  --color-teal-500: #3f8356;
+  --color-teal-600: #2f6b4f;
+  --color-teal-700: #285b43;
+  --color-teal-800: #214a37;
+  --color-teal-900: #1b3d2e;
+
+  /* Softer warm tones for warnings and errors. */
+  --color-amber-50: #faf5ea;
+  --color-amber-100: #f3e8cf;
+  --color-amber-200: #e6d2a3;
+  --color-amber-300: #d6b673;
+  --color-amber-400: #c39a49;
+  --color-amber-500: #a97d2c;
+  --color-amber-600: #8a5a12;
+  --color-amber-700: #714a12;
+  --color-amber-800: #5b3c12;
+  --color-amber-900: #4a3212;
+  --color-orange-50: #faf3ec;
+  --color-orange-100: #f3e3d3;
+  --color-orange-500: #b86a2e;
+  --color-orange-600: #9c5523;
+  --color-orange-700: #7f441d;
+  --color-red-50: #fbf1ef;
+  --color-red-100: #f5e0dc;
+  --color-red-200: #ebc3bb;
+  --color-red-300: #dc9c90;
+  --color-red-400: #c87262;
+  --color-red-500: #b4513f;
+  --color-red-600: #a33a2c;
+  --color-red-700: #872f24;
+  --color-red-800: #6d281f;
+  --color-red-900: #5a231c;
+  --color-rose-50: #fbf1ef;
+  --color-rose-100: #f5e0dc;
+  --color-rose-200: #ebc3bb;
+  --color-rose-300: #dc9c90;
+  --color-rose-400: #c87262;
+  --color-rose-500: #b4513f;
+  --color-rose-600: #a33a2c;
+  --color-rose-700: #872f24;
+  --color-rose-800: #6d281f;
+  --color-rose-900: #5a231c;
+
+  --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-control: 0.375rem;
+  --radius-panel: 0.5rem;
+  --radius-md: 0.3125rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.625rem;
+
+  --shadow-panel: none;
+  --shadow-sm: 0 1px 1px rgb(23 32 28 / 4%);
+  --shadow-md: 0 1px 2px rgb(23 32 28 / 6%);
+  --shadow-lg: 0 4px 12px rgb(23 32 28 / 8%);
+  --shadow-xl: 0 8px 24px rgb(23 32 28 / 10%);
+  --shadow-2xl: 0 12px 32px rgb(23 32 28 / 12%);
+}
+
+@layer base {
+  :root {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    caret-color: var(--color-brand);
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    line-height: 1.55;
+  }
+
+  /* Headings stay light and editorial rather than heavy and bold. */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='range'],
+  progress {
+    accent-color: var(--color-brand);
+  }
+
+  ::selection {
+    background: rgb(31 95 76 / 16%);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(31 95 76 / 70%);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
