@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CCV</string>
+    <string name="title_activity_main">CCV</string>
+    <string name="package_name">vn.fa26se119.ccv</string>
+    <string name="custom_url_scheme">vn.fa26se119.ccv</string>
+</resources>
