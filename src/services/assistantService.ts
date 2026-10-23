@@ -373,6 +373,13 @@ export interface AiResponseEngineParams {
   selectedCv?: Resume;
   selectedJob?: Job;
   isVietnamese?: boolean;
+  /** Jobs the candidate saved or applied for in Job discovery (newest first). */
+  jobActivity?: AssistantJobActivity;
+}
+
+export interface AssistantJobActivity {
+  applied: Job[];
+  saved: Job[];
 }
 
 export async function sendUserMessageAndGetAiReply({
@@ -382,6 +389,7 @@ export async function sendUserMessageAndGetAiReply({
   selectedCv,
   selectedJob,
   isVietnamese = true,
+  jobActivity,
 }: AiResponseEngineParams): Promise<{
   userMessage: AiChatMessage;
   assistantMessage: AiChatMessage;
@@ -436,6 +444,7 @@ export async function sendUserMessageAndGetAiReply({
     cv: selectedCv,
     job: selectedJob,
     isVi: isVietnamese,
+    activity: jobActivity,
   });
 
   const assistantMsgId = `asst-${Date.now()}`;
@@ -474,16 +483,52 @@ function generateContextualAiContent({
   query,
   profile,
   cv,
-  job,
+  job: selectedJob,
   isVi,
+  activity,
 }: {
   query: string;
   profile?: CandidateProfile;
   cv?: Resume;
   job?: Job;
   isVi: boolean;
+  activity?: AssistantJobActivity;
 }): GeneratedAiResult {
   const q = query.toLowerCase();
+  const applied = activity?.applied ?? [];
+  const saved = activity?.saved ?? [];
+
+  // Intent 0: the candidate's own shortlist (saved / applied jobs)
+  if (
+    q.includes('đã lưu') ||
+    q.includes('đã ứng tuyển') ||
+    q.includes('việc của tôi') ||
+    q.includes('ưu tiên') ||
+    q.includes('saved') ||
+    q.includes('applied') ||
+    q.includes('shortlist') ||
+    q.includes('my jobs')
+  ) {
+    return generateShortlistReply({ applied, saved, cv, isVi });
+  }
+
+  // With no job attached, answer about the job the candidate applied for (or saved) most recently.
+  const fallbackJob = selectedJob ? undefined : (applied[0] ?? saved[0]);
+  const job = selectedJob ?? fallbackJob;
+  if (fallbackJob) {
+    const result = generateContextualAiContent({ query, profile, cv, job: fallbackJob, isVi });
+    const status = applied[0] === fallbackJob ? (isVi ? 'đã ứng tuyển' : 'applied for') : isVi ? 'đã lưu' : 'saved';
+    const usesJob = result.content.includes(fallbackJob.title) || result.content.includes(fallbackJob.company);
+    if (!usesJob) return result;
+    return {
+      ...result,
+      content:
+        (isVi
+          ? `_Bạn chưa gắn việc làm, nên mình dựa vào việc bạn ${status} gần nhất: **${fallbackJob.title}** tại **${fallbackJob.company}**._\n\n`
+          : `_No job is attached, so I used the job you ${status} most recently: **${fallbackJob.title}** at **${fallbackJob.company}**._\n\n`) +
+        result.content,
+    };
+  }
 
   // Intent 1: CV / ATS Optimization
   if (
@@ -888,5 +933,126 @@ Feel free to ask me about CV optimization, interview preparation, market salary 
         category: 'career',
       },
     ],
+  };
+}
+
+// -------------------------------------------------------------
+// Saved / applied jobs summary
+// -------------------------------------------------------------
+function generateShortlistReply({
+  applied,
+  saved,
+  cv,
+  isVi,
+}: {
+  applied: Job[];
+  saved: Job[];
+  cv?: Resume;
+  isVi: boolean;
+}): GeneratedAiResult {
+  if (applied.length === 0 && saved.length === 0) {
+    return {
+      content: isVi
+        ? `Bạn chưa lưu hay ứng tuyển việc nào.
+
+Hãy vào **Khám phá việc làm**, bấm **Lưu** cho những việc bạn quan tâm hoặc **Ứng tuyển** khi đã sẵn sàng. Mình sẽ dựa vào danh sách đó để so khớp CV, gợi ý kỹ năng cần học và chuẩn bị phỏng vấn cho đúng việc bạn nhắm tới.`
+        : `You have not saved or applied for any job yet.
+
+Open **Job discovery**, press **Save** on jobs you like or **Apply** when you are ready. I will use that list to match your CV, suggest skills to learn and prepare you for interviews.`,
+      actionSuggestions: [
+        {
+          label: isVi ? 'Việc nào hợp với hồ sơ của tôi?' : 'Which jobs fit my profile?',
+          prompt: isVi
+            ? 'Những việc làm nào đang có nhu cầu tuyển dụng cao nhất cho vị trí của tôi?'
+            : 'Which jobs are most in demand for my role?',
+          category: 'job',
+        },
+      ],
+    };
+  }
+
+  const line = (j: Job, i: number) => `${i + 1}. **${j.title}** · ${j.company} · ${j.location} · ${isVi ? 'khớp' : 'match'} **${j.match}%**`;
+  const nextToApply = [...saved].sort((a, b) => b.match - a.match)[0];
+  const topApplied = applied[0];
+  const weakest = [...applied].sort((a, b) => a.match - b.match)[0];
+
+  const sections: string[] = [];
+  if (applied.length) {
+    sections.push(
+      (isVi ? `### Đã ứng tuyển (${applied.length})\n` : `### Applied (${applied.length})\n`) +
+        applied.map(line).join('\n')
+    );
+  }
+  if (saved.length) {
+    sections.push(
+      (isVi ? `### Đã lưu, chưa ứng tuyển (${saved.length})\n` : `### Saved, not applied yet (${saved.length})\n`) +
+        saved.map(line).join('\n')
+    );
+  }
+
+  const steps: string[] = [];
+  if (topApplied) {
+    steps.push(
+      isVi
+        ? `**Chuẩn bị phỏng vấn cho ${topApplied.title} (${topApplied.company}).** Ôn lại ${topApplied.skills.slice(0, 3).join(', ')} và làm bài đánh giá kỹ năng theo JD của việc này.`
+        : `**Prepare the interview for ${topApplied.title} (${topApplied.company}).** Review ${topApplied.skills.slice(0, 3).join(', ')} and take the skill assessment built from its JD.`
+    );
+  }
+  if (weakest && weakest !== topApplied && weakest.match < 85) {
+    steps.push(
+      isVi
+        ? `**${weakest.title} mới khớp ${weakest.match}%.** Mở trang Fit CV để xem kỹ năng còn thiếu và bổ sung vào CV trước vòng sàng lọc.`
+        : `**${weakest.title} is only a ${weakest.match}% match.** Open CV–Job fit to see the missing skills and add them before screening.`
+    );
+  }
+  if (nextToApply) {
+    steps.push(
+      isVi
+        ? `**Nên ứng tuyển tiếp: ${nextToApply.title} tại ${nextToApply.company}** (khớp ${nextToApply.match}%, cao nhất trong danh sách đã lưu).${cv ? ` Dùng CV “${cv.name}” và soạn thư ứng tuyển riêng cho việc này.` : ''}`
+        : `**Apply next: ${nextToApply.title} at ${nextToApply.company}** (${nextToApply.match}% match, the best of your saved jobs).${cv ? ` Use your CV “${cv.name}” and write a cover letter for it.` : ''}`
+    );
+  }
+
+  const content =
+    (isVi ? 'Đây là các việc bạn đang theo dõi:\n\n' : 'Here are the jobs you are tracking:\n\n') +
+    sections.join('\n\n') +
+    (steps.length
+      ? (isVi ? '\n\n---\n\n### Gợi ý tiếp theo\n' : '\n\n---\n\n### Next steps\n') +
+        steps.map((st, i) => `${i + 1}. ${st}`).join('\n')
+      : '');
+
+  const actionSuggestions: NonNullable<GeneratedAiResult['actionSuggestions']> = [];
+  if (topApplied) {
+    actionSuggestions.push({
+      label: isVi ? `Câu hỏi phỏng vấn cho ${topApplied.title}` : `Interview questions for ${topApplied.title}`,
+      prompt: isVi
+        ? `Hãy liệt kê các câu hỏi phỏng vấn có thể gặp phải cho vị trí ${topApplied.title} tại ${topApplied.company}.`
+        : `List likely interview questions for ${topApplied.title} at ${topApplied.company}.`,
+      category: 'interview',
+    });
+  }
+  if (nextToApply) {
+    actionSuggestions.push({
+      label: isVi ? `Thư ứng tuyển cho ${nextToApply.title}` : `Cover letter for ${nextToApply.title}`,
+      prompt: isVi
+        ? `Hãy viết giúp tôi một bức thư ứng tuyển (Cover Letter) chuyên nghiệp cho vị trí ${nextToApply.title} tại ${nextToApply.company}.`
+        : `Write a professional cover letter for ${nextToApply.title} at ${nextToApply.company}.`,
+      category: 'job',
+    });
+  }
+
+  return {
+    content,
+    highlights: [
+      isVi ? `Đã ứng tuyển: ${applied.length}` : `Applied: ${applied.length}`,
+      isVi ? `Đã lưu: ${saved.length}` : `Saved: ${saved.length}`,
+      ...(nextToApply ? [isVi ? `Nên ứng tuyển tiếp: ${nextToApply.title}` : `Apply next: ${nextToApply.title}`] : []),
+    ],
+    tips: [
+      isVi
+        ? 'Gắn một việc ở ô Việc làm phía trên để mình tư vấn sát với JD của việc đó.'
+        : 'Attach a job in the Job field above for advice tailored to its JD.',
+    ],
+    actionSuggestions,
   };
 }
