@@ -231,7 +231,7 @@ export function GuestAiBuilderTab({
                   {isVietnamese ? 'Tóm tắt sự nghiệp (Summary)' : 'Career Summary'}
                 </label>
                 {aiEnhanced && (
-                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
                     <CheckCircle2 size={12} />
                     {isVietnamese ? 'Đã tối ưu bằng AI' : 'AI Enhanced'}
                   </span>
@@ -250,7 +250,7 @@ export function GuestAiBuilderTab({
                 {isVietnamese ? 'Kinh nghiệm & Thành tích' : 'Experience & Achievements'}
               </label>
               <textarea
-                className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-700 leading-relaxed outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 font-mono text-[11px]"
+                className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-700 leading-relaxed outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 font-mono text-xs"
                 rows={5}
                 value={experience}
                 onChange={(e) => setExperience(e.target.value)}
@@ -281,7 +281,7 @@ export function GuestAiBuilderTab({
                   </>
                 )}
               </Button>
-              <p className="mt-2 text-center text-[11px] text-slate-400">
+              <p className="mt-2 text-center text-xs text-slate-400">
                 {isVietnamese
                   ? 'Tự động bổ sung động từ hành động, lượng hoá chỉ số và làm giàu từ khoá ATS'
                   : 'Automatically injects action verbs, quantified metrics, and ATS keywords'}
@@ -314,7 +314,7 @@ export function GuestAiBuilderTab({
                       : 'Average (Needs Polish)'}
                   </span>
                 </p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   {aiEnhanced
                     ? isVietnamese
                       ? '✓ Đã bổ sung 12 từ khoá và chỉ số % đo lường thành công'
@@ -336,7 +336,7 @@ export function GuestAiBuilderTab({
               <Layout size={14} className="text-brand-600" />
               {isVietnamese ? 'Xem Trước Trực Quan (Live Preview)' : 'Live Document Preview'}
             </span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
               {template.toUpperCase()} TEMPLATE
             </span>
           </div>
@@ -344,11 +344,11 @@ export function GuestAiBuilderTab({
           {/* Formatted Resume Preview Sheet */}
           <div
             id="printable-guest-resume"
-            className={`rounded-2xl border bg-surface p-6 sm:p-8 shadow-sm min-h-[550px] transition-all ${
+            className={`rounded-2xl border bg-surface p-6 sm:p-8 shadow-sm min-h-[clamp(550px,64vh,860px)] transition-all ${
               template === 'modern'
                 ? 'border-brand-200'
                 : template === 'tech'
-                ? 'border-slate-800 font-mono text-[13px]'
+                ? 'border-slate-800 font-mono text-sm'
                 : 'border-amber-900/20 font-serif'
             }`}
           >
@@ -435,7 +435,7 @@ export function GuestAiBuilderTab({
                       template === 'modern'
                         ? 'bg-brand-50 text-brand-700 border border-brand-100'
                         : template === 'tech'
-                        ? 'bg-slate-100 text-slate-800 border border-slate-300 font-mono text-[11px]'
+                        ? 'bg-slate-100 text-slate-800 border border-slate-300 font-mono text-xs'
                         : 'bg-slate-50 text-slate-800 border border-slate-200'
                     }`}
                   >

@@ -195,7 +195,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
               <p className="text-sm font-medium text-slate-900">
                 {isVietnamese ? 'CareerPilot AI Coach' : 'CareerPilot AI Coach'}
               </p>
-              <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+              <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
                 {isVietnamese ? 'Đang trực tuyến · Phiên thử nghiệm' : 'Online · Guest Session'}
               </p>
@@ -208,7 +208,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
         </div>
 
         {/* Message Stream */}
-        <div className="flex h-[380px] flex-col gap-4 overflow-y-auto p-5 bg-canvas">
+        <div className="flex h-[clamp(380px,52vh,640px)] flex-col gap-4 overflow-y-auto p-5 bg-canvas">
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -239,7 +239,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
                   {/* Optional AI tips pill list */}
                   {msg.tips && msg.tips.length > 0 && (
                     <div className="mt-3 border-t border-slate-100 pt-3">
-                      <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mb-1.5">
+                      <p className="text-xs font-medium text-slate-500 flex items-center gap-1 mb-1.5">
                         <Lightbulb size={12} className="text-amber-500" />
                         {isVietnamese ? 'Gợi ý cốt lõi từ AI:' : 'AI Key Recommendations:'}
                       </p>
@@ -256,7 +256,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
                 </div>
 
                 <p
-                  className={`text-[10px] text-slate-400 ${
+                  className={`text-xs text-slate-400 ${
                     msg.role === 'USER' ? 'text-right' : 'text-left'
                   }`}
                 >
@@ -321,7 +321,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
         {/* Suggested Prompts */}
         {quotaRemaining > 0 && (
           <div className="border-t border-slate-100 bg-surface p-3">
-            <p className="text-[11px] font-semibold text-slate-400 mb-2">
+            <p className="text-xs font-semibold text-slate-400 mb-2">
               {isVietnamese ? 'Gợi ý câu hỏi phổ biến:' : 'Suggested career prompts:'}
             </p>
             <div className="flex flex-wrap gap-2">

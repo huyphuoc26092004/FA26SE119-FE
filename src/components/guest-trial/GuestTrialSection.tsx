@@ -21,7 +21,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
 
   const handleSelectTemplateForBuilder = (
     template: 'modern' | 'tech' | 'classic',
-    cv: DemoCvData
+    cv: DemoCvData,
   ) => {
     setBuilderTemplate(template);
     setBuilderInitialData(cv);
@@ -58,10 +58,10 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
 
   const tabList = (
     <div>
-      <p className="pb-3 text-[13px] text-slate-600">
+      <p className="pb-4 text-sm text-slate-600">
         {isVietnamese ? 'Bốn thứ bạn có thể thử' : 'Four things you can try'}
       </p>
-      <div role="tablist" className="border-b border-border">
+      <div role="tablist" className="grid grid-cols-2 gap-x-5 border-b border-border lg:block">
         {tabs.map((tab, index) => {
           const isActive = activeTab === tab.id;
           return (
@@ -71,20 +71,22 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveTab(tab.id)}
-              className="group flex w-full items-baseline gap-3 border-t border-border py-3.5 text-left"
+              className="group flex w-full items-baseline gap-3 border-t border-border py-4 text-left"
             >
-              <span className={`w-5 shrink-0 text-xs tabular-nums ${isActive ? 'text-brand' : 'text-slate-600'}`}>
+              <span
+                className={`w-6 shrink-0 text-xs tabular-nums ${isActive ? 'text-brand' : 'text-slate-600'}`}
+              >
                 {String(index + 1).padStart(2, '0')}
               </span>
               <span className="min-w-0">
                 <span
-                  className={`block text-[16px] transition-colors ${
+                  className={`block text-lg transition-colors ${
                     isActive ? 'text-brand' : 'text-slate-800 group-hover:text-brand'
                   }`}
                 >
                   {tab.label}
                 </span>
-                <span className="mt-0.5 block text-[13px] leading-5 text-slate-600">{tab.hint}</span>
+                <span className="mt-1 block text-sm leading-snug text-slate-600">{tab.hint}</span>
               </span>
             </button>
           );
@@ -111,11 +113,11 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
   );
 
   const heading = (
-    <header className="mb-14">
-      <p className="text-sm text-brand">
+    <header className="mb-[clamp(3rem,6vh,5rem)]">
+      <p className="text-base text-brand">
         {isVietnamese ? 'Trải nghiệm dùng thử dành cho khách' : 'Guest trial for visitors'}
       </p>
-      <h1 className="mt-5 text-4xl font-normal leading-[1.12] tracking-[-0.025em] text-ink sm:text-5xl lg:text-[3.6rem]">
+      <h1 className="mt-5 text-[clamp(2.25rem,4.4vw,5.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-ink">
         {isVietnamese ? (
           <>
             Dùng thử không cần tài khoản,
@@ -130,7 +132,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
           </>
         )}
       </h1>
-      <p className="mt-7 max-w-[600px] text-[17px] leading-8 text-slate-700">
+      <p className="mt-7 max-w-3xl text-lg leading-relaxed text-slate-700">
         {isVietnamese
           ? 'Xem việc làm công khai, đọc bản phân tích CV mẫu, tự tạo CV bằng AI và trò chuyện với trợ lý nghề nghiệp.'
           : 'Browse public jobs, read a sample CV analysis, build a CV and chat with the career assistant.'}
@@ -139,24 +141,28 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
   );
 
   return (
-    <section id="guest-trial" className="scroll-mt-24">
+    <section
+      id="guest-trial"
+      // Fluid scale for the whole trial: Tailwind's spacing and text sizes grow with the viewport.
+      className="scroll-mt-24 [--spacing:clamp(0.25rem,0.2rem+0.11vw,0.32rem)] [--text-xs:clamp(0.75rem,0.69rem+0.17vw,0.9375rem)] [--text-sm:clamp(0.875rem,0.8rem+0.2vw,1.0625rem)] [--text-base:clamp(1rem,0.92rem+0.22vw,1.1875rem)] [--text-lg:clamp(1.125rem,1.03rem+0.26vw,1.375rem)] [--text-xl:clamp(1.25rem,1.13rem+0.32vw,1.5rem)] [--text-2xl:clamp(1.5rem,1.33rem+0.45vw,1.875rem)] [--text-3xl:clamp(1.875rem,1.6rem+0.7vw,2.375rem)]"
+    >
       {isStandalone ? (
-        <div className="min-h-screen lg:grid lg:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="border-b border-border px-6 py-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:px-8 lg:py-10">
+        <div className="min-h-screen lg:grid lg:grid-cols-[clamp(18.5rem,21vw,28rem)_minmax(0,1fr)]">
+          <aside className="border-b border-border px-6 py-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:px-[clamp(1.5rem,2vw,2.5rem)] lg:py-10">
             <Link to="/" className="flex items-baseline gap-1 text-ink">
-              <span className="text-[28px] font-medium tracking-[-0.02em]">Jobie</span>
-              <span className="text-xs text-brand">ai</span>
+              <span className="text-3xl font-medium tracking-[-0.02em]">Jobie</span>
+              <span className="text-sm text-brand">ai</span>
             </Link>
             <div className="mt-10 flex-1 overflow-y-auto">{tabList}</div>
             <div className="mt-8">
               <Link
                 to="/register"
-                className="flex min-h-12 items-center justify-between rounded-full bg-ink px-6 text-[15px] font-medium text-white transition-colors hover:bg-brand-800"
+                className="flex min-h-12 items-center justify-between rounded-full bg-ink px-6 text-base font-medium text-white transition-colors hover:bg-brand-800"
               >
                 {t('common.getStarted', isVietnamese ? 'Bắt đầu ngay' : 'Get started')}
                 <ArrowRight size={18} aria-hidden="true" />
               </Link>
-              <div className="mt-4 flex items-center justify-between text-[15px]">
+              <div className="mt-4 flex items-center justify-between text-base">
                 <Link to="/login" className="text-slate-700 transition-colors hover:text-brand">
                   {t('common.signIn', isVietnamese ? 'Đăng nhập' : 'Sign in')}
                 </Link>
@@ -164,9 +170,11 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
               </div>
             </div>
           </aside>
-          <div className="min-w-0 px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
-            {heading}
-            {content}
+          <div className="min-w-0 px-5 py-12 sm:px-10 lg:px-[clamp(3rem,4.5vw,6rem)] lg:py-[clamp(3.5rem,7vh,6rem)]">
+            <div className="max-w-[1640px]">
+              {heading}
+              {content}
+            </div>
           </div>
         </div>
       ) : (

@@ -149,7 +149,7 @@ export default function PublicLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
       <header className="sticky top-0 z-40 border-b border-border bg-canvas">
-        <div className="relative mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-6 px-5 sm:px-8">
+        <div className="relative mx-auto flex h-16 w-full max-w-[1680px] items-center justify-between gap-6 px-5 sm:px-8 lg:px-[clamp(2rem,4vw,5rem)]">
           <Link
             to="/"
             className="flex shrink-0 items-baseline gap-1 rounded-control focus-visible:outline-offset-4"
@@ -229,7 +229,7 @@ export default function PublicLayout() {
       </main>
 
       <footer className="border-t border-border py-8">
-        <div className="mx-auto flex max-w-[1440px] flex-col items-start justify-between gap-3 px-5 text-xs text-slate-600 sm:px-8 md:flex-row md:items-center">
+        <div className="mx-auto flex max-w-[1680px] flex-col items-start justify-between gap-3 px-5 text-xs text-slate-600 sm:px-8 lg:px-[clamp(2rem,4vw,5rem)] md:flex-row md:items-center">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-slate-700">{t('footer.projectCode', 'Mã đồ án: FA26SE119')}</span>
             <span aria-hidden="true">·</span>

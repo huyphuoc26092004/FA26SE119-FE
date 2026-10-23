@@ -18,6 +18,8 @@
   --color-warning: #8a5a12;
   --color-danger: #a33a2c;
   --color-muted: #5d6660;
+  --color-night: #14231e;
+  --color-mint: #9fd3bc;
 
   /* Accent scale (used where pages previously used blue / indigo / violet). */
   --color-brand-50: #eff4f1;
@@ -196,39 +198,4 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-}
-
-.auth-page-form label:not(:has(input[type='checkbox'])) {
-  display: block;
-  margin-bottom: 0;
-  color: #3c4942;
-  font-size: 0.75rem;
-  font-weight: 400;
-}
-
-.auth-page-form .auth-input-wrap {
-  border-width: 0 0 1px;
-  border-radius: 0;
-  border-color: #aeb7b0;
-  box-shadow: none;
-}
-
-.auth-page-form .auth-input-wrap:focus-within {
-  border-color: #1f5f4c;
-  box-shadow: none;
-}
-
-.auth-page-form .auth-input-wrap > svg {
-  display: none;
-}
-
-.auth-page-form .auth-input-wrap input {
-  min-height: 1.5rem;
-  color: #17201c;
-  font-size: 0.875rem;
-}
-
-.auth-page-form .auth-input-wrap input::placeholder {
-  color: #58645d;
-  opacity: 1;
 }

@@ -78,7 +78,7 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 truncate mt-0.5">{cv.title}</p>
-                <span className="mt-2 inline-block text-[11px] font-medium text-brand-600">
+                <span className="mt-2 inline-block text-xs font-medium text-brand-600">
                   {isVietnamese ? `Mẫu: ${cv.template.toUpperCase()}` : `Template: ${cv.template.toUpperCase()}`}
                 </span>
               </div>

@@ -47,7 +47,7 @@ export function GuestJobsTab() {
         </h3>
         <Link
           to="/jobs"
-          className="text-[15px] text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
+          className="text-base text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
         >
           {isVietnamese ? 'Xem toàn bộ trang việc làm' : 'View full job board'}
         </Link>
@@ -58,7 +58,7 @@ export function GuestJobsTab() {
           <span className="sr-only">Search</span>
           <Search size={16} className="shrink-0 text-ink" aria-hidden="true" />
           <input
-            className="min-h-12 w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-slate-500"
+            className="min-h-12 w-full bg-transparent text-base text-ink outline-none placeholder:text-slate-500"
             placeholder={
               isVietnamese
                 ? 'Vị trí, công ty hoặc kỹ năng: React, TypeScript, Remote'
@@ -71,7 +71,7 @@ export function GuestJobsTab() {
         <label className="relative flex items-center border-b border-ink/80 md:w-56">
           <span className="sr-only">Location filter</span>
           <select
-            className="min-h-12 w-full cursor-pointer appearance-none bg-transparent pr-6 text-[15px] text-ink outline-none"
+            className="min-h-12 w-full cursor-pointer appearance-none bg-transparent pr-6 text-base text-ink outline-none"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           >
@@ -101,16 +101,16 @@ export function GuestJobsTab() {
           >
             <div className="min-w-0">
               <h4 className="text-xl font-medium text-ink">{job.title}</h4>
-              <p className="mt-1.5 text-[15px] text-slate-700">
+              <p className="mt-1.5 text-base text-slate-700">
                 {job.company} · {job.location} · {job.type}
               </p>
-              <p className="mt-3 line-clamp-3 text-[15px] leading-6 text-slate-600">
+              <p className="mt-3 line-clamp-3 text-base leading-6 text-slate-600">
                 {job.description}
               </p>
             </div>
-            <p className="text-[15px] leading-7 text-slate-700 lg:pt-6">{job.skills.join(' · ')}</p>
+            <p className="text-base leading-7 text-slate-700 lg:pt-6">{job.skills.join(' · ')}</p>
             <div className="lg:pt-8">
-              <p className="text-[15px] text-ink">{job.salary}</p>
+              <p className="text-base text-ink">{job.salary}</p>
             </div>
             <div className="lg:pt-6">
               <p className="text-2xl font-normal text-brand">{job.match}%</p>
@@ -120,7 +120,7 @@ export function GuestJobsTab() {
               <div className="mt-3 flex items-center gap-3">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 whitespace-nowrap text-[15px] text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
+                  className="inline-flex items-center gap-1 whitespace-nowrap text-base text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
                   onClick={() => setSelectedJob(job)}
                 >
                   {isVietnamese ? 'Xem nhanh' : 'Quick view'}
@@ -139,7 +139,7 @@ export function GuestJobsTab() {
         ))}
 
         {filteredJobs.length === 0 && (
-          <div className="border-b border-border py-10 text-center text-[15px] text-slate-600">
+          <div className="border-b border-border py-10 text-center text-base text-slate-600">
             {isVietnamese
               ? 'Không tìm thấy việc làm công khai phù hợp với từ khóa này.'
               : 'No public jobs found matching your criteria.'}
