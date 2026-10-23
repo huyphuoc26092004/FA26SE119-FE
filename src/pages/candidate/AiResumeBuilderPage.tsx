@@ -1,98 +1,270 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Award,
-  MessageSquare,
-  BrainCircuit,
-  Briefcase,
-  Check,
-  CheckCircle2,
-  Code2,
-  Compass,
-  Cpu,
-  Database,
-  Download,
-  Edit3,
-  FileCheck2,
-  FileText,
-  Globe,
-  GraduationCap,
-  Languages,
-  Layers,
-  Loader2,
-  MapPin,
-  Plus,
-  RefreshCw,
-  Save,
-  Server,
-  Smartphone,
-  Lightbulb,
-  Star,
-  Target,
-  Trash2,
-  User,
-  PenLine,
-  Wrench,
-  X,
-  Zap,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, X } from 'lucide-react';
 import { generateAiResume, translateResumeContent, createResume } from '../../mocks/services/mockService';
-import type { Resume, WorkExperience, EducationItem, ProjectItem } from '../../types/domain';
-import { Badge, Button, Card, Input, PageTitle } from '../../components/ui';
+import type { Resume } from '../../types/domain';
 import { useTranslation } from '../../i18n';
+
+// ─── Options ────────────────────────────────────────────────────────────────
 
 interface CareerTrackOption {
   id: string;
   title: string;
-  icon: any;
   techKeywords: string[];
   description: string;
+  descriptionEn: string;
 }
 
 const CAREER_TRACKS: CareerTrackOption[] = [
   {
     id: 'frontend',
     title: 'Frontend Engineer / Web Architect',
-    icon: Code2,
     techKeywords: ['React', 'TypeScript', 'Next.js', 'Tailwind', 'Performance'],
     description: 'Tập trung vào giao diện người dùng, tối ưu Core Web Vitals, micro-frontends và trải nghiệm hiện đại.',
+    descriptionEn: 'User interfaces, Core Web Vitals, micro-frontends and modern product experience.',
   },
   {
     id: 'backend',
     title: 'Backend Engineer / Microservices',
-    icon: Server,
     techKeywords: ['Node.js', 'Go', 'PostgreSQL', 'Redis', 'Docker'],
     description: 'Tập trung vào hệ thống phân tán, xử lý dữ liệu lớn, bảo mật APIs và độ khả dụng 99.99%.',
+    descriptionEn: 'Distributed systems, large-scale data processing, secure APIs and 99.99% availability.',
   },
   {
     id: 'ai-ml',
     title: 'AI / Machine Learning Engineer',
-    icon: BrainCircuit,
     techKeywords: ['Python', 'LLMs', 'RAG', 'LangChain', 'Vector DB'],
     description: 'Tập trung vào Generative AI, mô hình ngôn ngữ lớn, pipeline RAG và tích hợp AI Agents vào sản phẩm.',
+    descriptionEn: 'Generative AI, large language models, RAG pipelines and agents inside real products.',
   },
   {
     id: 'fullstack',
     title: 'Fullstack Engineer (React & Cloud)',
-    icon: Layers,
     techKeywords: ['React', 'Node.js', 'Next.js', 'PostgreSQL', 'AWS'],
     description: 'Làm chủ toàn diện từ frontend giao diện đến hạ tầng đám mây và cơ sở dữ liệu.',
+    descriptionEn: 'End to end ownership, from the frontend to cloud infrastructure and databases.',
   },
 ];
 
 const SENIORITY_LEVELS = [
-  { id: 'Fresher', label: 'Fresher / Entry-Level', exp: '0 - 1 năm' },
-  { id: 'Junior', label: 'Junior Engineer', exp: '1 - 2 năm' },
-  { id: 'Middle', label: 'Middle Engineer', exp: '2 - 4 năm' },
-  { id: 'Senior', label: 'Senior Engineer', exp: '4+ năm (Khuyên dùng)' },
-  { id: 'Lead', label: 'Tech Lead / Architect', exp: '6+ năm' },
+  { id: 'Fresher', label: 'Fresher / Entry-Level', exp: '0 - 1', recommended: false },
+  { id: 'Junior', label: 'Junior Engineer', exp: '1 - 2', recommended: false },
+  { id: 'Middle', label: 'Middle Engineer', exp: '2 - 4', recommended: false },
+  { id: 'Senior', label: 'Senior Engineer', exp: '4+', recommended: true },
+  { id: 'Lead', label: 'Tech Lead / Architect', exp: '6+', recommended: false },
 ];
 
+type Tone = 'impact' | 'technical' | 'modern';
+type CvLang = 'Vietnamese' | 'English';
+
+// ─── Page copy (page-only strings, no new i18n keys) ─────────────────────────
+
+const copy = {
+  vi: {
+    back: 'Quay lại CV của tôi',
+    eyebrow: 'Tạo CV bằng AI',
+    headline: 'Tạo CV bằng AI.',
+    headlineAccent: 'Chọn hướng đi, hệ thống viết giúp.',
+    intro:
+      'Chọn định hướng nghề nghiệp, cấp bậc và ngôn ngữ. Hệ thống sẽ biên soạn tóm tắt, kinh nghiệm theo mô hình STAR và bộ kỹ năng chuẩn ATS để bạn chỉnh lại.',
+    trackTitle: 'Định hướng nghề nghiệp',
+    levelTitle: 'Cấp bậc',
+    levelNote: 'Số năm kinh nghiệm quyết định giọng văn và độ sâu của phần thành tích.',
+    years: (exp: string) => `${exp} năm`,
+    recommended: 'Khuyên dùng',
+    languageTitle: 'Ngôn ngữ & văn phong',
+    langLabel: 'Ngôn ngữ CV',
+    langVi: 'Tiếng Việt',
+    langViNote: 'Phù hợp ứng tuyển các công ty tại Việt Nam.',
+    langEn: 'English',
+    langEnNote: 'Chuẩn quốc tế, cho công ty đa quốc gia và remote.',
+    toneLabel: 'Văn phong',
+    tones: {
+      impact: { label: 'Nhấn mạnh thành tích', note: 'Số liệu, kết quả đo được.' },
+      technical: { label: 'Chuyên sâu kỹ thuật', note: 'Kiến trúc, công nghệ, quy mô.' },
+      modern: { label: 'Hiện đại, ngắn gọn', note: 'Câu ngắn, dễ đọc lướt.' },
+    } as Record<Tone, { label: string; note: string }>,
+    keywordsTitle: 'Điểm muốn nhấn mạnh',
+    keywordsNote: 'Không bắt buộc. Kỹ năng, công nghệ hoặc thành tích bạn muốn được ưu tiên trong CV.',
+    summaryLabel: 'Bạn đã chọn',
+    generatingHead: 'Đang biên soạn CV.',
+    generatingNote: 'Thường mất vài giây. Đừng đóng trang này.',
+    stepDone: 'Xong',
+    stepNow: 'Đang làm',
+    readyHead: 'CV đã sẵn sàng.',
+    atsLine: (n: number | undefined) => `Điểm ATS ${n ?? '—'}/100.`,
+    readyNote: (lang: string) =>
+      `Nội dung đang ở ${lang}. Chỉnh trực tiếp bên trái, bản xem trước bên phải cập nhật ngay.`,
+    langNameVi: 'tiếng Việt',
+    langNameEn: 'tiếng Anh',
+    toEnglish: 'Dịch sang tiếng Anh',
+    toVietnamese: 'Dịch sang tiếng Việt',
+    basicTitle: 'Thông tin cơ bản',
+    cvName: 'Tên bản CV',
+    position: 'Chức danh / vị trí',
+    fullName: 'Họ và tên',
+    summary: 'Tóm tắt sự nghiệp',
+    skillsTitle: 'Kỹ năng',
+    skillsCount: (n: number) => `${n} kỹ năng`,
+    addSkillPlaceholder: 'Nhập kỹ năng rồi nhấn Enter',
+    add: 'Thêm',
+    removeSkill: (s: string) => `Xoá ${s}`,
+    noSkills: 'Chưa có kỹ năng nào.',
+    expTitle: 'Kinh nghiệm làm việc',
+    expNote: 'Thành tích được viết theo mô hình STAR. Gạch đầu dòng hiển thị trong bản xem trước.',
+    role: 'Chức danh',
+    company: 'Công ty',
+    description: 'Mô tả công việc',
+    noExp: 'Chưa có kinh nghiệm nào.',
+    previewTitle: 'Bản xem trước',
+    previewNote: 'Cập nhật theo thời gian thực',
+    paper: {
+      summary: ['Tóm tắt nghề nghiệp', 'Professional summary'],
+      experience: ['Kinh nghiệm làm việc', 'Work experience'],
+      projects: ['Dự án', 'Projects'],
+      education: ['Học vấn', 'Education'],
+      skills: ['Kỹ năng chuyên môn', 'Technical skills'],
+    },
+    closingNote: 'Kiểm tra lại nội dung trước khi lưu vào tài khoản.',
+  },
+  en: {
+    back: 'Back to my CVs',
+    eyebrow: 'AI CV builder',
+    headline: 'Build a CV with AI.',
+    headlineAccent: 'Pick a direction, we draft the rest.',
+    intro:
+      'Choose a career track, level and language. The system drafts a summary, STAR-style experience and an ATS-ready skill set for you to refine.',
+    trackTitle: 'Career track',
+    levelTitle: 'Level',
+    levelNote: 'Years of experience set the tone and depth of your achievements.',
+    years: (exp: string) => `${exp} yrs`,
+    recommended: 'Recommended',
+    languageTitle: 'Language & tone',
+    langLabel: 'CV language',
+    langVi: 'Tiếng Việt',
+    langViNote: 'Best for companies in Vietnam.',
+    langEn: 'English',
+    langEnNote: 'International standard, for global and remote roles.',
+    toneLabel: 'Tone',
+    tones: {
+      impact: { label: 'Impact first', note: 'Numbers and measurable results.' },
+      technical: { label: 'Technical depth', note: 'Architecture, stack and scale.' },
+      modern: { label: 'Modern and concise', note: 'Short, scannable lines.' },
+    } as Record<Tone, { label: string; note: string }>,
+    keywordsTitle: 'What to highlight',
+    keywordsNote: 'Optional. Skills, technologies or achievements you want the CV to put first.',
+    summaryLabel: 'Your choices',
+    generatingHead: 'Drafting your CV.',
+    generatingNote: 'This usually takes a few seconds. Keep this page open.',
+    stepDone: 'Done',
+    stepNow: 'Working',
+    readyHead: 'Your CV is ready.',
+    atsLine: (n: number | undefined) => `ATS score ${n ?? '—'}/100.`,
+    readyNote: (lang: string) => `Content is in ${lang}. Edit on the left; the preview on the right updates instantly.`,
+    langNameVi: 'Vietnamese',
+    langNameEn: 'English',
+    toEnglish: 'Translate to English',
+    toVietnamese: 'Translate to Vietnamese',
+    basicTitle: 'Basic information',
+    cvName: 'CV name',
+    position: 'Title / position',
+    fullName: 'Full name',
+    summary: 'Career summary',
+    skillsTitle: 'Skills',
+    skillsCount: (n: number) => `${n} ${n === 1 ? 'skill' : 'skills'}`,
+    addSkillPlaceholder: 'Type a skill and press Enter',
+    add: 'Add',
+    removeSkill: (s: string) => `Remove ${s}`,
+    noSkills: 'No skills yet.',
+    expTitle: 'Work experience',
+    expNote: 'Achievements are written in STAR format. Bullet points show in the preview.',
+    role: 'Role',
+    company: 'Company',
+    description: 'Description',
+    noExp: 'No experience yet.',
+    previewTitle: 'Preview',
+    previewNote: 'Updates in real time',
+    paper: {
+      summary: ['Tóm tắt nghề nghiệp', 'Professional summary'],
+      experience: ['Kinh nghiệm làm việc', 'Work experience'],
+      projects: ['Dự án', 'Projects'],
+      education: ['Học vấn', 'Education'],
+      skills: ['Kỹ năng chuyên môn', 'Technical skills'],
+    },
+    closingNote: 'Review the content before saving it to your account.',
+  },
+};
+
+// ─── Shared styles ──────────────────────────────────────────────────────────
+
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer disabled:pointer-events-none disabled:opacity-50';
+
+const primaryButton =
+  'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+
+const lineInput =
+  'w-full min-w-0 border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-[15px] text-ink outline-none transition-colors duration-150 placeholder:text-slate-400 focus-visible:border-ink';
+
+const lineTextarea = `${lineInput} resize-y leading-7`;
+
+const sectionGap = 'mt-[clamp(3rem,6vw,4.5rem)]';
+
+// ─── Building blocks ────────────────────────────────────────────────────────
+
+function SectionHead({ index, title, note, action }: { index: string; title: string; note?: string; action?: ReactNode }) {
+  return (
+    <div className="border-b border-ink pb-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
+          <span className="text-xs tabular-nums tracking-normal text-slate-500">{index}</span>
+          {title}
+        </h2>
+        {action}
+      </div>
+      {note && <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600">{note}</p>}
+    </div>
+  );
+}
+
+function Field({ label, htmlFor, className = '', children }: { label: string; htmlFor?: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <label htmlFor={htmlFor} className="block text-xs text-slate-600">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+/** Round radio marker used by every option row. */
+function RadioDot({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`mt-1 grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors ${
+        checked ? 'border-brand' : 'border-slate-400 group-hover:border-ink'
+      }`}
+    >
+      {checked && <span className="h-2 w-2 rounded-full bg-brand" />}
+    </span>
+  );
+}
+
+function PaperHeading({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="mb-2 border-b border-border pb-1 text-[11px] font-medium uppercase tracking-[0.12em] text-ink">{children}</h3>
+  );
+}
+
+// ─── Page ───────────────────────────────────────────────────────────────────
+
 export default function AiResumeBuilderPage() {
-  const { t, language: uiLang } = useTranslation();
+  const { t, language: uiLang, isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -104,10 +276,8 @@ export default function AiResumeBuilderPage() {
   // Configuration inputs
   const [selectedTrack, setSelectedTrack] = useState<string>('frontend');
   const [selectedLevel, setSelectedLevel] = useState<string>('Senior');
-  const [cvLanguage, setCvLanguage] = useState<'Vietnamese' | 'English'>(
-    uiLang === 'vi' ? 'Vietnamese' : 'English'
-  );
-  const [writingTone, setWritingTone] = useState<'impact' | 'technical' | 'modern'>('impact');
+  const [cvLanguage, setCvLanguage] = useState<CvLang>(uiLang === 'vi' ? 'Vietnamese' : 'English');
+  const [writingTone, setWritingTone] = useState<Tone>('impact');
   const [focusKeywords, setFocusKeywords] = useState('');
 
   // Generated CV object in Review mode
@@ -118,6 +288,7 @@ export default function AiResumeBuilderPage() {
   const handleStartGeneration = async () => {
     setWizardState('generating');
     setGenerationStep(1);
+    window.scrollTo({ top: 0 });
 
     const s1 = setTimeout(() => setGenerationStep(2), 300);
     const s2 = setTimeout(() => setGenerationStep(3), 600);
@@ -196,600 +367,574 @@ export default function AiResumeBuilderPage() {
     }));
   };
 
-  return (
-    <>
-      <PageTitle
-        title={t('resumes.aiResumeBuilder')}
-        subtitle={t('resumes.aiBuilderSubtitle')}
-        action={
-          <Link to="/candidate/resumes">
-            <Button variant="secondary">
-              <ArrowLeft size={16} />
-              {t('resumes.backToList')}
-            </Button>
-          </Link>
-        }
-      />
+  const updateExperience = (idx: number, patch: Partial<NonNullable<Resume['experience']>[number]>) => {
+    const list = [...(generatedCv.experience || [])];
+    list[idx] = { ...list[idx], ...patch };
+    setGeneratedCv((prev) => ({ ...prev, experience: list }));
+  };
 
-      {/* STAGE 1: CONFIGURE CAREER & AI PREFERENCES */}
-      {wizardState === 'configure' && (
-        <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-          {/* Hero Banner */}
-          <div className="rounded-2xl bg-brand-700 p-6 text-white relative overflow-hidden">
-            <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 h-48 w-48 rounded-full bg-white/10 hidden pointer-events-none" />
-            <div className="flex items-center gap-3 mb-2">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-amber-300">
-                <Lightbulb size={20} />
-              </div>
-              <h2 className="text-xl font-medium tracking-tight">
-                AI Resume Builder — Trợ lý tạo CV Thông minh
-              </h2>
-            </div>
-            <p className="text-xs sm:text-sm text-brand-100 max-w-2xl leading-relaxed">
-              Chỉ cần chọn định hướng nghề nghiệp và cấp bậc, AI Agent sẽ tự động nghiên cứu tiêu chuẩn tuyển dụng, biên soạn các thành tích định lượng (STAR format) và tối ưu hóa từ khóa chuẩn ATS cho bản CV của bạn.
-            </p>
-          </div>
+  const track = CAREER_TRACKS.find((tr) => tr.id === selectedTrack);
+  const level = SENIORITY_LEVELS.find((l) => l.id === selectedLevel);
+  const paperLang = generatedCv.language === 'Vietnamese' ? 0 : 1;
 
-          {/* 1. Select Career Track */}
-          <Card>
-            <div className="border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
-                <Compass size={17} className="text-brand-600" />
-                {t('resumes.selectCareerTrack')} *
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">{t('resumes.careerTrackDesc')}</p>
-            </div>
+  const backLink = (
+    <Link to="/candidate/resumes" className={`${textLink} text-[13px] text-slate-600 hover:text-ink`}>
+      <ArrowLeft size={14} aria-hidden="true" />
+      {c.back}
+    </Link>
+  );
 
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              {CAREER_TRACKS.map((track) => {
-                const Icon = track.icon;
-                const isSelected = selectedTrack === track.id;
-                return (
-                  <div
-                    key={track.id}
-                    onClick={() => setSelectedTrack(track.id)}
-                    className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
-                      isSelected
-                        ? 'border-brand-600 bg-brand-50/40 ring-2 ring-brand-500/20 shadow-xs'
-                        : 'border-slate-200 bg-surface hover:border-brand-300 hover:bg-slate-50/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className={`grid h-9 w-9 place-items-center rounded-lg ${
-                            isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          <Icon size={18} />
-                        </span>
-                        <h4 className="font-medium text-slate-900 text-xs sm:text-sm">{track.title}</h4>
-                      </div>
-                      {isSelected && (
-                        <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-600 text-white">
-                          <Check size={12} />
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-500 leading-relaxed mb-3">
-                      {track.description}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {track.techKeywords.map((kw) => (
-                        <span
-                          key={kw}
-                          className="rounded-md bg-surface border border-slate-200 px-1.5 py-0.5 text-2xs font-medium text-slate-600"
-                        >
-                          {kw}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* 2. Seniority Level & Language */}
-          <div className="grid gap-6 sm:grid-cols-2">
-            {/* Seniority Level */}
-            <Card>
-              <div className="border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                  <Briefcase size={16} className="text-brand-600" />
-                  {t('resumes.seniorityLevel')}
-                </h3>
-              </div>
-
-              <div className="space-y-2">
-                {SENIORITY_LEVELS.map((lvl) => {
-                  const isSelected = selectedLevel === lvl.id;
-                  return (
-                    <div
-                      key={lvl.id}
-                      onClick={() => setSelectedLevel(lvl.id)}
-                      className={`flex items-center justify-between p-3 rounded-xl border transition cursor-pointer ${
-                        isSelected
-                          ? 'border-brand-600 bg-brand-50/50 font-semibold text-brand-900'
-                          : 'border-slate-200 bg-surface text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`h-3.5 w-3.5 rounded-full border-2 grid place-items-center ${
-                            isSelected ? 'border-brand-600 bg-brand-600' : 'border-slate-300 bg-white'
-                          }`}
-                        >
-                          {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-surface" />}
-                        </div>
-                        <span className="text-xs">{lvl.label}</span>
-                      </div>
-                      <span className="text-2xs text-slate-400 font-normal">{lvl.exp}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-
-            {/* CV Language Selection */}
-            <Card>
-              <div className="border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                  <Languages size={16} className="text-emerald-600" />
-                  {t('resumes.cvLanguageLabel')}
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">{t('resumes.cvLanguageDesc')}</p>
-              </div>
-
-              <div className="space-y-3">
-                <div
-                  onClick={() => setCvLanguage('Vietnamese')}
-                  className={`p-3.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
-                    cvLanguage === 'Vietnamese'
-                      ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
-                      : 'border-slate-200 bg-surface hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">🇻🇳</span>
-                    <div>
-                      <p className="font-medium text-xs text-slate-900">Tiếng Việt (Vietnamese)</p>
-                      <p className="text-2xs text-slate-500">Phù hợp ứng tuyển các công ty tại Việt Nam</p>
-                    </div>
-                  </div>
-                  {cvLanguage === 'Vietnamese' && <CheckCircle2 size={18} className="text-emerald-600" />}
-                </div>
-
-                <div
-                  onClick={() => setCvLanguage('English')}
-                  className={`p-3.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
-                    cvLanguage === 'English'
-                      ? 'border-brand-600 bg-brand-50/50 ring-2 ring-brand-500/20'
-                      : 'border-slate-200 bg-surface hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">🇬🇧</span>
-                    <div>
-                      <p className="font-medium text-xs text-slate-900">English (Tiếng Anh)</p>
-                      <p className="text-2xs text-slate-500">Chuẩn quốc tế, tối ưu cho các tập đoàn đa quốc gia & remote</p>
-                    </div>
-                  </div>
-                  {cvLanguage === 'English' && <CheckCircle2 size={18} className="text-brand-600" />}
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* 3. Focus Keywords / Custom Prompts */}
-          <Card>
-            <div className="border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                <Target size={16} className="text-amber-500" />
-                {t('resumes.focusKeywordsLabel')}
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Nhập các kỹ năng, công nghệ hoặc thành tích đặc biệt bạn muốn AI ưu tiên làm nổi bật trong CV.
-              </p>
-            </div>
-
-            <textarea
-              rows={3}
-              value={focusKeywords}
-              onChange={(e) => setFocusKeywords(e.target.value)}
-              placeholder={t('resumes.focusKeywordsPlaceholder')}
-              className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-            />
-          </Card>
-
-          {/* Generation Action Button */}
-          <div className="text-center pt-2">
-            <button
-              type="button"
-              onClick={handleStartGeneration}
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-brand-600 px-8 py-4 text-base font-medium text-white shadow-sm transition-all shadow-sm hover:bg-brand-700 cursor-pointer"
-            >
-              <Lightbulb size={20} className="text-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
-              {t('resumes.generateAiCvButton')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STAGE 2: GENERATING WITH AI ANIMATION */}
-      {wizardState === 'generating' && (
-        <Card className="max-w-2xl mx-auto my-10 p-8 text-center animate-fade-in border-brand-100 shadow-sm">
-          <div className="relative mx-auto mb-6 grid h-24 w-24 place-items-center rounded-3xl bg-brand-600 text-white shadow-sm">
-            <MessageSquare size={44} className="" />
-            <span className="absolute -top-1 -right-1 flex h-5 w-5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-5 w-5 bg-amber-400 border-2 border-white" />
-            </span>
-          </div>
-
-          <h3 className="text-xl font-semibold text-slate-900 mb-1">
-            {t('resumes.generatingAiCv')}
-          </h3>
-          <p className="text-xs text-slate-500 mb-6">
-            Đang biên soạn bản CV theo định hướng:{' '}
-            <strong className="text-brand-600">
-              {CAREER_TRACKS.find((t) => t.id === selectedTrack)?.title}
-            </strong>
+  // ── STAGE 2: GENERATING ──
+  if (wizardState === 'generating') {
+    const steps = [
+      t('resumes.step1Analyzing'),
+      t('resumes.step2Summary'),
+      t('resumes.step3Experience'),
+      t('resumes.step4Skills'),
+      t('resumes.step5Projects'),
+    ];
+    return (
+      <div className="pb-[clamp(3rem,6vw,5rem)]">
+        {backLink}
+        <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+          <p className="text-[13px] text-brand">{c.eyebrow}</p>
+          <h1 className="mt-3 text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+            {c.generatingHead}
+            <span className="block text-brand">{track?.title}.</span>
+          </h1>
+          <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[36rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+            {c.generatingNote}
           </p>
+        </header>
 
-          {/* Progressive Step Progress */}
-          <div className="space-y-3 text-left max-w-md mx-auto">
-            {[
-              { step: 1, label: t('resumes.step1Analyzing') },
-              { step: 2, label: t('resumes.step2Summary') },
-              { step: 3, label: t('resumes.step3Experience') },
-              { step: 4, label: t('resumes.step4Skills') },
-              { step: 5, label: t('resumes.step5Projects') },
-            ].map((s) => {
-              const isDone = generationStep > s.step;
-              const isCurrent = generationStep === s.step;
+        <section className="mt-[clamp(2rem,4vw,2.75rem)] max-w-3xl" role="status" aria-live="polite">
+          <div className="h-[2px] w-full bg-slate-200">
+            <div
+              className="h-full bg-brand transition-[width] duration-300"
+              style={{ width: `${(Math.min(generationStep, 5) / 5) * 100}%` }}
+            />
+          </div>
+          <ol className="mt-2">
+            {steps.map((label, i) => {
+              const step = i + 1;
+              const isDone = generationStep > step;
+              const isCurrent = generationStep === step;
               return (
-                <div
-                  key={s.step}
-                  className={`flex items-center gap-3 p-3 rounded-xl transition ${
-                    isCurrent
-                      ? ' bg-brand-50  border border-brand-200 text-brand-950 font-semibold shadow-2xs'
-                      : isDone
-                      ? 'text-slate-700'
-                      : 'text-slate-400 opacity-50'
+                <li
+                  key={step}
+                  className={`grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-border py-4 transition-opacity ${
+                    !isDone && !isCurrent ? 'opacity-45' : ''
                   }`}
                 >
-                  {isDone ? (
-                    <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
-                  ) : isCurrent ? (
-                    <Loader2 size={18} className="animate-spin text-brand-600 shrink-0" />
-                  ) : (
-                    <div className="h-4 w-4 rounded-full border border-slate-300 shrink-0" />
-                  )}
-                  <span className="text-xs">{s.label}</span>
-                </div>
+                  <span className="text-xs tabular-nums text-slate-500">{String(step).padStart(2, '0')}</span>
+                  <span className={`text-[15px] leading-7 ${isCurrent ? 'text-ink' : 'text-slate-700'}`}>{label}</span>
+                  <span className="text-[13px]">
+                    {isDone ? (
+                      <span className="text-brand">{c.stepDone}</span>
+                    ) : isCurrent ? (
+                      <span className="inline-flex items-center gap-1.5 text-ink">
+                        <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                        {c.stepNow}
+                      </span>
+                    ) : null}
+                  </span>
+                </li>
               );
             })}
+          </ol>
+        </section>
+      </div>
+    );
+  }
+
+  // ── STAGE 3: REVIEW ──
+  if (wizardState === 'review') {
+    const isViCv = generatedCv.language === 'Vietnamese';
+    const contactLine = [generatedCv.location, generatedCv.email, generatedCv.phone].filter(Boolean).join(' · ');
+    return (
+      <div className="pb-[clamp(3rem,6vw,5rem)]">
+        {backLink}
+        <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+          <p className="text-[13px] text-brand">{c.eyebrow}</p>
+          <h1 className="mt-3 text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+            {c.readyHead}
+            <span className="block text-brand">{c.atsLine(generatedCv.atsScore)}</span>
+          </h1>
+          <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[36rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+            {c.readyNote(isViCv ? c.langNameVi : c.langNameEn)}
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <button type="button" onClick={handleSaveToProfile} disabled={saveMutation.isPending} className={primaryButton}>
+              {saveMutation.isPending ? t('resumes.saving') : t('resumes.saveAiCv')}
+              {saveMutation.isPending ? (
+                <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <ArrowRight size={15} aria-hidden="true" />
+              )}
+            </button>
+            <button type="button" onClick={handleSwitchCvLanguage} disabled={isTranslating} className={`${textLink} text-ink`}>
+              {isTranslating && <Loader2 size={13} className="animate-spin" aria-hidden="true" />}
+              {isTranslating ? t('resumes.translating') : isViCv ? c.toEnglish : c.toVietnamese}
+            </button>
+            <button type="button" onClick={() => setWizardState('configure')} className={`${textLink} text-ink`}>
+              {t('resumes.regenerateAi')}
+            </button>
           </div>
-        </Card>
-      )}
+        </header>
 
-      {/* STAGE 3: REVIEW / EDIT GENERATED CV WITH LIVE SPLIT PREVIEW */}
-      {wizardState === 'review' && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Top Control Bar with Language Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-surface p-4 border border-slate-200/80 shadow-2xs">
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-brand-700">
-                <Lightbulb size={20} />
-              </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-slate-900 text-sm">
-                    {t('resumes.aiGeneratedSuccess')}
-                  </h3>
-                  <Badge tone="green">ATS: {generatedCv.atsScore}/100</Badge>
-                </div>
-                <p className="text-2xs text-slate-500">
-                  Ngôn ngữ hiện tại:{' '}
-                  <strong className="text-slate-800">
-                    {generatedCv.language === 'Vietnamese' ? 'Tiếng Việt 🇻🇳' : 'English 🇬🇧'}
-                  </strong>{' '}
-                  · Bạn có thể chuyển đổi ngôn ngữ hoặc chỉnh sửa trực tiếp nội dung bên dưới.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {/* 1-Click Instant Language Switcher */}
-              <button
-                type="button"
-                onClick={handleSwitchCvLanguage}
-                disabled={isTranslating}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/70 hover:bg-brand-100 px-3.5 py-2 text-xs font-medium text-brand-700 transition cursor-pointer disabled:opacity-50"
-              >
-                {isTranslating ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Languages size={15} />
-                )}
-                {isTranslating
-                  ? t('resumes.translating')
-                  : generatedCv.language === 'Vietnamese'
-                  ? 'Translate to English 🇬🇧'
-                  : 'Dịch sang Tiếng Việt 🇻🇳'}
-              </button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setWizardState('configure')}
-                className="text-xs py-2 px-3"
-              >
-                <RefreshCw size={14} />
-                {t('resumes.regenerateAi')}
-              </Button>
-            </div>
-          </div>
-
-          {/* 2-Column Split: Editable Left Form + Live Document Right Preview */}
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            {/* Left: Editable Form */}
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <Card>
-                <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
-                  <h4 className="font-medium text-slate-900 text-sm flex items-center gap-1.5">
-                    <User size={15} className="text-brand-600" />
-                    Thông tin cơ bản
-                  </h4>
-                  <span className="rounded-full bg-brand-50 px-2 py-0.5 text-2xs font-semibold text-brand-700 border border-brand-200">
-                    AI Generated
-                  </span>
-                </div>
-
-                <div className="grid gap-3.5 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Tên bản CV</label>
-                    <Input
-                      value={generatedCv.name || ''}
-                      onChange={(e) => setGeneratedCv((prev) => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Chức danh / Vị trí</label>
-                    <Input
-                      value={generatedCv.position || ''}
-                      onChange={(e) => setGeneratedCv((prev) => ({ ...prev, position: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Họ và tên ứng viên</label>
-                    <Input
-                      value={generatedCv.fullName || ''}
-                      onChange={(e) => setGeneratedCv((prev) => ({ ...prev, fullName: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">
-                      Tóm tắt sự nghiệp (Executive Summary)
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={generatedCv.summary || ''}
-                      onChange={(e) => setGeneratedCv((prev) => ({ ...prev, summary: e.target.value }))}
-                      className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500"
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              {/* Skills Management */}
-              <Card>
-                <div className="border-b border-slate-100 pb-3 mb-3 flex items-center justify-between">
-                  <h4 className="font-medium text-slate-900 text-sm flex items-center gap-1.5">
-                    <Wrench size={15} className="text-amber-500" />
-                    Kỹ năng chuẩn ATS ({generatedCv.skills?.length || 0})
-                  </h4>
-                </div>
-
-                <div className="flex gap-2 mb-3">
-                  <Input
-                    value={newSkillInput}
-                    onChange={(e) => setNewSkillInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddSkill(newSkillInput);
-                      }
-                    }}
-                    placeholder="Thêm kỹ năng mới…"
-                    className="max-w-xs"
+        <div
+          className={`mt-[clamp(2.5rem,5vw,3.5rem)] grid gap-x-[clamp(2rem,4vw,4rem)] gap-y-14 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] transition-opacity ${
+            isTranslating ? 'opacity-60' : ''
+          }`}
+        >
+          {/* Left: editable form */}
+          <div className="min-w-0">
+            <section>
+              <SectionHead index="01" title={c.basicTitle} />
+              <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                <Field label={c.cvName} htmlFor="ai-cv-name" className="sm:col-span-2">
+                  <input
+                    id="ai-cv-name"
+                    value={generatedCv.name || ''}
+                    onChange={(e) => setGeneratedCv((prev) => ({ ...prev, name: e.target.value }))}
+                    className={lineInput}
                   />
-                  <Button type="button" variant="secondary" onClick={() => handleAddSkill(newSkillInput)}>
-                    <Plus size={14} /> Thêm
-                  </Button>
-                </div>
+                </Field>
+                <Field label={c.position} htmlFor="ai-cv-position">
+                  <input
+                    id="ai-cv-position"
+                    value={generatedCv.position || ''}
+                    onChange={(e) => setGeneratedCv((prev) => ({ ...prev, position: e.target.value }))}
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.fullName} htmlFor="ai-cv-fullname">
+                  <input
+                    id="ai-cv-fullname"
+                    value={generatedCv.fullName || ''}
+                    onChange={(e) => setGeneratedCv((prev) => ({ ...prev, fullName: e.target.value }))}
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.summary} htmlFor="ai-cv-summary" className="sm:col-span-2">
+                  <textarea
+                    id="ai-cv-summary"
+                    rows={5}
+                    value={generatedCv.summary || ''}
+                    onChange={(e) => setGeneratedCv((prev) => ({ ...prev, summary: e.target.value }))}
+                    className={lineTextarea}
+                  />
+                </Field>
+              </div>
+            </section>
 
-                <div className="flex flex-wrap gap-1.5">
-                  {generatedCv.skills?.map((skill) => (
-                    <span
-                      key={skill}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-surface px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs"
-                    >
-                      <span>{skill}</span>
+            <section className={sectionGap}>
+              <SectionHead
+                index="02"
+                title={c.skillsTitle}
+                action={<span className="text-[13px] text-slate-600">{c.skillsCount(generatedCv.skills?.length || 0)}</span>}
+              />
+              <div className="mt-5 flex items-end gap-4">
+                <input
+                  value={newSkillInput}
+                  onChange={(e) => setNewSkillInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddSkill(newSkillInput);
+                    }
+                  }}
+                  placeholder={c.addSkillPlaceholder}
+                  aria-label={c.addSkillPlaceholder}
+                  className={lineInput}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddSkill(newSkillInput)}
+                  disabled={!newSkillInput.trim()}
+                  className={`${textLink} mb-2 shrink-0 text-ink`}
+                >
+                  {c.add}
+                </button>
+              </div>
+              {generatedCv.skills && generatedCv.skills.length > 0 ? (
+                <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2.5">
+                  {generatedCv.skills.map((skill) => (
+                    <li key={skill} className="inline-flex items-center gap-1 text-sm text-ink">
+                      <span className="border-b border-slate-300 pb-px">{skill}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveSkill(skill)}
-                        className="text-slate-400 hover:text-red-600 transition"
+                        aria-label={c.removeSkill(skill)}
+                        className="p-0.5 text-slate-400 transition-colors hover:text-danger cursor-pointer"
                       >
-                        <X size={12} />
+                        <X size={13} />
                       </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-5 text-sm text-slate-500">{c.noSkills}</p>
+              )}
+            </section>
+
+            <section className={sectionGap}>
+              <SectionHead index="03" title={c.expTitle} note={c.expNote} />
+              {(generatedCv.experience?.length ?? 0) === 0 && (
+                <p className="border-b border-border py-6 text-sm text-slate-500">{c.noExp}</p>
+              )}
+              {generatedCv.experience?.map((exp, idx) => (
+                <div key={exp.id || idx} className="border-b border-border py-6">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="text-xs tabular-nums text-slate-500">#{idx + 1}</span>
+                    <span className="text-[13px] tabular-nums text-slate-500">
+                      {exp.startDate} – {exp.endDate}
                     </span>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Work Experience */}
-              <Card>
-                <div className="border-b border-slate-100 pb-3 mb-4">
-                  <h4 className="font-medium text-slate-900 text-sm flex items-center gap-1.5">
-                    <Briefcase size={15} className="text-emerald-600" />
-                    Kinh nghiệm làm việc & Thành tích định lượng (STAR Format)
-                  </h4>
-                </div>
-
-                <div className="space-y-4">
-                  {generatedCv.experience?.map((exp, idx) => (
-                    <div key={exp.id || idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2.5">
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <div>
-                          <label className="text-2xs font-semibold text-slate-500 mb-1 block">Chức danh</label>
-                          <Input
-                            value={exp.role}
-                            onChange={(e) => {
-                              const list = [...(generatedCv.experience || [])];
-                              list[idx] = { ...list[idx], role: e.target.value };
-                              setGeneratedCv((prev) => ({ ...prev, experience: list }));
-                            }}
-                            className="bg-surface"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-2xs font-semibold text-slate-500 mb-1 block">Công ty</label>
-                          <Input
-                            value={exp.company}
-                            onChange={(e) => {
-                              const list = [...(generatedCv.experience || [])];
-                              list[idx] = { ...list[idx], company: e.target.value };
-                              setGeneratedCv((prev) => ({ ...prev, experience: list }));
-                            }}
-                            className="bg-surface"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-2xs font-semibold text-slate-500 mb-1 block">Mô tả công việc</label>
-                        <textarea
-                          rows={2}
-                          value={exp.description}
-                          onChange={(e) => {
-                            const list = [...(generatedCv.experience || [])];
-                            list[idx] = { ...list[idx], description: e.target.value };
-                            setGeneratedCv((prev) => ({ ...prev, experience: list }));
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* Right: Live CV Paper Preview */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <FileCheck2 size={15} className="text-brand-600" />
-                  {t('resumes.livePreview')}
-                </span>
-                <span className="text-2xs text-emerald-600 font-semibold">Tự động cập nhật tức thời</span>
-              </div>
-
-              <div className="rounded-2xl border border-slate-300 bg-surface p-6 shadow-sm text-xs space-y-4 sticky top-24">
-                {/* Paper Header */}
-                <div className="border-b-2 border-slate-900 pb-4">
-                  <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
-                    {generatedCv.fullName || 'Alex Morgan'}
-                  </h2>
-                  <p className="font-medium text-brand-700 text-xs mt-0.5">
-                    {generatedCv.position}
-                  </p>
-                  <p className="text-2xs text-slate-500 mt-1">
-                    {generatedCv.location} · {generatedCv.email} · {generatedCv.phone}
-                  </p>
-                </div>
-
-                {/* Paper Summary */}
-                <div>
-                  <h5 className="font-medium text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-1.5">
-                    {generatedCv.language === 'Vietnamese' ? 'TÓM TẮT NGHỀ NGHIỆP' : 'PROFESSIONAL SUMMARY'}
-                  </h5>
-                  <p className="text-2xs text-slate-700 leading-relaxed">
-                    {generatedCv.summary}
-                  </p>
-                </div>
-
-                {/* Paper Experience */}
-                <div>
-                  <h5 className="font-medium text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-2">
-                    {generatedCv.language === 'Vietnamese' ? 'KINH NGHIỆM LÀM VIỆC' : 'WORK EXPERIENCE'}
-                  </h5>
-                  <div className="space-y-3">
-                    {generatedCv.experience?.map((exp) => (
-                      <div key={exp.id}>
-                        <div className="flex justify-between font-medium text-2xs text-slate-900">
-                          <span>{exp.role} · {exp.company}</span>
-                          <span className="text-slate-400 font-normal">{exp.startDate} – {exp.endDate}</span>
-                        </div>
-                        <p className="text-2xs text-slate-600 mt-0.5">{exp.description}</p>
-                        {exp.highlights && exp.highlights.length > 0 && (
-                          <ul className="mt-1 list-disc list-inside space-y-0.5 text-2xs text-slate-700">
-                            {exp.highlights.map((h, i) => (
-                              <li key={i}>{h}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    ))}
+                  </div>
+                  <div className="mt-3 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                    <Field label={c.role} htmlFor={`ai-exp-role-${idx}`}>
+                      <input
+                        id={`ai-exp-role-${idx}`}
+                        value={exp.role}
+                        onChange={(e) => updateExperience(idx, { role: e.target.value })}
+                        className={lineInput}
+                      />
+                    </Field>
+                    <Field label={c.company} htmlFor={`ai-exp-company-${idx}`}>
+                      <input
+                        id={`ai-exp-company-${idx}`}
+                        value={exp.company}
+                        onChange={(e) => updateExperience(idx, { company: e.target.value })}
+                        className={lineInput}
+                      />
+                    </Field>
+                    <Field label={c.description} htmlFor={`ai-exp-desc-${idx}`} className="sm:col-span-2">
+                      <textarea
+                        id={`ai-exp-desc-${idx}`}
+                        rows={3}
+                        value={exp.description}
+                        onChange={(e) => updateExperience(idx, { description: e.target.value })}
+                        className={lineTextarea}
+                      />
+                    </Field>
                   </div>
                 </div>
-
-                {/* Paper Skills */}
-                <div>
-                  <h5 className="font-medium text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-1.5">
-                    {generatedCv.language === 'Vietnamese' ? 'KỸ NĂNG CHUYÊN MÔN' : 'TECHNICAL SKILLS'}
-                  </h5>
-                  <div className="flex flex-wrap gap-1">
-                    {generatedCv.skills?.map((s) => (
-                      <span key={s} className="rounded bg-slate-100 px-1.5 py-0.5 text-2xs text-slate-800">
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+              ))}
+            </section>
           </div>
 
-          {/* Sticky Bottom Actions Bar */}
-          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-sm border border-slate-200">
-            <span className="text-xs text-slate-500">
-              Kiểm tra kỹ nội dung đã được AI tối ưu trước khi lưu vào hệ thống.
-            </span>
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="secondary" onClick={() => setWizardState('configure')}>
-                {t('resumes.cancel')}
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleSaveToProfile}
-                disabled={saveMutation.isPending}
-                className="bg-brand-600 text-white shadow-sm"
-              >
-                <Save size={16} />
-                {saveMutation.isPending ? t('resumes.saving') : t('resumes.saveAiCv')}
-              </Button>
+          {/* Right: live paper preview */}
+          <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
+            <div className="flex items-baseline justify-between gap-4 border-b border-ink pb-3">
+              <h2 className="text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">{c.previewTitle}</h2>
+              <span className="text-[13px] text-slate-600">{c.previewNote}</span>
             </div>
+            <article className="mt-5 border border-border bg-surface p-[clamp(1.25rem,3vw,2.25rem)] text-ink xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto">
+              <header className="border-b border-ink pb-4">
+                <p className="text-[clamp(1.375rem,2.4vw,1.75rem)] font-normal leading-tight tracking-[-0.02em]">
+                  {generatedCv.fullName || 'Alex Morgan'}
+                </p>
+                <p className="mt-1 text-sm text-brand">{generatedCv.position}</p>
+                {contactLine && <p className="mt-1.5 text-[12px] text-slate-600">{contactLine}</p>}
+              </header>
+
+              <div className="mt-5 space-y-5 text-[13px] leading-6">
+                {generatedCv.summary && (
+                  <section>
+                    <PaperHeading>{c.paper.summary[paperLang]}</PaperHeading>
+                    <p className="text-slate-700">{generatedCv.summary}</p>
+                  </section>
+                )}
+
+                {(generatedCv.experience?.length ?? 0) > 0 && (
+                  <section>
+                    <PaperHeading>{c.paper.experience[paperLang]}</PaperHeading>
+                    <div className="space-y-4">
+                      {generatedCv.experience?.map((exp, idx) => (
+                        <div key={exp.id || idx}>
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                            <span className="font-medium">
+                              {exp.role} · {exp.company}
+                            </span>
+                            <span className="text-[12px] tabular-nums text-slate-500">
+                              {exp.startDate} – {exp.endDate}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-slate-600">{exp.description}</p>
+                          {exp.highlights && exp.highlights.length > 0 && (
+                            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-slate-700">
+                              {exp.highlights.map((h, i) => (
+                                <li key={i}>{h}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {(generatedCv.projects?.length ?? 0) > 0 && (
+                  <section>
+                    <PaperHeading>{c.paper.projects[paperLang]}</PaperHeading>
+                    <div className="space-y-3">
+                      {generatedCv.projects?.map((p, idx) => (
+                        <div key={p.id || idx}>
+                          <p className="font-medium">
+                            {p.name}
+                            {p.role && <span className="font-normal text-slate-500"> · {p.role}</span>}
+                          </p>
+                          <p className="text-slate-600">{p.description}</p>
+                          {p.techStack && p.techStack.length > 0 && (
+                            <p className="text-[12px] text-slate-500">{p.techStack.join(' · ')}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {(generatedCv.education?.length ?? 0) > 0 && (
+                  <section>
+                    <PaperHeading>{c.paper.education[paperLang]}</PaperHeading>
+                    {generatedCv.education?.map((ed, idx) => (
+                      <div key={ed.id || idx} className="flex flex-wrap items-baseline justify-between gap-x-4">
+                        <span>
+                          <span className="font-medium">{ed.school}</span>
+                          <span className="text-slate-600">
+                            {' '}
+                            · {ed.degree}, {ed.field}
+                            {ed.gpa ? ` · GPA ${ed.gpa}` : ''}
+                          </span>
+                        </span>
+                        <span className="text-[12px] tabular-nums text-slate-500">
+                          {ed.startDate} – {ed.endDate}
+                        </span>
+                      </div>
+                    ))}
+                  </section>
+                )}
+
+                {(generatedCv.skills?.length ?? 0) > 0 && (
+                  <section>
+                    <PaperHeading>{c.paper.skills[paperLang]}</PaperHeading>
+                    <p className="text-slate-700">{generatedCv.skills?.join(' · ')}</p>
+                  </section>
+                )}
+              </div>
+            </article>
+          </aside>
+        </div>
+
+        {/* Closing actions */}
+        <section className={`${sectionGap} border-t border-ink pt-6`}>
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="max-w-md text-[clamp(1rem,1.3vw,1.125rem)] leading-7 text-ink">{c.closingNote}</p>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+              <button type="button" onClick={() => setWizardState('configure')} className={`${textLink} text-ink`}>
+                {t('resumes.cancel')}
+              </button>
+              <button type="button" onClick={handleSaveToProfile} disabled={saveMutation.isPending} className={primaryButton}>
+                {saveMutation.isPending ? t('resumes.saving') : t('resumes.saveAiCv')}
+                {saveMutation.isPending ? (
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <ArrowRight size={15} aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // ── STAGE 1: CONFIGURE ──
+  const choices = [
+    track?.title,
+    level?.label,
+    cvLanguage === 'Vietnamese' ? c.langVi : c.langEn,
+    c.tones[writingTone].label,
+  ].filter(Boolean);
+
+  return (
+    <div className="pb-[clamp(3rem,6vw,5rem)]">
+      {backLink}
+      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+        <p className="text-[13px] text-brand">{c.eyebrow}</p>
+        <h1 className="mt-3 text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {c.headline}
+          <span className="block text-brand">{c.headlineAccent}</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[38rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {c.intro}
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4">
+          <button type="button" onClick={handleStartGeneration} className={primaryButton}>
+            {t('resumes.generateAiCvButton')}
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+          <Link to="/candidate/resumes/create" className={`${textLink} text-ink`}>
+            {isVietnamese ? 'Tự viết CV' : 'Write it myself'}
+          </Link>
+        </div>
+      </header>
+
+      {/* 01 Career track */}
+      <section className={sectionGap}>
+        <SectionHead index="01" title={c.trackTitle} note={t('resumes.careerTrackDesc')} />
+        <div role="radiogroup" aria-label={c.trackTitle} className="grid md:grid-cols-2 md:gap-x-[clamp(2rem,4vw,3.5rem)]">
+          {CAREER_TRACKS.map((tr, i) => {
+            const isSelected = selectedTrack === tr.id;
+            return (
+              <button
+                key={tr.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => setSelectedTrack(tr.id)}
+                className="group grid grid-cols-[2.25rem_minmax(0,1fr)_auto] gap-x-3 border-b border-border py-5 text-left cursor-pointer"
+              >
+                <span className="pt-1 text-xs tabular-nums text-slate-500">{String(i + 1).padStart(2, '0')}</span>
+                <span className="min-w-0">
+                  <span
+                    className={`block text-[clamp(1.0625rem,1.5vw,1.25rem)] transition-colors ${
+                      isSelected ? 'text-brand' : 'text-ink group-hover:text-brand'
+                    }`}
+                  >
+                    {tr.title}
+                  </span>
+                  <span className="mt-1.5 block text-[13px] leading-6 text-slate-600">
+                    {isVietnamese ? tr.description : tr.descriptionEn}
+                  </span>
+                  <span className="mt-2 block text-[12px] text-slate-500">{tr.techKeywords.join(' · ')}</span>
+                </span>
+                <RadioDot checked={isSelected} />
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 02 Level */}
+      <section className={sectionGap}>
+        <SectionHead index="02" title={c.levelTitle} note={c.levelNote} />
+        <div role="radiogroup" aria-label={c.levelTitle} className="grid sm:grid-cols-2 lg:grid-cols-5">
+          {SENIORITY_LEVELS.map((lvl, i) => {
+            const isSelected = selectedLevel === lvl.id;
+            return (
+              <button
+                key={lvl.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => setSelectedLevel(lvl.id)}
+                className={`group flex items-start justify-between gap-3 border-b border-border py-4 text-left cursor-pointer sm:pr-4 ${
+                  i > 0 ? 'lg:border-l lg:pl-4' : ''
+                } ${i % 2 === 1 ? 'sm:border-l sm:pl-4' : ''}`}
+              >
+                <span className="min-w-0">
+                  <span className={`block text-[15px] transition-colors ${isSelected ? 'text-brand' : 'text-ink group-hover:text-brand'}`}>
+                    {lvl.label}
+                  </span>
+                  <span className="mt-1 block text-[12px] text-slate-500">
+                    {c.years(lvl.exp)}
+                    {lvl.recommended && <span className="text-brand"> · {c.recommended}</span>}
+                  </span>
+                </span>
+                <RadioDot checked={isSelected} />
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 03 Language & tone */}
+      <section className={sectionGap}>
+        <SectionHead index="03" title={c.languageTitle} note={t('resumes.cvLanguageDesc')} />
+        <div className="grid gap-x-[clamp(2rem,4vw,3.5rem)] md:grid-cols-2">
+          <div role="radiogroup" aria-label={c.langLabel}>
+            <p className="pt-5 pb-1 text-xs text-slate-600">{c.langLabel}</p>
+            {(
+              [
+                { id: 'Vietnamese', label: c.langVi, note: c.langViNote },
+                { id: 'English', label: c.langEn, note: c.langEnNote },
+              ] as { id: CvLang; label: string; note: string }[]
+            ).map((opt) => {
+              const isSelected = cvLanguage === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => setCvLanguage(opt.id)}
+                  className="group flex w-full items-start justify-between gap-3 border-b border-border py-4 text-left cursor-pointer"
+                >
+                  <span>
+                    <span className={`block text-[15px] transition-colors ${isSelected ? 'text-brand' : 'text-ink group-hover:text-brand'}`}>
+                      {opt.label}
+                    </span>
+                    <span className="mt-1 block text-[13px] text-slate-600">{opt.note}</span>
+                  </span>
+                  <RadioDot checked={isSelected} />
+                </button>
+              );
+            })}
+          </div>
+          <div role="radiogroup" aria-label={c.toneLabel}>
+            <p className="pt-5 pb-1 text-xs text-slate-600">{c.toneLabel}</p>
+            {(['impact', 'technical', 'modern'] as Tone[]).map((tone) => {
+              const isSelected = writingTone === tone;
+              return (
+                <button
+                  key={tone}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => setWritingTone(tone)}
+                  className="group flex w-full items-start justify-between gap-3 border-b border-border py-4 text-left cursor-pointer"
+                >
+                  <span>
+                    <span className={`block text-[15px] transition-colors ${isSelected ? 'text-brand' : 'text-ink group-hover:text-brand'}`}>
+                      {c.tones[tone].label}
+                    </span>
+                    <span className="mt-1 block text-[13px] text-slate-600">{c.tones[tone].note}</span>
+                  </span>
+                  <RadioDot checked={isSelected} />
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
-    </>
+      </section>
+
+      {/* 04 Focus keywords */}
+      <section className={sectionGap}>
+        <SectionHead index="04" title={c.keywordsTitle} note={c.keywordsNote} />
+        <textarea
+          rows={3}
+          value={focusKeywords}
+          onChange={(e) => setFocusKeywords(e.target.value)}
+          placeholder={t('resumes.focusKeywordsPlaceholder')}
+          aria-label={c.keywordsTitle}
+          className={`${lineTextarea} mt-4`}
+        />
+      </section>
+
+      {/* Closing CTA */}
+      <section className={`${sectionGap} border-t border-ink pt-6`}>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-[13px] text-slate-600">{c.summaryLabel}</p>
+            <p className="mt-1 text-[clamp(1rem,1.3vw,1.125rem)] leading-7 text-ink">{choices.join(' · ')}</p>
+          </div>
+          <button type="button" onClick={handleStartGeneration} className={`${primaryButton} self-start lg:self-auto`}>
+            {t('resumes.generateAiCvButton')}
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }

@@ -2,51 +2,116 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  AlertCircle,
-  AlertTriangle,
   ArrowLeft,
-  Award,
-  BookOpen,
-  MessageSquare,
-  Briefcase,
+  ArrowRight,
   Calendar,
-  Check,
-  CheckCircle2,
-  Clock,
-  Download,
-  Edit3,
   ExternalLink,
-  FileCheck2,
-  FileText,
-  FolderGit2,
   Globe,
-  GraduationCap,
-  Info,
+  Heart,
   Linkedin,
   Mail,
-  MailCheck,
   MapPin,
   Phone,
-  Printer,
-  Share2,
-  Lightbulb,
-  Star,
-  Target,
-  Trash2,
   Trophy,
-  Users,
   User,
-  Heart,
   X,
-  Zap,
 } from 'lucide-react';
 import { getResumeById, deleteResume, setDefaultResume } from '../../mocks/services/mockService';
-import { Badge, Button, Card, EmptyState, ErrorState, Loading, PageTitle } from '../../components/ui';
+import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+
+// Short page-only strings that have no i18n key yet.
+const copy = {
+  vi: {
+    pageLabel: 'Chi tiết CV',
+    atsLine: (n: number) => `Điểm ATS ${n}.`,
+    language: 'Ngôn ngữ',
+    updated: 'Cập nhật',
+    analyse: 'Phân tích & cải thiện bằng AI',
+    assistant: 'Tư vấn với trợ lý AI',
+    coverLetter: 'Tạo cover letter',
+    downloadToast: (name: string) =>
+      `Đang chuẩn bị tệp PDF chuẩn ATS cho bản CV "${name}"… Tệp sẽ tải về máy của bạn ngay bây giờ.`,
+    closeToast: 'Đóng thông báo',
+    statusReady: 'Sẵn sàng ứng tuyển',
+    statusDraft: 'Bản nháp',
+    statusReview: 'Cần xem lại',
+    primary: 'CV chính',
+    setPrimary: 'Đặt làm CV chính',
+    share: 'Chia sẻ',
+    copied: 'Đã sao chép link',
+    template: 'Mẫu CV',
+    templatePlum: 'Hai cột (mặc định)',
+    templateAts: 'Một cột chuẩn ATS',
+    overall: 'Điểm ATS tổng thể',
+    overallNote: 'Dựa trên đối sánh ngữ nghĩa và tiêu chuẩn bộ lọc ATS tuyển dụng.',
+    excellent: 'Xuất sắc',
+    needsWork: 'Cần tối ưu',
+    deepAnalysis: 'Xem phân tích chuyên sâu',
+    jobFit: 'So khớp với việc làm cụ thể',
+    keywordTitle: 'Đối sánh từ khoá',
+    sourceFile: 'Tệp nguồn tải lên',
+    file: 'Tệp',
+    size: 'Kích thước',
+    extractedAt: 'Thời gian trích xuất',
+    deleting: 'Đang xoá…',
+  },
+  en: {
+    pageLabel: 'CV details',
+    atsLine: (n: number) => `ATS score ${n}.`,
+    language: 'Language',
+    updated: 'Updated',
+    analyse: 'Analyse & improve with AI',
+    assistant: 'Ask the AI assistant',
+    coverLetter: 'Create cover letter',
+    downloadToast: (name: string) =>
+      `Preparing an ATS-ready PDF for "${name}"… The file will download shortly.`,
+    closeToast: 'Close notification',
+    statusReady: 'Ready to apply',
+    statusDraft: 'Draft',
+    statusReview: 'Needs review',
+    primary: 'Primary CV',
+    setPrimary: 'Make primary',
+    share: 'Share',
+    copied: 'Link copied',
+    template: 'Template',
+    templatePlum: 'Two columns (default)',
+    templateAts: 'One column, ATS standard',
+    overall: 'Overall ATS score',
+    overallNote: 'Based on semantic matching and recruiter ATS screening standards.',
+    excellent: 'Excellent',
+    needsWork: 'Needs work',
+    deepAnalysis: 'See in-depth analysis',
+    jobFit: 'Compare with a specific job',
+    keywordTitle: 'Keyword matching',
+    sourceFile: 'Uploaded source file',
+    file: 'File',
+    size: 'Size',
+    extractedAt: 'Extracted',
+    deleting: 'Deleting…',
+  },
+};
+
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
+
+const primaryButton =
+  'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+
+const toggle = (active: boolean) =>
+  `pb-1 text-sm transition-colors duration-150 cursor-pointer whitespace-nowrap border-b ${
+    active ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'
+  }`;
+
+/** Small heading with a dark rule, used in the side column. */
+function AsideHead({ children }: { children: string }) {
+  return <h2 className="border-b border-ink pb-2.5 text-[17px] font-normal text-ink">{children}</h2>;
+}
 
 export default function ResumeDetailsPage() {
   const { resumeId } = useParams<{ resumeId: string }>();
-  const { t } = useTranslation();
+  const { t, isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -105,158 +170,128 @@ export default function ResumeDetailsPage() {
     missingKeywords: ['CI/CD', 'Docker'],
   };
 
-  return (
-    <>
-      <PageTitle
-        title={cv.name}
-        subtitle={`${cv.position} · Ngôn ngữ: ${cv.language} · Cập nhật ngày ${cv.updatedAt}`}
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <Link to="/candidate/resumes">
-              <Button variant="secondary">
-                <ArrowLeft size={16} />
-                {t('resumes.backToList')}
-              </Button>
-            </Link>
-            <Link to={`/candidate/resumes/${cv.id}/edit`}>
-              <Button variant="secondary">
-                <Edit3 size={15} />
-                {t('resumes.editCv')}
-              </Button>
-            </Link>
-            <Link to={`/candidate/assistant?cvId=${cv.id}`}>
-              <Button
-                variant="secondary"
-                className="border-brand-200 text-brand-700 hover:bg-brand-50"
-              >
-                <MessageSquare size={15} className="text-brand-600" />
-                Tư vấn với Trợ lý AI
-              </Button>
-            </Link>
-            <Link to={`/candidate/applications?cvId=${cv.id}`}>
-              <Button
-                variant="secondary"
-                className="border-brand-200 text-brand-700 hover:bg-brand-50"
-              >
-                <MailCheck size={15} className="text-brand-600" />
-                Tạo Cover Letter
-              </Button>
-            </Link>
-            <Link to={`/candidate/resumes/${cv.id}/analysis`}>
-              <Button
-                variant="primary"
-                className="bg-brand-600 text-white border-0 shadow-xs"
-              >
-                <Lightbulb size={15} className="text-amber-300" />
-                Phân tích & Cải thiện AI
-              </Button>
-            </Link>
-            <Button variant="secondary" onClick={handleDownloadPdf}>
-              <Download size={15} />
-              {t('resumes.downloadPdf')}
-            </Button>
-          </div>
-        }
-      />
+  const statusLabel =
+    cv.status === 'Ready' ? c.statusReady : cv.status === 'Draft' ? c.statusDraft : c.statusReview;
 
-      {/* Download Alert Toast */}
+  const scoreRows = [
+    { label: t('resumes.atsFormatting'), value: ats.formatting },
+    { label: t('resumes.atsKeywords'), value: ats.keywords },
+    { label: t('resumes.atsImpact'), value: ats.impactMetrics },
+    { label: t('resumes.atsStructure'), value: ats.structure },
+  ];
+
+  return (
+    <div className="w-full max-w-[min(100%,90rem)] pb-[clamp(2rem,5vw,4rem)]">
+      <Link to="/candidate/resumes" className={`${textLink} text-slate-600 hover:text-ink`}>
+        <ArrowLeft size={14} aria-hidden="true" />
+        {t('resumes.backToList')}
+      </Link>
+
+      {/* Headline */}
+      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+        <p className="text-sm text-brand">{c.pageLabel}</p>
+        <h1 className="mt-[clamp(1.25rem,3vw,2rem)] break-words text-[clamp(2rem,4.4vw,3.75rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {cv.name}
+          <span className="block text-brand">{c.atsLine(cv.atsScore)}</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[44rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {cv.position} · {c.language}: {cv.language} · {c.updated} {cv.updatedAt}
+        </p>
+
+        <div className="mt-[clamp(1.75rem,3.5vw,2.5rem)] flex flex-wrap items-center gap-x-7 gap-y-4">
+          <Link to={`/candidate/resumes/${cv.id}/analysis`} className={primaryButton}>
+            {c.analyse}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+          <Link to={`/candidate/resumes/${cv.id}/edit`} className={`${textLink} text-[15px] text-ink`}>
+            {t('resumes.editCv')}
+          </Link>
+          <button type="button" onClick={handleDownloadPdf} className={`${textLink} text-[15px] text-ink`}>
+            {t('resumes.downloadPdf')}
+          </button>
+          <Link to={`/candidate/assistant?cvId=${cv.id}`} className={`${textLink} text-[15px] text-ink`}>
+            {c.assistant}
+          </Link>
+          <Link to={`/candidate/applications?cvId=${cv.id}`} className={`${textLink} text-[15px] text-ink`}>
+            {c.coverLetter}
+          </Link>
+        </div>
+      </header>
+
+      {/* Download toast */}
       {downloadSuccessToast && (
-        <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-50 border border-brand-200 p-4 text-brand-900 shadow-sm animate-fade-in">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 size={20} className="text-brand-600 shrink-0" />
-            <p className="font-semibold text-sm">
-              Đang chuẩn bị tệp PDF chuẩn ATS cho bản CV "{cv.name}"… Tệp sẽ tải về máy của bạn ngay bây giờ!
-            </p>
-          </div>
+        <div
+          role="status"
+          className="mt-8 flex items-center justify-between gap-4 border-y border-brand-200 py-3 text-sm text-brand"
+        >
+          <p>{c.downloadToast(cv.name)}</p>
           <button
+            type="button"
             onClick={() => setDownloadSuccessToast(false)}
-            className="text-brand-500 hover:text-brand-700 p-1"
+            aria-label={c.closeToast}
+            className="p-1 text-brand transition-colors hover:text-ink cursor-pointer"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Meta Bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface p-4 border border-slate-200/80 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Badge tone={cv.status === 'Ready' ? 'green' : cv.status === 'Draft' ? 'gray' : 'amber'}>
-            {cv.status === 'Ready' ? 'Sẵn sàng ứng tuyển' : cv.status === 'Draft' ? 'Bản nháp' : 'Cần xem lại'}
-          </Badge>
+      {/* Meta row */}
+      <section className="mt-[clamp(2.5rem,5vw,3.5rem)] flex flex-col gap-3 border-y border-t-ink border-b-border py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+          <span className="text-ink">{statusLabel}</span>
           {cv.isDefault ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              CV Mặc định
-            </span>
+            <span className="text-brand">{c.primary}</span>
           ) : (
             <button
               type="button"
               onClick={() => setDefaultMutation.mutate()}
-              className="inline-flex items-center gap-1 rounded-full bg-slate-100 hover:bg-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-600 transition cursor-pointer"
+              disabled={setDefaultMutation.isPending}
+              className={`${textLink} text-brand hover:text-ink disabled:opacity-50`}
             >
-              <Star size={12} />
-              Đặt làm mặc định
+              {c.setPrimary}
             </button>
           )}
-          <span className="text-xs text-slate-400">ID: {cv.id}</span>
+          <span className="text-slate-500">ID: {cv.id}</span>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-          >
-            <Share2 size={13} />
-            {copiedLink ? 'Đã sao chép link!' : 'Chia sẻ'}
+        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+          <button type="button" onClick={handleShare} className={`${textLink} text-ink`}>
+            {copiedLink ? c.copied : c.share}
           </button>
           <button
             type="button"
             onClick={() => setDeleteModalOpen(true)}
-            className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50/50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition"
+            className={`${textLink} text-danger hover:text-ink`}
           >
-            <Trash2 size={13} />
             {t('resumes.deleteCv')}
           </button>
         </div>
-      </div>
+      </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
-        {/* Left Column: Formatted Resume Document (Paper Aesthetic) */}
-        <div className="space-y-4">
-          {/* Template Selector Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 print:hidden">
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setSelectedTemplate('topcv-plum')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 cursor-pointer ${
-                  selectedTemplate === 'topcv-plum'
-                    ? 'bg-[#382329] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                }`}
-              >
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
-                Mẫu TopCV Elegance 2 Cột (Mặc định)
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedTemplate('standard-ats')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 cursor-pointer ${
-                  selectedTemplate === 'standard-ats'
-                    ? 'bg-brand-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                }`}
-              >
-                <span className="w-2.5 h-2.5 rounded-full bg-brand-300"></span>
-                Mẫu Đơn Cột ATS Chuẩn
-              </button>
-            </div>
-            <span className="text-2xs text-slate-500 font-medium hidden sm:inline pr-2">
-              Mẫu chuẩn hồ sơ Huy Phước
-            </span>
+      <div className="mt-[clamp(2rem,4vw,3rem)] grid gap-x-[clamp(2rem,4vw,4rem)] gap-y-14 xl:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)]">
+        {/* CV document */}
+        <div className="min-w-0 space-y-5">
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 print:hidden">
+            <span className="text-[13px] text-slate-600">{c.template}</span>
+            <button
+              type="button"
+              aria-pressed={selectedTemplate === 'topcv-plum'}
+              onClick={() => setSelectedTemplate('topcv-plum')}
+              className={toggle(selectedTemplate === 'topcv-plum')}
+            >
+              {c.templatePlum}
+            </button>
+            <button
+              type="button"
+              aria-pressed={selectedTemplate === 'standard-ats'}
+              onClick={() => setSelectedTemplate('standard-ats')}
+              className={toggle(selectedTemplate === 'standard-ats')}
+            >
+              {c.templateAts}
+            </button>
           </div>
 
+          <div className="overflow-x-auto">
           {selectedTemplate === 'topcv-plum' ? (
             /* TOPCV 2-COLUMN PLUM / BURGUNDY TEMPLATE */
             <div className="rounded-2xl border border-slate-200 bg-surface overflow-hidden flex flex-col md:flex-row print:border-none print:shadow-none min-h-[960px]">
@@ -594,7 +629,7 @@ export default function ResumeDetailsPage() {
             </div>
           ) : (
             /* STANDARD ATS 1-COLUMN DOCUMENT */
-            <div className="rounded-2xl border border-slate-200 bg-surface p-8 shadow-sm print:border-none print:shadow-none">
+            <div className="rounded-2xl border border-slate-200 bg-surface p-[clamp(1.25rem,4vw,2rem)] print:border-none print:shadow-none">
             {/* CV Header */}
             <div className="border-b-2 border-slate-900 pb-6 mb-6">
               <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight">
@@ -915,224 +950,142 @@ export default function ResumeDetailsPage() {
             )}
           </div>
         )}
+          </div>
         </div>
 
-        {/* Right Column: ATS Score & Deep Diagnostic */}
-        <div className="space-y-6">
-          {/* Main Score Card */}
-          <Card className="border-brand-100 bg-surface">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium text-slate-900 text-base flex items-center gap-2">
-                <Lightbulb size={18} className="text-amber-500" />
-                {t('resumes.atsScoreAnalysis')}
-              </h3>
-              <Badge tone={cv.atsScore >= 80 ? 'green' : 'amber'}>
-                {cv.atsScore >= 80 ? 'Xuất sắc' : 'Cần tối ưu'}
-              </Badge>
+        {/* ATS diagnostics */}
+        <aside className="min-w-0 space-y-12">
+          <section className="border-t border-ink pt-4">
+            <div className="flex items-baseline justify-between gap-4">
+              <p className="text-[13px] text-slate-600">{c.overall}</p>
+              <span className={`text-[13px] ${cv.atsScore >= 80 ? 'text-brand' : 'text-warning'}`}>
+                {cv.atsScore >= 80 ? c.excellent : c.needsWork}
+              </span>
             </div>
+            <p className="mt-2 text-[clamp(2.75rem,4vw,3.5rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
+              {cv.atsScore}
+            </p>
+            <p className="mt-2.5 text-[13px] leading-6 text-slate-600">{c.overallNote}</p>
 
-            <div className="flex items-center gap-4 my-4">
-              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-surface text-3xl font-semibold text-slate-900 shadow-sm">
-                {cv.atsScore}
-              </div>
-              <div>
-                <p className="font-medium text-slate-800 text-sm">Điểm số tổng thể ATS</p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  Dựa trên thuật toán đối sánh ngữ nghĩa và tiêu chuẩn bộ lọc ATS tuyển dụng.
-                </p>
-              </div>
-            </div>
+            <ul className="mt-5">
+              {scoreRows.map((row) => (
+                <li key={row.label} className="border-t border-border py-3 last:border-b">
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-600">{row.label}</span>
+                    <span className="text-ink tabular-nums">{row.value}%</span>
+                  </div>
+                  <div className="mt-2 h-[2px] w-full bg-slate-200">
+                    <div className="h-full bg-brand" style={{ width: `${row.value}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
 
-            {/* Component Progress Bars */}
-            <div className="space-y-3 pt-4 border-t border-slate-100 text-xs">
-              <div>
-                <div className="flex justify-between text-slate-700 font-semibold mb-1">
-                  <span>{t('resumes.atsFormatting')}</span>
-                  <span>{ats.formatting}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500 rounded-full"
-                    style={{ width: `${ats.formatting}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-700 font-semibold mb-1">
-                  <span>{t('resumes.atsKeywords')}</span>
-                  <span>{ats.keywords}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full bg-brand-600 rounded-full"
-                    style={{ width: `${ats.keywords}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-700 font-semibold mb-1">
-                  <span>{t('resumes.atsImpact')}</span>
-                  <span>{ats.impactMetrics}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500 rounded-full"
-                    style={{ width: `${ats.impactMetrics}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-700 font-semibold mb-1">
-                  <span>{t('resumes.atsStructure')}</span>
-                  <span>{ats.structure}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full bg-brand-500 rounded-full"
-                    style={{ width: `${ats.structure}%` }}
-                  />
-                </div>
-              </div>
-
-              <Link
-                to={`/candidate/resumes/${cv.id}/analysis`}
-                className="mt-4 flex items-center justify-center gap-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-200 py-2.5 px-3 text-xs font-medium text-brand-700 transition"
-              >
-                <Lightbulb size={14} className="text-brand-600" />
-                Xem phân tích chuyên sâu & Cải thiện AI →
+            <div className="mt-5 flex flex-col items-start gap-2.5">
+              <Link to={`/candidate/resumes/${cv.id}/analysis`} className={`${textLink} text-brand hover:text-ink`}>
+                {c.deepAnalysis}
               </Link>
-
-              <Link
-                to={`/candidate/cv-job-fit?cvId=${cv.id}`}
-                className="mt-2 flex items-center justify-center gap-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-200 py-2.5 px-3 text-xs font-medium text-brand-700 transition"
-              >
-                <Target size={14} className="text-brand-600" />
-                So sánh với việc làm cụ thể (CV–Job Fit) →
+              <Link to={`/candidate/cv-job-fit?cvId=${cv.id}`} className={`${textLink} text-ink`}>
+                {c.jobFit}
               </Link>
             </div>
-          </Card>
+          </section>
 
-          {/* Key Strengths Card */}
-          <Card>
-            <h4 className="font-medium text-slate-900 text-sm mb-3 flex items-center gap-1.5 text-emerald-700">
-              <CheckCircle2 size={16} />
-              {t('resumes.atsStrengths')}
-            </h4>
-            <div className="space-y-2 text-xs text-slate-700">
+          <section>
+            <AsideHead>{t('resumes.atsStrengths')}</AsideHead>
+            <ul>
               {ats.strengths.map((str, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="text-emerald-500 font-medium shrink-0">•</span>
-                  <p>{str}</p>
-                </div>
+                <li key={i} className="border-b border-border py-3 text-sm leading-6 text-ink">
+                  {str}
+                </li>
               ))}
-            </div>
-          </Card>
+            </ul>
+          </section>
 
-          {/* Optimization Suggestions Card */}
-          <Card>
-            <h4 className="font-medium text-slate-900 text-sm mb-3 flex items-center gap-1.5 text-amber-700">
-              <AlertCircle size={16} />
-              {t('resumes.atsImprovements')}
-            </h4>
-            <div className="space-y-2 text-xs text-slate-700">
+          <section>
+            <AsideHead>{t('resumes.atsImprovements')}</AsideHead>
+            <ul>
               {ats.improvements.map((imp, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="text-amber-500 font-medium shrink-0">•</span>
-                  <p>{imp}</p>
-                </div>
+                <li key={i} className="border-b border-border py-3 text-sm leading-6 text-ink">
+                  {imp}
+                </li>
               ))}
+            </ul>
+          </section>
+
+          <section>
+            <AsideHead>{c.keywordTitle}</AsideHead>
+            <div className="border-b border-border py-3">
+              <p className="text-[13px] text-slate-600">
+                {t('resumes.matchedKeywords')} ({ats.matchedKeywords.length})
+              </p>
+              <p className="mt-1.5 text-sm leading-6 text-brand">{ats.matchedKeywords.join(' · ')}</p>
             </div>
-          </Card>
-
-          {/* Keywords Breakdown */}
-          <Card>
-            <h4 className="font-medium text-slate-900 text-sm mb-3">Đối sánh từ khóa AI</h4>
-            <div className="space-y-3">
-              <div>
-                <p className="text-2xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                  {t('resumes.matchedKeywords')} ({ats.matchedKeywords.length})
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {ats.matchedKeywords.map((kw) => (
-                    <span
-                      key={kw}
-                      className="rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-2xs font-medium text-emerald-800"
-                    >
-                      ✓ {kw}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-2xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                  {t('resumes.missingKeywords')} ({ats.missingKeywords.length})
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {ats.missingKeywords.map((kw) => (
-                    <span
-                      key={kw}
-                      className="rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-2xs font-medium text-slate-600"
-                    >
-                      + {kw}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            <div className="border-b border-border py-3">
+              <p className="text-[13px] text-slate-600">
+                {t('resumes.missingKeywords')} ({ats.missingKeywords.length})
+              </p>
+              <p className="mt-1.5 text-sm leading-6 text-ink">{ats.missingKeywords.join(' · ')}</p>
             </div>
-          </Card>
+          </section>
 
-          {/* Uploaded File Info (if extracted) */}
           {cv.extractedMeta && (
-            <Card>
-              <h4 className="font-medium text-slate-900 text-sm mb-2">Tệp nguồn tải lên</h4>
-              <p className="text-xs text-slate-500">Tệp: {cv.extractedMeta.fileName}</p>
-              <p className="text-xs text-slate-500">Kích thước: {cv.extractedMeta.fileSize}</p>
-              <p className="text-xs text-slate-500">Thời gian bóc tách: {cv.extractedMeta.extractedAt}</p>
-            </Card>
+            <section>
+              <AsideHead>{c.sourceFile}</AsideHead>
+              <dl className="text-sm">
+                {[
+                  { label: c.file, value: cv.extractedMeta.fileName },
+                  { label: c.size, value: cv.extractedMeta.fileSize },
+                  { label: c.extractedAt, value: cv.extractedMeta.extractedAt },
+                ].map((row) => (
+                  <div key={row.label} className="grid grid-cols-[7rem_minmax(0,1fr)] gap-4 border-b border-border py-2.5">
+                    <dt className="text-slate-600">{row.label}</dt>
+                    <dd className="break-words text-right text-ink">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
           )}
-        </div>
+        </aside>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete confirmation */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center gap-3 text-red-600 mb-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-red-50">
-                <AlertTriangle size={22} />
-              </span>
-              <h3 className="text-lg font-medium text-slate-900">
-                {t('resumes.deleteConfirmTitle')}
-              </h3>
-            </div>
-            <p className="text-sm text-slate-600 leading-relaxed mb-6">
-              {t('resumes.deleteConfirmDesc')}
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                variant="secondary"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-cv-title"
+        >
+          <div className="w-full max-w-md border border-border bg-canvas p-[clamp(1.5rem,4vw,2rem)]">
+            <h3
+              id="delete-cv-title"
+              className="border-b border-ink pb-3 text-[1.375rem] font-normal tracking-[-0.01em] text-ink"
+            >
+              {t('resumes.deleteConfirmTitle')}
+            </h3>
+            <p className="mt-4 text-sm leading-6 text-slate-600">{t('resumes.deleteConfirmDesc')}</p>
+            <div className="mt-7 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">
+              <button
+                type="button"
                 onClick={() => setDeleteModalOpen(false)}
                 disabled={deleteMutation.isPending}
+                className={`${textLink} text-ink disabled:opacity-50`}
               >
                 {t('resumes.cancel')}
-              </Button>
+              </button>
               <button
                 type="button"
                 onClick={() => deleteMutation.mutate()}
                 disabled={deleteMutation.isPending}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-danger px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-800 disabled:opacity-50 cursor-pointer"
               >
-                <Trash2 size={16} />
-                {deleteMutation.isPending ? 'Đang xoá…' : t('resumes.deleteCv')}
+                {deleteMutation.isPending ? c.deleting : t('resumes.deleteCv')}
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
