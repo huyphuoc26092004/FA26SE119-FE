@@ -1,12 +1,8 @@
-import React from 'react';
-import {
-  X,
-  Printer,
-  CheckCircle2,
-  ShieldCheck,
-  QrCode,
-} from 'lucide-react';
+import React, { useEffect } from 'react';
+import { X } from 'lucide-react';
 import type { PaymentTransaction } from '../../../types/subscription';
+import { smallPrimary } from '../../../components/admin/AdminKit';
+import { METHOD_LABEL } from '../payment/TransactionLedgerTab';
 
 interface TransactionInvoiceModalProps {
   isOpen: boolean;
@@ -14,11 +10,29 @@ interface TransactionInvoiceModalProps {
   transaction: PaymentTransaction | null;
 }
 
+const money = (v: number) => `${v.toLocaleString('vi-VN')}đ`;
+
+function Line({ label, children, strong }: { label: React.ReactNode; children: React.ReactNode; strong?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-6 border-b border-border py-2.5 text-[13px]">
+      <span className="text-slate-500">{label}</span>
+      <span className={`text-right tabular-nums ${strong ? 'text-[15px] font-medium text-ink' : 'text-ink'}`}>{children}</span>
+    </div>
+  );
+}
+
 export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = ({
   isOpen,
   onClose,
   transaction,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !transaction) return null;
 
   const handlePrint = () => {
@@ -28,174 +42,114 @@ export const TransactionInvoiceModal: React.FC<TransactionInvoiceModalProps> = (
   const vatPercent = 8;
   const netAmount = Math.round(transaction.finalAmountVND / (1 + vatPercent / 100));
   const vatAmount = transaction.finalAmountVND - netAmount;
+  const issuedAt = transaction.completedAt || transaction.createdAt;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-2xl my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 print:hidden">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Hóa đơn điện tử hợp lệ (e-VAT Invoice)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
-            >
-              <Printer size={14} />
-              <span>In hóa đơn</span>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center sm:p-6" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className="relative flex max-h-[94vh] w-full max-w-2xl flex-col bg-canvas sm:rounded-panel"
+      >
+        <div className="flex items-center justify-between gap-6 border-b border-border px-6 py-4 print:hidden sm:px-8">
+          <p className="text-[13px] text-brand">Hoá đơn điện tử hợp lệ</p>
+          <div className="flex items-center gap-x-4">
+            <button type="button" onClick={handlePrint} className={smallPrimary}>
+              In hoá đơn
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+              aria-label="Đóng"
+              className="-mr-2 grid h-9 w-9 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-200 hover:text-ink"
             >
               <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* Invoice Printable Sheet */}
-        <div className="p-8 overflow-y-auto font-sans text-slate-800 space-y-6 print:p-0">
-          {/* Top header */}
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-slate-200">
-            <div>
-              <span className="text-xl font-semibold tracking-tight text-brand-600">
-                CareerPilot<span className="text-slate-900">AI</span>
-              </span>
-              <p className="text-xs text-slate-500 mt-1 font-medium">
-                CÔNG TY CỔ PHẦN CÔNG NGHỆ TRÍ TUỆ NHÂN TẠO CAREERPILOT
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-8 text-ink sm:px-10 print:p-0">
+          <header className="grid gap-6 border-b border-ink pb-6 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="min-w-0">
+              <p className="text-xl tracking-[-0.01em]">
+                CareerPilot <span className="text-brand">AI</span>
               </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Mã số thuế (MST): <strong>0318924819</strong> · Website: careerpilot.io
-              </p>
-              <p className="text-[11px] text-slate-400">
-                Địa chỉ: Tòa nhà FPT Tower, Lô E2a-7, Đường D1, TP. Thủ Đức, TP. Hồ Chí Minh
+              <p className="mt-2 text-[13px]">CÔNG TY CỔ PHẦN CÔNG NGHỆ TRÍ TUỆ NHÂN TẠO CAREERPILOT</p>
+              <p className="mt-1 text-[13px] leading-6 text-slate-600">
+                MST 0318924819 · careerpilot.io
+                <br />
+                Toà nhà FPT Tower, Lô E2a-7, Đường D1, TP. Thủ Đức, TP. Hồ Chí Minh
               </p>
             </div>
-
-            <div className="text-left sm:text-right shrink-0">
-              <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-medium uppercase bg-brand-50 text-brand-700 mb-1">
-                HÓA ĐƠN GIÁ TRỊ GIA TĂNG
-              </span>
-              <p className="text-xs text-slate-600">
-                Mã hóa đơn: <strong className="font-mono text-slate-900">{transaction.orderCode}</strong>
-              </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Ký hiệu: <strong>1C26TTA</strong> · Số: <strong>008412</strong>
-              </p>
-              <p className="text-[11px] text-slate-400">
-                Ngày phát hành: <strong>{transaction.completedAt || transaction.createdAt}</strong>
+            <div className="sm:text-right">
+              <p className="text-[13px] text-slate-500">Hoá đơn giá trị gia tăng</p>
+              <p className="mt-1 text-[clamp(1.5rem,2.6vw,2rem)] leading-none tabular-nums">{transaction.orderCode}</p>
+              <p className="mt-3 text-[13px] leading-6 text-slate-600">
+                Ký hiệu 1C26TTA · Số 008412
+                <br />
+                Ngày phát hành {issuedAt}
               </p>
             </div>
-          </div>
+          </header>
 
-          {/* Buyer details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 text-xs">
+          <section className="grid gap-6 border-b border-border py-6 text-[13px] leading-6 sm:grid-cols-2">
             <div>
-              <span className="text-[10px] uppercase font-medium tracking-wider text-slate-400 block mb-1">
-                Đơn vị nhận hóa đơn (Khách hàng)
-              </span>
-              <p className="font-medium text-slate-900">{transaction.candidateName}</p>
-              <p className="text-slate-600 mt-0.5">Email: {transaction.candidateEmail}</p>
+              <p className="text-slate-500">Khách hàng</p>
+              <p className="text-[15px]">{transaction.candidateName}</p>
+              <p className="text-slate-600">{transaction.candidateEmail}</p>
             </div>
             <div>
-              <span className="text-[10px] uppercase font-medium tracking-wider text-slate-400 block mb-1">
-                Thông tin thanh toán
+              <p className="text-slate-500">Thanh toán</p>
+              <p>{METHOD_LABEL[transaction.paymentMethod] ?? transaction.paymentMethod}</p>
+              <p className="text-brand">Đã quyết toán</p>
+            </div>
+          </section>
+
+          <section className="pt-6">
+            <div className="hidden grid-cols-[2rem_minmax(0,1fr)_5rem_8rem] gap-x-4 border-b border-border pb-2 text-xs text-slate-500 sm:grid">
+              <span>STT</span>
+              <span>Dịch vụ</span>
+              <span className="text-center">Chu kỳ</span>
+              <span className="text-right">Thành tiền</span>
+            </div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 border-b border-border py-3 text-[13px] sm:grid-cols-[2rem_minmax(0,1fr)_5rem_8rem]">
+              <span className="hidden text-slate-500 sm:block">1</span>
+              <span className="min-w-0">
+                <span className="block text-[15px]">Gói dịch vụ AI: {transaction.planName}</span>
+                <span className="block text-slate-500">Trợ lý sự nghiệp, phân tích CV chuẩn ATS và đối sánh việc làm</span>
               </span>
-              <p className="font-medium text-slate-700">
-                Phương thức: <span className="font-medium uppercase text-slate-900">{transaction.paymentMethod}</span>
-              </p>
-              <p className="text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
-                <CheckCircle2 size={13} />
-                <span>Trạng thái: Đã quyết toán thành công</span>
-              </p>
+              <span className="hidden text-center text-slate-600 sm:block">{transaction.billingCycle === 'yearly' ? '1 năm' : '1 tháng'}</span>
+              <span className="text-right tabular-nums">{money(transaction.amountVND)}</span>
             </div>
-          </div>
-
-          {/* Items Table */}
-          <div className="rounded-2xl border border-slate-200 overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="py-2.5 px-3 w-12 text-center">STT</th>
-                  <th className="py-2.5 px-3">Tên hàng hóa, dịch vụ phần mềm AI</th>
-                  <th className="py-2.5 px-3 text-center">Chu kỳ</th>
-                  <th className="py-2.5 px-3 text-right">Đơn giá</th>
-                  <th className="py-2.5 px-3 text-right">Thành tiền (VND)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                <tr>
-                  <td className="py-3 px-3 text-center text-slate-400 font-medium">1</td>
-                  <td className="py-3 px-3 font-semibold text-slate-900">
-                    Gói dịch vụ AI: {transaction.planName}
-                    <span className="block text-[11px] font-normal text-slate-500 mt-0.5">
-                      Dịch vụ Trợ lý AI sự nghiệp, phân tích CV chuẩn ATS và đối sánh việc làm
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-center text-slate-600 font-medium">
-                    {transaction.billingCycle === 'yearly' ? '1 Năm' : '1 Tháng'}
-                  </td>
-                  <td className="py-3 px-3 text-right font-medium text-slate-700">
-                    {transaction.amountVND.toLocaleString('vi-VN')} đ
-                  </td>
-                  <td className="py-3 px-3 text-right font-medium text-slate-900">
-                    {transaction.amountVND.toLocaleString('vi-VN')} đ
-                  </td>
-                </tr>
-
-                {transaction.discountAmountVND > 0 && (
-                  <tr className="bg-emerald-50/40 text-emerald-800">
-                    <td className="py-2.5 px-3 text-center font-medium">2</td>
-                    <td className="py-2.5 px-3 font-medium" colSpan={3}>
-                      Chiết khấu khuyến mại voucher: <strong>{transaction.voucherCode || 'Ưu đãi chu kỳ'}</strong>
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-medium">
-                      -{transaction.discountAmountVND.toLocaleString('vi-VN')} đ
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Totals Summary */}
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-2">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 max-w-sm">
-              <QrCode size={36} className="text-slate-800 shrink-0" />
-              <div>
-                <p className="font-semibold text-slate-700">Tra cứu hóa đơn điện tử</p>
-                <p>Quét mã QR hoặc truy cập hoadon.careerpilot.io với mã {transaction.orderCode}</p>
+            {transaction.discountAmountVND > 0 && (
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 border-b border-border py-3 text-[13px] sm:grid-cols-[2rem_minmax(0,1fr)_5rem_8rem]">
+                <span className="hidden text-slate-500 sm:block">2</span>
+                <span className="text-brand sm:col-span-2">Chiết khấu · {transaction.voucherCode || 'Ưu đãi chu kỳ'}</span>
+                <span className="text-right tabular-nums text-brand">−{money(transaction.discountAmountVND)}</span>
               </div>
-            </div>
+            )}
+          </section>
 
-            <div className="w-full sm:w-64 space-y-1.5 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>Cộng tiền dịch vụ:</span>
-                <span className="font-medium text-slate-900">{netAmount.toLocaleString('vi-VN')} đ</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Thuế suất GTGT ({vatPercent}%):</span>
-                <span className="font-medium text-slate-900">{vatAmount.toLocaleString('vi-VN')} đ</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-slate-200 text-sm font-semibold text-brand-700">
-                <span>Tổng tiền thanh toán:</span>
-                <span>{transaction.finalAmountVND.toLocaleString('vi-VN')} đ</span>
-              </div>
+          <section className="grid gap-8 pt-6 sm:grid-cols-[minmax(0,1fr)_16rem]">
+            <p className="text-[13px] leading-6 text-slate-600">
+              Tra cứu tại <span className="text-ink">hoadon.careerpilot.io</span>
+              <br />
+              với mã <span className="text-brand">{transaction.orderCode}</span>
+            </p>
+            <div>
+              <Line label="Cộng tiền dịch vụ">{money(netAmount)}</Line>
+              <Line label={`Thuế GTGT ${vatPercent}%`}>{money(vatAmount)}</Line>
+              <Line label="Tổng thanh toán" strong>
+                {money(transaction.finalAmountVND)}
+              </Line>
             </div>
-          </div>
+          </section>
 
-          {/* Signature & Digital Stamp */}
-          <div className="pt-6 border-t border-slate-200 flex items-center justify-between text-xs text-slate-400">
-            <div className="flex items-center gap-1.5 text-emerald-600 font-semibold">
-              <ShieldCheck size={16} />
-              <span>Được ký số điện tử bởi CareerPilot AI JSC vào {transaction.completedAt || transaction.createdAt}</span>
-            </div>
-            <div className="text-[11px] font-mono">
-              SHA-256: 8a9f...3c7e
-            </div>
-          </div>
+          <footer className="mt-10 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-ink pt-5 text-[13px]">
+            <span className="text-brand">Ký số bởi CareerPilot AI JSC · {issuedAt}</span>
+            <span className="font-mono text-xs text-slate-500">SHA-256 8a9f…3c7e</span>
+          </footer>
         </div>
       </div>
     </div>

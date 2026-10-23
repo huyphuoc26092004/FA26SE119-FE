@@ -1,60 +1,162 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  Award,
-  MessageSquare,
-  BrainCircuit,
-  Briefcase,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Code2,
-  Copy,
-  Download,
-  Edit3,
-  ExternalLink,
-  Eye,
-  FileCheck2,
-  FileText,
-  Filter,
-  GraduationCap,
-  Layers,
-  Lightbulb,
-  ListFilter,
-  Loader2,
-  Lock,
-  MinusCircle,
-  Plus,
-  RefreshCw,
-  Search,
-  Server,
-  Share2,
-  Sliders,
-  Star,
-  Target,
-  PenLine,
-  X,
-  Zap,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import {
   getResumes,
   getResumeAnalysis,
   applySuggestionToResume,
   reanalyzeResume,
 } from '../../mocks/services/mockService';
-import type { ResumeAnalysisResult, SuggestionItem } from '../../types/domain';
-import { Badge, Button, Card, EmptyState, ErrorState, Input, Loading, PageTitle } from '../../components/ui';
+import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+
+// Short page-only strings that have no i18n key yet.
+const copy = {
+  vi: {
+    pageLabel: 'Phân tích & cải thiện',
+    headline: (n: number) => `Điểm ATS ${n}/100.`,
+    pending: (n: number) => (n > 0 ? `${n} đề xuất để cải thiện.` : 'Đã áp dụng mọi đề xuất.'),
+    switchCv: 'Chọn CV',
+    points: 'đ',
+    overall: 'Tổng thể',
+    grade: (g: string) => `Hạng ${g}`,
+    passRate: (p: number) => `${p}% khả năng qua vòng lọc tự động`,
+    analyzedAt: 'Cập nhật lúc',
+    dimensionsAts: 'Độ tương thích ATS',
+    dimensionsStructure: 'Cấu trúc & bố cục',
+    dimensionsContent: 'Nội dung & STAR',
+    dimensionsKeywords: 'Độ phủ từ khoá',
+    priority: 'Ưu tiên',
+    category: 'Danh mục',
+    all: 'Tất cả',
+    high: 'Cao',
+    medium: 'Trung bình',
+    low: 'Thấp',
+    catImpact: 'Số liệu & STAR',
+    catKeywords: 'Từ khoá',
+    catContent: 'Nội dung',
+    catStructure: 'Bố cục',
+    noSuggestions: 'Không có đề xuất nào khớp bộ lọc.',
+    applying: 'Đang áp dụng…',
+    copy: 'Sao chép đề xuất',
+    copyShort: 'Sao chép',
+    style: 'Phong cách',
+    toneStar: 'STAR & số liệu',
+    toneTech: 'Kỹ thuật chuyên sâu',
+    toneLead: 'Lãnh đạo dự án',
+    result: 'Kết quả tối ưu',
+    copied: 'Đã chép',
+    copySentence: 'Sao chép câu này',
+    summaryTitle: 'Đánh giá tổng quan',
+    passed: 'Đạt chuẩn',
+    needsWork: 'Cần tối ưu',
+    strengths: 'Điểm mạnh',
+    issues: 'Cần cải thiện',
+    keywordsTitle: 'Đối sánh từ khoá cho vị trí mục tiêu',
+    keywordsNote:
+      'Hệ thống ATS quét và tính điểm dựa trên độ tương đồng từ khoá với mô tả công việc (JD).',
+    role: 'Vị trí',
+    matched: (n: number) => `Từ khoá đã có trong CV (${n})`,
+    matchedNote: 'Những từ khoá này đã được ATS nhận diện trong hồ sơ của bạn.',
+    missing: (n: number) => `Từ khoá quan trọng còn thiếu (${n})`,
+    missingNote: 'Bổ sung vào phần Kỹ năng hoặc mô tả dự án để tăng điểm ATS.',
+    editToAdd: 'Chỉnh sửa CV để thêm các từ khoá này',
+    checklistTitle: 'Checklist 10 tiêu chuẩn kỹ thuật ATS',
+    checklistNote:
+      'Kiểm tra khả năng đọc tự động của các phần mềm quản lý ứng viên (Workday, Taleo, Greenhouse, Lever).',
+    pass: 'Đạt',
+    fix: 'Cần sửa',
+    closeToast: 'Đóng thông báo',
+  },
+  en: {
+    pageLabel: 'Analyse & improve',
+    headline: (n: number) => `ATS score ${n}/100.`,
+    pending: (n: number) => (n > 0 ? `${n} suggestions to improve.` : 'All suggestions applied.'),
+    switchCv: 'Choose CV',
+    points: 'pts',
+    overall: 'Overall',
+    grade: (g: string) => `Grade ${g}`,
+    passRate: (p: number) => `${p}% chance to pass automated screening`,
+    analyzedAt: 'Updated',
+    dimensionsAts: 'ATS compatibility',
+    dimensionsStructure: 'Structure & layout',
+    dimensionsContent: 'Content & STAR',
+    dimensionsKeywords: 'Keyword coverage',
+    priority: 'Priority',
+    category: 'Category',
+    all: 'All',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+    catImpact: 'Metrics & STAR',
+    catKeywords: 'Keywords',
+    catContent: 'Content',
+    catStructure: 'Layout',
+    noSuggestions: 'No suggestions match these filters.',
+    applying: 'Applying…',
+    copy: 'Copy suggestion',
+    copyShort: 'Copy',
+    style: 'Style',
+    toneStar: 'STAR & metrics',
+    toneTech: 'Technical depth',
+    toneLead: 'Project leadership',
+    result: 'Optimised result',
+    copied: 'Copied',
+    copySentence: 'Copy this sentence',
+    summaryTitle: 'Overall assessment',
+    passed: 'Passed',
+    needsWork: 'Needs work',
+    strengths: 'Strengths',
+    issues: 'To improve',
+    keywordsTitle: 'Keyword matching for your target role',
+    keywordsNote: 'ATS systems score you on keyword similarity with the job description (JD).',
+    role: 'Role',
+    matched: (n: number) => `Keywords found in your CV (${n})`,
+    matchedNote: 'These keywords were recognised by ATS in your profile.',
+    missing: (n: number) => `Important missing keywords (${n})`,
+    missingNote: 'Add them to Skills or project descriptions to raise your ATS score.',
+    editToAdd: 'Edit CV to add these keywords',
+    checklistTitle: 'ATS technical checklist (10 standards)',
+    checklistNote:
+      'Checks how well applicant tracking systems (Workday, Taleo, Greenhouse, Lever) can read your CV.',
+    pass: 'Pass',
+    fix: 'Fix',
+    closeToast: 'Close notification',
+  },
+};
+
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
+
+const primaryButton =
+  'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+
+const toggle = (active: boolean) =>
+  `pb-1 text-sm transition-colors duration-150 cursor-pointer whitespace-nowrap border-b ${
+    active ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'
+  }`;
+
+const lineSelect =
+  'min-w-0 max-w-full cursor-pointer border-0 border-b border-slate-300 bg-transparent py-1.5 pr-6 text-sm text-ink outline-none transition-colors focus-visible:border-ink';
+
+/** Section heading with a dark rule underneath. */
+function SectionHead({ title, note, action }: { title: string; note?: string; action?: React.ReactNode }) {
+  return (
+    <div className="border-b border-ink pb-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h2 className="text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">{title}</h2>
+        {action}
+      </div>
+      {note && <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600">{note}</p>}
+    </div>
+  );
+}
 
 export default function ResumeAnalysisPage() {
   const { resumeId } = useParams<{ resumeId?: string }>();
-  const { t } = useTranslation();
+  const { t, isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -174,789 +276,484 @@ export default function ResumeAnalysisPage() {
   if (isPending) return <Loading />;
   if (isError || !analysis) return <ErrorState />;
 
-  const getPriorityBadge = (priority: 'high' | 'medium' | 'low') => {
-    switch (priority) {
-      case 'high':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-red-50 border border-red-200 px-2 py-0.5 text-xs font-semibold text-red-700">
-            <AlertCircle size={12} />
-            {t('resumes.highPriority')}
-          </span>
-        );
-      case 'medium':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-700">
-            <AlertTriangle size={12} />
-            {t('resumes.mediumPriority')}
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 border border-brand-200 px-2 py-0.5 text-xs font-semibold text-brand-700">
-            <Lightbulb size={12} />
-            {t('resumes.lowPriority')}
-          </span>
-        );
-    }
-  };
+  const priorityLabel = (priority: 'high' | 'medium' | 'low') =>
+    priority === 'high'
+      ? { text: t('resumes.highPriority'), tone: 'text-danger' }
+      : priority === 'medium'
+      ? { text: t('resumes.mediumPriority'), tone: 'text-warning' }
+      : { text: t('resumes.lowPriority'), tone: 'text-slate-600' };
+
+  const dimensions = [
+    { label: c.dimensionsAts, value: analysis.atsCompatibilityScore },
+    { label: c.dimensionsStructure, value: analysis.structureScore },
+    { label: c.dimensionsContent, value: analysis.contentQualityScore },
+    { label: c.dimensionsKeywords, value: analysis.keywordScore },
+  ];
+
+  const tabs: { id: typeof activeTab; label: string; count?: number }[] = [
+    { id: 'suggestions', label: t('resumes.suggestionsTab'), count: pendingSuggestionsCount },
+    { id: 'audit', label: t('resumes.atsAuditTab') },
+    { id: 'keywords', label: t('resumes.keywordsTab') },
+    { id: 'checklist', label: t('resumes.checklistTab') },
+  ];
 
   return (
-    <>
-      {/* Toast Alert */}
+    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+      {/* Toast */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3.5 shadow-sm border border-slate-700 animate-fade-in max-w-lg">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 size={20} className="text-emerald-400 shrink-0" />
-            <p className="text-xs font-medium leading-relaxed">{toastMessage}</p>
-          </div>
+        <div
+          role="status"
+          className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-lg items-start justify-between gap-4 bg-ink px-5 py-3.5 text-sm text-white sm:inset-x-auto sm:right-6 sm:bottom-6"
+        >
+          <p className="leading-6">{toastMessage}</p>
           <button
+            type="button"
             onClick={() => setToastMessage(null)}
-            className="text-slate-400 hover:text-white p-1 shrink-0"
+            aria-label={c.closeToast}
+            className="shrink-0 p-1 text-slate-300 transition-colors hover:text-white cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Breadcrumb & Navigation */}
-      <div className="mb-3 flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/candidate/resumes" className="hover:text-brand-600 transition">
-          {t('nav.myResumes')}
-        </Link>
-        <span>/</span>
-        <Link to={`/candidate/resumes/${effectiveResumeId}`} className="hover:text-brand-600 transition truncate max-w-[200px]">
-          {analysis.resumeName}
-        </Link>
-        <span>/</span>
-        <span className="font-semibold text-slate-800">Phân tích & Cải thiện</span>
-      </div>
+      <Link
+        to={`/candidate/resumes/${effectiveResumeId}`}
+        className={`${textLink} max-w-full text-slate-600 hover:text-ink`}
+      >
+        <ArrowLeft size={14} aria-hidden="true" className="shrink-0" />
+        <span className="truncate">{analysis.resumeName}</span>
+      </Link>
 
-      {/* Page Title & Actions */}
-      <PageTitle
-        title={t('resumes.analysisTitle')}
-        subtitle={t('resumes.analysisSubtitle')}
-        action={
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Resume Switcher Dropdown */}
-            {resumes && resumes.length > 1 && (
-              <div className="relative">
-                <select
-                  value={effectiveResumeId}
-                  onChange={(e) => navigate(`/candidate/resumes/${e.target.value}/analysis`)}
-                  className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 pr-8 cursor-pointer"
-                >
-                  {resumes.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name} ({r.atsScore}đ)
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+      {/* Headline */}
+      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+        <p className="text-sm text-brand">{c.pageLabel}</p>
+        <h1 className="mt-[clamp(1.25rem,3vw,2rem)] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {c.headline(analysis.overallScore)}
+          <span className="block text-brand">{c.pending(pendingSuggestionsCount)}</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[40rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {t('resumes.analysisSubtitle')}
+        </p>
 
-            <Button
-              variant="secondary"
-              onClick={() => reanalyzeMutation.mutate()}
-              disabled={reanalyzeMutation.isPending}
-              className="shadow-2xs text-xs"
-            >
-              <RefreshCw
-                size={14}
-                className={reanalyzeMutation.isPending ? 'animate-spin text-brand-600' : 'text-slate-600'}
-              />
-              {reanalyzeMutation.isPending ? t('resumes.reAnalyzing') : t('resumes.reAnalyzeButton')}
-            </Button>
+        <div className="mt-[clamp(1.75rem,3.5vw,2.5rem)] flex flex-wrap items-center gap-x-7 gap-y-4">
+          <button
+            type="button"
+            onClick={() => reanalyzeMutation.mutate()}
+            disabled={reanalyzeMutation.isPending}
+            className={primaryButton}
+          >
+            {reanalyzeMutation.isPending ? t('resumes.reAnalyzing') : t('resumes.reAnalyzeButton')}
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+          <Link to={`/candidate/resumes/${effectiveResumeId}/edit`} className={`${textLink} text-[15px] text-ink`}>
+            {t('resumes.editCv')}
+          </Link>
+          <button type="button" onClick={handleExportPdf} className={`${textLink} text-[15px] text-ink`}>
+            {t('resumes.exportReport')}
+          </button>
+          {resumes && resumes.length > 1 && (
+            <label className="flex min-w-0 items-baseline gap-3 text-sm text-slate-600">
+              <span className="shrink-0">{c.switchCv}</span>
+              <select
+                value={effectiveResumeId}
+                onChange={(e) => navigate(`/candidate/resumes/${e.target.value}/analysis`)}
+                className={lineSelect}
+              >
+                {resumes.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name} ({r.atsScore}
+                    {c.points})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      </header>
 
-            <Link to={`/candidate/resumes/${effectiveResumeId}/edit`}>
-              <Button variant="secondary" className="shadow-2xs text-xs">
-                <Edit3 size={14} />
-                {t('resumes.editCv')}
-              </Button>
-            </Link>
-
-            <Button variant="primary" onClick={handleExportPdf} className="shadow-2xs text-xs">
-              <Download size={14} />
-              {t('resumes.exportReport')}
-            </Button>
+      {/* Scoreboard */}
+      <section className="mt-[clamp(2.5rem,5vw,3.75rem)]">
+        <div className="grid border-y border-t-ink border-b-border sm:grid-cols-2 lg:grid-cols-5">
+          <div className="py-5 sm:col-span-2 lg:col-span-1 lg:pr-6">
+            <p className="text-[13px] text-slate-600">{c.overall}</p>
+            <p className="mt-2 text-[clamp(2.25rem,3.6vw,3rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
+              {analysis.overallScore}
+            </p>
+            <p className="mt-2.5 text-[13px] text-slate-600">{c.grade(analysis.grade)}</p>
           </div>
-        }
-      />
-
-      {/* Top Hero ATS Scoreboard */}
-      <div className="mb-7 grid gap-5 lg:grid-cols-[1.2fr_1.8fr]">
-        {/* Overall Score Circle & Grade */}
-        <Card className="relative overflow-hidden border border-brand-100 bg-surface p-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative grid h-32 w-32 shrink-0 place-items-center rounded-full bg-brand-600 p-1.5 shadow-sm">
-              <div className="grid h-full w-full place-items-center rounded-full bg-surface text-center">
-                <div>
-                  <div className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight">
-                    {analysis.overallScore}
-                  </div>
-                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                    / 100 ATS
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 text-center sm:text-left">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1.5">
-                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                  Xếp loại: Hạng {analysis.grade}
-                </span>
-                <span className="rounded-full bg-brand-50 border border-brand-200 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
-                  {analysis.targetRole}
-                </span>
-              </div>
-              <h2 className="text-lg font-medium text-slate-900">{analysis.resumeName}</h2>
-              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-                Tỷ lệ ước tính vượt qua vòng lọc CV tự động của nhà tuyển dụng:{' '}
-                <strong className="text-emerald-600 font-medium text-sm">{analysis.passProbability}%</strong>
-              </p>
-              <div className="mt-3 flex items-center justify-center sm:justify-start gap-3 text-xs text-slate-400">
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 size={13} className="text-emerald-500" /> Đạt chuẩn ATS
-                </span>
-                <span>·</span>
-                <span>Cập nhật lúc {analysis.analyzedAt}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* 4 Core Dimensions Progress */}
-        <Card className="border border-slate-200/80 p-6 shadow-sm flex flex-col justify-between">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-medium text-slate-900">4 Khía cạnh chất lượng cốt lõi</h3>
-            <span className="text-xs text-slate-400">Tiêu chuẩn quốc tế</span>
-          </div>
-
-          <div className="grid gap-3.5 sm:grid-cols-2">
-            {/* 1. ATS Compatibility */}
-            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <MessageSquare size={14} className="text-brand-600" />
-                  Độ tương thích ATS
-                </span>
-                <span className="text-xs font-medium text-brand-700">
-                  {analysis.atsCompatibilityScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
-                  style={{ width: `${analysis.atsCompatibilityScore}%` }}
-                />
-              </div>
-            </div>
-
-            {/* 2. Structure */}
-            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Layers size={14} className="text-brand-600" />
-                  Cấu trúc & Bố cục
-                </span>
-                <span className="text-xs font-medium text-brand-700">
-                  {analysis.structureScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
-                  style={{ width: `${analysis.structureScore}%` }}
-                />
-              </div>
-            </div>
-
-            {/* 3. Content Impact */}
-            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Zap size={14} className="text-brand-600" />
-                  Chất lượng nội dung & STAR
-                </span>
-                <span className="text-xs font-medium text-brand-700">
-                  {analysis.contentQualityScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
-                  style={{ width: `${analysis.contentQualityScore}%` }}
-                />
-              </div>
-            </div>
-
-            {/* 4. Keyword Match */}
-            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Target size={14} className="text-emerald-600" />
-                  Độ phủ từ khóa ngành
-                </span>
-                <span className="text-xs font-medium text-emerald-700">
-                  {analysis.keywordScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-emerald-600 transition-all duration-500"
-                  style={{ width: `${analysis.keywordScore}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Tabs Navigation */}
-      <div className="mb-6 flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-2 scrollbar-none">
-        <button
-          onClick={() => setActiveTab('suggestions')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition whitespace-nowrap cursor-pointer ${
-            activeTab === 'suggestions'
-              ? 'bg-brand-600 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          <Lightbulb size={15} />
-          {t('resumes.suggestionsTab')}
-          {pendingSuggestionsCount > 0 && (
-            <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-semibold ${
-                activeTab === 'suggestions' ? 'bg-white text-brand-700' : 'bg-red-500 text-white'
+          {dimensions.map((dim, index) => (
+            <div
+              key={dim.label}
+              className={`border-t border-border py-5 lg:border-t-0 lg:border-l lg:px-6 ${
+                index % 2 === 1 ? 'sm:border-l sm:pl-6' : 'sm:pr-6'
               }`}
             >
-              {pendingSuggestionsCount}
-            </span>
-          )}
-        </button>
+              <p className="text-[13px] text-slate-600">{dim.label}</p>
+              <p className="mt-2 text-[clamp(1.75rem,2.6vw,2.25rem)] font-normal leading-none tracking-[-0.02em] text-ink tabular-nums">
+                {dim.value}%
+              </p>
+              <div className="mt-3 h-[2px] w-full bg-slate-200">
+                <div className="h-full bg-brand transition-[width] duration-500" style={{ width: `${dim.value}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-sm text-slate-600">
+          {analysis.targetRole} · <span className="text-brand">{c.passRate(analysis.passProbability)}</span> ·{' '}
+          {c.analyzedAt} {analysis.analyzedAt}
+        </p>
+      </section>
 
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition whitespace-nowrap cursor-pointer ${
-            activeTab === 'audit'
-              ? 'bg-brand-600 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          <FileCheck2 size={15} />
-          {t('resumes.atsAuditTab')}
-        </button>
+      {/* Tabs */}
+      <nav
+        className="mt-[clamp(3rem,6vw,4.5rem)] flex gap-x-7 overflow-x-auto border-b border-border scrollbar-none"
+        aria-label={c.pageLabel}
+      >
+        {tabs.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setActiveTab(tab.id)}
+              className={`-mb-px flex items-baseline gap-1.5 whitespace-nowrap border-b-2 pb-3 text-[15px] transition-colors cursor-pointer ${
+                active ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'
+              }`}
+            >
+              {tab.label}
+              {!!tab.count && <span className="text-xs text-brand tabular-nums">{tab.count}</span>}
+            </button>
+          );
+        })}
+      </nav>
 
-        <button
-          onClick={() => setActiveTab('keywords')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition whitespace-nowrap cursor-pointer ${
-            activeTab === 'keywords'
-              ? 'bg-brand-600 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          <Target size={15} />
-          {t('resumes.keywordsTab')}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('checklist')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition whitespace-nowrap cursor-pointer ${
-            activeTab === 'checklist'
-              ? 'bg-brand-600 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          <CheckCircle2 size={15} />
-          {t('resumes.checklistTab')}
-        </button>
-      </div>
-
-      {/* ============================================================== */}
-      {/* TAB 1: AI IMPROVEMENT SUGGESTIONS (Đề xuất cải thiện từ AI)    */}
-      {/* ============================================================== */}
+      {/* TAB 1: SUGGESTIONS */}
       {activeTab === 'suggestions' && (
-        <div className="space-y-6">
-          {/* Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl bg-surface p-4 border border-slate-200 shadow-2xs">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-                Ưu tiên:
-              </span>
-              {[
-                { id: 'all', label: 'Tất cả' },
-                { id: 'high', label: 'Ưu tiên cao' },
-                { id: 'medium', label: 'Trung bình' },
-                { id: 'low', label: 'Thấp' },
-              ].map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setPriorityFilter(p.id as any)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                    priorityFilter === p.id
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
+        <div className="mt-8 space-y-[clamp(3rem,6vw,4.5rem)]">
+          <div>
+            {/* Filters */}
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-baseline lg:gap-10">
+              <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+                <span className="text-[13px] text-slate-600">{c.priority}</span>
+                {[
+                  { id: 'all', label: c.all },
+                  { id: 'high', label: c.high },
+                  { id: 'medium', label: c.medium },
+                  { id: 'low', label: c.low },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    aria-pressed={priorityFilter === p.id}
+                    onClick={() => setPriorityFilter(p.id as any)}
+                    className={toggle(priorityFilter === p.id)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+                <span className="text-[13px] text-slate-600">{c.category}</span>
+                {[
+                  { id: 'all', label: c.all },
+                  { id: 'impact', label: c.catImpact },
+                  { id: 'keywords', label: c.catKeywords },
+                  { id: 'content', label: c.catContent },
+                  { id: 'structure', label: c.catStructure },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    aria-pressed={categoryFilter === cat.id}
+                    onClick={() => setCategoryFilter(cat.id as any)}
+                    className={toggle(categoryFilter === cat.id)}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-                Danh mục:
-              </span>
-              {[
-                { id: 'all', label: 'Tất cả' },
-                { id: 'impact', label: 'Số liệu & STAR' },
-                { id: 'keywords', label: 'Từ khóa' },
-                { id: 'content', label: 'Nội dung' },
-                { id: 'structure', label: 'Bố cục' },
-              ].map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setCategoryFilter(c.id as any)}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                    categoryFilter === c.id
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
+            {/* Suggestions list */}
+            <ul className="mt-6 border-t border-slate-400">
+              {filteredSuggestions.map((sug) => {
+                const prio = priorityLabel(sug.priority);
+                return (
+                  <li key={sug.id} className="border-b border-border py-7">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
+                      <p className="flex flex-wrap gap-x-2 text-[13px]">
+                        <span className={prio.tone}>{prio.text}</span>
+                        <span className="text-slate-400">·</span>
+                        <span className="text-slate-600">{sug.section}</span>
+                        {sug.impactGain && (
+                          <>
+                            <span className="text-slate-400">·</span>
+                            <span className="text-brand">{sug.impactGain}</span>
+                          </>
+                        )}
+                      </p>
+                      {sug.applied ? (
+                        <span className="text-sm text-brand">{t('resumes.appliedSuggestion')}</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => applyMutation.mutate(sug.id)}
+                          disabled={applyMutation.isPending}
+                          className={`${textLink} text-brand hover:text-ink disabled:opacity-50`}
+                        >
+                          {applyMutation.isPending ? c.applying : t('resumes.applySuggestion')}
+                        </button>
+                      )}
+                    </div>
+
+                    <h3 className="mt-2 text-[clamp(1.0625rem,1.4vw,1.25rem)] font-normal text-ink">{sug.title}</h3>
+                    <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">{sug.description}</p>
+
+                    {(sug.originalText || sug.suggestedText) && (
+                      <div className="mt-5 grid gap-5 md:grid-cols-2 md:gap-8">
+                        {sug.originalText && (
+                          <div className="border-l-2 border-slate-300 pl-4">
+                            <p className="text-xs text-slate-500">{t('resumes.beforeImprovement')}</p>
+                            <p className="mt-1.5 text-sm leading-6 text-slate-500 line-through decoration-slate-400">
+                              {sug.originalText}
+                            </p>
+                          </div>
+                        )}
+                        {sug.suggestedText && (
+                          <div className="border-l-2 border-brand pl-4">
+                            <div className="flex items-baseline justify-between gap-4">
+                              <p className="text-xs text-brand">{t('resumes.afterAiImprovement')}</p>
+                              <button
+                                type="button"
+                                onClick={() => handleCopySuggestion(sug.suggestedText!)}
+                                className="text-xs text-slate-600 transition-colors hover:text-ink cursor-pointer"
+                              >
+                                {c.copyShort}
+                              </button>
+                            </div>
+                            <p className="mt-1.5 text-sm leading-6 text-ink">{sug.suggestedText}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopySuggestion(sug.suggestedText || '')}
+                      className={`${textLink} mt-5 text-[13px] text-slate-600 hover:text-ink`}
+                    >
+                      {c.copy}
+                    </button>
+                  </li>
+                );
+              })}
+              {filteredSuggestions.length === 0 && (
+                <li className="border-b border-border py-8 text-sm text-slate-600">{c.noSuggestions}</li>
+              )}
+            </ul>
           </div>
 
-          {/* Suggestions List */}
-          <div className="space-y-4">
-            {filteredSuggestions.map((sug) => (
-              <Card
-                key={sug.id}
-                className={`relative overflow-hidden border transition-all ${
-                  sug.applied
-                    ? 'border-emerald-200 bg-emerald-50/20'
-                    : 'border-slate-200 bg-surface '
-                }`}
-              >
-                {/* Header row */}
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {getPriorityBadge(sug.priority)}
-                    <span className="rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
-                      {sug.section}
-                    </span>
-                    {sug.impactGain && (
-                      <span className="rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                        {sug.impactGain}
-                      </span>
-                    )}
-                  </div>
-
-                  {sug.applied ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
-                      <Check size={14} className="stroke-[3]" />
-                      {t('resumes.appliedSuggestion')}
-                    </span>
-                  ) : (
-                    <Button
-                      variant="primary"
-                      onClick={() => applyMutation.mutate(sug.id)}
-                      disabled={applyMutation.isPending}
-                      className="text-xs bg-brand-600 hover:bg-brand-700 border-0 shadow-sm"
-                    >
-                      <Lightbulb size={13} className="text-amber-300" />
-                      {applyMutation.isPending ? 'Đang áp dụng…' : t('resumes.applySuggestion')}
-                    </Button>
-                  )}
-                </div>
-
-                {/* Title & Explanation */}
-                <h3 className="text-base font-medium text-slate-900 mb-1.5">{sug.title}</h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-4">{sug.description}</p>
-
-                {/* Before & After Diff Box */}
-                {(sug.originalText || sug.suggestedText) && (
-                  <div className="grid gap-3 md:grid-cols-2 rounded-xl bg-slate-50 p-3.5 border border-slate-200/80 mb-3">
-                    {/* Before */}
-                    {sug.originalText && (
-                      <div className="rounded-lg bg-red-50/70 border border-red-200 p-3">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-red-700 mb-1.5">
-                          <X size={14} />
-                          {t('resumes.beforeImprovement')}
-                        </div>
-                        <p className="text-xs text-slate-700 leading-relaxed line-through decoration-red-400">
-                          {sug.originalText}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* After */}
-                    {sug.suggestedText && (
-                      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-                        <div className="flex items-center justify-between gap-1.5 text-xs font-medium text-emerald-800 mb-1.5">
-                          <span className="flex items-center gap-1.5">
-                            <Lightbulb size={14} className="text-emerald-600" />
-                            {t('resumes.afterAiImprovement')}
-                          </span>
-                          <button
-                            onClick={() => handleCopySuggestion(sug.suggestedText!)}
-                            className="text-emerald-700 hover:text-emerald-900 transition p-0.5"
-                            title="Sao chép"
-                          >
-                            <Copy size={13} />
-                          </button>
-                        </div>
-                        <p className="text-xs text-slate-900 font-medium leading-relaxed">
-                          {sug.suggestedText}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Bottom Card Actions */}
-                <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-                  <span>Hệ thống phân tích AI tự động phát hiện</span>
+          {/* Rewriter tool */}
+          <section>
+            <SectionHead title={t('resumes.aiEnhancerTitle')} note={t('resumes.aiEnhancerDesc')} />
+            <textarea
+              value={rewriterInput}
+              onChange={(e) => setRewriterInput(e.target.value)}
+              placeholder={t('resumes.aiEnhancerPlaceholder')}
+              aria-label={t('resumes.aiEnhancerTitle')}
+              rows={3}
+              className="mt-5 w-full resize-y border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-[15px] leading-7 text-ink outline-none transition-colors placeholder:text-slate-400 focus-visible:border-ink"
+            />
+            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+                <span className="text-[13px] text-slate-600">{c.style}</span>
+                {[
+                  { id: 'star', label: c.toneStar },
+                  { id: 'tech', label: c.toneTech },
+                  { id: 'lead', label: c.toneLead },
+                ].map((tone) => (
                   <button
-                    onClick={() => handleCopySuggestion(sug.suggestedText || '')}
-                    className="text-slate-600 hover:text-brand-600 font-semibold flex items-center gap-1 cursor-pointer transition"
+                    key={tone.id}
+                    type="button"
+                    aria-pressed={rewriterTone === tone.id}
+                    onClick={() => setRewriterTone(tone.id as any)}
+                    className={toggle(rewriterTone === tone.id)}
                   >
-                    <Copy size={13} /> Sao chép đề xuất
+                    {tone.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleRewrite}
+                disabled={isRewriting || !rewriterInput.trim()}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-ink px-5 py-2 text-sm text-ink transition-colors hover:bg-ink hover:text-white disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
+              >
+                {isRewriting ? t('resumes.rewriting') : t('resumes.rewriteButton')}
+              </button>
+            </div>
+
+            {rewriterResult && (
+              <div className="mt-6 border-l-2 border-brand pl-4">
+                <div className="flex items-baseline justify-between gap-4">
+                  <p className="text-xs text-brand">{c.result}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(rewriterResult);
+                      setRewriterCopied(true);
+                      setTimeout(() => setRewriterCopied(false), 2500);
+                    }}
+                    className="text-xs text-slate-600 transition-colors hover:text-ink cursor-pointer"
+                  >
+                    {rewriterCopied ? c.copied : c.copySentence}
                   </button>
                 </div>
-              </Card>
-            ))}
-          </div>
-
-          {/* Interactive AI Instant Rewriter Tool */}
-          <Card className="border border-brand-200 bg-brand-50/50 p-6 shadow-sm">
-            <div className="flex items-start gap-3 mb-4">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white">
-                <PenLine size={20} />
-              </span>
-              <div>
-                <h3 className="text-base font-medium text-slate-900">{t('resumes.aiEnhancerTitle')}</h3>
-                <p className="text-xs text-slate-500">{t('resumes.aiEnhancerDesc')}</p>
+                <p className="mt-1.5 text-[15px] leading-7 text-ink">{rewriterResult}</p>
               </div>
-            </div>
-
-            {/* Input & Tone Selector */}
-            <div className="space-y-3">
-              <textarea
-                value={rewriterInput}
-                onChange={(e) => setRewriterInput(e.target.value)}
-                placeholder={t('resumes.aiEnhancerPlaceholder')}
-                rows={3}
-                className="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-              />
-
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-slate-600 mr-1">Phong cách:</span>
-                  {[
-                    { id: 'star', label: 'STAR & Số liệu định lượng' },
-                    { id: 'tech', label: 'Kỹ thuật chuyên sâu' },
-                    { id: 'lead', label: 'Lãnh đạo dự án' },
-                  ].map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setRewriterTone(t.id as any)}
-                      className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
-                        rewriterTone === t.id
-                          ? 'bg-brand-600 text-white'
-                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-
-                <Button
-                  variant="primary"
-                  onClick={handleRewrite}
-                  disabled={isRewriting || !rewriterInput.trim()}
-                  className="bg-brand-600 hover:bg-brand-700 text-white border-0 text-xs"
-                >
-                  {isRewriting ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      {t('resumes.rewriting')}
-                    </>
-                  ) : (
-                    <>
-                      <Lightbulb size={14} className="text-amber-300" />
-                      {t('resumes.rewriteButton')}
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Rewriter Result Output */}
-              {rewriterResult && (
-                <div className="mt-4 rounded-xl bg-surface p-4 border border-brand-200 shadow-xs animate-fade-in">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-brand-700 flex items-center gap-1.5">
-                      <Lightbulb size={14} />
-                      Kết quả AI tối ưu hóa:
-                    </span>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard?.writeText(rewriterResult);
-                        setRewriterCopied(true);
-                        setTimeout(() => setRewriterCopied(false), 2500);
-                      }}
-                      className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1 cursor-pointer transition"
-                    >
-                      {rewriterCopied ? (
-                        <>
-                          <Check size={13} className="text-emerald-600" /> Đã chép!
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={13} /> Sao chép câu này
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-800 leading-relaxed font-medium">
-                    {rewriterResult}
-                  </p>
-                </div>
-              )}
-            </div>
-          </Card>
+            )}
+          </section>
         </div>
       )}
 
-      {/* ============================================================== */}
-      {/* TAB 2: ATS & QUALITY AUDIT (Phân tích chi tiết từng phần)       */}
-      {/* ============================================================== */}
+      {/* TAB 2: AUDIT */}
       {activeTab === 'audit' && (
-        <div className="space-y-6">
-          {/* AI Executive Assessment Summary */}
-          <Card className="border border-brand-200 bg-brand-900 p-6 text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2 text-amber-300">
-                <BrainCircuit size={20} />
-                <h3 className="text-sm font-medium uppercase tracking-wider">
-                  Đánh giá tổng quan từ AI Career Agent
-                </h3>
-              </div>
-              <p className="text-sm text-slate-100 leading-relaxed font-normal">
-                {analysis.summaryEvaluation}
-              </p>
-            </div>
-          </Card>
+        <div className="mt-8 space-y-[clamp(2.5rem,5vw,3.5rem)]">
+          <section className="border-l-2 border-brand pl-5">
+            <p className="text-[13px] text-brand">{c.summaryTitle}</p>
+            <p className="mt-2 max-w-4xl text-[clamp(1rem,1.4vw,1.1875rem)] leading-8 text-ink">
+              {analysis.summaryEvaluation}
+            </p>
+          </section>
 
-          {/* Section by Section Audit Grid */}
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-x-[clamp(2rem,4vw,3.5rem)] gap-y-10 md:grid-cols-2">
             {analysis.sections.map((sec) => (
-              <Card key={sec.id} className="border border-slate-200/80 bg-surface p-5 shadow-2xs">
-                {/* Header */}
-                <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`grid h-7 w-7 place-items-center rounded-lg text-xs font-medium ${
-                        sec.status === 'passed'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {sec.score}
-                    </span>
-                    <h4 className="text-sm font-medium text-slate-900">{sec.name}</h4>
-                  </div>
-                  <Badge tone={sec.status === 'passed' ? 'green' : 'amber'}>
-                    {sec.status === 'passed' ? 'Đạt chuẩn' : 'Cần tối ưu'}
-                  </Badge>
+              <section key={sec.id} className="border-t border-ink pt-4">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h3 className="flex items-baseline gap-3 text-[17px] font-normal text-ink">
+                    <span className="text-[1.5rem] leading-none text-brand tabular-nums">{sec.score}</span>
+                    {sec.name}
+                  </h3>
+                  <span className={`shrink-0 text-[13px] ${sec.status === 'passed' ? 'text-brand' : 'text-warning'}`}>
+                    {sec.status === 'passed' ? c.passed : c.needsWork}
+                  </span>
                 </div>
+                <p className="mt-2.5 text-sm leading-6 text-slate-600">{sec.summary}</p>
 
-                <p className="text-xs text-slate-600 mb-3.5 leading-relaxed">{sec.summary}</p>
-
-                {/* Strengths */}
                 {sec.strengths.length > 0 && (
-                  <div className="mb-2.5">
-                    <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <CheckCircle2 size={12} /> Điểm mạnh:
-                    </p>
-                    <ul className="space-y-1 text-xs text-slate-700 pl-4 list-disc marker:text-emerald-500">
+                  <div className="mt-4">
+                    <p className="text-xs text-brand">{c.strengths}</p>
+                    <ul className="mt-1">
                       {sec.strengths.map((str, idx) => (
-                        <li key={idx}>{str}</li>
+                        <li key={idx} className="border-b border-border py-2 text-sm leading-6 text-ink">
+                          {str}
+                        </li>
                       ))}
                     </ul>
                   </div>
                 )}
 
-                {/* Issues */}
                 {sec.issues.length > 0 && (
-                  <div>
-                    <p className="text-[11px] font-medium text-amber-700 uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <AlertCircle size={12} /> Cần cải thiện:
-                    </p>
-                    <ul className="space-y-1 text-xs text-slate-700 pl-4 list-disc marker:text-amber-500">
+                  <div className="mt-4">
+                    <p className="text-xs text-warning">{c.issues}</p>
+                    <ul className="mt-1">
                       {sec.issues.map((iss, idx) => (
-                        <li key={idx}>{iss}</li>
+                        <li key={idx} className="border-b border-border py-2 text-sm leading-6 text-ink">
+                          {iss}
+                        </li>
                       ))}
                     </ul>
                   </div>
                 )}
-              </Card>
+              </section>
             ))}
           </div>
         </div>
       )}
 
-      {/* ============================================================== */}
-      {/* TAB 3: KEYWORDS & TARGET ROLE (Đối sánh từ khóa & Vị trí)       */}
-      {/* ============================================================== */}
+      {/* TAB 3: KEYWORDS */}
       {activeTab === 'keywords' && (
-        <div className="space-y-6">
-          {/* Target Role Selector Header */}
-          <Card className="border border-slate-200 bg-surface p-5 shadow-2xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-base font-medium text-slate-900">
-                  Đối sánh từ khóa cho vị trí ứng tuyển mục tiêu
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Hệ thống ATS sẽ quét và tính điểm dựa trên độ tương đồng từ khóa trong mô tả công việc (JD).
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-600 shrink-0">Vị trí:</span>
-                <select
-                  value={targetRole}
-                  onChange={(e) => setTargetRole(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs"
-                >
+        <div className="mt-8">
+          <SectionHead
+            title={c.keywordsTitle}
+            note={c.keywordsNote}
+            action={
+              <label className="flex min-w-0 items-baseline gap-3 text-sm text-slate-600">
+                <span className="shrink-0">{c.role}</span>
+                <select value={targetRole} onChange={(e) => setTargetRole(e.target.value)} className={lineSelect}>
                   <option value="Frontend Engineer">Frontend Engineer / Web Architect</option>
                   <option value="Backend Engineer">Backend Engineer / Microservices</option>
                   <option value="AI / ML Engineer">AI / Machine Learning Engineer</option>
                   <option value="Fullstack Engineer">Fullstack Engineer</option>
                 </select>
-              </div>
-            </div>
-          </Card>
+              </label>
+            }
+          />
 
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Matched Keywords */}
-            <Card className="border border-emerald-200 bg-emerald-50/20 p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-emerald-800">
-                  <CheckCircle2 size={18} />
-                  <h4 className="text-sm font-medium">
-                    Từ khóa đã có trong CV ({analysis.matchedKeywords.length})
-                  </h4>
-                </div>
-                <span className="text-xs font-semibold text-emerald-700">Tốt</span>
-              </div>
-              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                Những từ khóa này đã được robot ATS nhận diện thành công trong hồ sơ của bạn:
-              </p>
-              <div className="flex flex-wrap gap-2">
+          <div className="mt-8 grid gap-x-[clamp(2rem,4vw,3.5rem)] gap-y-10 md:grid-cols-2">
+            <section>
+              <h3 className="text-[17px] font-normal text-ink">{c.matched(analysis.matchedKeywords.length)}</h3>
+              <p className="mt-1 text-[13px] leading-6 text-slate-600">{c.matchedNote}</p>
+              <ul className="mt-4 border-t border-border">
                 {analysis.matchedKeywords.map((kw) => (
-                  <span
-                    key={kw}
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-2xs"
-                  >
-                    <Check size={13} className="text-emerald-700 stroke-[3]" />
-                    {kw}
-                  </span>
+                  <li key={kw} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 text-sm">
+                    <span className="text-ink">{kw}</span>
+                    <span className="text-[13px] text-brand">{c.pass}</span>
+                  </li>
                 ))}
-              </div>
-            </Card>
+              </ul>
+            </section>
 
-            {/* Missing Keywords */}
-            <Card className="border border-amber-200 bg-amber-50/20 p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-amber-800">
-                  <AlertTriangle size={18} />
-                  <h4 className="text-sm font-medium">
-                    Từ khóa quan trọng còn thiếu ({analysis.missingKeywords.length})
-                  </h4>
-                </div>
-                <span className="text-xs font-semibold text-amber-700">Khuyên bổ sung</span>
-              </div>
-              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                Bổ sung các từ khóa này vào phần Kỹ năng hoặc mô tả dự án để tăng điểm ATS thêm +10%:
-              </p>
-              <div className="flex flex-wrap gap-2">
+            <section>
+              <h3 className="text-[17px] font-normal text-ink">{c.missing(analysis.missingKeywords.length)}</h3>
+              <p className="mt-1 text-[13px] leading-6 text-slate-600">{c.missingNote}</p>
+              <ul className="mt-4 border-t border-border">
                 {analysis.missingKeywords.map((kw) => (
-                  <span
-                    key={kw}
-                    className="inline-flex items-center gap-1 rounded-lg bg-surface border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-900 shadow-2xs"
-                  >
-                    <Plus size={13} className="text-amber-600" />
-                    {kw}
-                  </span>
+                  <li key={kw} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 text-sm">
+                    <span className="text-ink">{kw}</span>
+                    <span className="text-[13px] text-warning">+</span>
+                  </li>
                 ))}
-              </div>
-
-              <div className="mt-5 pt-3 border-t border-amber-200/60">
-                <Link
-                  to={`/candidate/resumes/${effectiveResumeId}/edit`}
-                  className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1"
-                >
-                  Chỉnh sửa CV để thêm các từ khóa này →
-                </Link>
-              </div>
-            </Card>
+              </ul>
+              <Link
+                to={`/candidate/resumes/${effectiveResumeId}/edit`}
+                className={`${textLink} mt-5 text-brand hover:text-ink`}
+              >
+                {c.editToAdd}
+              </Link>
+            </section>
           </div>
         </div>
       )}
 
-      {/* ============================================================== */}
-      {/* TAB 4: ATS TECHNICAL CHECKLIST (10 Tiêu chuẩn kỹ thuật)        */}
-      {/* ============================================================== */}
+      {/* TAB 4: TECHNICAL CHECKLIST */}
       {activeTab === 'checklist' && (
-        <Card className="border border-slate-200/80 bg-surface p-6 shadow-sm">
-          <div className="mb-5">
-            <h3 className="text-base font-medium text-slate-900">
-              Checklist 10 Tiêu chuẩn Kỹ thuật Hệ thống Lọc ATS
-            </h3>
-            <p className="text-xs text-slate-500">
-              Kiểm tra khả năng đọc hiểu tự động của các phần mềm quản lý ứng viên (Workday, Taleo, Greenhouse, Lever).
-            </p>
-          </div>
-
-          <div className="divide-y divide-slate-100">
+        <div className="mt-8">
+          <SectionHead title={c.checklistTitle} note={c.checklistNote} />
+          <ol>
             {analysis.technicalChecklist.map((item, index) => (
-              <div key={item.id} className="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-medium text-slate-600">
-                    {index + 1}
+              <li key={item.id} className="flex items-start justify-between gap-6 border-b border-border py-4">
+                <div className="flex min-w-0 items-baseline gap-4">
+                  <span className="w-5 shrink-0 text-xs tabular-nums text-slate-500">
+                    {String(index + 1).padStart(2, '0')}
                   </span>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                      {item.title}
-                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                        {item.category}
-                      </span>
+                  <div className="min-w-0">
+                    <h4 className="text-[15px] font-normal text-ink">
+                      {item.title} <span className="text-[13px] text-slate-500">· {item.category}</span>
                     </h4>
-                    <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">{item.detail}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{item.detail}</p>
                   </div>
                 </div>
-
-                <div className="shrink-0">
-                  {item.passed ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                      <Check size={12} className="stroke-[3]" /> Đạt
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-                      <AlertTriangle size={12} /> Cần sửa
-                    </span>
-                  )}
-                </div>
-              </div>
+                <span className={`shrink-0 text-sm ${item.passed ? 'text-brand' : 'text-warning'}`}>
+                  {item.passed ? c.pass : c.fix}
+                </span>
+              </li>
             ))}
-          </div>
-        </Card>
+          </ol>
+        </div>
       )}
-    </>
+    </div>
   );
 }

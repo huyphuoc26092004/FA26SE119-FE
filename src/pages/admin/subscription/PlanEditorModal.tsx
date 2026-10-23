@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Check,
-  AlertCircle,
-  Plus,
-  Trash2,
-  Lightbulb,
-  CreditCard,
-  Layers,
-  ShieldCheck,
-  Zap,
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import type { AdminSubscriptionPlan, PlanStatus } from '../../../types/subscriptionManagement';
+import {
+  CheckBox,
+  Modal,
+  SubHead,
+  fieldLabel,
+  primaryButton,
+  textLink,
+  underlineInput,
+  underlineSelect,
+} from '../../../components/admin/AdminKit';
+
+function Field({ label, hint, children, className = '' }: { label: React.ReactNode; hint?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return (
+    <label className={`block ${className}`}>
+      <span className={fieldLabel}>{label}</span>
+      {children}
+      {hint && <span className="mt-1 block text-xs text-slate-500">{hint}</span>}
+    </label>
+  );
+}
 
 interface PlanEditorModalProps {
   isOpen: boolean;
@@ -151,421 +160,145 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
     }
   };
 
+  const limitFields: [string, string, (v: string) => void, string][] = [
+    ['Trích xuất CV ATS', cvParsingLimit, setCvParsingLimit, '3 hoặc unlimited'],
+    ['Đối sánh CV – việc', cvJobFitLimit, setCvJobFitLimit, '5 hoặc unlimited'],
+    ['Hỏi trợ lý AI', aiAssistantQueriesLimit, setAiAssistantQueriesLimit, '15 hoặc unlimited'],
+    ['Tạo thư ứng tuyển', coverLetterGenLimit, setCoverLetterGenLimit, '5 hoặc unlimited'],
+    ['Phỏng vấn STAR', mockInterviewLimit, setMockInterviewLimit, '1 hoặc unlimited'],
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-3xl my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-brand-600 text-white shadow-sm">
-              <CreditCard size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-medium text-slate-900">
-                {isEdit ? `Chỉnh sửa gói cước: ${initialPlan?.name}` : 'Tạo gói cước mới'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                Cấu hình giá bán, hạn mức Token và chính sách API cho người dùng
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-          >
-            <X size={20} />
+    <Modal
+      eyebrow={isEdit ? 'Chỉnh sửa gói cước' : 'Gói cước mới'}
+      title={isEdit ? `${initialPlan?.name}.` : 'Tạo gói cước.'}
+      onClose={onClose}
+      width="max-w-3xl"
+      footer={
+        <>
+          <button type="button" onClick={onClose} disabled={isSubmitting} className={`${textLink} text-slate-600`}>
+            Huỷ
           </button>
-        </div>
+          <button type="submit" form="plan-editor-form" disabled={isSubmitting} className={primaryButton}>
+            {isSubmitting ? 'Đang lưu…' : isEdit ? 'Cập nhật gói' : 'Tạo gói'}
+          </button>
+        </>
+      }
+    >
+      <form id="plan-editor-form" onSubmit={handleSubmit} className="space-y-10">
+        {error && <p className="border-l-2 border-danger pl-4 text-[13px] text-danger">{error}</p>}
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6">
-          {error && (
-            <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-              <AlertCircle size={16} className="shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
+        <section>
+          <SubHead title="01  Thông tin chung" />
+          <div className="mt-5 grid gap-x-8 gap-y-5 md:grid-cols-2">
+            <Field label={<>Tên gói <span className="text-danger">*</span></>}>
+              <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Chuyên nghiệp Pro" className={underlineInput} />
+            </Field>
+            <Field label="Nhãn hiển thị">
+              <input type="text" value={badge} onChange={(e) => setBadge(e.target.value)} placeholder="Phổ biến nhất, Đặc quyền VIP" className={underlineInput} />
+            </Field>
+            <Field label="Mô tả ngắn" className="md:col-span-2">
+              <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Gói dành cho ai và giá trị chính" className={`${underlineInput} resize-none`} />
+            </Field>
+            <Field label="Trạng thái phát hành" className="md:col-span-2">
+              <select value={status} onChange={(e) => setStatus(e.target.value as PlanStatus)} className={underlineSelect}>
+                <option value="ACTIVE">Đang bán · người dùng có thể mua</option>
+                <option value="DRAFT">Bản nháp · thử nghiệm nội bộ</option>
+                <option value="ARCHIVED">Lưu trữ · ẩn khỏi bảng giá</option>
+              </select>
+            </Field>
+          </div>
+          <div className="mt-4 grid border-t border-border sm:grid-cols-2 sm:gap-x-8">
+            <CheckBox checked={highlight} onChange={setHighlight} label="Gói nổi bật" description="Đánh dấu “Đề xuất” trên bảng giá" />
+            <CheckBox checked={prioritySupport} onChange={setPrioritySupport} label="Hỗ trợ ưu tiên 24/7" />
+          </div>
+        </section>
 
-          {/* 1. Basic Info */}
-          <div>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-              <Layers size={14} />
-              Thông tin chung gói dịch vụ
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Tên gói cước <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ví dụ: Chuyên nghiệp Pro"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
+        <section>
+          <SubHead title="02  Giá bán & token" />
+          <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-3">
+            <Field label="Giá tháng (VNĐ)" hint={`${monthlyPriceVND.toLocaleString('vi-VN')}đ / tháng`}>
+              <input type="number" min="0" step="1000" value={monthlyPriceVND} onChange={(e) => setMonthlyPriceVND(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
+            <Field label="Giá năm (VNĐ)" hint={`${yearlyPriceVND.toLocaleString('vi-VN')}đ / năm`}>
+              <input type="number" min="0" step="10000" value={yearlyPriceVND} onChange={(e) => setYearlyPriceVND(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
+            <Field label="Token mỗi tháng" hint={`${tokenMonthlyQuota.toLocaleString('vi-VN')} token`}>
+              <input type="number" min="1000" step="5000" value={tokenMonthlyQuota} onChange={(e) => setTokenMonthlyQuota(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
+          </div>
+        </section>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Huy hiệu / Nhãn Badge (Tùy chọn)
-                </label>
-                <input
-                  type="text"
-                  value={badge}
-                  onChange={(e) => setBadge(e.target.value)}
-                  placeholder="Ví dụ: Phổ biến nhất , Đặc quyền VIP"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
+        <section>
+          <SubHead title="03  Giới hạn tính năng" action={<span className="text-[13px] text-slate-500">Nhập số hoặc “unlimited”</span>} />
+          <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-3">
+            {limitFields.map(([label, value, set, ph]) => (
+              <Field key={label} label={label}>
+                <input type="text" value={value} onChange={(e) => set(e.target.value)} placeholder={ph} className={underlineInput} />
+              </Field>
+            ))}
+            <Field label="Giảm giá tư vấn 1-1 (%)">
+              <input type="number" min="0" max="100" value={consultantDiscountPercent} onChange={(e) => setConsultantDiscountPercent(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
+          </div>
+        </section>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Mô tả ngắn gọn
-                </label>
-                <textarea
-                  rows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Tóm tắt đối tượng phù hợp và giá trị cốt lõi của gói..."
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
+        <section>
+          <SubHead title="04  API & mô hình" />
+          <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+            <Field label="Giới hạn RPM (request / phút)">
+              <input type="number" min="1" value={apiRateLimitRPM} onChange={(e) => setApiRateLimitRPM(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
+            <Field label="Giới hạn TPM (token / phút)">
+              <input type="number" min="1000" step="5000" value={apiRateLimitTPM} onChange={(e) => setApiRateLimitTPM(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
+          </div>
+          <p className={`${fieldLabel} mt-6`}>Mô hình được phép dùng (giữ ít nhất 1)</p>
+          <div className="mt-1 grid border-t border-border sm:grid-cols-2 sm:gap-x-8">
+            {AVAILABLE_MODELS.map((m) => (
+              <CheckBox key={m.id} checked={supportedModels.includes(m.id)} onChange={() => handleToggleModel(m.id)} label={m.name} />
+            ))}
+          </div>
+        </section>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Trạng thái phát hành
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as PlanStatus)}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
+        <section>
+          <SubHead title="05  Quyền lợi hiển thị" action={<span className="text-[13px] text-slate-500">{features.length} mục</span>} />
+          <ol>
+            {features.map((feat, idx) => (
+              <li key={idx} className="flex items-baseline gap-4 border-b border-border py-3 text-[15px]">
+                <span className="w-6 shrink-0 text-xs tabular-nums text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
+                <span className="min-w-0 flex-1 text-ink">{feat}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFeature(idx)}
+                  aria-label={`Xoá quyền lợi ${feat}`}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-200 hover:text-danger"
                 >
-                  <option value="ACTIVE">Đang hoạt động (ACTIVE - Người dùng có thể mua)</option>
-                  <option value="DRAFT">Bản nháp (DRAFT - Đang thử nghiệm nội bộ)</option>
-                  <option value="ARCHIVED">Lưu trữ (ARCHIVED - Ẩn khỏi bảng giá)</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-6 pt-5">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 select-none">
-                  <input
-                    type="checkbox"
-                    checked={highlight}
-                    onChange={(e) => setHighlight(e.target.checked)}
-                    className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-4 h-4"
-                  />
-                  <span>Gói nổi bật (Highlight Card)</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 select-none">
-                  <input
-                    type="checkbox"
-                    checked={prioritySupport}
-                    onChange={(e) => setPrioritySupport(e.target.checked)}
-                    className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-4 h-4"
-                  />
-                  <span>Hỗ trợ VIP 24/7 ưu tiên</span>
-                </label>
-              </div>
-            </div>
+                  <X size={14} />
+                </button>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-3 flex items-end gap-6">
+            <input
+              type="text"
+              value={newFeatureText}
+              onChange={(e) => setNewFeatureText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddFeature();
+                }
+              }}
+              placeholder="Thêm quyền lợi, ví dụ: Không giới hạn lưu trữ CV"
+              className={`${underlineInput} flex-1`}
+            />
+            <button type="button" onClick={handleAddFeature} disabled={!newFeatureText.trim()} className={`${textLink} mb-2.5 text-ink`}>
+              Thêm
+            </button>
           </div>
-
-          {/* 2. Pricing & Tokens */}
-          <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-              <Zap size={14} />
-              Giá bán & Định mức Token tháng
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Giá tháng (VND)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={monthlyPriceVND}
-                  onChange={(e) => setMonthlyPriceVND(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden font-medium"
-                />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  {monthlyPriceVND.toLocaleString('vi-VN')} đ / tháng
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Giá năm (VND)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="10000"
-                  value={yearlyPriceVND}
-                  onChange={(e) => setYearlyPriceVND(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden font-medium"
-                />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  {yearlyPriceVND.toLocaleString('vi-VN')} đ / năm
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Hạn mức Token tháng
-                </label>
-                <input
-                  type="number"
-                  min="1000"
-                  step="5000"
-                  value={tokenMonthlyQuota}
-                  onChange={(e) => setTokenMonthlyQuota(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden font-medium text-brand-700"
-                />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  {tokenMonthlyQuota.toLocaleString()} AI Tokens
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Feature Limits */}
-          <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-              <ShieldCheck size={14} />
-              Giới hạn lượt dùng tính năng cốt lõi (Nhập số hoặc "unlimited")
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Trích xuất CV ATS
-                </label>
-                <input
-                  type="text"
-                  value={cvParsingLimit}
-                  onChange={(e) => setCvParsingLimit(e.target.value)}
-                  placeholder="3 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Đối sánh CV–Job Fit
-                </label>
-                <input
-                  type="text"
-                  value={cvJobFitLimit}
-                  onChange={(e) => setCvJobFitLimit(e.target.value)}
-                  placeholder="5 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Hỏi đáp Trợ lý AI
-                </label>
-                <input
-                  type="text"
-                  value={aiAssistantQueriesLimit}
-                  onChange={(e) => setAiAssistantQueriesLimit(e.target.value)}
-                  placeholder="15 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Tạo Thư ứng tuyển
-                </label>
-                <input
-                  type="text"
-                  value={coverLetterGenLimit}
-                  onChange={(e) => setCoverLetterGenLimit(e.target.value)}
-                  placeholder="5 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Phỏng vấn STAR
-                </label>
-                <input
-                  type="text"
-                  value={mockInterviewLimit}
-                  onChange={(e) => setMockInterviewLimit(e.target.value)}
-                  placeholder="1 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Giảm giá Tư vấn 1-on-1 (%)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={consultantDiscountPercent}
-                  onChange={(e) => setConsultantDiscountPercent(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 4. API & AI Models Allocation */}
-          <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-              <Zap size={14} />
-              Chính sách API Rate Limits & Quyền truy cập mô hình
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Giới hạn RPM (Requests Per Minute)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={apiRateLimitRPM}
-                  onChange={(e) => setApiRateLimitRPM(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Giới hạn TPM (Tokens Per Minute)
-                </label>
-                <input
-                  type="number"
-                  min="1000"
-                  step="5000"
-                  value={apiRateLimitTPM}
-                  onChange={(e) => setApiRateLimitTPM(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-2">
-                Các mô hình AI được phép kích hoạt cho gói này:
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {AVAILABLE_MODELS.map((m) => {
-                  const isChecked = supportedModels.includes(m.id);
-                  return (
-                    <label
-                      key={m.id}
-                      onClick={() => handleToggleModel(m.id)}
-                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition select-none text-xs ${
-                        isChecked
-                          ? 'border-brand-300 bg-brand-50/60 font-semibold text-brand-900'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {}}
-                        className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                      />
-                      <span>{m.name}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* 5. Features Checklist */}
-          <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-              <Lightbulb size={14} />
-              Danh sách quyền lợi hiển thị trên thẻ (Features Checklist)
-            </h3>
-            <div className="space-y-2 mb-3 max-h-40 overflow-y-auto pr-1">
-              {features.map((feat, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200/60 text-xs text-slate-700"
-                >
-                  <span className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>{feat}</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFeature(idx)}
-                    className="text-slate-400 hover:text-red-500 p-1 rounded-lg transition"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newFeatureText}
-                onChange={(e) => setNewFeatureText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddFeature();
-                  }
-                }}
-                placeholder="Nhập quyền lợi mới (Ví dụ: Không giới hạn lưu trữ CV chuẩn ATS)..."
-                className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
-              />
-              <button
-                type="button"
-                onClick={handleAddFeature}
-                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5"
-              >
-                <Plus size={14} />
-                Thêm
-              </button>
-            </div>
-          </div>
-        </form>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/80 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 bg-surface text-slate-600 text-xs font-semibold hover:bg-slate-50 transition"
-          >
-            Hủy bỏ
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-2 shadow-xs disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <span>Đang lưu...</span>
-            ) : (
-              <>
-                <Check size={15} />
-                <span>{isEdit ? 'Cập nhật gói cước' : 'Tạo gói cước ngay'}</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
+        </section>
+      </form>
+    </Modal>
   );
 };

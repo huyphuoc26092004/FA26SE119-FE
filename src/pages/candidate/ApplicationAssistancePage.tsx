@@ -1,25 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  FileText,
-  Mail,
-  Send,
-  Lightbulb,
-  Bookmark,
-  CheckCircle2,
-  AlertCircle,
-  FolderArchive,
-  ArrowRight,
-  Briefcase,
-  User,
-  RotateCcw,
-  Sliders,
-  Check,
-  X,
-  Languages,
-} from 'lucide-react';
-import { Button, Card, PageTitle } from '../../components/ui';
+import { ArrowRight, ChevronDown, X } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import {
   getCandidateProfile,
@@ -44,8 +26,160 @@ import { ApplicationEditor } from './application/ApplicationEditor';
 import { ApplicationReviewPanel } from './application/ApplicationReviewPanel';
 import { SavedApplicationsList } from './application/SavedApplicationsList';
 
+const copy = {
+  vi: {
+    eyebrow: 'Hỗ trợ ứng tuyển',
+    title: 'Thư ứng tuyển.',
+    titleAccent: 'AI viết, bạn chỉnh lại.',
+    intro: 'Chọn CV và công việc, AI soạn bản nháp thư ứng tuyển để bạn chỉnh sửa trước khi gửi.',
+    tabCompose: 'Soạn thư',
+    tabSaved: 'Thư đã lưu',
+    s1: 'Chọn CV và công việc',
+    cvLabel: 'CV của bạn',
+    jobLabel: 'Công việc ứng tuyển',
+    typeLabel: 'Loại văn bản',
+    s2: 'Chọn giọng văn',
+    tones: {
+      professional: { label: 'Chuyên nghiệp', desc: 'Trang trọng, phù hợp công ty lớn và vị trí senior.' },
+      impactful: { label: 'Ấn tượng', desc: 'Nhấn mạnh thành tích và con số, giúp thư nổi bật giữa nhiều hồ sơ.' },
+      enthusiastic: { label: 'Thân thiện', desc: 'Gần gũi, thể hiện sự hào hứng, hợp với startup và môi trường trẻ.' },
+      concise: { label: 'Ngắn gọn', desc: 'Đi thẳng vào ý chính, đọc trong chưa đầy một phút.' },
+    } as Record<ApplicationTone, { label: string; desc: string }>,
+    focusLabel: 'Điểm nhấn',
+    languageLabel: 'Ngôn ngữ',
+    recipientLabel: 'Người nhận',
+    recipientPlaceholder: 'VD: Anh Minh, phòng Nhân sự',
+    generate: 'Soạn thư bằng AI',
+    generating: 'Đang soạn thư…',
+    s3: 'Thư ứng tuyển',
+    words: (n: number) => `${n} từ`,
+    emptyPlaceholder:
+      'Bấm “Soạn thư bằng AI” để tạo bản nháp. Bạn có thể gõ trực tiếp vào đây để chỉnh sửa.',
+    close: 'Đóng',
+  },
+  en: {
+    eyebrow: 'Application assistance',
+    title: 'Cover letter.',
+    titleAccent: 'AI drafts, you refine.',
+    intro: 'Pick a CV and a job. AI writes a first draft so you can polish it before sending.',
+    tabCompose: 'Compose',
+    tabSaved: 'Saved letters',
+    s1: 'Choose CV and job',
+    cvLabel: 'Your CV',
+    jobLabel: 'Target job',
+    typeLabel: 'Document type',
+    s2: 'Choose a tone',
+    tones: {
+      professional: { label: 'Professional', desc: 'Formal, suited to large companies and senior roles.' },
+      impactful: { label: 'Impactful', desc: 'Leads with results and numbers so the letter stands out.' },
+      enthusiastic: { label: 'Friendly', desc: 'Warm and eager, a good fit for startups and young teams.' },
+      concise: { label: 'Concise', desc: 'Straight to the point, readable in under a minute.' },
+    } as Record<ApplicationTone, { label: string; desc: string }>,
+    focusLabel: 'Focus',
+    languageLabel: 'Language',
+    recipientLabel: 'Recipient',
+    recipientPlaceholder: 'e.g. Ms. Lan, HR team',
+    generate: 'Draft with AI',
+    generating: 'Drafting…',
+    s3: 'Your letter',
+    words: (n: number) => `${n} words`,
+    emptyPlaceholder: 'Press “Draft with AI” to create a draft. You can then edit it right here.',
+    close: 'Close',
+  },
+};
+
+const lineField =
+  'h-11 w-full min-w-0 border-0 border-b border-slate-400 bg-transparent py-2 text-[15px] text-ink outline-none transition-colors placeholder:text-slate-400 hover:border-ink focus-visible:border-ink';
+
+const primaryButton =
+  'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+
+const toneOrder: ApplicationTone[] = ['professional', 'impactful', 'enthusiastic', 'concise'];
+
+/** Numbered section heading with a dark rule underneath. */
+function SectionHead({ index, title, aside }: { index: string; title: string; aside?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-ink pb-3">
+      <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
+        <span className="text-xs tabular-nums text-slate-500">{index}</span>
+        {title}
+      </h2>
+      {aside}
+    </div>
+  );
+}
+
+/** Underlined native select with a chevron. */
+function LineSelect({
+  id,
+  value,
+  onChange,
+  children,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative mt-1.5">
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${lineField} cursor-pointer appearance-none truncate pr-7`}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        size={15}
+        aria-hidden="true"
+        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-500"
+      />
+    </div>
+  );
+}
+
+/** Row of text tabs with an underline on the active one. */
+function UnderlineTabs<T extends string>({
+  items,
+  value,
+  onChange,
+  label,
+}: {
+  items: { id: T; label: React.ReactNode }[];
+  value: T;
+  onChange: (id: T) => void;
+  label: string;
+}) {
+  return (
+    <div role="tablist" aria-label={label} className="-mb-px flex flex-wrap gap-x-7 gap-y-1">
+      {items.map((item) => {
+        const active = item.id === value;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(item.id)}
+            className={`border-b-2 pb-2 pt-1 text-sm transition-colors cursor-pointer ${
+              active
+                ? 'border-brand font-medium text-ink'
+                : 'border-transparent text-slate-500 hover:text-ink'
+            }`}
+          >
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ApplicationAssistancePage() {
   const { isVietnamese, t } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
   const [searchParams] = useSearchParams();
 
   // Queries
@@ -226,278 +360,205 @@ export default function ApplicationAssistancePage() {
     }
   };
 
+  const wordCount = currentDraft?.content?.trim() ? currentDraft.content.trim().split(/\s+/).length : 0;
+  const fitHref = `/candidate/cv-job-fit?cvId=${selectedCvId}&jobId=${selectedJobId}`;
+
+  const contentTypes: { id: ApplicationContentType; label: string }[] = [
+    { id: 'cover_letter', label: t('applicationAssistance.coverLetter') },
+    { id: 'application_email', label: t('applicationAssistance.applicationEmail') },
+    { id: 'linkedin_inmail', label: t('applicationAssistance.linkedinInmail') },
+    { id: 'follow_up_email', label: t('applicationAssistance.followUpEmail') },
+  ];
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3 shadow-sm border border-slate-700 animate-in fade-in max-w-lg">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-            <p className="text-xs font-semibold">{toastMessage}</p>
-          </div>
+        <div
+          role="status"
+          className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-lg items-start justify-between gap-4 bg-ink px-5 py-3.5 text-sm text-white sm:inset-x-auto sm:right-6 sm:bottom-6"
+        >
+          <p className="leading-6">{toastMessage}</p>
           <button
+            type="button"
             onClick={() => setToastMessage(null)}
-            className="text-slate-400 hover:text-white p-1"
+            aria-label={c.close}
+            className="shrink-0 p-1 text-slate-300 transition-colors hover:text-white cursor-pointer"
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <PageTitle
-          title={t('applicationAssistance.title')}
-          subtitle={t('applicationAssistance.subtitle')}
+      {/* Headline */}
+      <header>
+        <p className="text-[13px] text-brand">{c.eyebrow}</p>
+        <h1 className="mt-[clamp(1.25rem,3vw,2rem)] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {c.title}
+          <span className="block text-brand">{c.titleAccent}</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[34rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {c.intro}
+        </p>
+      </header>
+
+      {/* Compose / saved switch */}
+      <div className="mt-[clamp(1.75rem,3.5vw,2.5rem)] border-b border-border">
+        <UnderlineTabs
+          label={c.eyebrow}
+          value={activeTab}
+          onChange={setActiveTab}
+          items={[
+            { id: 'editor', label: c.tabCompose },
+            {
+              id: 'saved',
+              label: (
+                <>
+                  {c.tabSaved} <span className="tabular-nums text-slate-500">({savedDrafts.length})</span>
+                </>
+              ),
+            },
+          ]}
         />
-
-        {/* Tab switchers */}
-        <div className="flex items-center gap-1 rounded-2xl border border-slate-200/90 bg-surface p-1.5 shadow-2xs">
-          <button
-            onClick={() => setActiveTab('editor')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium transition cursor-pointer ${
-              activeTab === 'editor'
-                ? 'bg-brand-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            <Lightbulb size={15} />
-            <span>{t('applicationAssistance.createTab')}</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium transition cursor-pointer ${
-              activeTab === 'saved'
-                ? 'bg-brand-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            <FolderArchive size={15} />
-            <span>{t('applicationAssistance.savedTab')}</span>
-            <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-medium ${
-                activeTab === 'saved'
-                  ? 'bg-white text-brand-700'
-                  : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              {savedDrafts.length}
-            </span>
-          </button>
-        </div>
       </div>
 
-      {/* Main View Area */}
       {activeTab === 'saved' ? (
-        <SavedApplicationsList
-          drafts={savedDrafts}
-          onSelectDraft={handleSelectSavedDraft}
-          onDeleteDraft={handleDeleteSavedDraft}
-          onCreateNew={() => setActiveTab('editor')}
-        />
+        <div className="mt-[clamp(2rem,4vw,2.75rem)]">
+          <SavedApplicationsList
+            drafts={savedDrafts}
+            onSelectDraft={handleSelectSavedDraft}
+            onDeleteDraft={handleDeleteSavedDraft}
+            onCreateNew={() => setActiveTab('editor')}
+          />
+        </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
-          {/* Left Column: Generator Controls Card */}
-          <div className="space-y-5">
-            <Card className="p-5 border border-slate-200/90 bg-surface shadow-xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3 text-sm font-medium text-slate-900">
-                <Sliders size={18} className="text-brand-600" />
-                <span>Cấu hình thư ứng tuyển AI</span>
-              </div>
-
-              {/* 1. Target Job Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                  <Briefcase size={14} className="text-brand-600" />
-                  <span>{t('applicationAssistance.selectJob')}</span>
+        <>
+          {/* 01 — CV and job */}
+          <section className="mt-[clamp(2rem,4vw,3rem)]">
+            <SectionHead index="01" title={c.s1} />
+            <div className="mt-6 grid gap-x-[clamp(2rem,4vw,3.5rem)] gap-y-7 md:grid-cols-2">
+              <div className="min-w-0">
+                <label htmlFor="app-cv" className="block text-[13px] text-slate-600">
+                  {c.cvLabel}
                 </label>
-                <select
-                  value={selectedJobId}
-                  onChange={(e) => setSelectedJobId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-brand-500 focus:bg-surface transition cursor-pointer"
-                >
-                  {jobs.map((job) => (
-                    <option key={job.id} value={job.id}>
-                      {job.title} - {job.company} ({job.salary})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 2. CV Reference Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                  <FileText size={14} className="text-brand-600" />
-                  <span>{t('applicationAssistance.selectCv')}</span>
-                </label>
-                <select
-                  value={selectedCvId}
-                  onChange={(e) => setSelectedCvId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-brand-500 focus:bg-surface transition cursor-pointer"
-                >
+                <LineSelect id="app-cv" value={selectedCvId} onChange={setSelectedCvId}>
                   {resumes.map((cv) => (
                     <option key={cv.id} value={cv.id}>
                       {cv.name} ({cv.atsScore}% ATS)
                     </option>
                   ))}
-                </select>
+                </LineSelect>
               </div>
-
-              {/* 3. Document Type */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700 block">
-                  {t('applicationAssistance.contentTypeLabel')}
+              <div className="min-w-0">
+                <label htmlFor="app-job" className="block text-[13px] text-slate-600">
+                  {c.jobLabel}
                 </label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    { id: 'cover_letter', label: t('applicationAssistance.coverLetter') },
-                    { id: 'application_email', label: t('applicationAssistance.applicationEmail') },
-                    { id: 'linkedin_inmail', label: t('applicationAssistance.linkedinInmail') },
-                    { id: 'follow_up_email', label: t('applicationAssistance.followUpEmail') },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setContentType(item.id as ApplicationContentType)}
-                      className={`rounded-xl border p-2 text-left text-xs font-semibold transition cursor-pointer ${
-                        contentType === item.id
-                          ? 'border-brand-500 bg-brand-50/70 text-brand-900 shadow-2xs'
-                          : 'border-slate-200 bg-surface text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
+                <LineSelect id="app-job" value={selectedJobId} onChange={setSelectedJobId}>
+                  {jobs.map((job) => (
+                    <option key={job.id} value={job.id}>
+                      {job.title} – {job.company} ({job.salary})
+                    </option>
                   ))}
-                </div>
+                </LineSelect>
               </div>
+            </div>
 
-              {/* 4. Tone & Style */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700 block">
-                  {t('applicationAssistance.toneLabel')}
-                </label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    { id: 'impactful', label: t('applicationAssistance.toneImpactful') },
-                    { id: 'professional', label: t('applicationAssistance.toneProfessional') },
-                    { id: 'enthusiastic', label: t('applicationAssistance.toneEnthusiastic') },
-                    { id: 'concise', label: t('applicationAssistance.toneConcise') },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setTone(item.id as ApplicationTone)}
-                      className={`rounded-xl border p-2 text-left text-xs font-semibold transition cursor-pointer ${
-                        tone === item.id
-                          ? 'border-brand-500 bg-brand-50/70 text-brand-900 shadow-2xs'
-                          : 'border-slate-200 bg-surface text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
+            <div className="mt-7">
+              <p className="text-[13px] text-slate-600">{c.typeLabel}</p>
+              <div className="mt-2 border-b border-border">
+                <UnderlineTabs
+                  label={c.typeLabel}
+                  value={contentType}
+                  onChange={setContentType}
+                  items={contentTypes}
+                />
               </div>
+            </div>
+          </section>
 
-              {/* 5. Key Value Focus */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700 block">
-                  {t('applicationAssistance.focusLabel')}
+          {/* 02 — Tone and options */}
+          <section className="mt-[clamp(2.5rem,5vw,3.5rem)]">
+            <SectionHead index="02" title={c.s2} />
+            <div className="mt-3 border-b border-border">
+              <UnderlineTabs
+                label={c.s2}
+                value={tone}
+                onChange={setTone}
+                items={toneOrder.map((id) => ({ id, label: c.tones[id].label }))}
+              />
+            </div>
+            <p className="mt-3 text-[13px] leading-6 text-slate-600">{c.tones[tone].desc}</p>
+
+            <div className="mt-7 grid gap-x-[clamp(2rem,4vw,3.5rem)] gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="min-w-0">
+                <label htmlFor="app-focus" className="block text-[13px] text-slate-600">
+                  {c.focusLabel}
                 </label>
-                <select
-                  value={focus}
-                  onChange={(e) => setFocus(e.target.value as ApplicationFocus)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-brand-500 focus:bg-surface transition cursor-pointer"
-                >
+                <LineSelect id="app-focus" value={focus} onChange={(v) => setFocus(v as ApplicationFocus)}>
                   <option value="tech_depth">{t('applicationAssistance.focusTech')}</option>
                   <option value="leadership">{t('applicationAssistance.focusLeadership')}</option>
                   <option value="fast_learner">{t('applicationAssistance.focusFastLearner')}</option>
                   <option value="business_impact">{t('applicationAssistance.focusBusiness')}</option>
-                </select>
+                </LineSelect>
               </div>
 
-              {/* 6. Language */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700 block">
-                  {t('applicationAssistance.languageLabel')}
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('Vietnamese')}
-                    className={`rounded-xl border p-2 text-center text-xs font-semibold transition cursor-pointer ${
-                      language === 'Vietnamese'
-                        ? 'border-brand-500 bg-brand-50 text-brand-900 font-bold'
-                        : 'border-slate-200 bg-surface text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    🇻🇳 Tiếng Việt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('English')}
-                    className={`rounded-xl border p-2 text-center text-xs font-semibold transition cursor-pointer ${
-                      language === 'English'
-                        ? 'border-brand-500 bg-brand-50 text-brand-900 font-bold'
-                        : 'border-slate-200 bg-surface text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    🇬🇧 English
-                  </button>
+              <div className="min-w-0">
+                <p className="text-[13px] text-slate-600">{c.languageLabel}</p>
+                <div className="mt-1.5 flex h-11 items-center gap-6 border-b border-slate-400">
+                  {(
+                    [
+                      { id: 'Vietnamese', label: 'Tiếng Việt' },
+                      { id: 'English', label: 'English' },
+                    ] as { id: ApplicationLanguage; label: string }[]
+                  ).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-pressed={language === item.id}
+                      onClick={() => setLanguage(item.id)}
+                      className={`text-[15px] transition-colors cursor-pointer ${
+                        language === item.id ? 'text-ink underline decoration-brand decoration-2 underline-offset-[6px]' : 'text-slate-500 hover:text-ink'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* 7. Recipient Info */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700 block">
-                  {t('applicationAssistance.recipientLabel')}
+              <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+                <label htmlFor="app-recipient" className="block text-[13px] text-slate-600">
+                  {c.recipientLabel}
                 </label>
                 <input
+                  id="app-recipient"
                   type="text"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder={t('applicationAssistance.recipientPlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-brand-500 focus:bg-surface transition"
+                  placeholder={c.recipientPlaceholder}
+                  className={`${lineField} mt-1.5`}
                 />
               </div>
-
-              {/* Generate Button */}
-              <Button
-                type="button"
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs py-3 rounded-xl transition mt-2 cursor-pointer"
-              >
-                <Lightbulb size={16} />
-                <span>
-                  {isGenerating
-                    ? t('applicationAssistance.generating')
-                    : t('applicationAssistance.generateButton')}
-                </span>
-              </Button>
-            </Card>
-
-            {/* Quick Context Tip Box */}
-            <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 text-xs text-brand-900 space-y-2">
-              <p className="font-medium flex items-center gap-1.5">
-                <Lightbulb size={14} className="text-brand-600" />
-                Mẹo tối ưu tỷ lệ phản hồi:
-              </p>
-              <p className="text-[11px] leading-relaxed text-brand-800">
-                Thư ứng tuyển có đề cập đến các con số thành tích cụ thể (STAR / Google XYZ) và giải quyết trực tiếp bài toán của doanh nghiệp giúp tăng tỷ lệ phản hồi lên <strong>gấp 3 lần</strong> so với thư mẫu chung chung.
-              </p>
             </div>
-          </div>
 
-          {/* Right Column: AI Review Score Panel + Live Document Editor */}
-          <div className="space-y-5">
-            {/* AI Review Score & Diagnostics */}
-            {currentDraft?.reviewScore && (
-              <ApplicationReviewPanel score={currentDraft.reviewScore} />
-            )}
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className={`${primaryButton} mt-8 w-full sm:w-auto`}
+            >
+              {isGenerating ? c.generating : c.generate}
+              <ArrowRight size={15} aria-hidden="true" />
+            </button>
+          </section>
 
-            {/* Document Paper Editor Canvas */}
+          {/* 03 — Letter */}
+          <section className="mt-[clamp(2.5rem,5vw,3.5rem)]">
+            <SectionHead
+              index="03"
+              title={c.s3}
+              aside={<span className="text-[13px] tabular-nums text-slate-600">{c.words(wordCount)}</span>}
+            />
             {currentDraft ? (
               <ApplicationEditor
                 draft={currentDraft}
@@ -523,14 +584,25 @@ export default function ApplicationAssistancePage() {
                 isRefining={isRefining}
                 onSave={handleSave}
                 isSaved={!!currentDraft.isSaved}
+                fitHref={fitHref}
               />
             ) : (
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-surface p-12 text-center">
-                <p className="text-sm text-slate-500">Chưa có văn bản nào được chọn.</p>
-              </div>
+              <textarea
+                disabled
+                rows={16}
+                placeholder={c.emptyPlaceholder}
+                className="mt-5 block min-h-[clamp(18rem,45vh,30rem)] w-full resize-none border-0 border-b border-border bg-transparent p-0 text-[clamp(1rem,1.2vw,1.0625rem)] leading-8 text-ink outline-none placeholder:text-slate-500"
+              />
             )}
-          </div>
-        </div>
+          </section>
+
+          {/* 04 — Review */}
+          {currentDraft?.reviewScore && (
+            <section className="mt-[clamp(2.5rem,5vw,3.5rem)]">
+              <ApplicationReviewPanel score={currentDraft.reviewScore} />
+            </section>
+          )}
+        </>
       )}
     </div>
   );

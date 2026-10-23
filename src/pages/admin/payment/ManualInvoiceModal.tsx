@@ -1,13 +1,27 @@
 import React, { useState } from 'react';
-import {
-  X,
-  FileText,
-  Check,
-  AlertCircle,
-  Calculator,
-} from 'lucide-react';
 import type { CreateInvoicePayload } from '../../../types/paymentManagement';
 import type { PaymentMethodType } from '../../../types/subscription';
+import {
+  Modal,
+  SubHead,
+  fieldLabel,
+  primaryButton,
+  textLink,
+  underlineInput,
+  underlineSelect,
+} from '../../../components/admin/AdminKit';
+
+function Field({ label, required, children, wide }: { label: string; required?: boolean; children: React.ReactNode; wide?: boolean }) {
+  return (
+    <label className={`block ${wide ? 'sm:col-span-2' : ''}`}>
+      <span className={fieldLabel}>
+        {label}
+        {required && <span className="text-danger"> *</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
 
 interface ManualInvoiceModalProps {
   isOpen: boolean;
@@ -77,249 +91,98 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-2xl my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-brand-50/60">
-          <div className="flex items-center gap-2.5 text-brand-900">
-            <div className="p-2 rounded-xl bg-brand-100 text-brand-700">
-              <FileText size={18} />
-            </div>
-            <div>
-              <h3 className="font-medium text-sm">Lập Hóa đơn điện tử VAT mới (Ad-hoc)</h3>
-              <p className="text-[11px] text-brand-600">
-                Xuất hóa đơn GTGT tuân thủ Thông tư 78/2021/TT-BTC & NĐ 123/2020/NĐ-CP
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-          >
-            <X size={18} />
+    <Modal
+      eyebrow="Theo Thông tư 78/2021/TT-BTC & NĐ 123/2020/NĐ-CP"
+      title="Lập hoá đơn VAT mới."
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" onClick={onClose} disabled={isSubmitting} className={`${textLink} text-slate-600`}>
+            Huỷ
           </button>
-        </div>
+          <button type="submit" form="manual-invoice-form" disabled={isSubmitting} className={primaryButton}>
+            {isSubmitting ? 'Đang ký số…' : 'Ký số & phát hành'}
+          </button>
+        </>
+      }
+    >
+      <form id="manual-invoice-form" onSubmit={handleSubmit} className="space-y-9">
+        {errorMsg && <p className="border-l-2 border-danger pl-4 text-[13px] text-danger">{errorMsg}</p>}
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
-          {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-              <AlertCircle size={15} />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {/* Section 1: Customer details */}
-          <div>
-            <span className="text-xs font-medium text-slate-800 uppercase tracking-wider block mb-2">
-              1. Thông tin người mua / Đơn vị nhận hóa đơn
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Họ tên khách hàng <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Ví dụ: Nguyễn Văn An"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Email nhận hóa đơn điện tử <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="email@company.vn"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Tên Công ty / Đơn vị (Tùy chọn)
-                </label>
-                <input
-                  type="text"
-                  value={customerCompany}
-                  onChange={(e) => setCustomerCompany(e.target.value)}
-                  placeholder="Công ty Cổ phần..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Mã số thuế Doanh nghiệp (MST)
-                </label>
-                <input
-                  type="text"
-                  value={customerTaxCode}
-                  onChange={(e) => setCustomerTaxCode(e.target.value)}
-                  placeholder="0318xxxxxx"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Số điện thoại liên hệ
-                </label>
-                <input
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="0908xxxxxx"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Mã đơn hàng liên kết (Tùy chọn)
-                </label>
-                <input
-                  type="text"
-                  value={orderCode}
-                  onChange={(e) => setOrderCode(e.target.value)}
-                  placeholder="CP-PAY-..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-mono"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Địa chỉ xuất hóa đơn
-                </label>
-                <input
-                  type="text"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  placeholder="Số nhà, Tòa nhà, Phường/Xã, Quận/Huyện, Tỉnh/TP"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                />
-              </div>
-            </div>
+        <section>
+          <SubHead title="01  Người mua" />
+          <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+            <Field label="Họ tên khách hàng" required>
+              <input type="text" required value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nguyễn Văn An" className={underlineInput} />
+            </Field>
+            <Field label="Email nhận hoá đơn" required>
+              <input type="email" required value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="email@company.vn" className={underlineInput} />
+            </Field>
+            <Field label="Công ty / đơn vị">
+              <input type="text" value={customerCompany} onChange={(e) => setCustomerCompany(e.target.value)} placeholder="Công ty Cổ phần…" className={underlineInput} />
+            </Field>
+            <Field label="Mã số thuế">
+              <input type="text" value={customerTaxCode} onChange={(e) => setCustomerTaxCode(e.target.value)} placeholder="0318xxxxxx" className={underlineInput} />
+            </Field>
+            <Field label="Số điện thoại">
+              <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="0908xxxxxx" className={underlineInput} />
+            </Field>
+            <Field label="Mã đơn hàng liên kết">
+              <input type="text" value={orderCode} onChange={(e) => setOrderCode(e.target.value)} placeholder="CP-PAY-…" className={underlineInput} />
+            </Field>
+            <Field label="Địa chỉ xuất hoá đơn" wide>
+              <input type="text" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} placeholder="Số nhà, phường/xã, quận/huyện, tỉnh/thành" className={underlineInput} />
+            </Field>
           </div>
+        </section>
 
-          {/* Section 2: Items & Pricing */}
-          <div className="pt-2 border-t border-slate-100">
-            <span className="text-xs font-medium text-slate-800 uppercase tracking-wider block mb-2">
-              2. Nội dung hàng hóa, dịch vụ & Thuế suất
-            </span>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Tên dịch vụ / Hàng hóa <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={itemName}
-                  onChange={(e) => setItemName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Tổng tiền thanh toán (VNĐ) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min={1000}
-                    step={1000}
-                    required
-                    value={amountVND}
-                    onChange={(e) => setAmountVND(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs font-medium text-slate-900 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Thuế suất GTGT
-                  </label>
-                  <select
-                    value={vatRatePercent}
-                    onChange={(e) => setVatRatePercent(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option value={8}>8% (Dịch vụ CNTT & Phần mềm)</option>
-                    <option value={10}>10% (Thuế suất chuẩn)</option>
-                    <option value={0}>0% (Không chịu thuế)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Hình thức thanh toán
-                  </label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethodType)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option value="vietqr">VietQR (Chuyển khoản)</option>
-                    <option value="momo">Ví MoMo</option>
-                    <option value="vnpay">VNPAY-QR</option>
-                    <option value="credit_card">Thẻ Quốc tế (Stripe)</option>
-                  </select>
-                </div>
-              </div>
+        <section>
+          <SubHead title="02  Dịch vụ & thuế suất" />
+          <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-3">
+            <div className="sm:col-span-3">
+              <Field label="Tên dịch vụ / hàng hoá" required>
+                <input type="text" required value={itemName} onChange={(e) => setItemName(e.target.value)} className={underlineInput} />
+              </Field>
             </div>
+            <Field label="Tổng thanh toán (VNĐ)" required>
+              <input type="number" min={1000} step={1000} required value={amountVND} onChange={(e) => setAmountVND(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
+            <Field label="Thuế suất GTGT">
+              <select value={vatRatePercent} onChange={(e) => setVatRatePercent(Number(e.target.value))} className={underlineSelect}>
+                <option value={8}>8% (CNTT & phần mềm)</option>
+                <option value={10}>10% (chuẩn)</option>
+                <option value={0}>0% (không chịu thuế)</option>
+              </select>
+            </Field>
+            <Field label="Hình thức thanh toán">
+              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethodType)} className={underlineSelect}>
+                <option value="vietqr">VietQR (chuyển khoản)</option>
+                <option value="momo">Ví MoMo</option>
+                <option value="vnpay">VNPAY-QR</option>
+                <option value="credit_card">Thẻ quốc tế (Stripe)</option>
+              </select>
+            </Field>
           </div>
+        </section>
 
-          {/* Section 3: Tax calculation preview */}
-          <div className="p-4 rounded-2xl bg-brand-50/50 border border-brand-200/80 space-y-2 text-xs">
-            <div className="flex items-center gap-1.5 font-medium text-brand-900 pb-1 border-b border-brand-200/60">
-              <Calculator size={14} className="text-brand-600" />
-              <span>Bảng tính thuế giá trị gia tăng tự động</span>
+        <section>
+          <SubHead title="03  Tính thuế tự động" />
+          <dl className="mt-2 text-[13px]">
+            <div className="flex justify-between border-b border-border py-2.5">
+              <dt className="text-slate-500">Doanh thu trước thuế</dt>
+              <dd className="tabular-nums text-ink">{subtotal.toLocaleString('vi-VN')}đ</dd>
             </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Doanh thu trước thuế (Net Subtotal):</span>
-              <span className="font-semibold text-slate-900">{subtotal.toLocaleString('vi-VN')} đ</span>
+            <div className="flex justify-between border-b border-border py-2.5">
+              <dt className="text-slate-500">Thuế GTGT {vatRatePercent}%</dt>
+              <dd className="tabular-nums text-ink">{vatAmount.toLocaleString('vi-VN')}đ</dd>
             </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Tiền thuế GTGT ({vatRatePercent}%):</span>
-              <span className="font-semibold text-slate-900">{vatAmount.toLocaleString('vi-VN')} đ</span>
+            <div className="flex items-baseline justify-between py-3">
+              <dt className="text-ink">Tổng thanh toán đã gồm thuế</dt>
+              <dd className="text-[clamp(1.25rem,2vw,1.5rem)] tabular-nums text-brand">{amountVND.toLocaleString('vi-VN')}đ</dd>
             </div>
-            <div className="flex justify-between pt-1 border-t border-brand-200 text-sm font-semibold text-brand-700">
-              <span>Tổng thanh toán đã gồm thuế:</span>
-              <span>{amountVND.toLocaleString('vi-VN')} đ</span>
-            </div>
-          </div>
-
-          {/* Submit actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
-            >
-              <Check size={14} />
-              <span>{isSubmitting ? 'Đang ký số & Lập HĐ...' : 'Ký số & Phát hành Hóa đơn'}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          </dl>
+        </section>
+      </form>
+    </Modal>
   );
 };

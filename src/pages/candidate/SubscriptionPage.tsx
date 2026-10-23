@@ -1,23 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import {
-  CreditCard,
-  Zap,
-  Lightbulb,
-  Crown,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Target,
-  MessageSquare,
-  MailCheck,
-  Calendar,
-  ShieldCheck,
-  Receipt,
-  HelpCircle,
-  PlusCircle,
-  Info,
-} from 'lucide-react';
+import React, { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { Check, Minus, Plus } from 'lucide-react';
 import type {
   BillingCycle,
   PaymentTransaction,
@@ -28,38 +11,180 @@ import {
   getSubscriptionPlans,
   getUserSubscription,
   getPaymentHistory,
+  getTopupPacks,
+  purchaseTokenTopup,
 } from '../../services/subscriptionService';
-import { SubscriptionPlanCard } from './subscription/SubscriptionPlanCard';
 import { PaymentCheckoutModal } from './subscription/PaymentCheckoutModal';
-import { PaymentHistoryTable } from './subscription/PaymentHistoryTable';
-import { TokenTopupModal } from './subscription/TokenTopupModal';
+import { InvoiceReceiptModal } from './subscription/InvoiceReceiptModal';
 import { TokenQuotaRulesModal } from './subscription/TokenQuotaRulesModal';
 import { useTranslation } from '../../i18n';
 
-export const SubscriptionPage: React.FC = () => {
-  const { isVietnamese, t } = useTranslation();
+const copy = {
+  vi: {
+    eyebrow: 'Gói đăng ký',
+    line1: 'Chọn gói phù hợp',
+    line2: 'với hành trình của bạn.',
+    intro: 'Bắt đầu miễn phí, nâng cấp khi bạn cần thêm AI và tư vấn trực tiếp từ cố vấn.',
+    monthly: 'Theo tháng',
+    yearly: 'Theo năm',
+    save: (pct: number) => `giảm ${pct}%`,
+    currentPlan: 'Gói hiện tại',
+    popular: 'Phổ biến nhất',
+    perMonth: '/ tháng',
+    free: 'Không cần thẻ thanh toán',
+    billedMonthly: 'Thanh toán hàng tháng',
+    billedYearly: (amount: string) => `Thanh toán ${amount} mỗi năm`,
+    upgradeTo: (name: string) => `Nâng cấp lên ${name}`,
+    switchTo: (name: string) => `Chuyển sang ${name}`,
+    moreBenefits: (n: number) => `+ ${n} quyền lợi khác`,
+    lessBenefits: 'Thu gọn',
+    renews: (date: string) => `Gia hạn ngày ${date}`,
+    footnote: 'Bạn có thể đổi hoặc huỷ gói bất kỳ lúc nào trong cài đặt tài khoản. Cần gói cho nhóm hoặc trường học?',
+    contactSupport: 'Liên hệ đội ngũ hỗ trợ',
+    tokenEyebrow: 'Token AI',
+    tokenLine1: 'Hết token? Nạp thêm',
+    tokenLine2: 'và dùng khi cần.',
+    tokenIntro:
+      'Mỗi lần dùng tính năng AI sẽ trừ một lượng token. Token nạp thêm được cộng ngay vào hạn mức của bạn.',
+    balance: 'Số dư token hiện tại',
+    balanceNote: (plan: string, quota: string) => `Gói ${plan} gồm ${quota} token mỗi tháng`,
+    used: (used: string, limit: string) => `Đã dùng ${used} / ${limit}`,
+    packsTitle: 'Chọn gói token',
+    tokens: 'token',
+    per1k: '/ 1.000 token',
+    saving: (pct: number) => `Tiết kiệm ${pct}%`,
+    pickPack: 'Chọn một gói token để tiếp tục.',
+    picked: (tokens: string, price: string) => `${tokens} token · ${price}`,
+    topup: 'Nạp token',
+    topping: 'Đang nạp…',
+    toppedUp: (tokens: string) => `Đã cộng ${tokens} token vào tài khoản.`,
+    rulesTitle: 'Bảng quy đổi token',
+    rulesNote: 'Giá quy đổi theo gói token nhỏ nhất. Gói lớn hơn có giá mỗi token thấp hơn.',
+    rulesDetail: 'Xem cách tính chi tiết',
+    thisMonth: (n: number) => `Tháng này: ${n} lần`,
+    historyTitle: 'Lịch sử thanh toán',
+    historyEmpty: 'Chưa có giao dịch nào.',
+    receipt: 'Biên lai',
+    showAll: (n: number) => `Xem tất cả (${n})`,
+    showLess: 'Thu gọn',
+    status: { success: 'Thành công', pending: 'Đang chờ', failed: 'Thất bại' } as Record<string, string>,
+    faqTitle: 'Câu hỏi thường gặp',
+    planNames: { free: 'Miễn phí', pro: 'Pro', executive: 'Premium' } as Record<string, string>,
+  },
+  en: {
+    eyebrow: 'Subscription',
+    line1: 'Pick the plan that fits',
+    line2: 'your journey.',
+    intro: 'Start free, upgrade when you need more AI and direct help from an advisor.',
+    monthly: 'Monthly',
+    yearly: 'Yearly',
+    save: (pct: number) => `save ${pct}%`,
+    currentPlan: 'Current plan',
+    popular: 'Most popular',
+    perMonth: '/ month',
+    free: 'No card required',
+    billedMonthly: 'Billed monthly',
+    billedYearly: (amount: string) => `Billed ${amount} yearly`,
+    upgradeTo: (name: string) => `Upgrade to ${name}`,
+    switchTo: (name: string) => `Switch to ${name}`,
+    moreBenefits: (n: number) => `+ ${n} more benefits`,
+    lessBenefits: 'Show less',
+    renews: (date: string) => `Renews on ${date}`,
+    footnote: 'You can change or cancel your plan anytime in account settings. Need a plan for a team or school?',
+    contactSupport: 'Contact support',
+    tokenEyebrow: 'AI tokens',
+    tokenLine1: 'Out of tokens? Top up',
+    tokenLine2: 'and use them when you need.',
+    tokenIntro: 'Each AI feature uses some tokens. Top-ups are added to your quota right away.',
+    balance: 'Current token balance',
+    balanceNote: (plan: string, quota: string) => `${plan} includes ${quota} tokens a month`,
+    used: (used: string, limit: string) => `Used ${used} / ${limit}`,
+    packsTitle: 'Choose a token pack',
+    tokens: 'tokens',
+    per1k: '/ 1,000 tokens',
+    saving: (pct: number) => `Save ${pct}%`,
+    pickPack: 'Choose a token pack to continue.',
+    picked: (tokens: string, price: string) => `${tokens} tokens · ${price}`,
+    topup: 'Top up',
+    topping: 'Topping up…',
+    toppedUp: (tokens: string) => `${tokens} tokens added to your account.`,
+    rulesTitle: 'Token costs',
+    rulesNote: 'Prices are based on the smallest pack. Larger packs cost less per token.',
+    rulesDetail: 'See how it is calculated',
+    thisMonth: (n: number) => `This month: ${n}`,
+    historyTitle: 'Payment history',
+    historyEmpty: 'No transactions yet.',
+    receipt: 'Receipt',
+    showAll: (n: number) => `Show all (${n})`,
+    showLess: 'Show less',
+    status: { success: 'Paid', pending: 'Pending', failed: 'Failed' } as Record<string, string>,
+    faqTitle: 'Frequently asked questions',
+    planNames: { free: 'Free', pro: 'Pro', executive: 'Premium' } as Record<string, string>,
+  },
+};
 
-  // State
-  const [activeTab, setActiveTab] = useState<'plans' | 'history'>('plans');
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer disabled:pointer-events-none disabled:opacity-40';
+const primaryButton =
+  'inline-flex min-h-11 w-full items-center justify-center rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:bg-slate-400 cursor-pointer';
+const outlineButton =
+  'inline-flex min-h-11 w-full items-center justify-center rounded-full border border-slate-300 px-6 py-2.5 text-sm text-slate-700 transition-colors duration-150 hover:border-ink hover:text-ink disabled:pointer-events-none disabled:text-slate-500 cursor-pointer';
+
+function Headline({ eyebrow, line1, line2, intro, aside }: { eyebrow: string; line1: string; line2: string; intro: string; aside?: ReactNode }) {
+  return (
+    <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0">
+        <p className="mb-3 text-[13px] text-brand">{eyebrow}</p>
+        <h1 className="text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {line1}
+          <span className="block text-brand">{line2}</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[40rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {intro}
+        </p>
+      </div>
+      {aside}
+    </header>
+  );
+}
+
+function SectionHead({ index, title, action }: { index: string; title: string; action?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-ink pb-3">
+      <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
+        <span className="text-xs tabular-nums tracking-normal text-slate-500">{index}</span>
+        {title}
+      </h2>
+      {action}
+    </div>
+  );
+}
+
+export const SubscriptionPage: React.FC = () => {
+  const { isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
+  const locale = isVietnamese ? 'vi-VN' : 'en-US';
+  const num = (n: number) => n.toLocaleString(locale);
+  const vnd = (n: number) => `${n.toLocaleString('vi-VN')}đ`;
+
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [plans, setPlans] = useState<SubscriptionPlan[]>(getSubscriptionPlans());
-  const [userSubscription, setUserSubscription] = useState<UserSubscriptionStatus>(
-    getUserSubscription()
-  );
+  const [userSubscription, setUserSubscription] = useState<UserSubscriptionStatus>(getUserSubscription());
   const [transactions, setTransactions] = useState<PaymentTransaction[]>(getPaymentHistory());
+  const packs = useMemo(() => getTopupPacks(), []);
 
-  // Modals state
-  const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<SubscriptionPlan | null>(
-    null
-  );
+  const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<SubscriptionPlan | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isTopupOpen, setIsTopupOpen] = useState(false);
   const [isQuotaRulesOpen, setIsQuotaRulesOpen] = useState(false);
+  const [receiptTxn, setReceiptTxn] = useState<PaymentTransaction | null>(null);
 
-  // FAQs open state
+  const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+  const [isToppingUp, setIsToppingUp] = useState(false);
+  const [toppedUp, setToppedUp] = useState<number | null>(null);
+  const [showAllTxns, setShowAllTxns] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
-  // Refresh local data
   const refreshData = () => {
     setPlans(getSubscriptionPlans());
     setUserSubscription(getUserSubscription());
@@ -75,11 +200,69 @@ export const SubscriptionPage: React.FC = () => {
     setIsCheckoutOpen(true);
   };
 
-  // Usage percentage
-  const tokenPercentage = Math.min(
-    100,
-    Math.round((userSubscription.tokensUsed / userSubscription.tokenLimit) * 100)
-  );
+  const handleTopup = async () => {
+    const pack = packs.find((p) => p.id === selectedPackId);
+    if (!pack || isToppingUp) return;
+    setIsToppingUp(true);
+    try {
+      await purchaseTokenTopup(pack.id);
+      setToppedUp(pack.tokens);
+      setSelectedPackId(null);
+      refreshData();
+    } finally {
+      setIsToppingUp(false);
+    }
+  };
+
+  const planName = (plan: SubscriptionPlan) => c.planNames[plan.id] ?? plan.name;
+  const currentPlan = plans.find((p) => p.id === userSubscription.planId);
+  const currentPrice = currentPlan?.monthlyPriceVND ?? 0;
+
+  // Smallest yearly saving across paid plans, so the label never over-promises.
+  const yearlySaving = useMemo(() => {
+    const paid = plans.filter((p) => p.monthlyPriceVND > 0 && p.yearlyPriceVND > 0);
+    if (paid.length === 0) return 0;
+    return Math.min(...paid.map((p) => Math.round((1 - p.yearlyPriceVND / (p.monthlyPriceVND * 12)) * 100)));
+  }, [plans]);
+
+  const remaining = Math.max(0, userSubscription.tokenLimit - userSubscription.tokensUsed);
+  const usedPct = Math.min(100, Math.round((userSubscription.tokensUsed / Math.max(1, userSubscription.tokenLimit)) * 100));
+
+  // Price per 1,000 tokens; the first pack is the reference for savings and the cost table.
+  const perThousand = (p: { tokens: number; priceVND: number }) => (p.priceVND / p.tokens) * 1000;
+  const basePerThousand = packs.length ? perThousand(packs[0]) : 0;
+  const selectedPack = packs.find((p) => p.id === selectedPackId);
+
+  const tokenCosts = [
+    {
+      name: isVietnamese ? 'Phân tích & tối ưu CV chuẩn ATS' : 'ATS CV parsing & scoring',
+      note: isVietnamese ? 'Bóc tách CV, chấm điểm ATS, gợi ý từ khoá' : 'Parse the CV, score ATS, suggest keywords',
+      tokens: 3500,
+      label: '3.500',
+      usage: userSubscription.cvParsedCount,
+    },
+    {
+      name: isVietnamese ? 'Phân tích độ phù hợp CV – Job' : 'CV – Job fit analysis',
+      note: isVietnamese ? 'Mỗi lần so khớp một CV với một tin tuyển dụng' : 'One CV matched against one job post',
+      tokens: 2500,
+      label: '2.500',
+      usage: userSubscription.cvJobFitCount,
+    },
+    {
+      name: isVietnamese ? 'Soạn thư ứng tuyển' : 'Cover letter & email',
+      note: isVietnamese ? 'Một bản nháp, có thể soạn lại' : 'One draft, can be regenerated',
+      tokens: 2000,
+      label: '1.200 – 2.000',
+      usage: userSubscription.coverLettersGeneratedCount,
+    },
+    {
+      name: isVietnamese ? 'Hỏi đáp với trợ lý nghề nghiệp' : 'Career assistant question',
+      note: isVietnamese ? 'Một câu trả lời có ngữ cảnh hồ sơ' : 'One answer using your profile context',
+      tokens: 1500,
+      label: '800 – 1.500',
+      usage: userSubscription.aiQueriesCount,
+    },
+  ];
 
   const faqs = [
     {
@@ -111,387 +294,324 @@ export const SubscriptionPage: React.FC = () => {
         ? 'Tôi có nhận được hóa đơn giá trị gia tăng (VAT) hợp lệ không?'
         : 'Can I receive an official VAT / tax invoice for my payment?',
       a: isVietnamese
-        ? 'Hóa đơn điện tử hợp lệ theo quy định của Bộ Tài Chính sẽ tự động được khởi tạo ngay sau khi thanh toán thành công. Bạn có thể xem và tải về tại tab "Lịch sử thanh toán & Hóa đơn".'
-        : 'Yes. An official electronic tax invoice is automatically generated upon transaction completion. You can view and download it anytime from the "Payment History" tab.',
+        ? 'Hóa đơn điện tử hợp lệ theo quy định của Bộ Tài Chính sẽ tự động được khởi tạo ngay sau khi thanh toán thành công. Bạn có thể xem và tải về ở mục "Lịch sử thanh toán".'
+        : 'Yes. An official electronic tax invoice is automatically generated upon transaction completion. You can view and download it anytime under "Payment history".',
     },
   ];
 
+  const visibleTxns = showAllTxns ? transactions : transactions.slice(0, 5);
+
   return (
-    <div className="space-y-8 animate-fade-in pb-16">
-      {/* Page Title & Navigation Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-5">
-        <div>
-          <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight flex items-center gap-3 [&>svg]:hidden">
-            <CreditCard className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-            <span>{t.subscriptionPage.title}</span>
-          </h1>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            {t.subscriptionPage.subtitle}
-          </p>
-        </div>
+    <div className="pb-[clamp(3rem,6vw,5rem)] pt-[clamp(1.75rem,3.5vw,2.5rem)]">
+      {/* ─── Plans ─── */}
+      <Headline
+        eyebrow={c.eyebrow}
+        line1={c.line1}
+        line2={c.line2}
+        intro={c.intro}
+        aside={
+          <div role="radiogroup" aria-label={c.eyebrow} className="flex shrink-0 gap-7">
+            {(['monthly', 'yearly'] as BillingCycle[]).map((cycle) => {
+              const active = billingCycle === cycle;
+              return (
+                <button
+                  key={cycle}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setBillingCycle(cycle)}
+                  className={`border-b-2 pb-2 text-[15px] transition-colors ${
+                    active ? 'border-ink text-ink' : 'border-transparent text-slate-600 hover:text-ink'
+                  }`}
+                >
+                  {cycle === 'monthly' ? c.monthly : c.yearly}
+                  {cycle === 'yearly' && yearlySaving > 0 && (
+                    <span className="ml-1.5 text-[13px] text-brand">{c.save(yearlySaving)}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        }
+      />
 
-        {/* Tab switchers */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700/80 self-start md:self-auto">
-          <button
-            onClick={() => setActiveTab('plans')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
-              activeTab === 'plans'
-                ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <Lightbulb className="w-4 h-4 text-emerald-600" />
-            <span>{isVietnamese ? 'Gói cước & Hạn mức' : 'Plans & Quota'}</span>
-          </button>
+      <div className="mt-[clamp(2rem,4vw,3rem)] grid border-b border-ink md:grid-cols-3">
+        {plans.map((plan, idx) => {
+          const isCurrent = plan.id === userSubscription.planId;
+          const isFree = plan.monthlyPriceVND === 0;
+          const yearly = billingCycle === 'yearly' && !isFree;
+          const price = yearly ? Math.round(plan.yearlyPriceVND / 12) : plan.monthlyPriceVND;
+          const expanded = !!expandedPlans[plan.id];
+          const features = expanded ? plan.features : plan.features.slice(0, 5);
+          const hidden = plan.features.length - 5;
 
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
-              activeTab === 'history'
-                ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <Receipt className="w-4 h-4 text-emerald-600" />
-            <span>{t.subscriptionPage.paymentHistoryTitle}</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
-              {transactions.length}
-            </span>
-          </button>
-        </div>
+          return (
+            <article
+              key={plan.id}
+              className={`flex flex-col border-t border-border px-0 py-7 md:px-[clamp(1rem,2vw,1.75rem)] ${
+                idx > 0 ? 'md:border-l' : ''
+              } ${plan.highlight ? 'border-t-2 border-t-brand' : ''}`}
+            >
+              <p className={`h-5 text-xs ${isCurrent ? 'text-slate-600' : 'text-brand'}`}>
+                {isCurrent ? c.currentPlan : plan.highlight ? plan.badge || c.popular : ''}
+              </p>
+              <h3 className="mt-1 text-[clamp(1.375rem,2vw,1.75rem)] font-normal text-ink">{planName(plan)}</h3>
+              <p className="mt-4 flex flex-wrap items-baseline gap-x-1.5">
+                <span className="text-[clamp(2.25rem,3.6vw,3rem)] font-normal leading-none tracking-[-0.03em] text-ink">
+                  {vnd(price)}
+                </span>
+                {!isFree && <span className="text-sm text-slate-600">{c.perMonth}</span>}
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                {isFree ? c.free : yearly ? c.billedYearly(vnd(plan.yearlyPriceVND)) : c.billedMonthly}
+              </p>
+              <p className="mt-4 min-h-[3rem] text-sm leading-6 text-slate-700">{plan.description}</p>
+
+              <div className="mt-6">
+                {isCurrent ? (
+                  <button type="button" disabled className={outlineButton}>
+                    {c.currentPlan}
+                  </button>
+                ) : plan.monthlyPriceVND > currentPrice ? (
+                  <button type="button" onClick={() => handleSelectPlan(plan)} className={primaryButton}>
+                    {c.upgradeTo(planName(plan))}
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => handleSelectPlan(plan)} className={outlineButton}>
+                    {c.switchTo(planName(plan))}
+                  </button>
+                )}
+                {isCurrent && (
+                  <p className="mt-2 text-center text-xs text-slate-500">{c.renews(userSubscription.expiresDate)}</p>
+                )}
+              </div>
+
+              <ul className="mt-6 space-y-2 border-t border-border pt-5">
+                {features.map((feature) => (
+                  <li key={feature} className="flex gap-2.5 text-sm leading-6 text-slate-800">
+                    <Check size={15} className="mt-[5px] shrink-0 text-brand" aria-hidden="true" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              {hidden > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setExpandedPlans((prev) => ({ ...prev, [plan.id]: !expanded }))}
+                  className={`${textLink} mt-4 self-start text-slate-600`}
+                >
+                  {expanded ? c.lessBenefits : c.moreBenefits(hidden)}
+                </button>
+              )}
+            </article>
+          );
+        })}
       </div>
 
-      {/* Main Tab Content */}
-      {activeTab === 'plans' ? (
-        <div className="space-y-8">
-          {/* Active Subscription & Quota Card */}
-          <div className="relative rounded-3xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/30 p-6 md:p-8 shadow-sm overflow-hidden">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-neutral-200/60 dark:border-neutral-800">
-              <div>
-                <div className="flex items-center gap-2.5 mb-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-600 text-white shadow-sm flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>{t.subscriptionPage.currentPlanBadge}: {userSubscription.planName}</span>
-                  </span>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {userSubscription.billingCycle === 'yearly'
-                      ? t.subscriptionPage.billingYearly
-                      : t.subscriptionPage.billingMonthly}
-                  </span>
-                </div>
-                <h2 className="text-xl md:text-2xl font-medium text-neutral-900 dark:text-neutral-100">
-                  {t.subscriptionPage.activeQuotaTitle}
-                </h2>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>
-                    {t.subscriptionPage.tokensResetDate}: <strong>{userSubscription.expiresDate}</strong>
-                  </span>
-                </p>
+      <p className="mt-5 text-[13px] leading-6 text-slate-600">
+        {c.footnote}{' '}
+        <Link to="/candidate/support" className={`${textLink} text-[13px] text-ink`}>
+          {c.contactSupport}
+        </Link>
+      </p>
+
+      {/* ─── Tokens ─── */}
+      <div className="mt-[clamp(4rem,8vw,6.5rem)]">
+        <Headline
+          eyebrow={c.tokenEyebrow}
+          line1={c.tokenLine1}
+          line2={c.tokenLine2}
+          intro={c.tokenIntro}
+          aside={
+            <div className="shrink-0 lg:text-right">
+              <p className="text-[13px] text-slate-600">{c.balance}</p>
+              <p className="mt-1 text-[clamp(3rem,6vw,4.5rem)] font-normal leading-none tracking-[-0.03em] text-brand tabular-nums">
+                {num(remaining)}
+              </p>
+              <p className="mt-3 text-xs text-slate-500">
+                {c.balanceNote(currentPlan ? planName(currentPlan) : userSubscription.planName, num(currentPlan?.tokenMonthlyQuota ?? userSubscription.tokenLimit))}
+              </p>
+              <div className="mt-3 h-px w-full bg-border lg:ml-auto lg:w-64">
+                <div className="h-px bg-brand" style={{ width: `${usedPct}%` }} />
               </div>
-
-              {/* Action buttons */}
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => setIsQuotaRulesOpen(true)}
-                  className="px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-surface dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-700/60 transition flex items-center gap-1.5 shadow-xs"
-                >
-                  <Info className="w-4 h-4 text-neutral-500" />
-                  <span>{t.subscriptionPage.viewQuotaRulesBtn}</span>
-                </button>
-                <button
-                  onClick={() => setIsTopupOpen(true)}
-                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  <span>{t.subscriptionPage.topupTokensBtn}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Token Progress Bar & Breakdown stats */}
-            <div className="pt-6 space-y-6">
-              <div>
-                <div className="flex justify-between items-baseline mb-2">
-                  <div className="flex items-center gap-1.5 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-                    <span>AI Tokens</span>
-                  </div>
-                  <div className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                    <span className="font-medium text-neutral-900 dark:text-neutral-100 font-mono">
-                      {userSubscription.tokensUsed.toLocaleString('vi-VN')}
-                    </span>{' '}
-                    / {userSubscription.tokenLimit.toLocaleString('vi-VN')} Tokens ({tokenPercentage}%)
-                  </div>
-                </div>
-
-                <div className="w-full h-3 rounded-full bg-neutral-200/80 dark:bg-neutral-800 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-700 ${
-                      tokenPercentage > 90
-                        ? 'bg-rose-500'
-                        : tokenPercentage > 70
-                        ? 'bg-amber-500'
-                        : ' bg-emerald-500 '
-                    }`}
-                    style={{ width: `${tokenPercentage}%` }}
-                  />
-                </div>
-
-                <div className="flex justify-between items-center text-[11px] text-neutral-400 mt-1.5 font-medium">
-                  <span>0 Tokens</span>
-                  <span>
-                    Còn lại:{' '}
-                    <strong className="text-emerald-600 dark:text-emerald-400 font-mono">
-                      {(userSubscription.tokenLimit - userSubscription.tokensUsed).toLocaleString('vi-VN')}
-                    </strong>{' '}
-                    Tokens
-                  </span>
-                  <span>{userSubscription.tokenLimit.toLocaleString('vi-VN')} Tokens</span>
-                </div>
-              </div>
-
-              {/* Counter breakdown widgets */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                <div className="p-3.5 rounded-2xl bg-surface dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
-                  <div className="flex items-center justify-between text-neutral-500 text-xs mb-1.5">
-                    <span>{t.subscriptionPage.cvParsingQuota}</span>
-                    <FileText className="w-4 h-4 text-emerald-600" />
-                  </div>
-                  <div className="text-lg font-medium text-neutral-900 dark:text-neutral-100 font-mono">
-                    {userSubscription.cvParsedCount}
-                    <span className="text-xs font-normal text-neutral-400"> / {t.subscriptionPage.unlimited}</span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-surface dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
-                  <div className="flex items-center justify-between text-neutral-500 text-xs mb-1.5">
-                    <span>{t.subscriptionPage.jobFitQuota}</span>
-                    <Target className="w-4 h-4 text-teal-600" />
-                  </div>
-                  <div className="text-lg font-medium text-neutral-900 dark:text-neutral-100 font-mono">
-                    {userSubscription.cvJobFitCount}
-                    <span className="text-xs font-normal text-neutral-400"> / {t.subscriptionPage.unlimited}</span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-surface dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
-                  <div className="flex items-center justify-between text-neutral-500 text-xs mb-1.5">
-                    <span>{t.subscriptionPage.aiAssistantQuota}</span>
-                    <MessageSquare className="w-4 h-4 text-brand-600" />
-                  </div>
-                  <div className="text-lg font-medium text-neutral-900 dark:text-neutral-100 font-mono">
-                    {userSubscription.aiQueriesCount}
-                    <span className="text-xs font-normal text-neutral-400"> / {t.subscriptionPage.unlimited}</span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-surface dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
-                  <div className="flex items-center justify-between text-neutral-500 text-xs mb-1.5">
-                    <span>{t.subscriptionPage.coverLetterQuota}</span>
-                    <MailCheck className="w-4 h-4 text-brand-600" />
-                  </div>
-                  <div className="text-lg font-medium text-neutral-900 dark:text-neutral-100 font-mono">
-                    {userSubscription.coverLettersGeneratedCount}
-                    <span className="text-xs font-normal text-neutral-400"> / {t.subscriptionPage.unlimited}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing Plans Section Header & Toggle */}
-          <div className="text-center space-y-3 pt-6">
-            <h2 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
-              {t.subscriptionPage.planComparisonTitle}
-            </h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto">
-              {t.subscriptionPage.planComparisonSubtitle}
-            </p>
-
-            {/* Monthly / Yearly Toggle */}
-            <div className="pt-3 inline-flex items-center p-1 rounded-2xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-              <button
-                type="button"
-                onClick={() => setBillingCycle('monthly')}
-                className={`px-4 py-2 rounded-xl text-xs font-medium transition ${
-                  billingCycle === 'monthly'
-                    ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                    : 'text-neutral-600 dark:text-neutral-400'
-                }`}
-              >
-                {t.subscriptionPage.billingMonthly}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingCycle('yearly')}
-                className={`px-4 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 ${
-                  billingCycle === 'yearly'
-                    ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                    : 'text-neutral-600 dark:text-neutral-400'
-                }`}
-              >
-                <span>{t.subscriptionPage.billingYearly}</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-                  {t.subscriptionPage.savePercent}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Plan Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {plans.map((plan) => (
-              <SubscriptionPlanCard
-                key={plan.id}
-                plan={plan}
-                billingCycle={billingCycle}
-                currentPlanId={userSubscription.planId}
-                onSelectPlan={handleSelectPlan}
-              />
-            ))}
-          </div>
-
-          {/* Detailed Feature Comparison Table */}
-          <div className="rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 overflow-hidden shadow-sm pt-6">
-            <div className="px-6 pb-4">
-              <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
-                {isVietnamese ? 'Ma trận so sánh tính năng chi tiết' : 'Detailed Feature Comparison Matrix'}
-              </h3>
-              <p className="text-xs text-neutral-500">
-                {isVietnamese
-                  ? 'Minh bạch từng chỉ tiêu hạn ngạch và đặc quyền chuyên sâu'
-                  : 'Transparent quotas and tier privileges'}
+              <p className="mt-1.5 text-xs text-slate-500">
+                {c.used(num(userSubscription.tokensUsed), num(userSubscription.tokenLimit))}
               </p>
             </div>
+          }
+        />
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 dark:text-neutral-400 uppercase text-[10px] tracking-wider border-y border-neutral-200 dark:border-neutral-800">
-                  <tr>
-                    <th className="py-3 px-6">Tính năng / Quyền lợi</th>
-                    <th className="py-3 px-4 text-center">Khởi đầu (Free)</th>
-                    <th className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400 font-medium">
-                      Chuyên nghiệp (Pro)
-                    </th>
-                    <th className="py-3 px-4 text-center text-brand-600 dark:text-brand-400 font-medium">
-                      Cao cấp (Executive VIP)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">AI Tokens hàng tháng</td>
-                    <td className="py-3.5 px-4 text-center font-mono">20,000</td>
-                    <td className="py-3.5 px-4 text-center font-mono font-medium text-emerald-600">250,000</td>
-                    <td className="py-3.5 px-4 text-center font-mono font-medium text-brand-600">1,000,000</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">Số lượng CV lưu trữ & Phân tích ATS</td>
-                    <td className="py-3.5 px-4 text-center">Tối đa 3 bản</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-emerald-600">Không giới hạn</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Không giới hạn</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">Lượt phân tích CV–Job Fit</td>
-                    <td className="py-3.5 px-4 text-center">5 lượt / tháng</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-emerald-600">Không giới hạn</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Không giới hạn</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">Trợ lý AI sự nghiệp (Chatbot tương tác)</td>
-                    <td className="py-3.5 px-4 text-center">15 tin nhắn / tháng</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-emerald-600">Không giới hạn</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Không giới hạn</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">Tạo Cover Letter & Email ứng tuyển</td>
-                    <td className="py-3.5 px-4 text-center">5 bản / tháng</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-emerald-600">Không giới hạn</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Không giới hạn</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">Ưu đãi khi đặt lịch Cố vấn 1-on-1</td>
-                    <td className="py-3.5 px-4 text-center text-neutral-400">—</td>
-                    <td className="py-3.5 px-4 text-center font-semibold text-emerald-600">Giảm 15%</td>
-                    <td className="py-3.5 px-4 text-center font-semibold text-brand-600">
-                      Tặng 1 buổi/quý (Trị giá 600k)
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">Huy hiệu "Ứng viên nổi bật" (Featured)</td>
-                    <td className="py-3.5 px-4 text-center text-neutral-400">—</td>
-                    <td className="py-3.5 px-4 text-center text-neutral-400">—</td>
-                    <td className="py-3.5 px-4 text-center text-brand-600 font-medium">Có đặc quyền</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">Báo cáo mức lương theo công ty (Intelligence)</td>
-                    <td className="py-3.5 px-4 text-center">Cơ bản</td>
-                    <td className="py-3.5 px-4 text-center">Nâng cao</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Toàn diện + Dự báo</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3.5 px-6 font-semibold">Hỗ trợ khách hàng ưu tiên 24/7</td>
-                    <td className="py-3.5 px-4 text-center">Tiêu chuẩn</td>
-                    <td className="py-3.5 px-4 text-center">Ưu tiên (trong 4h)</td>
-                    <td className="py-3.5 px-4 text-center font-medium text-brand-600">Chuyên viên hỗ trợ riêng 24/7</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* FAQs Accordion */}
-          <div className="space-y-4 pt-6">
-            <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-              <HelpCircle className="w-5 h-5 text-emerald-600" />
-              <span>{isVietnamese ? 'Câu hỏi thường gặp về Gói cước & Thanh toán' : 'Frequently Asked Questions'}</span>
-            </h3>
-
-            <div className="space-y-3">
-              {faqs.map((faq, index) => {
-                const isOpen = openFaqIndex === index;
+        <div className="mt-[clamp(2rem,4vw,3rem)] grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-14 lg:grid-cols-2">
+          {/* 01 Packs */}
+          <section>
+            <SectionHead index="01" title={c.packsTitle} />
+            <div role="radiogroup" aria-label={c.packsTitle}>
+              {packs.map((pack) => {
+                const active = pack.id === selectedPackId;
+                const saving = basePerThousand ? Math.round((1 - perThousand(pack) / basePerThousand) * 100) : 0;
                 return (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 overflow-hidden"
+                  <button
+                    key={pack.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => {
+                      setSelectedPackId(pack.id);
+                      setToppedUp(null);
+                    }}
+                    className="group flex w-full items-start gap-4 border-b border-border py-5 text-left"
                   >
-                    <button
-                      type="button"
-                      onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                      className="w-full p-4 text-left flex justify-between items-center text-xs md:text-sm font-semibold text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition"
+                    <span
+                      className={`mt-1.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors ${
+                        active ? 'border-ink' : 'border-slate-400 group-hover:border-ink'
+                      }`}
+                      aria-hidden="true"
                     >
-                      <span>{faq.q}</span>
-                      {isOpen ? <ChevronUp className="w-4 h-4 shrink-0 text-neutral-500" /> : <ChevronDown className="w-4 h-4 shrink-0 text-neutral-500" />}
-                    </button>
-                    {isOpen && (
-                      <div className="px-4 pb-4 pt-1 text-xs text-neutral-600 dark:text-neutral-400 border-t border-neutral-100 dark:border-neutral-800 leading-relaxed">
-                        {faq.a}
-                      </div>
-                    )}
-                  </div>
+                      {active && <span className="h-2 w-2 rounded-full bg-ink" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className={`block text-[clamp(1.0625rem,1.4vw,1.25rem)] ${active ? 'text-ink' : 'text-slate-800'}`}>
+                        {num(pack.tokens)} {c.tokens}
+                      </span>
+                      {saving > 0 && <span className="mt-0.5 block text-xs text-brand">{c.saving(saving)}</span>}
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="block text-[clamp(1.0625rem,1.4vw,1.25rem)] text-ink tabular-nums">{vnd(pack.priceVND)}</span>
+                      <span className="mt-0.5 block text-xs text-slate-500">
+                        {vnd(Math.round(perThousand(pack)))} {c.per1k}
+                      </span>
+                    </span>
+                  </button>
                 );
               })}
             </div>
-          </div>
-        </div>
-      ) : (
-        /* Payment History Tab */
-        <div className="space-y-6">
-          <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-700/80 text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-            <Info className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>
-              {isVietnamese
-                ? 'Hệ thống lưu trữ toàn bộ lịch sử giao dịch và biên lai điện tử VAT hợp lệ. Bạn có thể nhấn "Xem biên lai" để in hoặc lưu trữ báo cáo.'
-                : 'All transactions and VAT receipts are logged. Click "View Receipt" to print or download PDF invoices.'}
-            </span>
-          </div>
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+              <p className="text-sm text-slate-700" aria-live="polite">
+                {toppedUp ? (
+                  <span className="inline-flex items-center gap-1.5 text-brand">
+                    <Check size={15} aria-hidden="true" />
+                    {c.toppedUp(num(toppedUp))}
+                  </span>
+                ) : selectedPack ? (
+                  c.picked(num(selectedPack.tokens), vnd(selectedPack.priceVND))
+                ) : (
+                  c.pickPack
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={() => void handleTopup()}
+                disabled={!selectedPack || isToppingUp}
+                className={primaryButton.replace('w-full', 'w-auto')}
+              >
+                {isToppingUp ? c.topping : c.topup}
+              </button>
+            </div>
+          </section>
 
-          <PaymentHistoryTable transactions={transactions} />
+          {/* 02 Costs */}
+          <section>
+            <SectionHead index="02" title={c.rulesTitle} />
+            <ul>
+              {tokenCosts.map((row) => (
+                <li key={row.name} className="flex items-start justify-between gap-6 border-b border-border py-4">
+                  <span className="min-w-0">
+                    <span className="block text-[15px] text-ink">{row.name}</span>
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      {row.note} · {c.thisMonth(row.usage)}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="block text-[15px] text-brand tabular-nums">
+                      {row.label} {c.tokens}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      ≈ {vnd(Math.round((row.tokens * basePerThousand) / 1000))}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-xs leading-5 text-slate-500">
+              {c.rulesNote}{' '}
+              <button type="button" onClick={() => setIsQuotaRulesOpen(true)} className={`${textLink} text-xs text-ink`}>
+                {c.rulesDetail}
+              </button>
+            </p>
+          </section>
         </div>
-      )}
+      </div>
 
-      {/* Checkout Modal */}
+      {/* ─── History & FAQ ─── */}
+      <div className="mt-[clamp(4rem,8vw,6.5rem)] grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-14 lg:grid-cols-2">
+        <section>
+          <SectionHead index="03" title={c.historyTitle} />
+          {transactions.length === 0 ? (
+            <p className="py-6 text-sm text-slate-600">{c.historyEmpty}</p>
+          ) : (
+            <ul>
+              {visibleTxns.map((txn) => (
+                <li key={txn.id} className="flex items-start justify-between gap-6 border-b border-border py-4">
+                  <span className="min-w-0">
+                    <span className="block text-[15px] text-ink">{txn.planName}</span>
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      {txn.orderCode} · {txn.paymentMethod.toUpperCase()} · {txn.createdAt}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="block text-[15px] text-ink tabular-nums">{vnd(txn.finalAmountVND)}</span>
+                    <span className="mt-0.5 flex items-center justify-end gap-3 text-xs">
+                      <span
+                        className={
+                          txn.status === 'success' ? 'text-brand' : txn.status === 'pending' ? 'text-warning' : 'text-danger'
+                        }
+                      >
+                        {c.status[txn.status] ?? txn.status}
+                      </span>
+                      <button type="button" onClick={() => setReceiptTxn(txn)} className={`${textLink} text-xs text-slate-700`}>
+                        {c.receipt}
+                      </button>
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {transactions.length > 5 && (
+            <button type="button" onClick={() => setShowAllTxns((v) => !v)} className={`${textLink} mt-4 text-slate-700`}>
+              {showAllTxns ? c.showLess : c.showAll(transactions.length)}
+            </button>
+          )}
+        </section>
+
+        <section>
+          <SectionHead index="04" title={c.faqTitle} />
+          <ul>
+            {faqs.map((faq, index) => {
+              const isOpen = openFaqIndex === index;
+              return (
+                <li key={faq.q} className="border-b border-border">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-start justify-between gap-6 py-4 text-left text-[15px] text-ink transition-colors hover:text-brand"
+                  >
+                    <span>{faq.q}</span>
+                    {isOpen ? (
+                      <Minus size={16} className="mt-1 shrink-0 text-slate-500" aria-hidden="true" />
+                    ) : (
+                      <Plus size={16} className="mt-1 shrink-0 text-slate-500" aria-hidden="true" />
+                    )}
+                  </button>
+                  {isOpen && <p className="pb-5 pr-8 text-sm leading-7 text-slate-600">{faq.a}</p>}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      </div>
+
       {selectedPlanForCheckout && (
         <PaymentCheckoutModal
           plan={selectedPlanForCheckout}
@@ -507,20 +627,9 @@ export const SubscriptionPage: React.FC = () => {
         />
       )}
 
-      {/* Token Top-up Modal */}
-      <TokenTopupModal
-        isOpen={isTopupOpen}
-        onClose={() => setIsTopupOpen(false)}
-        onSuccess={() => {
-          refreshData();
-        }}
-      />
+      <InvoiceReceiptModal transaction={receiptTxn} isOpen={!!receiptTxn} onClose={() => setReceiptTxn(null)} />
 
-      {/* Token Quota Rules Modal */}
-      <TokenQuotaRulesModal
-        isOpen={isQuotaRulesOpen}
-        onClose={() => setIsQuotaRulesOpen(false)}
-      />
+      <TokenQuotaRulesModal isOpen={isQuotaRulesOpen} onClose={() => setIsQuotaRulesOpen(false)} />
     </div>
   );
 };

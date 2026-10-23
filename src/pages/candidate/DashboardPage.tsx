@@ -1,19 +1,7 @@
-import {
-  ArrowUpRight,
-  BriefcaseBusiness,
-  FileText,
-  Target,
-  Zap,
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  Edit3,
-  MapPin,
-  Lightbulb,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Badge, Button, Card, ErrorState, Loading, PageTitle, StatCard } from '../../components/ui';
+import { ErrorState, Loading } from '../../components/ui';
 import {
   getCandidateProfile,
   getRecommendations,
@@ -21,8 +9,44 @@ import {
 } from '../../mocks/services/mockService';
 import { useTranslation } from '../../i18n';
 
+// Short page-only strings that have no i18n key yet.
+const copy = {
+  vi: {
+    profileReached: (p: number) => `Hồ sơ của bạn đã ${p}%.`,
+    remainingHint: (p: number) => `Còn ${p}% để nhận gợi ý chính xác hơn`,
+    atsLabel: 'Điểm ATS của CV',
+    atsReady: 'Sẵn sàng gửi ứng tuyển',
+    atsShort: 'điểm ATS',
+    yourGoal: 'Mục tiêu của bạn',
+    perMonth: 'tháng',
+    matchSuffix: 'phù hợp',
+    nextSteps: 'Bước tiếp theo',
+    improveCv: 'Phân tích và cải thiện CV bằng AI',
+    continueRoadmap: 'Tiếp tục lộ trình học tập',
+    manageCv: 'Quản lý CV',
+  },
+  en: {
+    profileReached: (p: number) => `Your profile is ${p}% complete.`,
+    remainingHint: (p: number) => `${p}% to go for sharper recommendations`,
+    atsLabel: 'CV ATS score',
+    atsReady: 'Ready to apply',
+    atsShort: 'ATS score',
+    yourGoal: 'Your goal',
+    perMonth: 'month',
+    matchSuffix: 'match',
+    nextSteps: 'Next steps',
+    improveCv: 'Analyse and improve your CV with AI',
+    continueRoadmap: 'Continue your learning roadmap',
+    manageCv: 'Manage CVs',
+  },
+};
+
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand';
+
 export default function DashboardPage() {
-  const { t } = useTranslation();
+  const { t, isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
 
   const { data: profile } = useQuery({
     queryKey: ['profile'],
@@ -40,343 +64,209 @@ export default function DashboardPage() {
   });
 
   const bestResume = resumes?.[0];
+  const atsScore = bestResume?.atsScore ?? 88;
   const profileCompletion = profile?.completion ?? 85;
   const candidateFirstName = profile?.name ? profile.name.split(' ').slice(-1)[0] : 'Alex';
+  const recommendedCount = 24;
 
-  const recentActivities = [
-    { text: t('dashboard.activity4'), time: 'Hôm nay' },
-    { text: t('dashboard.activity1'), time: `1 ${t('dashboard.daysAgo')}` },
-    { text: t('dashboard.activity2'), time: `2 ${t('dashboard.daysAgo')}` },
-    { text: t('dashboard.activity3'), time: `3 ${t('dashboard.daysAgo')}` },
+  const greeting = t('dashboard.greeting').replace('Alex', candidateFirstName);
+  const salary =
+    profile?.expectedSalary ||
+    (profile?.salaryMin
+      ? `${profile.salaryMin.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`
+      : '35,000,000 – 55,000,000 VNĐ');
+  const goalMeta = [
+    `${salary} / ${c.perMonth}`,
+    profile?.employmentType || 'Full-time / Hybrid',
+    profile?.preferredLocations?.join(', ') || profile?.location || 'Hồ Chí Minh',
+  ];
+
+  const stats = [
+    {
+      to: '/candidate/resumes',
+      label: c.atsLabel,
+      value: String(atsScore),
+      detail: c.atsReady,
+    },
+    {
+      to: '/candidate/jobs',
+      label: t('dashboard.recommendedJobsCount'),
+      value: String(recommendedCount),
+      detail: t('dashboard.recommendedJobsDetail'),
+    },
+    {
+      to: undefined,
+      label: t('dashboard.averageMatch'),
+      value: '88%',
+      detail: t('dashboard.averageMatchDetail'),
+    },
+  ];
+
+  const nextSteps = [
+    {
+      to: `/candidate/resumes/${bestResume?.id || 'cv-1'}/analysis`,
+      title: c.improveCv,
+      detail: `${bestResume?.name ?? 'Frontend Developer CV'} · ${c.atsShort} ${atsScore}`,
+    },
+    {
+      to: '/candidate/learning/roadmap',
+      title: c.continueRoadmap,
+      detail: `${t('dashboard.learningRoadmapSubtitle')} · ${t('dashboard.stagesComplete')}`,
+    },
   ];
 
   return (
-    <>
-      <PageTitle
-        title={t('dashboard.greeting').replace('Alex', candidateFirstName)}
-        subtitle={t('dashboard.greetingSubtitle')}
-        action={
-          <div className="flex items-center gap-3">
-            <Link to="/candidate/profile/edit">
-              <Button variant="secondary">
-                <Edit3 size={15} />
-                {t('dashboard.quickEditPreferences')}
-              </Button>
-            </Link>
-            <Link to="/candidate/jobs">
-              <Button variant="primary">
-                <BriefcaseBusiness size={15} />
-                {t('dashboard.viewAllJobs')}
-              </Button>
+    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+      {/* Greeting */}
+      <header>
+        <p className="text-sm text-brand">{t('nav.dashboard')}</p>
+        <h1 className="mt-[clamp(1.25rem,3vw,2rem)] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {greeting}
+          {greeting.endsWith('.') ? '' : '.'}
+          <span className="block text-brand">{c.profileReached(profileCompletion)}</span>
+        </h1>
+
+        <div className="mt-[clamp(1.5rem,3vw,2.25rem)] max-w-[34rem]">
+          <div
+            className="h-[3px] w-full bg-slate-200"
+            role="progressbar"
+            aria-valuenow={profileCompletion}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={t('dashboard.profileCompletion')}
+          >
+            <div
+              className="h-full bg-brand transition-[width] duration-500"
+              style={{ width: `${profileCompletion}%` }}
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <p className="text-sm text-slate-600">{c.remainingHint(100 - profileCompletion)}</p>
+            <Link to="/candidate/profile" className={`${textLink} text-ink`}>
+              {t('dashboard.profileCompletion')}
             </Link>
           </div>
-        }
-      />
-
-      {/* Overview Stat Cards */}
-      <div className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Link to="/candidate/profile" className="block transition-transform">
-          <StatCard
-            label={t('dashboard.profileCompletion')}
-            value={`${profileCompletion}%`}
-            detail={t('dashboard.profileCompletionDetail')}
-            icon={<Target size={20} />}
-          />
-        </Link>
-        <Link to="/candidate/resumes" className="block transition-transform">
-          <StatCard
-            label={t('dashboard.myResumesCount')}
-            value={String(resumes?.length || 3)}
-            detail={t('dashboard.myResumesDetail')}
-            icon={<FileText size={20} />}
-          />
-        </Link>
-        <Link to="/candidate/jobs" className="block transition-transform">
-          <StatCard
-            label={t('dashboard.recommendedJobsCount')}
-            value="24"
-            detail={t('dashboard.recommendedJobsDetail')}
-            icon={<BriefcaseBusiness size={20} />}
-          />
-        </Link>
-        <div className="block">
-          <StatCard
-            label={t('dashboard.averageMatch')}
-            value="88%"
-            detail={t('dashboard.averageMatchDetail')}
-            icon={<Zap size={20} />}
-          />
         </div>
-      </div>
+      </header>
 
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <div className="space-y-6">
-          {/* Thông tin nghề nghiệp & Nguyện vọng (Career Snapshot) */}
-          <Card className="border border-brand-100 bg-surface">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-100 text-brand-700">
-                    <Target size={16} />
-                  </span>
-                  <h2 className="text-base font-medium text-slate-900">
-                    {t('dashboard.careerSnapshot')}
-                  </h2>
-                </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  {t('dashboard.careerSnapshotSubtitle')}
-                </p>
-              </div>
-
-              <Link to="/candidate/profile/edit">
-                <Button variant="secondary" className="text-xs py-1.5 px-3">
-                  <Edit3 size={13} />
-                  {t('dashboard.quickEditPreferences')}
-                </Button>
-              </Link>
+      {/* Stats */}
+      <section className="mt-[clamp(2.5rem,5vw,3.75rem)] grid border-y border-t-ink border-b-border sm:grid-cols-3">
+        {stats.map((stat, index) => {
+          const body = (
+            <>
+              <p className="text-[13px] text-slate-600">{stat.label}</p>
+              <p className="mt-2 text-[clamp(2.25rem,3.6vw,3rem)] font-normal leading-none tracking-[-0.02em] text-ink tabular-nums">
+                {stat.value}
+              </p>
+              <p className="mt-2.5 text-[13px] text-slate-600">{stat.detail}</p>
+            </>
+          );
+          const cell = `block py-5 sm:py-6 ${
+            index > 0 ? 'border-t border-border sm:border-t-0 sm:border-l sm:pl-[clamp(1.25rem,3vw,2.5rem)]' : ''
+          }`;
+          return stat.to ? (
+            <Link key={stat.label} to={stat.to} className={`${cell} transition-colors hover:text-brand`}>
+              {body}
+            </Link>
+          ) : (
+            <div key={stat.label} className={cell}>
+              {body}
             </div>
+          );
+        })}
+      </section>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-xl border border-slate-100 bg-surface p-3.5 shadow-2xs">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  {t('dashboard.targetRoleLabel')}
-                </p>
-                <p className="mt-1 font-medium text-slate-900 text-sm">
-                  {profile?.targetPosition || 'Senior Frontend Engineer'}
-                </p>
-                <span className="mt-1.5 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-                  {profile?.experienceLevel || 'Senior Level'}
-                </span>
-              </div>
+      {/* Goal */}
+      <section className="mt-[clamp(2.5rem,5vw,3.75rem)]">
+        <p className="text-[13px] text-slate-600">{c.yourGoal}</p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+          <div className="min-w-0">
+            <h2 className="text-[clamp(1.25rem,2vw,1.5rem)] font-normal tracking-[-0.01em] text-ink">
+              {profile?.targetPosition || 'Senior Frontend Engineer'}
+            </h2>
+            <p className="mt-1.5 text-[15px] text-slate-600">{goalMeta.join(' · ')}</p>
+          </div>
+          <Link to="/candidate/profile/edit" className={`${textLink} text-ink`}>
+            {t('dashboard.quickEditPreferences')}
+          </Link>
+        </div>
+      </section>
 
-              <div className="rounded-xl border border-slate-100 bg-surface p-3.5 shadow-2xs">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  {t('dashboard.expectedSalaryLabel')}
-                </p>
-                <p className="mt-1 font-medium text-emerald-600 text-sm">
-                  {profile?.expectedSalary ||
-                    (profile?.salaryMin
-                      ? `${profile.salaryMin.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`
-                      : '35,000,000 – 55,000,000 VNĐ')}
-                </p>
-                <p className="mt-1 text-xs text-slate-400">
-                  {profile?.salaryCurrency || 'VNĐ'} / tháng
-                </p>
-              </div>
+      {/* Recommended jobs */}
+      <section className="mt-[clamp(3rem,6vw,4.5rem)]">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-ink pb-4">
+          <h2 className="text-[clamp(1.375rem,2.2vw,1.75rem)] font-normal tracking-[-0.01em] text-ink">
+            {t('dashboard.recommendedForYou')}
+          </h2>
+          <Link to="/candidate/jobs" className={`${textLink} text-brand hover:text-ink`}>
+            {t('dashboard.viewAllJobs')} {recommendedCount}
+          </Link>
+        </div>
 
-              <div className="rounded-xl border border-slate-100 bg-surface p-3.5 shadow-2xs">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  {t('dashboard.workTypeLabel')}
-                </p>
-                <p className="mt-1 font-semibold text-slate-800 text-sm">
-                  {profile?.employmentType || 'Full-time / Hybrid'}
-                </p>
-                <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                  <MapPin size={12} className="text-slate-400" />
-                  <span className="truncate">
-                    {profile?.preferredLocations?.join(', ') || profile?.location || 'Hồ Chí Minh'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Core Skills Snapshot */}
-            <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs font-semibold text-slate-500 mr-1">
-                  {t('dashboard.coreSkillsLabel')}:
-                </span>
-                {profile?.skills.slice(0, 5).map((skill) => (
-                  <Badge key={skill} tone="blue">
-                    {skill}
-                  </Badge>
-                ))}
-                {(profile?.skills.length ?? 0) > 5 && (
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                    +{(profile?.skills.length ?? 0) - 5}
-                  </span>
-                )}
-              </div>
-
-              <Link
-                to="/candidate/profile"
-                className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
-              >
-                {t('profile.viewProfile')} →
-              </Link>
-            </div>
-          </Card>
-
-          {/* Đề xuất việc làm (Recommended Jobs) */}
-          <Card>
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium text-slate-900">
-                  {t('dashboard.recommendedForYou')}
-                </h2>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  Dựa trên hồ sơ kỹ năng và mức lương kỳ vọng của bạn
-                </p>
-              </div>
-              <Link
-                className="flex items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700"
-                to="/candidate/jobs"
-              >
-                {t('dashboard.viewAllJobs')} <ArrowRight size={15} />
-              </Link>
-            </div>
-
-            {isJobsPending ? (
-              <Loading />
-            ) : isJobsError ? (
-              <ErrorState />
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {jobs?.map((job) => (
-                  <Link
-                    to={`/candidate/jobs/${job.id}`}
-                    key={job.id}
-                    className="flex items-center justify-between gap-3 py-4 first:pt-0 last:pb-0 hover:bg-slate-50/60 px-2 rounded-xl transition group"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 font-medium text-brand-700 group-hover:bg-brand-600 group-hover:text-white transition">
-                        {job.company.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 truncate group-hover:text-brand-600 transition">
-                          {job.title}
-                        </p>
-                        <p className="mt-0.5 text-xs text-slate-500 truncate">
-                          {job.company} · {job.location} ·{' '}
-                          <span className="font-medium text-emerald-600">{job.salary}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge tone="green">
-                        {job.match}% {t('jobs.match')}
-                      </Badge>
-                      <ArrowUpRight
-                        size={17}
-                        className="text-slate-400 group-hover:text-brand-600 transition"
-                      />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          {/* Hoạt động gần đây (Recent Activities) */}
-          <Card>
-            <h2 className="mb-4 text-lg font-medium text-slate-900">{t('dashboard.recentActivity')}</h2>
-            <div className="space-y-3">
-              {recentActivities.map((act) => (
-                <div
-                  key={act.text}
-                  className="flex items-start gap-3 py-2.5 border-b border-slate-50 last:border-0"
+        {isJobsPending ? (
+          <div className="mt-6">
+            <Loading />
+          </div>
+        ) : isJobsError ? (
+          <div className="mt-6">
+            <ErrorState />
+          </div>
+        ) : (
+          <ul>
+            {jobs?.map((job) => (
+              <li key={job.id} className="border-b border-border">
+                <Link
+                  to={`/candidate/jobs/${job.id}`}
+                  className="group flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
                 >
-                  <CheckCircle2 size={18} className="mt-0.5 text-emerald-500 shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-800">{act.text}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">{act.time}</p>
+                  <div className="min-w-0">
+                    <p className="text-[17px] text-ink transition-colors group-hover:text-brand">
+                      {job.title}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {job.company} · {job.location} · {job.salary}
+                    </p>
                   </div>
+                  <span className="shrink-0 text-sm font-medium text-brand tabular-nums">
+                    {job.match}% {c.matchSuffix}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Next steps */}
+      <section className="mt-[clamp(3rem,6vw,4.5rem)]">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-slate-400 pb-4">
+          <h2 className="text-[clamp(1.375rem,2.2vw,1.75rem)] font-normal tracking-[-0.01em] text-ink">
+            {c.nextSteps}
+          </h2>
+          <Link to="/candidate/resumes" className={`${textLink} text-slate-600 hover:text-ink`}>
+            {c.manageCv}
+          </Link>
+        </div>
+        <ul>
+          {nextSteps.map((step) => (
+            <li key={step.to} className="border-b border-border">
+              <Link to={step.to} className="group flex items-center justify-between gap-6 py-5">
+                <div className="min-w-0">
+                  <p className="text-base text-ink transition-colors group-hover:text-brand">
+                    {step.title}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">{step.detail}</p>
                 </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        {/* Right Sidebar Columns */}
-        <div className="space-y-6">
-          {/* Hồ sơ nghề nghiệp (Profile Completion) */}
-          <Card>
-            <h2 className="text-lg font-medium text-slate-900">{t('dashboard.careerProfileCard')}</h2>
-            <p className="mt-1 text-sm text-slate-500">{t('dashboard.careerProfileCardDesc')}</p>
-            <div className="mt-5 flex items-end justify-between">
-              <span className="text-3xl font-semibold text-slate-900">
-                {profileCompletion}%
-              </span>
-              <span className="text-xs text-slate-500">
-                {100 - profileCompletion}% {t('dashboard.remaining')}
-              </span>
-            </div>
-            <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full rounded-full bg-brand-600 transition-all duration-500"
-                style={{ width: `${profileCompletion}%` }}
-              />
-            </div>
-            <div className="mt-5 flex items-center justify-between pt-4 border-t border-slate-100">
-              <Link
-                to="/candidate/profile"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
-              >
-                {t('dashboard.viewProfileLink')} <ArrowRight size={15} />
+                <ArrowRight
+                  size={16}
+                  aria-hidden="true"
+                  className="shrink-0 text-ink transition-transform duration-150 group-hover:translate-x-1 group-hover:text-brand"
+                />
               </Link>
-              <Link
-                to="/candidate/profile/edit"
-                className="text-xs font-medium text-slate-500 hover:text-slate-800"
-              >
-                Chỉnh sửa
-              </Link>
-            </div>
-          </Card>
-
-          {/* CV & Đánh giá ATS (CV Performance) */}
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-slate-900">{t('dashboard.cvPerformance')}</h2>
-              <Badge tone="green">{t('dashboard.atsScoreReady')}</Badge>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-surface text-2xl font-semibold text-slate-800 shadow-sm">
-                {bestResume?.atsScore ?? 88}
-              </div>
-              <div className="min-w-0">
-                <p className="font-medium text-slate-800 text-sm">
-                  {t('dashboard.atsScoreLabel')}
-                </p>
-                <p className="mt-1 text-xs text-slate-500 truncate">
-                  {bestResume?.name ?? 'Frontend Developer CV'}
-                </p>
-                <p className="mt-1 text-xs text-emerald-600 font-semibold">
-                  Sẵn sàng gửi ứng tuyển
-                </p>
-              </div>
-            </div>
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-              <Link
-                to={`/candidate/resumes/${bestResume?.id || 'cv-1'}/analysis`}
-                className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
-              >
-                Phân tích & Cải thiện AI <ArrowRight size={13} />
-              </Link>
-              <Link
-                to="/candidate/resumes"
-                className="text-xs text-slate-500 hover:text-slate-800"
-              >
-                Quản lý CV
-              </Link>
-            </div>
-          </Card>
-
-          {/* Lộ trình học tập (Learning Roadmap) */}
-          <Card>
-            <div className="flex items-center gap-2 mb-2">
-              <Lightbulb size={16} className="text-brand-600" />
-              <h2 className="text-lg font-medium text-slate-900">
-                {t('dashboard.learningRoadmapCard')}
-              </h2>
-            </div>
-            <p className="text-sm text-slate-500">{t('dashboard.learningRoadmapSubtitle')}</p>
-            <div className="mt-4 h-2 rounded-full bg-slate-100">
-              <div className="h-full w-2/5 rounded-full bg-brand-600" />
-            </div>
-            <p className="mt-2 text-xs text-slate-500">{t('dashboard.stagesComplete')}</p>
-          </Card>
-        </div>
-      </div>
-    </>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 }

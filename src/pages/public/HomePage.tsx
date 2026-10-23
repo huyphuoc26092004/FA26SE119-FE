@@ -107,7 +107,7 @@ export function LegacyHomePage() {
             <div className="hp-product-preview" aria-label="Minh họa kết quả AI khớp nối công việc">
               <div className="hp-preview-topbar">
                 <span className="hp-preview-brand">
-                  <Lightbulb aria-hidden="true" /> Jobie AI
+                  <Lightbulb aria-hidden="true" /> CCV
                 </span>
                 <span className="hp-preview-status">
                   <span /> AI đang phân tích

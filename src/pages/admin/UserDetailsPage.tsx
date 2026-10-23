@@ -1,33 +1,22 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
+import { Loading, ErrorState } from '../../components/ui';
 import {
-  ArrowLeft,
-  Users,
-  Shield,
-  ShieldCheck,
-  ShieldAlert,
-  Edit,
-  Lock,
-  Unlock,
-  RefreshCw,
-  Trash2,
-  CheckCircle2,
-  AlertTriangle,
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
-  Lightbulb,
-  CreditCard,
-  Zap,
-  Check,
-  Save,
-  X,
-  Layers,
-  History,
-} from 'lucide-react';
-import { Card, PageTitle, Badge, Button, Loading, ErrorState } from '../../components/ui';
+  InfoRow,
+  Modal,
+  SectionHead,
+  ThinBar,
+  Toast,
+  dangerButton,
+  fieldLabel,
+  outlineButton,
+  primaryButton,
+  textLink,
+  underlineInput,
+} from '../../components/admin/AdminKit';
+import { RolePicker } from '../../components/admin/RolePicker';
 import {
   getUserById,
   updateUser,
@@ -42,13 +31,196 @@ import type { AdminManagedUser, UpdateUserPayload } from '../../types/userManage
 import type { UserRole } from '../../types/domain';
 import { useTranslation } from '../../i18n';
 
+const copy = {
+  vi: {
+    back: 'Quay lại danh sách người dùng',
+    joined: 'Tham gia',
+    roles: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn nghề nghiệp', ADMIN: 'Quản trị viên' } as Record<UserRole, string>,
+    status: { ACTIVE: 'Hoạt động', SUSPENDED: 'Bị khoá', PENDING: 'Chờ kích hoạt' } as Record<AdminManagedUser['status'], string>,
+    verified: 'Đã xác thực OTP',
+    unverified: 'Chờ xác thực OTP',
+    defaultHeadline: 'Người dùng nền tảng CCV',
+    activeAgo: (t: string) => `Hoạt động ${t}`,
+    actions: { edit: 'Sửa thông tin', role: 'Phân quyền (Role)', lock: 'Khoá tài khoản', unlock: 'Mở khoá', reset: 'Reset mật khẩu', del: 'Xoá tài khoản' },
+    suspended: 'Tài khoản đang bị khoá bởi quản trị viên.',
+    reason: 'Lý do',
+    defaultReason: 'Vi phạm điều khoản sử dụng hệ thống',
+    lockedAt: 'Thời gian khoá',
+    anchors: [
+      ['profile', 'Hồ sơ'],
+      ['permissions', 'Quyền hạn'],
+      ['subscription', 'Gói cước & Token AI'],
+      ['activities', 'Lịch sử hoạt động'],
+      ['notes', 'Ghi chú'],
+      ['security', 'Bảo mật'],
+    ] as [string, string][],
+    s1: 'Giới thiệu bản thân',
+    noBio: 'Chưa cập nhật phần giới thiệu cá nhân.',
+    s2: 'Thông tin chi tiết tài khoản',
+    fullName: 'Họ và tên đầy đủ',
+    email: 'Email đăng nhập',
+    phone: 'Số điện thoại',
+    location: 'Địa điểm làm việc',
+    notUpdated: 'Chưa cập nhật',
+    created: 'Ngày tạo tài khoản',
+    lastActive: 'Lần hoạt động gần nhất',
+    s3: (n: number) => `Ma trận quyền hạn (${n})`,
+    editRole: 'Chỉnh sửa phân quyền',
+    allowed: 'Được phép',
+    denied: 'Không có',
+    s4: 'Gói cước & Token AI',
+    plan: 'Gói cước',
+    quota: 'Token AI được cấp',
+    perMonth: 'token / tháng',
+    used: 'Đã dùng tháng này',
+    remaining: 'Còn lại',
+    cycle: 'Chu kỳ',
+    cycleValue: 'Hàng tháng, tự động gia hạn',
+    s5: 'Lịch sử hoạt động & kiểm toán',
+    events: (n: number) => `${n} sự kiện`,
+    noEvents: 'Chưa có hoạt động nào.',
+    s6: 'Ghi chú quản trị viên',
+    private: 'Riêng tư, chỉ admin thấy',
+    notesPh: 'Ghi chú riêng của ban quản trị về tài khoản này…',
+    saveNotes: 'Lưu ghi chú',
+    savingNotes: 'Đang lưu…',
+    s7: 'Bảo mật & tuân thủ',
+    hash: 'Mã hoá mật khẩu',
+    otp: 'Xác thực 2 bước (OTP)',
+    otpOn: 'Đã kích hoạt',
+    otpOff: 'Chưa kích hoạt',
+    pwdChanged: 'Lần đổi mật khẩu cuối',
+    pwdChangedValue: '10 ngày trước',
+    lastIp: 'Địa chỉ IP truy cập gần nhất',
+    toastUpdated: 'Đã cập nhật thông tin.',
+    toastLocked: 'Đã khoá tài khoản.',
+    toastUnlocked: 'Đã kích hoạt lại tài khoản.',
+    toastRole: (r: string) => `Đã chuyển vai trò sang ${r}.`,
+    toastReset: (p: string) => `Đã đặt lại mật khẩu về mặc định: "${p}"`,
+    toastDeleted: 'Đã xoá tài khoản vĩnh viễn.',
+    editTitle: 'Sửa thông tin',
+    nameField: 'Họ và tên *',
+    emailField: 'Email *',
+    phoneField: 'Số điện thoại',
+    locationField: 'Địa điểm',
+    headlineField: 'Chức danh',
+    cancel: 'Huỷ',
+    saving: 'Đang lưu…',
+    save: 'Lưu thay đổi',
+    lockTitle: 'Khoá tài khoản',
+    unlockTitle: 'Mở khoá tài khoản',
+    lockText: (n: string) => `Khoá "${n}" sẽ chặn đăng nhập và mọi lượt gọi AI.`,
+    unlockText: (n: string) => `Kích hoạt lại tài khoản "${n}"?`,
+    lockReason: 'Lý do khoá',
+    lockReasonPh: 'Nhập lý do khoá tài khoản…',
+    confirmLock: 'Xác nhận khoá',
+    confirmUnlock: 'Mở khoá',
+    roleTitle: 'Phân quyền',
+    saveRole: 'Lưu phân quyền',
+    deleteTitle: 'Xoá tài khoản vĩnh viễn',
+    deleteText: (n: string) => `Xoá tài khoản ${n}? Hành động này không thể hoàn tác.`,
+    confirmDelete: 'Xác nhận xoá',
+  },
+  en: {
+    back: 'Back to users',
+    joined: 'Joined',
+    roles: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Career consultant', ADMIN: 'Administrator' } as Record<UserRole, string>,
+    status: { ACTIVE: 'Active', SUSPENDED: 'Suspended', PENDING: 'Pending' } as Record<AdminManagedUser['status'], string>,
+    verified: 'OTP verified',
+    unverified: 'Awaiting OTP',
+    defaultHeadline: 'CCV platform user',
+    activeAgo: (t: string) => `Active ${t}`,
+    actions: { edit: 'Edit details', role: 'Roles', lock: 'Suspend account', unlock: 'Activate', reset: 'Reset password', del: 'Delete account' },
+    suspended: 'This account is suspended by an administrator.',
+    reason: 'Reason',
+    defaultReason: 'Terms of service violation',
+    lockedAt: 'Suspended at',
+    anchors: [
+      ['profile', 'Profile'],
+      ['permissions', 'Permissions'],
+      ['subscription', 'Plan & AI tokens'],
+      ['activities', 'Activity'],
+      ['notes', 'Notes'],
+      ['security', 'Security'],
+    ] as [string, string][],
+    s1: 'About',
+    noBio: 'No bio yet.',
+    s2: 'Account details',
+    fullName: 'Full name',
+    email: 'Login email',
+    phone: 'Phone',
+    location: 'Location',
+    notUpdated: 'Not set',
+    created: 'Created',
+    lastActive: 'Last active',
+    s3: (n: number) => `Permission matrix (${n})`,
+    editRole: 'Edit permissions',
+    allowed: 'Allowed',
+    denied: 'None',
+    s4: 'Plan & AI tokens',
+    plan: 'Plan',
+    quota: 'Monthly AI tokens',
+    perMonth: 'tokens / month',
+    used: 'Used this month',
+    remaining: 'Remaining',
+    cycle: 'Cycle',
+    cycleValue: 'Monthly, auto-renew',
+    s5: 'Activity & audit log',
+    events: (n: number) => `${n} events`,
+    noEvents: 'No activity yet.',
+    s6: 'Admin notes',
+    private: 'Private, admins only',
+    notesPh: 'Private notes about this account…',
+    saveNotes: 'Save notes',
+    savingNotes: 'Saving…',
+    s7: 'Security & compliance',
+    hash: 'Password hashing',
+    otp: 'Two-step verification (OTP)',
+    otpOn: 'Enabled',
+    otpOff: 'Not enabled',
+    pwdChanged: 'Password last changed',
+    pwdChangedValue: '10 days ago',
+    lastIp: 'Last IP address',
+    toastUpdated: 'Details updated.',
+    toastLocked: 'Account suspended.',
+    toastUnlocked: 'Account activated.',
+    toastRole: (r: string) => `Role changed to ${r}.`,
+    toastReset: (p: string) => `Password reset to default: "${p}"`,
+    toastDeleted: 'Account deleted permanently.',
+    editTitle: 'Edit details',
+    nameField: 'Full name *',
+    emailField: 'Email *',
+    phoneField: 'Phone',
+    locationField: 'Location',
+    headlineField: 'Headline',
+    cancel: 'Cancel',
+    saving: 'Saving…',
+    save: 'Save changes',
+    lockTitle: 'Suspend account',
+    unlockTitle: 'Activate account',
+    lockText: (n: string) => `Suspending "${n}" blocks sign-in and every AI request.`,
+    unlockText: (n: string) => `Reactivate "${n}"?`,
+    lockReason: 'Reason',
+    lockReasonPh: 'Why is this account suspended…',
+    confirmLock: 'Suspend',
+    confirmUnlock: 'Activate',
+    roleTitle: 'Roles & permissions',
+    saveRole: 'Save permissions',
+    deleteTitle: 'Delete account permanently',
+    deleteText: (n: string) => `Delete ${n}? This cannot be undone.`,
+    confirmDelete: 'Delete',
+  },
+};
+
 export default function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isVietnamese } = useTranslation();
+  const lang = isVietnamese ? 'vi' : 'en';
+  const c = copy[lang];
+  const locale = isVietnamese ? 'vi-VN' : 'en-US';
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'permissions' | 'subscription' | 'activities'>('profile');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Modal states
@@ -91,7 +263,7 @@ export default function UserDetailsPage() {
       queryClient.setQueryData(['admin-managed-user', id], updated);
       queryClient.invalidateQueries({ queryKey: ['admin-managed-users'] });
       setShowEditModal(false);
-      showToast(isVietnamese ? 'Cập nhật thông tin thành công!' : 'Updated user details successfully!');
+      showToast(c.toastUpdated);
     },
     onError: (err: Error) => showToast(err.message),
   });
@@ -104,15 +276,7 @@ export default function UserDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-managed-users'] });
       setShowLockModal(false);
       setLockReason('');
-      showToast(
-        updated.status === 'SUSPENDED'
-          ? isVietnamese
-            ? 'Đã khóa tài khoản thành công!'
-            : 'Suspended user account!'
-          : isVietnamese
-          ? 'Đã kích hoạt lại tài khoản!'
-          : 'Activated user account!'
-      );
+      showToast(updated.status === 'SUSPENDED' ? c.toastLocked : c.toastUnlocked);
     },
     onError: (err: Error) => showToast(err.message),
   });
@@ -124,11 +288,7 @@ export default function UserDetailsPage() {
       queryClient.setQueryData(['admin-managed-user', id], updated);
       queryClient.invalidateQueries({ queryKey: ['admin-managed-users'] });
       setShowRoleModal(false);
-      showToast(
-        isVietnamese
-          ? `Đã chuyển vai trò sang ${updated.role} thành công!`
-          : `Role changed to ${updated.role} successfully!`
-      );
+      showToast(c.toastRole(c.roles[updated.role]));
     },
     onError: (err: Error) => showToast(err.message),
   });
@@ -136,11 +296,7 @@ export default function UserDetailsPage() {
   const resetPasswordMutation = useMutation({
     mutationFn: () => resetUserPassword(id!),
     onSuccess: (pwd) => {
-      showToast(
-        isVietnamese
-          ? `Đã đặt lại mật khẩu về mặc định: "${pwd}"`
-          : `Password reset to default: "${pwd}"`
-      );
+      showToast(c.toastReset(pwd));
     },
   });
 
@@ -149,7 +305,7 @@ export default function UserDetailsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-managed-users'] });
       navigate('/admin/users');
-      showToast(isVietnamese ? 'Đã xóa tài khoản vĩnh viễn!' : 'Deleted user permanently!');
+      showToast(c.toastDeleted);
     },
     onError: (err: Error) => showToast(err.message),
   });
@@ -157,706 +313,389 @@ export default function UserDetailsPage() {
   if (isLoading) return <Loading />;
   if (isError || !user) {
     return (
-      <div className="py-12 text-center">
+      <div className="py-12">
         <ErrorState />
-        <div className="mt-4">
-          <Button variant="secondary" onClick={() => navigate('/admin/users')}>
-            Quay lại danh sách người dùng
-          </Button>
-        </div>
+        <Link to="/admin/users" className={`${textLink} mt-6 text-ink`}>
+          {c.back}
+        </Link>
       </div>
     );
   }
 
-  const getRoleBadge = (role: UserRole) => {
-    switch (role) {
-      case 'ADMIN':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 border border-rose-200">
-            <ShieldAlert size={13} />
-            <span>Administrator</span>
-          </span>
-        );
-      case 'CAREER_CONSULTANT':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 border border-brand-200">
-            <ShieldCheck size={13} />
-            <span>Career Consultant</span>
-          </span>
-        );
-      case 'CANDIDATE':
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 border border-brand-200">
-            <Users size={13} />
-            <span>Job Candidate</span>
-          </span>
-        );
-    }
+  const openRoleModal = () => {
+    setNewRole(user.role);
+    setSelectedPermissions(user.permissions || getDefaultPermissionsForRole(user.role));
+    setShowRoleModal(true);
   };
 
-  const getStatusBadge = (status: AdminManagedUser['status']) => {
-    switch (status) {
-      case 'ACTIVE':
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 border border-emerald-200">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Hoạt động (Active)</span>
-          </span>
-        );
-      case 'SUSPENDED':
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700 border border-red-200">
-            <Lock size={12} />
-            <span>Đã bị khóa (Suspended)</span>
-          </span>
-        );
-      case 'PENDING':
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 border border-amber-200">
-            <Clock size={12} />
-            <span>Chờ kích hoạt (Pending)</span>
-          </span>
-        );
-    }
-  };
-
-  const tokenUsagePercent = Math.min(
-    100,
-    Math.round((user.tokensUsedThisMonth / user.tokenMonthlyQuota) * 100)
+  const tokenUsagePercent = Math.min(100, Math.round((user.tokensUsedThisMonth / user.tokenMonthlyQuota) * 100));
+  const statusTone = user.status === 'ACTIVE' ? 'text-brand' : user.status === 'SUSPENDED' ? 'text-danger' : 'text-orange-600';
+  const lastIp = user.recentActivities[0]?.ipAddress ?? '113.161.72.45';
+  const sorted = [...ALL_SYSTEM_PERMISSIONS].sort(
+    (a, b) => Number(user.permissions?.includes(b.key)) - Number(user.permissions?.includes(a.key))
   );
 
   return (
-    <div className="space-y-6">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-sm animate-fade-in border border-slate-700">
-          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div className="max-w-[56rem]">
+      <Toast message={toastMessage} />
 
-      {/* Breadcrumb Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          to="/admin/users"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 transition"
-        >
-          <ArrowLeft size={14} />
-          <span>{isVietnamese ? 'Quay lại danh sách người dùng' : 'Back to Users'}</span>
+      {/* Top row */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-[13px]">
+        <Link to="/admin/users" className={`${textLink} text-[13px] text-slate-600`}>
+          <ArrowLeft size={13} aria-hidden />
+          {c.back}
         </Link>
-
-        <span className="text-xs text-slate-400 font-mono">
-          ID: #{user.id} · Tham gia: {user.createdAt}
+        <span className="tabular-nums text-slate-500">
+          ID #{user.id} · {c.joined} {user.createdAt}
         </span>
       </div>
 
-      {/* Profile Header Hero Card */}
-      <Card className="border-slate-200 shadow-sm bg-surface p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-4">
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="h-20 w-20 shrink-0 rounded-2xl object-cover border-2 border-white ring-2 ring-brand-100"
-            />
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight">{user.name}</h1>
-                {getRoleBadge(user.role)}
-                {getStatusBadge(user.status)}
-                {user.isVerified ? (
-                  <span className="font-semibold text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    Đã xác thực OTP
-                  </span>
-                ) : (
-                  <span className="font-semibold text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                    Chờ xác thực
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                {user.headline || 'Người dùng nền tảng CareerPilot'}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 pt-1">
-                <span className="flex items-center gap-1">
-                  <Mail size={13} className="text-slate-400" />
-                  <span>{user.email}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <Phone size={13} className="text-slate-400" />
-                  <span>{user.phone}</span>
-                </span>
-                {user.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin size={13} className="text-slate-400" />
-                    <span>{user.location}</span>
-                  </span>
-                )}
-                <span className="flex items-center gap-1">
-                  <Clock size={13} className="text-slate-400" />
-                  <span>Hoạt động: {user.lastActiveAt}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons Column */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0 self-end lg:self-center border-t lg:border-t-0 pt-3 lg:pt-0 w-full lg:w-auto justify-end">
-            {/* Edit */}
-            <Button
-              variant="secondary"
-              onClick={() => setShowEditModal(true)}
-              className="text-xs py-2 px-3 gap-1.5"
-            >
-              <Edit size={14} />
-              <span>Sửa thông tin</span>
-            </Button>
-
-            {/* Role & Permissions */}
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setNewRole(user.role);
-                setSelectedPermissions(user.permissions || getDefaultPermissionsForRole(user.role));
-                setShowRoleModal(true);
-              }}
-              className="text-xs py-2 px-3 gap-1.5 border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
-            >
-              <Shield size={14} />
-              <span>Phân quyền (Role)</span>
-            </Button>
-
-            {/* Lock / Unlock */}
-            <button
-              onClick={() => {
-                setLockReason(user.suspendedReason || '');
-                setShowLockModal(true);
-              }}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition cursor-pointer ${
-                user.status === 'SUSPENDED'
-                  ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                  : 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-              }`}
-            >
-              {user.status === 'SUSPENDED' ? <Unlock size={14} /> : <Lock size={14} />}
-              <span>{user.status === 'SUSPENDED' ? 'Mở khóa' : 'Khóa tài khoản'}</span>
+      {/* Header */}
+      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+        <p className="text-[13px] text-slate-600">
+          {c.roles[user.role]} · <span className={statusTone}>{c.status[user.status]}</span> ·{' '}
+          {user.isVerified ? c.verified : <span className="text-orange-600">{c.unverified}</span>}
+        </p>
+        <h1 className="mt-3 text-[clamp(2.25rem,4.6vw,4rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {user.name}.
+          <span className="block text-brand">{(user.headline || c.defaultHeadline).replace(/\.$/, '')}.</span>
+        </h1>
+        <p className="mt-5 text-[13px] text-slate-600">
+          {[user.email, user.phone, user.location, c.activeAgo(user.lastActiveAt)].filter(Boolean).join(' · ')}
+        </p>
+        <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <button type="button" onClick={() => setShowEditModal(true)} className={primaryButton}>
+            {c.actions.edit}
+          </button>
+          <button type="button" onClick={openRoleModal} className={`${textLink} text-ink`}>
+            {c.actions.role}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setLockReason(user.suspendedReason || '');
+              setShowLockModal(true);
+            }}
+            className={`${textLink} ${user.status === 'SUSPENDED' ? 'text-brand' : 'text-danger'}`}
+          >
+            {user.status === 'SUSPENDED' ? c.actions.unlock : c.actions.lock}
+          </button>
+          <button
+            type="button"
+            onClick={() => resetPasswordMutation.mutate()}
+            disabled={resetPasswordMutation.isPending}
+            className={`${textLink} text-ink`}
+          >
+            {c.actions.reset}
+          </button>
+          {user.email !== 'admin@example.com' && (
+            <button type="button" onClick={() => setShowDeleteModal(true)} className={`${textLink} text-danger`}>
+              {c.actions.del}
             </button>
-
-            {/* Reset Password */}
-            <button
-              onClick={() => resetPasswordMutation.mutate()}
-              disabled={resetPasswordMutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-              title="Đặt lại mật khẩu mặc định"
-            >
-              <RefreshCw size={13} className={resetPasswordMutation.isPending ? 'animate-spin' : ''} />
-              <span>Reset mật khẩu</span>
-            </button>
-
-            {/* Delete */}
-            {user.email !== 'admin@example.com' && (
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="rounded-xl border border-slate-200 bg-surface p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                title="Xóa tài khoản"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
-          </div>
+          )}
         </div>
-      </Card>
+      </header>
 
-      {/* Reason for suspension banner if suspended */}
       {user.status === 'SUSPENDED' && (
-        <div className="rounded-2xl border border-red-200 bg-red-50/70 p-4 text-xs text-red-900 flex items-start gap-3">
-          <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-red-800 text-sm">Tài khoản này đang bị khóa bởi Quản trị viên</h4>
-            <p className="mt-0.5">
-              Lý do: <strong>{user.suspendedReason || 'Vi phạm điều khoản sử dụng hệ thống'}</strong>
-            </p>
-            {user.suspendedAt && <span className="text-[11px] text-red-700 mt-1 block">Thời gian khóa: {user.suspendedAt}</span>}
-          </div>
+        <div className="mt-10 border-y border-red-200 py-4 text-sm">
+          <p className="text-danger">{c.suspended}</p>
+          <p className="mt-1 text-slate-700">
+            {c.reason}: {user.suspendedReason || c.defaultReason}
+            {user.suspendedAt && <span className="text-slate-500"> · {c.lockedAt}: {user.suspendedAt}</span>}
+          </p>
         </div>
       )}
 
-      {/* Main Tabs */}
-      <div className="flex border-b border-slate-200 overflow-x-auto space-x-2">
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
-            activeTab === 'profile'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Users size={16} />
-          <span>Thông Tin Hồ Sơ</span>
-        </button>
+      {/* Anchor row */}
+      <nav className="mt-[clamp(2.5rem,5vw,3.5rem)] flex flex-wrap gap-x-6 gap-y-2 text-[13px]">
+        {c.anchors.map(([key, label]) => (
+          <a key={key} href={`#user-${key}`} className="border-b border-current pb-px text-ink hover:text-brand">
+            {label}
+          </a>
+        ))}
+      </nav>
 
-        <button
-          onClick={() => setActiveTab('permissions')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
-            activeTab === 'permissions'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Shield size={16} />
-          <span>Ma Trận Quyền Hạn ({user.permissions?.length || 0})</span>
-        </button>
+      {/* 01 */}
+      <section className="mt-[clamp(2.5rem,5vw,3.5rem)]">
+        <SectionHead id="user-profile" index="01" title={c.s1} />
+        <p className="py-5 text-[15px] leading-7 text-ink">{user.bio || <span className="text-slate-500">{c.noBio}</span>}</p>
+      </section>
 
-        <button
-          onClick={() => setActiveTab('subscription')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
-            activeTab === 'subscription'
-              ? 'border-emerald-600 text-emerald-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <CreditCard size={16} />
-          <span>Gói Cước & Token AI</span>
-        </button>
+      {/* 02 */}
+      <section className="mt-12">
+        <SectionHead index="02" title={c.s2} />
+        <dl>
+          <InfoRow label={c.fullName}>{user.name}</InfoRow>
+          <InfoRow label={c.email}>{user.email}</InfoRow>
+          <InfoRow label={c.phone}>{user.phone}</InfoRow>
+          <InfoRow label={c.location}>{user.location || c.notUpdated}</InfoRow>
+          <InfoRow label={c.created}>{user.createdAt}</InfoRow>
+          <InfoRow label={c.lastActive} tone="brand">
+            {user.lastActiveAt}
+          </InfoRow>
+        </dl>
+      </section>
 
-        <button
-          onClick={() => setActiveTab('activities')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
-            activeTab === 'activities'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <History size={16} />
-          <span>Lịch Sử Hoạt Động & Kiểm Toán</span>
-        </button>
-      </div>
+      {/* 03 */}
+      <section className="mt-14">
+        <SectionHead
+          id="user-permissions"
+          index="03"
+          title={c.s3(user.permissions?.length || 0)}
+          action={
+            <button type="button" onClick={openRoleModal} className={`${textLink} text-[13px] text-ink`}>
+              {c.editRole}
+            </button>
+          }
+        />
+        <ul>
+          {sorted.map((p) => {
+            const has = user.permissions?.includes(p.key);
+            return (
+              <li key={p.key} className="flex items-baseline justify-between gap-6 border-b border-border py-3" title={p.description}>
+                <span className={`text-sm ${has ? 'text-ink' : 'text-slate-500'}`}>{p.name}</span>
+                <span className={`shrink-0 text-xs ${has ? 'text-brand' : 'text-slate-500'}`}>{has ? c.allowed : c.denied}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
-      {/* ========================================================================= */}
-      {/* TAB 1: PROFILE & INFORMATION                                              */}
-      {/* ========================================================================= */}
-      {activeTab === 'profile' && (
-        <div className="grid gap-6 lg:grid-cols-[1.8fr_1.2fr]">
-          <div className="space-y-6">
-            {/* Bio / Summary */}
-            <Card>
-              <h3 className="font-medium text-sm text-slate-900 mb-2 border-b border-slate-100 pb-2">
-                Giới Thiệu Bản Thân
-              </h3>
-              <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                {user.bio || 'Chưa cập nhật phần giới thiệu cá nhân.'}
-              </p>
-            </Card>
+      {/* 04 */}
+      <section className="mt-14">
+        <SectionHead id="user-subscription" index="04" title={c.s4} />
+        <dl>
+          <InfoRow label={c.plan}>{user.planName}</InfoRow>
+          <InfoRow label={c.quota}>
+            {user.tokenMonthlyQuota.toLocaleString(locale)} {c.perMonth}
+          </InfoRow>
+          <InfoRow label={c.used}>
+            <span className="tabular-nums">
+              {user.tokensUsedThisMonth.toLocaleString(locale)} token <span className="text-slate-500">({tokenUsagePercent}%)</span>
+            </span>
+            <span className="mt-2.5 block max-w-sm">
+              <ThinBar value={tokenUsagePercent} tone={tokenUsagePercent > 80 ? 'danger' : 'brand'} />
+            </span>
+          </InfoRow>
+          <InfoRow label={c.remaining}>
+            {Math.max(0, user.tokenMonthlyQuota - user.tokensUsedThisMonth).toLocaleString(locale)} token
+          </InfoRow>
+          <InfoRow label={c.cycle}>{c.cycleValue}</InfoRow>
+        </dl>
+      </section>
 
-            {/* Basic Information Grid */}
-            <Card>
-              <h3 className="font-medium text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2">
-                Thông Tin Chi Tiết Tài Khoản
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Họ và tên đầy đủ:</span>
-                  <strong className="text-slate-900 text-sm">{user.name}</strong>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Email đăng nhập:</span>
-                  <strong className="text-slate-900 text-sm font-mono">{user.email}</strong>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Số điện thoại:</span>
-                  <strong className="text-slate-900">{user.phone}</strong>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Địa điểm làm việc:</span>
-                  <strong className="text-slate-900">{user.location || 'Chưa cập nhật'}</strong>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Ngày tạo tài khoản:</span>
-                  <strong className="text-slate-900">{user.createdAt}</strong>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Lần hoạt động gần nhất:</span>
-                  <strong className="text-emerald-700">{user.lastActiveAt}</strong>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Right Column: Admin Notes & Security Card */}
-          <div className="space-y-6">
-            {/* Admin Private Notes */}
-            <Card className="border-amber-200 bg-amber-50/20">
-              <div className="flex items-center justify-between mb-2 border-b border-slate-100 pb-2">
-                <div className="flex items-center gap-1.5 font-medium text-sm text-slate-900">
-                  <Lightbulb size={16} className="text-amber-500" />
-                  <span>Ghi Chú Quản Trị Viên</span>
-                </div>
-                <Badge tone="amber">Private</Badge>
-              </div>
-              <textarea
-                rows={4}
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Nhập ghi chú riêng của ban quản trị về ứng viên/cố vấn này..."
-                className="w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-amber-500 bg-surface leading-relaxed"
-              />
-              <div className="flex justify-end mt-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => updateMutation.mutate({ notes: adminNotes })}
-                  disabled={updateMutation.isPending}
-                  className="text-xs py-1.5 px-3 gap-1"
-                >
-                  <Save size={13} />
-                  <span>Lưu ghi chú</span>
-                </Button>
-              </div>
-            </Card>
-
-            {/* Quick Security Status */}
-            <Card>
-              <h3 className="font-medium text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2">
-                Bảo Mật & Tuân Thủ
-              </h3>
-              <div className="space-y-2.5 text-xs text-slate-600">
-                <div className="flex items-center justify-between">
-                  <span>Mã hóa mật khẩu:</span>
-                  <span className="font-medium text-emerald-700">PBKDF2 SHA-256</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Xác thực 2 bước (OTP):</span>
-                  <span className="font-medium text-emerald-700">Đã kích hoạt</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Lần đổi mật khẩu cuối:</span>
-                  <span className="text-slate-400">10 ngày trước</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Địa chỉ IP truy cập gần nhất:</span>
-                  <span className="font-mono text-slate-500">113.161.72.45</span>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 2: ROLE & PERMISSIONS MATRIX                                          */}
-      {/* ========================================================================= */}
-      {activeTab === 'permissions' && (
-        <Card className="space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
-            <div>
-              <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
-                <Shield size={18} className="text-brand-600" />
-                <span>Danh Sách Quyền Hạn Của Tài Khoản</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Đang áp dụng bộ quyền hạn của vai trò: <strong>{user.role}</strong>
-              </p>
-            </div>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setNewRole(user.role);
-                setSelectedPermissions(user.permissions || getDefaultPermissionsForRole(user.role));
-                setShowRoleModal(true);
-              }}
-              className="text-xs py-2 px-3.5 gap-1.5 bg-brand-600 hover:bg-brand-700"
-            >
-              <Shield size={14} />
-              <span>Chỉnh sửa phân quyền</span>
-            </Button>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-xs">
-            {ALL_SYSTEM_PERMISSIONS.map((p) => {
-              const hasPermission = user.permissions?.includes(p.key);
-              return (
-                <div
-                  key={p.key}
-                  className={`rounded-xl border p-3.5 space-y-1 transition ${
-                    hasPermission
-                      ? 'border-brand-200 bg-brand-50/40 text-brand-950'
-                      : 'border-slate-200/60 bg-slate-50/50 text-slate-400 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm text-slate-900">{p.name}</span>
-                    {hasPermission ? (
-                      <span className="inline-flex items-center gap-1 rounded bg-brand-100 px-1.5 py-0.2 text-[10px] font-medium text-brand-800">
-                        <Check size={11} /> Cấp quyền
-                      </span>
-                    ) : (
-                      <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-medium text-slate-500">
-                        Chưa cấp
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">{p.description}</p>
-                  <span className="text-[10px] text-slate-400 font-mono block mt-1">Key: {p.key}</span>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 3: SUBSCRIPTION & AI TOKEN QUOTA                                      */}
-      {/* ========================================================================= */}
-      {activeTab === 'subscription' && (
-        <div className="space-y-6">
-          <Card className="border-brand-200 bg-brand-50/50 p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand-600 text-white font-medium shadow-sm">
-                  <CreditCard size={28} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-medium text-slate-900">{user.planName}</h3>
-                    <Badge tone="blue">{user.planId.toUpperCase()}</Badge>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-1">
-                    Hạn mức token tháng: <strong>{user.tokenMonthlyQuota.toLocaleString()} AI Tokens</strong>
-                  </p>
-                  <span className="text-[11px] text-slate-400 block mt-0.5">
-                    Chu kỳ: Hàng tháng (Tự động gia hạn)
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-brand-200 bg-surface p-4 text-center shrink-0 min-w-[200px] shadow-2xs">
-                <span className="text-[11px] uppercase font-medium text-slate-400 block">
-                  Đã sử dụng tháng này
-                </span>
-                <span className="text-2xl font-semibold text-brand-700">
-                  {user.tokensUsedThisMonth.toLocaleString()}
-                </span>
-                <span className="text-xs text-slate-500 block mt-0.5">
-                  ({tokenUsagePercent}% hạn mức)
-                </span>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="mt-5 space-y-1.5">
-              <div className="flex justify-between text-xs text-slate-600 font-medium">
-                <span>0 Tokens</span>
-                <span className="text-brand-700 font-medium">
-                  Còn lại: {(user.tokenMonthlyQuota - user.tokensUsedThisMonth).toLocaleString()} Tokens
-                </span>
-                <span>{user.tokenMonthlyQuota.toLocaleString()} Tokens</span>
-              </div>
-              <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    tokenUsagePercent > 80 ? 'bg-red-500' : 'bg-brand-600'
-                  }`}
-                  style={{ width: `${tokenUsagePercent}%` }}
-                />
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 4: AUDIT TRAIL & RECENT ACTIVITIES                                    */}
-      {/* ========================================================================= */}
-      {activeTab === 'activities' && (
-        <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <History size={18} className="text-brand-600" />
-              <h3 className="font-medium text-sm text-slate-900">
-                Lịch Sử Kiểm Toán & Hoạt Động Của Người Dùng
-              </h3>
-            </div>
-            <span className="text-xs text-slate-400">{user.recentActivities.length} sự kiện</span>
-          </div>
-
-          <div className="divide-y divide-slate-100 text-xs">
+      {/* 05 */}
+      <section className="mt-14">
+        <SectionHead id="user-activities" index="05" title={c.s5} meta={c.events(user.recentActivities.length)} />
+        {user.recentActivities.length === 0 ? (
+          <p className="border-b border-border py-6 text-sm text-slate-500">{c.noEvents}</p>
+        ) : (
+          <ul>
             {user.recentActivities.map((act) => (
-              <div key={act.id} className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
-                <div>
-                  <strong className="text-slate-900 text-sm block">{act.action}</strong>
-                  <p className="text-slate-600">{act.details}</p>
-                  <span className="text-[11px] text-slate-400">IP: {act.ipAddress}</span>
+              <li key={act.id} className="grid gap-1 border-b border-border py-3.5 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-6">
+                <span className="text-[13px] tabular-nums text-slate-500">{act.timestamp}</span>
+                <div className="min-w-0">
+                  <p className="text-sm text-ink">{act.action}</p>
+                  <p className="mt-0.5 text-[13px] text-slate-600">
+                    {act.details} · IP {act.ipAddress}
+                  </p>
                 </div>
-                <span className="text-slate-400 font-mono text-[11px] shrink-0 self-end sm:self-center">
-                  {act.timestamp}
-                </span>
-              </div>
+              </li>
             ))}
-          </div>
-        </Card>
-      )}
+          </ul>
+        )}
+      </section>
+
+      {/* 06 */}
+      <section className="mt-14">
+        <SectionHead id="user-notes" index="06" title={c.s6} meta={c.private} />
+        <textarea
+          rows={4}
+          value={adminNotes}
+          onChange={(e) => setAdminNotes(e.target.value)}
+          placeholder={c.notesPh}
+          aria-label={c.s6}
+          className="mt-4 w-full resize-y border-0 border-b border-slate-300 bg-transparent py-2 text-[15px] leading-7 text-ink outline-none placeholder:text-slate-400 focus:border-brand"
+        />
+        <button
+          type="button"
+          onClick={() => updateMutation.mutate({ notes: adminNotes })}
+          disabled={updateMutation.isPending}
+          className={`${textLink} mt-4 text-ink`}
+        >
+          {updateMutation.isPending ? c.savingNotes : c.saveNotes}
+        </button>
+      </section>
+
+      {/* 07 */}
+      <section className="mt-14">
+        <SectionHead id="user-security" index="07" title={c.s7} />
+        <dl>
+          <InfoRow label={c.hash}>PBKDF2 SHA-256</InfoRow>
+          <InfoRow label={c.otp} tone={user.isVerified ? 'brand' : 'warning'}>
+            {user.isVerified ? c.otpOn : c.otpOff}
+          </InfoRow>
+          <InfoRow label={c.pwdChanged}>{c.pwdChangedValue}</InfoRow>
+          <InfoRow label={c.lastIp}>{lastIp}</InfoRow>
+        </dl>
+      </section>
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-medium text-slate-900">Sửa thông tin: {user.name}</h3>
-              <button onClick={() => setShowEditModal(false)} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
-                <X size={18} />
+        <Modal
+          title={c.editTitle}
+          eyebrow={user.name}
+          onClose={() => setShowEditModal(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowEditModal(false)} className={outlineButton}>
+                {c.cancel}
               </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.currentTarget;
-                const name = (form.elements.namedItem('name') as HTMLInputElement).value;
-                const email = (form.elements.namedItem('email') as HTMLInputElement).value;
-                const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
-                const location = (form.elements.namedItem('location') as HTMLInputElement).value;
-                const headline = (form.elements.namedItem('headline') as HTMLInputElement).value;
-                updateMutation.mutate({ name, email, phone, location, headline });
-              }}
-              className="space-y-3 text-xs"
-            >
-              <div>
-                <label className="font-medium block mb-1">Họ và tên *</label>
-                <input name="name" defaultValue={user.name} required className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
-              </div>
-              <div>
-                <label className="font-medium block mb-1">Email *</label>
-                <input name="email" type="email" defaultValue={user.email} required className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-medium block mb-1">Số điện thoại</label>
-                  <input name="phone" defaultValue={user.phone} className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
-                </div>
-                <div>
-                  <label className="font-medium block mb-1">Địa điểm</label>
-                  <input name="location" defaultValue={user.location} className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
-                </div>
-              </div>
-              <div>
-                <label className="font-medium block mb-1">Chức danh / Headline</label>
-                <input name="headline" defaultValue={user.headline} className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t">
-                <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>Hủy</Button>
-                <Button variant="primary" type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+              <button type="submit" form="admin-user-edit" disabled={updateMutation.isPending} className={primaryButton}>
+                {updateMutation.isPending ? c.saving : c.save}
+              </button>
+            </>
+          }
+        >
+          <form
+            id="admin-user-edit"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.currentTarget;
+              const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+              const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+              const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+              const location = (form.elements.namedItem('location') as HTMLInputElement).value;
+              const headline = (form.elements.namedItem('headline') as HTMLInputElement).value;
+              updateMutation.mutate({ name, email, phone, location, headline });
+            }}
+            className="grid gap-x-8 gap-y-6 sm:grid-cols-2"
+          >
+            <label className="block">
+              <span className={fieldLabel}>{c.nameField}</span>
+              <input name="name" defaultValue={user.name} required className={underlineInput} />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.emailField}</span>
+              <input name="email" type="email" defaultValue={user.email} required className={underlineInput} />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.phoneField}</span>
+              <input name="phone" defaultValue={user.phone} className={underlineInput} />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.locationField}</span>
+              <input name="location" defaultValue={user.location} className={underlineInput} />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className={fieldLabel}>{c.headlineField}</span>
+              <input name="headline" defaultValue={user.headline} className={underlineInput} />
+            </label>
+          </form>
+        </Modal>
       )}
 
       {/* Lock Modal */}
       {showLockModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
-            <h3 className="text-lg font-medium text-slate-900">
-              {user.status === 'SUSPENDED' ? 'Mở Khóa Tài Khoản' : 'Khóa Tài Khoản Người Dùng'}
-            </h3>
-            <p className="text-xs text-slate-600">
-              {user.status === 'SUSPENDED'
-                ? `Kích hoạt lại tài khoản "${user.name}"?`
-                : `Khóa tài khoản "${user.name}" sẽ ngăn chặn đăng nhập và gọi AI.`}
-            </p>
-            {user.status !== 'SUSPENDED' && (
-              <textarea
-                rows={2}
-                value={lockReason}
-                onChange={(e) => setLockReason(e.target.value)}
-                placeholder="Nhập lý do khóa tài khoản..."
-                className="w-full rounded-xl border p-2.5 text-xs outline-none focus:border-red-500"
-              />
-            )}
-            <div className="flex justify-end gap-2 pt-3 border-t text-xs">
-              <Button variant="secondary" onClick={() => setShowLockModal(false)}>Hủy</Button>
-              <Button
-                variant="primary"
+        <Modal
+          title={user.status === 'SUSPENDED' ? c.unlockTitle : c.lockTitle}
+          eyebrow={user.name}
+          onClose={() => setShowLockModal(false)}
+          width="max-w-lg"
+          footer={
+            <>
+              <button type="button" onClick={() => setShowLockModal(false)} className={outlineButton}>
+                {c.cancel}
+              </button>
+              <button
+                type="button"
                 onClick={() =>
                   lockMutation.mutate({
                     status: user.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED',
                     reason: lockReason.trim(),
                   })
                 }
-                className={user.status === 'SUSPENDED' ? 'bg-emerald-600' : 'bg-red-600'}
+                disabled={lockMutation.isPending}
+                className={user.status === 'SUSPENDED' ? primaryButton : dangerButton}
               >
-                {user.status === 'SUSPENDED' ? 'Mở Khóa' : 'Xác Nhận Khóa'}
-              </Button>
-            </div>
-          </div>
-        </div>
+                {user.status === 'SUSPENDED' ? c.confirmUnlock : c.confirmLock}
+              </button>
+            </>
+          }
+        >
+          <p className="text-[15px] leading-7 text-slate-700">
+            {user.status === 'SUSPENDED' ? c.unlockText(user.name) : c.lockText(user.name)}
+          </p>
+          {user.status !== 'SUSPENDED' && (
+            <label className="mt-6 block">
+              <span className={fieldLabel}>{c.lockReason}</span>
+              <textarea
+                rows={2}
+                value={lockReason}
+                onChange={(e) => setLockReason(e.target.value)}
+                placeholder={c.lockReasonPh}
+                className={`${underlineInput} resize-none leading-7`}
+              />
+            </label>
+          )}
+        </Modal>
       )}
 
       {/* Role Modal */}
       {showRoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-          <div className="w-full max-w-xl rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-base font-medium text-slate-900">Phân Quyền Vai Trò (Roles)</h3>
-              <button onClick={() => setShowRoleModal(false)} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
-                <X size={18} />
+        <Modal
+          title={c.roleTitle}
+          eyebrow={user.name}
+          onClose={() => setShowRoleModal(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowRoleModal(false)} className={outlineButton}>
+                {c.cancel}
               </button>
-            </div>
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-medium block mb-1">Chọn vai trò chính</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['CANDIDATE', 'CAREER_CONSULTANT', 'ADMIN'] as const).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => {
-                        setNewRole(r);
-                        setSelectedPermissions(getDefaultPermissionsForRole(r));
-                      }}
-                      className={`p-2.5 rounded-xl border text-center font-medium transition cursor-pointer ${
-                        newRole === r ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-200'
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-3 border-t">
-              <Button variant="secondary" onClick={() => setShowRoleModal(false)}>Hủy</Button>
-              <Button
-                variant="primary"
+              <button
+                type="button"
                 onClick={() => roleMutation.mutate({ role: newRole, permissions: selectedPermissions })}
                 disabled={roleMutation.isPending}
-                className="bg-brand-600"
+                className={primaryButton}
               >
-                Lưu Phân Quyền
-              </Button>
-            </div>
-          </div>
-        </div>
+                {c.saveRole}
+              </button>
+            </>
+          }
+        >
+          <RolePicker
+            lang={lang}
+            role={newRole}
+            onRole={(r) => {
+              setNewRole(r);
+              setSelectedPermissions(getDefaultPermissionsForRole(r));
+            }}
+            permissions={selectedPermissions}
+            onPermissions={setSelectedPermissions}
+          />
+        </Modal>
       )}
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
-            <h3 className="text-lg font-medium text-red-600">Xóa Tài Khoản Vĩnh Viễn</h3>
-            <p className="text-xs text-slate-600">
-              Bạn có chắc chắn muốn xóa tài khoản <strong>{user.name}</strong> không? Hành động này không thể hoàn tác.
-            </p>
-            <div className="flex justify-end gap-2 pt-3 border-t text-xs">
-              <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Hủy</Button>
-              <Button variant="primary" onClick={() => deleteMutation.mutate()} className="bg-red-600">
-                Xác Nhận Xóa
-              </Button>
-            </div>
-          </div>
-        </div>
+        <Modal
+          title={c.deleteTitle}
+          eyebrow={user.name}
+          onClose={() => setShowDeleteModal(false)}
+          width="max-w-lg"
+          footer={
+            <>
+              <button type="button" onClick={() => setShowDeleteModal(false)} className={outlineButton}>
+                {c.cancel}
+              </button>
+              <button type="button" onClick={() => deleteMutation.mutate()} className={dangerButton}>
+                {c.confirmDelete}
+              </button>
+            </>
+          }
+        >
+          <p className="text-[15px] leading-7 text-slate-700">{c.deleteText(user.name)}</p>
+        </Modal>
       )}
     </div>
   );

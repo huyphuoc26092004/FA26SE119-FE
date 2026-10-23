@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
-import {
-  Receipt,
-  Search,
-  Plus,
-  Mail,
-  ShieldCheck,
-  AlertTriangle,
-  Download,
-  CheckCircle2,
-  Filter,
-  Eye,
-  Building,
-  RotateCcw,
-} from 'lucide-react';
 import type { VatInvoiceItem, VatInvoiceStatus } from '../../../types/paymentManagement';
+import {
+  EmptyRow,
+  StatRow,
+  UnderlineTabs,
+  brandLink,
+  dangerLink,
+  smallPrimary,
+  textLink,
+  underlineInput,
+} from '../../../components/admin/AdminKit';
 
 interface VatInvoiceTabProps {
   invoices: VatInvoiceItem[];
@@ -23,6 +19,18 @@ interface VatInvoiceTabProps {
   onSendEmail: (invoiceId: string) => Promise<void>;
 }
 
+type StatusFilter = 'ALL' | VatInvoiceStatus;
+
+export const VAT_STATUS_LABEL: Record<VatInvoiceStatus, string> = {
+  SENT: 'Đã gửi email',
+  ISSUED: 'Đã phát hành',
+  CANCELLED: 'Đã huỷ',
+  ADJUSTED: 'Điều chỉnh',
+};
+
+export const vatStatusTone = (s: VatInvoiceStatus) =>
+  s === 'SENT' ? 'text-brand' : s === 'ISSUED' ? 'text-ink' : s === 'CANCELLED' ? 'text-danger' : 'text-orange-600';
+
 export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
   invoices,
   onOpenViewModal,
@@ -31,7 +39,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
   onSendEmail,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [sendingId, setSendingId] = useState<string | null>(null);
 
   // Filter logic
@@ -66,40 +74,6 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
       await onSendEmail(inv.id);
     } finally {
       setSendingId(null);
-    }
-  };
-
-  const getStatusBadge = (status: VatInvoiceStatus) => {
-    switch (status) {
-      case 'SENT':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 size={12} className="text-emerald-600" />
-            Đã gửi Email
-          </span>
-        );
-      case 'ISSUED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
-            <ShieldCheck size={12} className="text-brand-600" />
-            Đã phát hành
-          </span>
-        );
-      case 'CANCELLED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-            <AlertTriangle size={12} className="text-rose-600" />
-            Đã hủy
-          </span>
-        );
-      case 'ADJUSTED':
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <RotateCcw size={12} className="text-amber-600" />
-            Điều chỉnh
-          </span>
-        );
     }
   };
 
@@ -155,274 +129,150 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
     document.body.removeChild(link);
   };
 
+  const count = (s: StatusFilter) => (s === 'ALL' ? invoices.length : invoices.filter((i) => i.status === s).length);
+  const hasFilters = statusFilter !== 'ALL' || !!searchQuery;
+  const money = (v: number) => `${v.toLocaleString('vi-VN')}đ`;
+  const grid = 'md:grid-cols-[minmax(0,1fr)_9rem_7rem_9rem_8rem]';
+
   return (
-    <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Tổng số HĐ đã phát hành
-            </p>
-            <p className="text-2xl font-semibold text-slate-900 mt-1">{totalCount}</p>
-            <p className="text-[11px] text-slate-500 mt-1">Ký hiệu mẫu: 1C26TTA</p>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-brand-50 text-brand-600">
-            <Receipt size={24} />
-          </div>
-        </div>
+    <div>
+      <StatRow
+        items={[
+          { label: 'Hoá đơn đã phát hành', value: totalCount, detail: 'Ký hiệu mẫu 1C26TTA' },
+          { label: 'Đã gửi email cho khách', value: sentCount, valueTone: 'brand', detail: 'Kèm mã tra cứu' },
+          { label: 'Thuế GTGT đầu ra', value: money(totalVatVND), detail: `Doanh số ${money(totalGrossVND)}` },
+          {
+            label: 'Đã huỷ',
+            value: cancelledCount,
+            valueTone: cancelledCount > 0 ? 'danger' : 'ink',
+            detail: 'Đã lưu biên bản huỷ',
+            onClick: cancelledCount > 0 ? () => setStatusFilter('CANCELLED') : undefined,
+          },
+        ]}
+      />
 
-        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Đã gửi Email cho khách
-            </p>
-            <p className="text-2xl font-semibold text-emerald-600 mt-1">{sentCount}</p>
-            <p className="text-[11px] text-slate-500 mt-1">Kèm mã tra cứu & bản thể hiện</p>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-emerald-50 text-emerald-600">
-            <Mail size={24} />
-          </div>
-        </div>
+      <UnderlineTabs
+        className="mt-[clamp(2.5rem,5vw,3.5rem)]"
+        tabs={(['ALL', 'ISSUED', 'SENT', 'CANCELLED'] as const).map((s) => ({
+          value: s,
+          label: s === 'ALL' ? 'Tất cả' : VAT_STATUS_LABEL[s],
+          count: count(s),
+        }))}
+        value={statusFilter}
+        onChange={setStatusFilter}
+        label="Lọc theo trạng thái hoá đơn"
+      />
 
-        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Tổng thuế GTGT 8% đầu ra
-            </p>
-            <p className="text-2xl font-semibold text-slate-900 mt-1">
-              {totalVatVND.toLocaleString('vi-VN')} đ
-            </p>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Doanh số: {totalGrossVND.toLocaleString('vi-VN')} đ
-            </p>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-brand-50 text-brand-600">
-            <ShieldCheck size={24} />
-          </div>
-        </div>
-
-        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Hóa đơn đã hủy / Điều chỉnh
-            </p>
-            <p className="text-2xl font-semibold text-rose-600 mt-1">{cancelledCount}</p>
-            <p className="text-[11px] text-slate-500 mt-1">Đã lưu lý do biên bản hủy</p>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-rose-50 text-rose-600">
-            <AlertTriangle size={24} />
-          </div>
-        </div>
-      </div>
-
-      {/* Action and Filter Bar */}
-      <div className="p-4 rounded-3xl bg-surface border border-slate-200/80 shadow-xs space-y-3">
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo Số HĐ (008412), Mã tra cứu, Mã đơn, Tên khách hàng, MST Công ty..."
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
-            />
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+        <label className="block w-full max-w-md">
+          <span className="sr-only">Tìm hoá đơn</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm theo số HĐ, mã tra cứu, mã đơn, khách hàng hoặc MST"
+            className={`${underlineInput} border-ink`}
+          />
+        </label>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px]">
+          {hasFilters && (
             <button
-              onClick={handleExportCSV}
-              className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
-            >
-              <Download size={14} />
-              <span>Xuất sổ HĐ</span>
-            </button>
-
-            <button
-              onClick={onOpenManualModal}
-              className="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs"
-            >
-              <Plus size={15} />
-              <span>Lập Hóa đơn mới</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Filter chips */}
-        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-slate-100 text-xs text-slate-600">
-          <span className="font-semibold text-slate-500 flex items-center gap-1">
-            <Filter size={13} />
-            Trạng thái HĐ:
-          </span>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-surface text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
-          >
-            <option value="ALL">Tất cả hóa đơn</option>
-            <option value="ISSUED">Đã phát hành (ISSUED)</option>
-            <option value="SENT">Đã gửi Email (SENT)</option>
-            <option value="CANCELLED">Đã hủy (CANCELLED)</option>
-          </select>
-
-          {(statusFilter !== 'ALL' || searchQuery) && (
-            <button
+              type="button"
               onClick={() => {
                 setStatusFilter('ALL');
                 setSearchQuery('');
               }}
-              className="text-brand-600 hover:text-brand-700 text-xs font-semibold ml-auto"
+              className={`${textLink} text-[13px] text-slate-600`}
             >
-              Xóa bộ lọc
+              Xoá bộ lọc
             </button>
           )}
+          <button type="button" onClick={handleExportCSV} className={`${textLink} text-[13px] text-ink`}>
+            Xuất sổ hoá đơn
+          </button>
+          <button type="button" onClick={onOpenManualModal} className={smallPrimary}>
+            Lập hoá đơn mới
+          </button>
         </div>
       </div>
 
-      {/* Invoice Ledger Table */}
-      <div className="rounded-3xl bg-surface border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-medium tracking-wider">
-                <th className="py-3.5 px-4">Số HĐ & Mẫu</th>
-                <th className="py-3.5 px-4">Khách hàng & MST</th>
-                <th className="py-3.5 px-4">Hàng hóa / Dịch vụ</th>
-                <th className="py-3.5 px-4 text-right">Chưa thuế (VND)</th>
-                <th className="py-3.5 px-4 text-right">Thuế VAT (8%)</th>
-                <th className="py-3.5 px-4 text-right">Tổng tiền (VND)</th>
-                <th className="py-3.5 px-4">Ngày ký số</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
-                    <Receipt size={32} className="mx-auto mb-2 text-slate-300" />
-                    Không tìm thấy hóa đơn điện tử nào.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-slate-50/60 transition group">
-                    {/* Invoice Number & Series */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-medium text-brand-700 text-sm group-hover:underline cursor-pointer" onClick={() => onOpenViewModal(inv)}>
-                          {inv.invoiceNumber}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        Ký hiệu: <span className="font-mono font-medium text-slate-600">{inv.invoiceSeries}</span>
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        Tra cứu: <span className="font-mono text-slate-700">{inv.lookupCode}</span>
-                      </div>
-                    </td>
-
-                    {/* Customer */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-900">{inv.customerName}</div>
-                      <div className="text-[11px] text-slate-500">{inv.customerEmail}</div>
-                      {inv.customerCompany && (
-                        <div className="text-[10px] text-slate-700 font-medium truncate max-w-[170px] mt-0.5 flex items-center gap-1">
-                          <Building size={11} className="text-brand-500 shrink-0" />
-                          <span>{inv.customerCompany}</span>
-                        </div>
-                      )}
-                      {inv.customerTaxCode && (
-                        <div className="text-[10px] text-brand-800 font-mono">
-                          MST: {inv.customerTaxCode}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Item */}
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <div className="font-medium text-slate-800 line-clamp-2">{inv.itemName}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        Đơn hàng: <span className="font-mono text-slate-600">{inv.orderCode}</span>
-                      </div>
-                    </td>
-
-                    {/* Subtotal */}
-                    <td className="py-3.5 px-4 text-right font-medium text-slate-700">
-                      {inv.subtotalVND.toLocaleString('vi-VN')} đ
-                    </td>
-
-                    {/* VAT */}
-                    <td className="py-3.5 px-4 text-right font-medium text-slate-700">
-                      <div>{inv.vatAmountVND.toLocaleString('vi-VN')} đ</div>
-                      <div className="text-[10px] text-slate-400">{inv.vatRatePercent}%</div>
-                    </td>
-
-                    {/* Total */}
-                    <td className="py-3.5 px-4 text-right font-semibold text-slate-900 text-sm">
-                      {inv.totalAmountVND.toLocaleString('vi-VN')} đ
-                    </td>
-
-                    {/* Issued At & Digital Signature */}
-                    <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                      <div>{inv.issuedAt}</div>
-                      <div className="text-[10px] text-emerald-600 flex items-center gap-1 font-medium mt-0.5">
-                        <ShieldCheck size={11} />
-                        <span>Đã ký số SHA-256</span>
-                      </div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-3.5 px-4 text-center">{getStatusBadge(inv.status)}</td>
-
-                    {/* Actions */}
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {/* View & Print */}
-                        <button
-                          onClick={() => onOpenViewModal(inv)}
-                          className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 font-semibold text-xs transition flex items-center gap-1 shadow-2xs"
-                          title="Xem bản thể hiện & In hóa đơn"
-                        >
-                          <Eye size={13} />
-                          <span>Xem / In</span>
-                        </button>
-
-                        {/* Send Email */}
-                        {inv.status !== 'CANCELLED' && (
-                          <button
-                            onClick={() => handleSendEmail(inv)}
-                            disabled={sendingId === inv.id}
-                            className="p-1.5 rounded-xl text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition"
-                            title="Gửi email cho khách hàng"
-                          >
-                            <Mail size={15} />
-                          </button>
-                        )}
-
-                        {/* Cancel Invoice */}
-                        {inv.status !== 'CANCELLED' && (
-                          <button
-                            onClick={() => onOpenCancelModal(inv)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                            title="Hủy hóa đơn điện tử"
-                          >
-                            <AlertTriangle size={15} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className={`mt-8 hidden gap-x-6 border-y border-b-border border-t-ink py-3 text-[13px] text-slate-500 md:grid ${grid}`}>
+        <span>Hoá đơn</span>
+        <span>Ngày ký số</span>
+        <span className="text-right">Thuế GTGT</span>
+        <span className="text-right">Tổng tiền</span>
+        <span />
       </div>
+      {filtered.length === 0 ? (
+        <EmptyRow>Không tìm thấy hoá đơn điện tử nào.</EmptyRow>
+      ) : (
+        <ul className="mt-8 border-t border-ink md:mt-0 md:border-t-0">
+          {filtered.map((inv) => {
+            const cancelled = inv.status === 'CANCELLED';
+            return (
+              <li key={inv.id} className={`grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6 gap-y-1 border-b border-border py-5 ${grid}`}>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <button
+                      type="button"
+                      onClick={() => onOpenViewModal(inv)}
+                      className={`text-left text-[clamp(1rem,1.2vw,1.0625rem)] font-medium tabular-nums hover:text-brand ${
+                        cancelled ? 'text-slate-500 line-through' : 'text-ink'
+                      }`}
+                    >
+                      HĐ {inv.invoiceNumber}
+                    </button>
+                    <span className={`text-[13px] ${vatStatusTone(inv.status)}`}>{VAT_STATUS_LABEL[inv.status]}</span>
+                  </div>
+                  <p className="mt-0.5 text-[13px] text-slate-700">
+                    {inv.customerName}
+                    {inv.customerCompany && <span className="text-slate-500"> · {inv.customerCompany}</span>}
+                    {inv.customerTaxCode && <span className="text-slate-500"> · MST {inv.customerTaxCode}</span>}
+                  </p>
+                  <p className="mt-0.5 line-clamp-1 text-[13px] text-slate-500">
+                    {inv.itemName} · {inv.orderCode} · Ký hiệu {inv.invoiceSeries} · Tra cứu {inv.lookupCode}
+                  </p>
+                  <p className="mt-1 text-[13px] text-slate-600 md:hidden">
+                    {inv.issuedAt} · <span className="text-ink">{money(inv.totalAmountVND)}</span>
+                  </p>
+                </div>
+                <span className="hidden text-[13px] text-slate-600 md:block">
+                  {inv.issuedAt}
+                  <span className="block text-xs text-slate-500">Ký số SHA-256</span>
+                </span>
+                <span className="hidden text-right md:block">
+                  <span className="block text-sm tabular-nums text-slate-700">{money(inv.vatAmountVND)}</span>
+                  <span className="block text-xs text-slate-500">{inv.vatRatePercent}%</span>
+                </span>
+                <span className="hidden text-right md:block">
+                  <span className="block text-[15px] tabular-nums text-ink">{money(inv.totalAmountVND)}</span>
+                  <span className="block text-xs text-slate-500">Chưa thuế {money(inv.subtotalVND)}</span>
+                </span>
+                <span className="flex flex-col items-end gap-2 text-[13px]">
+                  <button type="button" onClick={() => onOpenViewModal(inv)} className={`${textLink} text-[13px] text-ink`}>
+                    Xem / In
+                  </button>
+                  {!cancelled && (
+                    <button
+                      type="button"
+                      onClick={() => handleSendEmail(inv)}
+                      disabled={sendingId === inv.id}
+                      className={`${brandLink} text-[13px]`}
+                    >
+                      {sendingId === inv.id ? 'Đang gửi…' : 'Gửi email'}
+                    </button>
+                  )}
+                  {!cancelled && (
+                    <button type="button" onClick={() => onOpenCancelModal(inv)} className={`${dangerLink} text-[13px]`}>
+                      Huỷ HĐ
+                    </button>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 };

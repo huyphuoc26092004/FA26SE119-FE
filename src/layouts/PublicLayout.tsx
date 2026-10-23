@@ -10,6 +10,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+import { CcvLogo } from '../components/brand/CcvLogo';
 
 export default function PublicLayout() {
   const { isAuthenticated, role, user, logout } = useAuthStore();
@@ -107,7 +108,7 @@ export default function PublicLayout() {
         <Link
           to={getRoleDashboardPath()}
           onClick={() => setMobileMenuOpen(false)}
-          className="inline-flex min-h-10 items-center justify-center gap-3 rounded-full bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-brand-800 focus-visible:outline-offset-2"
+          className="btn btn-p btn-s min-h-10"
         >
           <span>{t('common.openWorkspace', 'Mở không gian làm việc')}</span>
           <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -138,7 +139,7 @@ export default function PublicLayout() {
         <Link
           to="/register"
           onClick={() => setMobileMenuOpen(false)}
-          className="inline-flex min-h-10 items-center justify-center gap-3 rounded-full bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-brand-800 focus-visible:outline-offset-2"
+          className="btn btn-p btn-s min-h-10"
         >
           {t('common.getStarted', 'Bắt đầu ngay')}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -152,11 +153,11 @@ export default function PublicLayout() {
         <div className="relative mx-auto flex h-16 w-full max-w-[1680px] items-center justify-between gap-6 px-5 sm:px-8 lg:px-[clamp(2rem,4vw,5rem)]">
           <Link
             to="/"
-            className="flex shrink-0 items-baseline gap-1 rounded-control focus-visible:outline-offset-4"
+            aria-label="CCV"
+            className="inline-flex shrink-0 rounded-control focus-visible:outline-offset-4"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <span className="text-2xl font-medium tracking-[-0.02em] text-ink">Jobie</span>
-            <span className="text-xs text-brand">ai</span>
+            <CcvLogo height={32} />
           </Link>
 
           <nav

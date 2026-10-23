@@ -1,27 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import {
-  LifeBuoy,
-  Plus,
-  Search,
-  Filter,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  HelpCircle,
-  MessageSquare,
-  Send,
-  X,
-  Paperclip,
-  Phone,
-  Mail,
-  ChevronRight,
-  ShieldCheck,
-  User,
-  Loader2,
-  AlertTriangle,
-} from 'lucide-react';
+import React, { useState, useEffect, type ReactNode } from 'react';
+import { ArrowRight, ArrowUpRight, Loader2, Search, X } from 'lucide-react';
 import type {
-  CreateTicketInput,
   SupportTicket,
   TicketCategory,
   TicketPriority,
@@ -35,8 +14,229 @@ import {
 } from '../../services/supportService';
 import { useTranslation } from '../../i18n';
 
+const copy = {
+  vi: {
+    eyebrow: 'Hỗ trợ',
+    line1: 'Cần giúp đỡ?',
+    line2: 'Chúng tôi luôn ở đây.',
+    intro: 'Gửi yêu cầu hỗ trợ, theo dõi tiến độ xử lý và trao đổi trực tiếp với đội ngũ CareerPilot.',
+    newTicket: 'Tạo yêu cầu mới',
+    stats: { total: 'Tổng yêu cầu', open: 'Mới tiếp nhận', in_progress: 'Đang xử lý', resolved: 'Đã giải quyết' },
+    listTitle: 'Yêu cầu của bạn',
+    all: 'Tất cả',
+    allCategories: 'Tất cả phân loại',
+    search: 'Tìm theo mã, tiêu đề, tính năng…',
+    empty: 'Không có yêu cầu nào phù hợp.',
+    emptyHint: 'Thử bỏ bớt bộ lọc, hoặc tạo yêu cầu mới.',
+    feature: 'Tính năng',
+    updated: 'Cập nhật',
+    view: 'Xem',
+    contactTitle: 'Kênh liên hệ khác',
+    hotline: 'Hotline 24/7',
+    hotlineNote: 'Hỗ trợ khẩn cấp về thanh toán và tài khoản',
+    email: 'Email chăm sóc khách hàng',
+    emailNote: 'Phản hồi trong tối đa 2 giờ làm việc',
+    tipsTitle: 'Trước khi gửi',
+    tips: [
+      'Ghi rõ các bước bạn đã làm trước khi gặp lỗi.',
+      'Chọn đúng tính năng liên quan để chuyển đến đúng bộ phận.',
+      'Chỉ chọn mức Khẩn cấp khi bạn không thể dùng tài khoản hoặc bị trừ tiền sai.',
+    ],
+    // Detail drawer
+    conversation: 'Trao đổi',
+    created: 'Tạo lúc',
+    reply: 'Phản hồi',
+    replyPlaceholder: 'Nhập nội dung phản hồi tiếp theo…',
+    send: 'Gửi phản hồi',
+    ticketStatus: 'Trạng thái yêu cầu',
+    markResolved: 'Đánh dấu đã giải quyết',
+    closeTicket: 'Đóng yêu cầu',
+    you: 'Bạn',
+    close: 'Đóng',
+    // Create drawer
+    createTitle: 'Yêu cầu hỗ trợ mới',
+    createIntro: 'Mô tả vấn đề bạn đang gặp, chúng tôi sẽ phản hồi sớm nhất.',
+    subject: 'Tiêu đề',
+    subjectPlaceholder: 'Ví dụ: Lỗi khi tải bản PDF, token bị trừ không đúng…',
+    category: 'Phân loại',
+    priority: 'Mức độ ưu tiên',
+    relatedFeature: 'Tính năng liên quan',
+    description: 'Mô tả chi tiết',
+    descriptionPlaceholder: 'Mô tả lỗi, các bước tái hiện hoặc thông tin bạn cần hỗ trợ…',
+    cancel: 'Huỷ',
+    submit: 'Gửi yêu cầu',
+    required: 'bắt buộc',
+  },
+  en: {
+    eyebrow: 'Support',
+    line1: 'Need a hand?',
+    line2: "We're right here.",
+    intro: 'Submit support tickets, track their progress and talk directly with the CareerPilot team.',
+    newTicket: 'New ticket',
+    stats: { total: 'All tickets', open: 'New', in_progress: 'In progress', resolved: 'Resolved' },
+    listTitle: 'Your tickets',
+    all: 'All',
+    allCategories: 'All categories',
+    search: 'Search ID, subject, feature…',
+    empty: 'No matching tickets.',
+    emptyHint: 'Try clearing some filters, or create a new ticket.',
+    feature: 'Feature',
+    updated: 'Updated',
+    view: 'View',
+    contactTitle: 'Other ways to reach us',
+    hotline: '24/7 hotline',
+    hotlineNote: 'Urgent help with payments and accounts',
+    email: 'Customer care email',
+    emailNote: 'Replies within 2 business hours',
+    tipsTitle: 'Before you send',
+    tips: [
+      'Describe the steps you took before the problem happened.',
+      'Pick the right feature so the ticket reaches the right team.',
+      'Use Urgent only when you cannot use your account or were charged incorrectly.',
+    ],
+    conversation: 'Conversation',
+    created: 'Created',
+    reply: 'Reply',
+    replyPlaceholder: 'Type your reply…',
+    send: 'Send reply',
+    ticketStatus: 'Ticket status',
+    markResolved: 'Mark as resolved',
+    closeTicket: 'Close ticket',
+    you: 'You',
+    close: 'Close',
+    createTitle: 'New support ticket',
+    createIntro: "Describe the issue you ran into and we'll get back to you soon.",
+    subject: 'Subject',
+    subjectPlaceholder: 'e.g. PDF download fails, tokens charged incorrectly…',
+    category: 'Category',
+    priority: 'Priority',
+    relatedFeature: 'Related feature',
+    description: 'Details',
+    descriptionPlaceholder: 'Describe the problem, steps to reproduce, or what you need help with…',
+    cancel: 'Cancel',
+    submit: 'Submit ticket',
+    required: 'required',
+  },
+};
+
+const statusLabels: Record<TicketStatus, { vi: string; en: string }> = {
+  open: { vi: 'Mới tiếp nhận', en: 'New' },
+  in_progress: { vi: 'Đang xử lý', en: 'In progress' },
+  resolved: { vi: 'Đã giải quyết', en: 'Resolved' },
+  closed: { vi: 'Đã đóng', en: 'Closed' },
+};
+
+const statusDot: Record<TicketStatus, string> = {
+  open: 'bg-brand',
+  in_progress: 'bg-warning',
+  resolved: 'bg-success',
+  closed: 'bg-slate-400',
+};
+
+const priorityLabels: Record<TicketPriority, { vi: string; en: string }> = {
+  low: { vi: 'Thấp', en: 'Low' },
+  medium: { vi: 'Trung bình', en: 'Medium' },
+  high: { vi: 'Cao', en: 'High' },
+  urgent: { vi: 'Khẩn cấp', en: 'Urgent' },
+};
+
+const priorityTone: Record<TicketPriority, string> = {
+  low: 'text-slate-500',
+  medium: 'text-slate-700',
+  high: 'text-warning',
+  urgent: 'text-danger',
+};
+
+const categoryLabels: Record<TicketCategory, { vi: string; en: string }> = {
+  technical: { vi: 'Lỗi kỹ thuật', en: 'Technical issue' },
+  billing: { vi: 'Gói cước & Thanh toán', en: 'Plans & billing' },
+  ai_accuracy: { vi: 'Độ chính xác AI', en: 'AI accuracy' },
+  consultation: { vi: 'Cố vấn nghề nghiệp', en: 'Career advisor' },
+  feature_request: { vi: 'Đề xuất tính năng', en: 'Feature request' },
+  other: { vi: 'Hỗ trợ chung', en: 'General' },
+};
+
+const categoryOrder: TicketCategory[] = ['technical', 'billing', 'ai_accuracy', 'consultation', 'feature_request', 'other'];
+const statusOrder: TicketStatus[] = ['open', 'in_progress', 'resolved', 'closed'];
+const priorityOrder: TicketPriority[] = ['low', 'medium', 'high', 'urgent'];
+
+// Values are stored on the ticket as-is, so they stay in Vietnamese like the existing data.
+const relatedFeatures = [
+  'Phân tích CV ATS',
+  'Khớp nối CV–Job Fit',
+  'Trợ lý sự nghiệp AI',
+  'Hỗ trợ ứng tuyển (Cover Letter)',
+  'Đánh giá kỹ năng',
+  'Gói cước & Thanh toán',
+  'Khác',
+];
+
+const fieldLabel = 'text-[13px] text-slate-600';
+const inputClass =
+  'w-full border-0 border-b border-[#aeb7b0] bg-transparent px-0 py-3 text-base text-ink outline-none transition-colors placeholder:text-slate-500 focus:border-ink md:text-[1.0625rem]';
+const selectClass =
+  'w-full appearance-none border-0 border-b border-[#aeb7b0] bg-transparent py-3 pr-6 text-base text-ink outline-none transition-colors focus:border-ink cursor-pointer md:text-[1.0625rem]';
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer disabled:pointer-events-none disabled:opacity-40';
+const primaryButton =
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:bg-slate-400 cursor-pointer';
+const outlineButton =
+  'inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 px-6 py-2.5 text-sm text-slate-700 transition-colors duration-150 hover:border-ink hover:text-ink cursor-pointer';
+
+function SectionHead({ index, title, action }: { index: string; title: string; action?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-ink pb-3">
+      <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
+        <span className="text-xs tabular-nums tracking-normal text-slate-500">{index}</span>
+        {title}
+      </h2>
+      {action}
+    </div>
+  );
+}
+
+function SelectChevron() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 12 12"
+      className="pointer-events-none absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-500"
+    >
+      <path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function StatusMark({ status, label }: { status: TicketStatus; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap text-sm text-slate-700">
+      <span className={`h-1.5 w-1.5 rounded-full ${statusDot[status]}`} aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
+
+function Drawer({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end animate-fade-in" role="dialog" aria-modal="true" aria-label={label}>
+      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/40 cursor-default" />
+      <div className="relative flex h-full w-full max-w-[44rem] flex-col border-l border-border bg-canvas">{children}</div>
+    </div>
+  );
+}
+
 export const SupportPage: React.FC = () => {
   const { isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
+  const lang = isVietnamese ? 'vi' : 'en';
 
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
@@ -142,546 +342,431 @@ export const SupportPage: React.FC = () => {
     return true;
   });
 
-  const getStatusBadge = (status: TicketStatus) => {
-    switch (status) {
-      case 'open':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-400">
-            <Clock className="w-3 h-3" />
-            <span>Mới tiếp nhận</span>
-          </span>
-        );
-      case 'in_progress':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            <span>Đang xử lý</span>
-          </span>
-        );
-      case 'resolved':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>Đã giải quyết</span>
-          </span>
-        );
-      case 'closed':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
-            <span>Đã đóng</span>
-          </span>
-        );
-    }
-  };
-
-  const getPriorityBadge = (priority: TicketPriority) => {
-    switch (priority) {
-      case 'urgent':
-        return (
-          <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            <span>Khẩn cấp</span>
-          </span>
-        );
-      case 'high':
-        return (
-          <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            <span>Cao</span>
-          </span>
-        );
-      case 'medium':
-        return <span className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">Trung bình</span>;
-      case 'low':
-        return <span className="text-[11px] text-neutral-400">Thấp</span>;
-    }
-  };
-
-  const getCategoryName = (cat: TicketCategory) => {
-    switch (cat) {
-      case 'technical':
-        return 'Lỗi kỹ thuật';
-      case 'billing':
-        return 'Gói cước & Thanh toán';
-      case 'ai_accuracy':
-        return 'Độ chính xác AI';
-      case 'consultation':
-        return 'Cố vấn nghề nghiệp';
-      case 'feature_request':
-        return 'Đề xuất tính năng';
-      default:
-        return 'Hỗ trợ chung';
-    }
-  };
+  const countBy = (status: TicketStatus) => tickets.filter((t) => t.status === status).length;
+  const stats = [
+    { key: 'total', label: c.stats.total, value: tickets.length },
+    { key: 'open', label: c.stats.open, value: countBy('open') },
+    { key: 'in_progress', label: c.stats.in_progress, value: countBy('in_progress') },
+    { key: 'resolved', label: c.stats.resolved, value: countBy('resolved') },
+  ];
+  const statusTabs: { value: string; label: string; count: number }[] = [
+    { value: 'all', label: c.all, count: tickets.length },
+    ...statusOrder.map((s) => ({ value: s, label: statusLabels[s][lang], count: countBy(s) })),
+  ];
 
   return (
-    <div className="space-y-8 animate-fade-in pb-16">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-5">
-        <div>
-          <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight flex items-center gap-3 [&>svg]:hidden">
-            <LifeBuoy className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-            <span>{isVietnamese ? 'Trung tâm Hỗ trợ & Báo lỗi' : 'Support Desk & Tickets'}</span>
+    <div className="animate-fade-in pb-[clamp(3rem,6vw,5rem)] pt-[clamp(1.75rem,3.5vw,2.5rem)]">
+      {/* Headline */}
+      <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <p className="mb-3 text-[13px] text-brand">{c.eyebrow}</p>
+          <h1 className="text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+            {c.line1}
+            <span className="block text-brand">{c.line2}</span>
           </h1>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            {isVietnamese
-              ? 'Gửi phiếu hỗ trợ, theo dõi tiến độ xử lý và trao đổi trực tiếp với đội ngũ CareerPilot'
-              : 'Submit support tickets, track resolution status, and chat with the CareerPilot team'}
+          <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[40rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+            {c.intro}
           </p>
         </div>
-
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-2 shadow-sm self-start md:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{isVietnamese ? 'Tạo yêu cầu hỗ trợ mới' : 'Create New Ticket'}</span>
+        <button type="button" onClick={() => setIsCreateOpen(true)} className={`${primaryButton} self-start lg:self-auto`}>
+          {c.newTicket}
+          <ArrowRight size={16} aria-hidden="true" />
         </button>
-      </div>
+      </header>
 
-      {/* Summary Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4.5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
-          <span className="text-xs text-neutral-500 block mb-1">Tổng phiếu hỗ trợ</span>
-          <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{tickets.length}</div>
-        </div>
-
-        <div className="p-4.5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
-          <span className="text-xs text-neutral-500 block mb-1">Mới tiếp nhận</span>
-          <div className="text-2xl font-semibold text-brand-600">
-            {tickets.filter((t) => t.status === 'open').length}
-          </div>
-        </div>
-
-        <div className="p-4.5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
-          <span className="text-xs text-neutral-500 block mb-1">Đang xử lý</span>
-          <div className="text-2xl font-semibold text-amber-500">
-            {tickets.filter((t) => t.status === 'in_progress').length}
-          </div>
-        </div>
-
-        <div className="p-4.5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
-          <span className="text-xs text-neutral-500 block mb-1">Đã giải quyết</span>
-          <div className="text-2xl font-semibold text-emerald-600">
-            {tickets.filter((t) => t.status === 'resolved').length}
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isVietnamese ? 'Tìm theo mã phiếu, tiêu đề...' : 'Search ticket ID, title...'}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          {/* Status selector */}
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 focus:outline-none"
+      {/* Stats */}
+      <dl className="mt-[clamp(2rem,4vw,3rem)] grid grid-cols-2 border-y border-border md:grid-cols-4">
+        {stats.map((s, i) => (
+          <div
+            key={s.key}
+            className={`py-5 ${i % 2 === 1 ? 'border-l border-border pl-5' : ''} ${i >= 2 ? 'border-t border-border md:border-t-0' : ''} ${
+              i > 0 ? 'md:border-l md:pl-[clamp(1rem,2vw,1.75rem)]' : ''
+            }`}
           >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="open">Mới tiếp nhận</option>
-            <option value="in_progress">Đang xử lý</option>
-            <option value="resolved">Đã giải quyết</option>
-            <option value="closed">Đã đóng</option>
-          </select>
-
-          {/* Category selector */}
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 focus:outline-none"
-          >
-            <option value="all">Tất cả phân loại</option>
-            <option value="technical">Lỗi kỹ thuật</option>
-            <option value="billing">Gói cước & Thanh toán</option>
-            <option value="ai_accuracy">Độ chính xác AI</option>
-            <option value="feature_request">Đề xuất tính năng</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Tickets Table */}
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 dark:text-neutral-400 font-medium uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
-              <tr>
-                <th className="py-3 px-4">Mã phiếu</th>
-                <th className="py-3 px-4">Tiêu đề yêu cầu</th>
-                <th className="py-3 px-4">Phân loại</th>
-                <th className="py-3 px-4">Mức ưu tiên</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4">Thời gian</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 font-medium">
-              {filteredTickets.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-neutral-400">
-                    <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>{isVietnamese ? 'Không có yêu cầu hỗ trợ nào phù hợp' : 'No support tickets found'}</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredTickets.map((ticket) => (
-                  <tr
-                    key={ticket.id}
-                    onClick={() => setSelectedTicket(ticket)}
-                    className="hover:bg-neutral-50/70 dark:hover:bg-neutral-800/50 cursor-pointer transition"
-                  >
-                    <td className="py-3.5 px-4 font-mono font-medium text-neutral-900 dark:text-neutral-100">
-                      {ticket.id}
-                    </td>
-                    <td className="py-3.5 px-4 max-w-sm">
-                      <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                        {ticket.subject}
-                      </div>
-                      {ticket.relatedFeature && (
-                        <div className="text-[10px] text-neutral-400 truncate">
-                          Tính năng liên quan: {ticket.relatedFeature}
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-neutral-600 dark:text-neutral-300">
-                      {getCategoryName(ticket.category)}
-                    </td>
-                    <td className="py-3.5 px-4">{getPriorityBadge(ticket.priority)}</td>
-                    <td className="py-3.5 px-4">{getStatusBadge(ticket.status)}</td>
-                    <td className="py-3.5 px-4 text-neutral-500 font-mono text-[11px] whitespace-nowrap">
-                      {ticket.updatedAt}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedTicket(ticket);
-                        }}
-                        className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Contact Channels Footer */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-        <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <Phone className="w-6 h-6" />
+            <dt className="text-[13px] text-slate-600">{s.label}</dt>
+            <dd className="mt-2 text-[clamp(2rem,3.4vw,2.75rem)] font-normal leading-none tracking-[-0.03em] tabular-nums text-ink">
+              {s.value}
+            </dd>
           </div>
-          <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-              Hotline hỗ trợ trực tiếp 24/7
-            </h4>
-            <div className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 font-mono">
-              1900 6868 (Ext: 2)
-            </div>
-            <p className="text-xs text-neutral-400">Hỗ trợ khẩn cấp về thanh toán và tài khoản</p>
-          </div>
-        </div>
+        ))}
+      </dl>
 
-        <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-400 flex items-center justify-center shrink-0">
-            <Mail className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-              Email Chăm sóc khách hàng
-            </h4>
-            <div className="text-base font-medium text-neutral-900 dark:text-neutral-100 font-mono">
-              support@careerpilot.ai
-            </div>
-            <p className="text-xs text-neutral-400">Phản hồi trong vòng tối đa 2 giờ làm việc</p>
-          </div>
-        </div>
-      </div>
+      {/* 01 Tickets */}
+      <section className="mt-[clamp(2.5rem,5vw,4rem)]">
+        <SectionHead index="01" title={c.listTitle} />
 
-      {/* Ticket Details Drawer / Modal */}
-      {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-3xl my-8 bg-surface dark:bg-neutral-900 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Drawer Header */}
-            <div className="p-6 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40 flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="font-mono text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                    {selectedTicket.id}
-                  </span>
-                  <span>·</span>
-                  <span className="text-xs font-medium text-neutral-500">
-                    {getCategoryName(selectedTicket.category)}
-                  </span>
-                  <span>·</span>
-                  {getStatusBadge(selectedTicket.status)}
-                </div>
-                <h3 className="text-base md:text-lg font-medium text-neutral-900 dark:text-neutral-100">
-                  {selectedTicket.subject}
-                </h3>
-                {selectedTicket.relatedFeature && (
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Tính năng: {selectedTicket.relatedFeature}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
+        <div className="mt-5 flex flex-col gap-5">
+          <div role="tablist" aria-label={c.listTitle} className="-mb-px flex gap-6 overflow-x-auto">
+            {statusTabs.map((tab) => {
+              const active = filterStatus === tab.value;
+              return (
                 <button
-                  onClick={() => setSelectedTicket(null)}
-                  className="p-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Conversation Messages Thread */}
-            <div className="p-6 overflow-y-auto space-y-4 flex-1">
-              {selectedTicket.messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex gap-3 text-xs ${
-                    msg.sender === 'user' ? 'justify-end' : 'justify-start'
+                  key={tab.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setFilterStatus(tab.value)}
+                  className={`shrink-0 border-b-2 pb-2 text-[15px] transition-colors cursor-pointer ${
+                    active ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'
                   }`}
                 >
-                  {msg.sender !== 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-medium text-[11px] shrink-0">
-                      {msg.sender === 'agent' ? 'CP' : 'AI'}
-                    </div>
-                  )}
-
-                  <div
-                    className={`max-w-xl p-4 rounded-2xl space-y-1.5 ${
-                      msg.sender === 'user'
-                        ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 rounded-tr-xs'
-                        : msg.sender === 'system'
-                        ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-center w-full max-w-none text-[11px] italic'
-                        : 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 rounded-tl-xs'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3 text-[10px] opacity-70">
-                      <span className="font-semibold">{msg.senderName}</span>
-                      <span>{msg.timestamp}</span>
-                    </div>
-                    <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                  </div>
-
-                  {msg.sender === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 flex items-center justify-center font-medium text-[11px] shrink-0">
-                      You
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Reply Input Bar */}
-            <div className="p-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40">
-              <form onSubmit={handleSendReply} className="flex gap-2">
-                <textarea
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder={
-                    isVietnamese
-                      ? 'Nhập nội dung phản hồi tiếp theo...'
-                      : 'Type your reply message...'
-                  }
-                  rows={2}
-                  className="flex-1 px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                <button
-                  type="submit"
-                  disabled={isSendingReply || !replyText.trim()}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shrink-0 self-end"
-                >
-                  {isSendingReply ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      <span>{isVietnamese ? 'Gửi' : 'Send'}</span>
-                    </>
-                  )}
+                  {tab.label}
+                  <span className="ml-1.5 text-xs tabular-nums text-slate-500">{tab.count}</span>
                 </button>
-              </form>
+              );
+            })}
+          </div>
 
-              {/* Quick status actions */}
-              <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-neutral-200/60 dark:border-neutral-700">
-                <span className="text-[11px] text-neutral-400">Trạng thái phiếu:</span>
-                <div className="flex gap-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:max-w-[42rem]">
+            <label className="relative block">
+              <span className="sr-only">{c.allCategories}</span>
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className={`${selectClass} !py-2 !text-sm`}>
+                <option value="all">{c.allCategories}</option>
+                {categoryOrder.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {categoryLabels[cat][lang]}
+                  </option>
+                ))}
+              </select>
+              <SelectChevron />
+            </label>
+            <label className="relative block">
+              <span className="sr-only">{c.search}</span>
+              <Search size={15} className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={c.search}
+                className={`${inputClass} !py-2 pl-6 !text-sm`}
+              />
+            </label>
+          </div>
+        </div>
+
+        <ul className="mt-6 border-t border-border">
+          {filteredTickets.length === 0 ? (
+            <li className="border-b border-border py-14 text-center">
+              <p className="text-base text-ink">{c.empty}</p>
+              <p className="mt-1 text-sm text-slate-500">{c.emptyHint}</p>
+            </li>
+          ) : (
+            filteredTickets.map((ticket) => (
+              <li key={ticket.id} className="border-b border-border">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTicket(ticket)}
+                  className="group grid w-full cursor-pointer grid-cols-[1fr_auto] items-start gap-x-6 gap-y-2 py-5 text-left transition-colors hover:bg-surface md:grid-cols-[7.5rem_minmax(0,1fr)_10rem_9rem_2rem] md:items-center md:px-2"
+                >
+                  <span className="order-1 font-mono text-xs text-slate-500">{ticket.id}</span>
+                  <span className="order-3 col-span-2 min-w-0 md:order-2 md:col-span-1">
+                    <span className="block text-[clamp(1rem,1.3vw,1.125rem)] leading-snug text-ink group-hover:text-brand md:truncate">
+                      {ticket.subject}
+                    </span>
+                    <span className="mt-1 block text-[13px] text-slate-500 md:truncate">
+                      {categoryLabels[ticket.category]?.[lang] ?? categoryLabels.other[lang]}
+                      {ticket.relatedFeature && ticket.relatedFeature !== categoryLabels[ticket.category]?.vi && <> · {ticket.relatedFeature}</>}
+                      {' · '}
+                      <span className={priorityTone[ticket.priority]}>{priorityLabels[ticket.priority][lang]}</span>
+                    </span>
+                  </span>
+                  <span className="order-2 justify-self-end md:order-3 md:justify-self-start">
+                    <StatusMark status={ticket.status} label={statusLabels[ticket.status][lang]} />
+                  </span>
+                  <span className="order-4 hidden whitespace-nowrap text-[13px] tabular-nums text-slate-500 md:block">{ticket.updatedAt}</span>
+                  <ArrowUpRight
+                    size={16}
+                    aria-hidden="true"
+                    className="order-5 hidden text-slate-400 transition-colors group-hover:text-ink md:block"
+                  />
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      </section>
+
+      {/* 02 Contact + tips */}
+      <section className="mt-[clamp(2.5rem,5vw,4rem)] grid gap-[clamp(2.5rem,5vw,4rem)] lg:grid-cols-2">
+        <div>
+          <SectionHead index="02" title={c.contactTitle} />
+          <dl>
+            <div className="grid gap-1 border-b border-border py-5 sm:grid-cols-[12rem_1fr] sm:gap-6">
+              <dt className="text-[13px] text-slate-600">{c.hotline}</dt>
+              <dd>
+                <a href="tel:19006868" className="text-[clamp(1.25rem,2vw,1.5rem)] tabular-nums text-ink hover:text-brand">
+                  1900 6868 <span className="text-base text-slate-500">(Ext: 2)</span>
+                </a>
+                <p className="mt-1 text-sm text-slate-500">{c.hotlineNote}</p>
+              </dd>
+            </div>
+            <div className="grid gap-1 border-b border-border py-5 sm:grid-cols-[12rem_1fr] sm:gap-6">
+              <dt className="text-[13px] text-slate-600">{c.email}</dt>
+              <dd>
+                <a href="mailto:support@careerpilot.ai" className="break-all text-[clamp(1.125rem,1.8vw,1.375rem)] text-ink hover:text-brand">
+                  support@careerpilot.ai
+                </a>
+                <p className="mt-1 text-sm text-slate-500">{c.emailNote}</p>
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <div>
+          <SectionHead index="03" title={c.tipsTitle} />
+          <ol>
+            {c.tips.map((tip, i) => (
+              <li key={tip} className="flex gap-4 border-b border-border py-5 text-[15px] leading-7 text-slate-700">
+                <span className="w-6 shrink-0 pt-0.5 text-xs tabular-nums text-slate-500">{String(i + 1).padStart(2, '0')}</span>
+                {tip}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* Ticket detail drawer */}
+      {selectedTicket && (
+        <Drawer label={selectedTicket.subject} onClose={() => setSelectedTicket(null)}>
+          <div className="border-b border-ink px-[clamp(1.25rem,3vw,2.5rem)] pb-5 pt-6">
+            <div className="flex items-start justify-between gap-4">
+              <p className="font-mono text-xs text-slate-500">{selectedTicket.id}</p>
+              <button
+                type="button"
+                onClick={() => setSelectedTicket(null)}
+                aria-label={c.close}
+                className="-mr-2 -mt-2 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <h2 className="mt-2 text-[clamp(1.5rem,2.6vw,2rem)] font-normal leading-tight tracking-[-0.02em] text-ink">
+              {selectedTicket.subject}
+            </h2>
+            <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[13px]">
+              <div className="flex gap-1.5">
+                <dt className="sr-only">Status</dt>
+                <dd>
+                  <StatusMark status={selectedTicket.status} label={statusLabels[selectedTicket.status][lang]} />
+                </dd>
+              </div>
+              <div className="flex gap-1.5">
+                <dt className="text-slate-500">{c.category}</dt>
+                <dd className="text-slate-800">
+                  {categoryLabels[selectedTicket.category]?.[lang] ?? categoryLabels.other[lang]}
+                </dd>
+              </div>
+              <div className="flex gap-1.5">
+                <dt className="text-slate-500">{c.priority}</dt>
+                <dd className={priorityTone[selectedTicket.priority]}>{priorityLabels[selectedTicket.priority][lang]}</dd>
+              </div>
+              {selectedTicket.relatedFeature && (
+                <div className="flex gap-1.5">
+                  <dt className="text-slate-500">{c.feature}</dt>
+                  <dd className="text-slate-800">{selectedTicket.relatedFeature}</dd>
+                </div>
+              )}
+              <div className="flex gap-1.5">
+                <dt className="text-slate-500">{c.created}</dt>
+                <dd className="tabular-nums text-slate-800">{selectedTicket.createdAt}</dd>
+              </div>
+            </dl>
+          </div>
+
+          {/* Conversation */}
+          <div className="flex-1 overflow-y-auto px-[clamp(1.25rem,3vw,2.5rem)]">
+            <p className="pt-5 text-[13px] text-slate-500">
+              {c.conversation} · {selectedTicket.messages.length}
+            </p>
+            <ol className="mt-2">
+              {selectedTicket.messages.map((msg) =>
+                msg.sender === 'system' ? (
+                  <li key={msg.id} className="flex items-center gap-3 py-4 text-xs text-slate-500">
+                    <span className="h-px flex-1 bg-border" aria-hidden="true" />
+                    <span className="max-w-[80%] text-center">
+                      {msg.text} · <span className="tabular-nums">{msg.timestamp}</span>
+                    </span>
+                    <span className="h-px flex-1 bg-border" aria-hidden="true" />
+                  </li>
+                ) : (
+                  <li
+                    key={msg.id}
+                    className={`border-b border-border py-5 ${msg.sender === 'user' ? 'pl-[clamp(1.5rem,6vw,4rem)]' : ''}`}
+                  >
+                    <div className="flex items-baseline justify-between gap-4 text-[13px]">
+                      <span className={msg.sender === 'user' ? 'text-ink' : 'text-brand'}>
+                        {msg.sender === 'user' ? c.you : msg.senderName}
+                      </span>
+                      <span className="tabular-nums text-slate-500">{msg.timestamp}</span>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-[15px] leading-7 text-slate-800">{msg.text}</p>
+                  </li>
+                ),
+              )}
+            </ol>
+          </div>
+
+          {/* Reply */}
+          <div className="border-t border-ink px-[clamp(1.25rem,3vw,2.5rem)] pb-5 pt-4">
+            <form onSubmit={handleSendReply}>
+              <label className={fieldLabel} htmlFor="ticket-reply">
+                {c.reply}
+              </label>
+              <textarea
+                id="ticket-reply"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder={c.replyPlaceholder}
+                rows={2}
+                className={`${inputClass} resize-none`}
+              />
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-slate-600">
                   {selectedTicket.status !== 'resolved' && (
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange('resolved')}
-                      className="px-2.5 py-1 rounded-lg text-emerald-600 hover:bg-emerald-50 text-[11px] font-semibold transition"
-                    >
-                      Đánh dấu đã giải quyết
+                    <button type="button" onClick={() => handleStatusChange('resolved')} className={textLink}>
+                      {c.markResolved}
                     </button>
                   )}
                   {selectedTicket.status !== 'closed' && (
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange('closed')}
-                      className="px-2.5 py-1 rounded-lg text-neutral-500 hover:bg-neutral-100 text-[11px] font-medium transition"
-                    >
-                      Đóng yêu cầu
+                    <button type="button" onClick={() => handleStatusChange('closed')} className={textLink}>
+                      {c.closeTicket}
                     </button>
                   )}
                 </div>
+                <button type="submit" disabled={isSendingReply || !replyText.trim()} className={primaryButton}>
+                  {isSendingReply ? <Loader2 size={16} className="animate-spin" /> : c.send}
+                </button>
               </div>
-            </div>
+            </form>
           </div>
-        </div>
+        </Drawer>
       )}
 
-      {/* Create Ticket Modal */}
+      {/* Create ticket drawer */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-xl my-8 bg-surface dark:bg-neutral-900 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
-                  <LifeBuoy className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
-                    {isVietnamese ? 'Tạo yêu cầu hỗ trợ mới' : 'Submit Support Ticket'}
-                  </h3>
-                  <p className="text-xs text-neutral-500">
-                    {isVietnamese ? 'Mô tả vấn đề bạn đang gặp phải' : 'Describe the issue you encountered'}
-                  </p>
-                </div>
-              </div>
+        <Drawer label={c.createTitle} onClose={() => setIsCreateOpen(false)}>
+          <div className="border-b border-ink px-[clamp(1.25rem,3vw,2.5rem)] pb-5 pt-6">
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-[13px] text-brand">{c.eyebrow}</p>
               <button
+                type="button"
                 onClick={() => setIsCreateOpen(false)}
-                className="p-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+                aria-label={c.close}
+                className="-mr-2 -mt-2 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X size={18} />
               </button>
             </div>
+            <h2 className="mt-2 text-[clamp(1.5rem,2.6vw,2rem)] font-normal leading-tight tracking-[-0.02em] text-ink">
+              {c.createTitle}
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">{c.createIntro}</p>
+          </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
-                  Tiêu đề yêu cầu <span className="text-rose-500">*</span>
-                </label>
+          <form onSubmit={handleCreateSubmit} className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex-1 space-y-7 overflow-y-auto px-[clamp(1.25rem,3vw,2.5rem)] py-6">
+              <label className="block">
+                <span className={fieldLabel}>
+                  {c.subject} <span className="text-slate-400">· {c.required}</span>
+                </span>
                 <input
                   type="text"
                   required
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Ví dụ: Gặp lỗi khi tải bản PDF hoặc Token trừ không đúng..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder={c.subjectPlaceholder}
+                  className={inputClass}
                 />
-              </div>
+              </label>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
-                    Phân loại
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as TicketCategory)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none"
-                  >
-                    <option value="technical">Lỗi kỹ thuật</option>
-                    <option value="billing">Gói cước & Thanh toán</option>
-                    <option value="ai_accuracy">Độ chính xác AI</option>
-                    <option value="consultation">Cố vấn nghề nghiệp</option>
-                    <option value="feature_request">Đề xuất tính năng</option>
-                    <option value="other">Khác</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
-                    Mức độ ưu tiên
-                  </label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as TicketPriority)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none"
-                  >
-                    <option value="low">Thấp</option>
-                    <option value="medium">Trung bình</option>
-                    <option value="high">Cao</option>
-                    <option value="urgent">Khẩn cấp</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
-                  Tính năng liên quan
+              <div className="grid gap-7 sm:grid-cols-2">
+                <label className="block">
+                  <span className={fieldLabel}>{c.category}</span>
+                  <span className="relative block">
+                    <select value={category} onChange={(e) => setCategory(e.target.value as TicketCategory)} className={selectClass}>
+                      {categoryOrder.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat === 'other' ? (isVietnamese ? 'Khác' : 'Other') : categoryLabels[cat][lang]}
+                        </option>
+                      ))}
+                    </select>
+                    <SelectChevron />
+                  </span>
                 </label>
-                <select
-                  value={relatedFeature}
-                  onChange={(e) => setRelatedFeature(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none"
-                >
-                  <option value="Phân tích CV ATS">Phân tích CV ATS</option>
-                  <option value="Khớp nối CV–Job Fit">Khớp nối CV–Job Fit</option>
-                  <option value="Trợ lý sự nghiệp AI">Trợ lý sự nghiệp AI</option>
-                  <option value="Hỗ trợ ứng tuyển (Cover Letter)">Hỗ trợ ứng tuyển (Cover Letter)</option>
-                  <option value="Gói cước & Thanh toán">Gói cước & Thanh toán</option>
-                  <option value="Ước tính lương thị trường">Ước tính lương thị trường</option>
-                </select>
+                <label className="block">
+                  <span className={fieldLabel}>{c.relatedFeature}</span>
+                  <span className="relative block">
+                    <select value={relatedFeature} onChange={(e) => setRelatedFeature(e.target.value)} className={selectClass}>
+                      {relatedFeatures.map((f) => (
+                        <option key={f} value={f}>
+                          {f}
+                        </option>
+                      ))}
+                    </select>
+                    <SelectChevron />
+                  </span>
+                </label>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
-                  Mô tả chi tiết <span className="text-rose-500">*</span>
-                </label>
+              <fieldset>
+                <legend className={fieldLabel}>{c.priority}</legend>
+                <div role="radiogroup" className="mt-2 grid grid-cols-2 border-y border-border sm:grid-cols-4">
+                  {priorityOrder.map((p, i) => {
+                    const active = priority === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setPriority(p)}
+                        className={`flex items-center gap-2.5 py-3.5 text-left text-[15px] transition-colors cursor-pointer ${
+                          i > 0 ? 'sm:border-l sm:border-border sm:pl-4' : ''
+                        } ${i % 2 === 1 ? 'border-l border-border pl-4' : ''} ${i >= 2 ? 'border-t border-border sm:border-t-0' : ''} ${
+                          active ? 'text-ink' : 'text-slate-500 hover:text-ink'
+                        }`}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                            active ? 'border-ink' : 'border-slate-400'
+                          }`}
+                        >
+                          {active && <span className="h-2 w-2 rounded-full bg-ink" />}
+                        </span>
+                        <span className={active && (p === 'high' || p === 'urgent') ? priorityTone[p] : ''}>
+                          {priorityLabels[p][lang]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <label className="block">
+                <span className={fieldLabel}>
+                  {c.description} <span className="text-slate-400">· {c.required}</span>
+                </span>
                 <textarea
                   required
-                  rows={4}
+                  rows={5}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Vui lòng cung cấp chi tiết lỗi, các bước tái hiện hoặc thông tin bạn cần hỗ trợ..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder={c.descriptionPlaceholder}
+                  className={`${inputClass} resize-y leading-7`}
                 />
-              </div>
+              </label>
+            </div>
 
-              <div className="pt-2 flex justify-end gap-3 border-t border-neutral-100 dark:border-neutral-800">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-sm"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <span>Gửi yêu cầu ngay</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="flex justify-end gap-3 border-t border-ink px-[clamp(1.25rem,3vw,2.5rem)] py-4">
+              <button type="button" onClick={() => setIsCreateOpen(false)} className={outlineButton}>
+                {c.cancel}
+              </button>
+              <button type="submit" disabled={isSubmitting} className={primaryButton}>
+                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : c.submit}
+              </button>
+            </div>
+          </form>
+        </Drawer>
       )}
     </div>
   );

@@ -1,37 +1,25 @@
 import { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Loading, ErrorState } from '../../components/ui';
 import {
-  Users,
-  UserPlus,
-  Search,
-  Filter,
-  CheckCircle2,
-  AlertTriangle,
-  RefreshCw,
-  Download,
-  Lock,
-  Unlock,
-  Eye,
-  Edit,
-  Trash2,
-  Shield,
-  ShieldCheck,
-  ShieldAlert,
-  Check,
-  X,
-  CreditCard,
-  Zap,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  Lightbulb,
-  ArrowRight,
-  UserCheck,
-  UserX,
-} from 'lucide-react';
-import { Card, PageTitle, StatCard, Badge, Button, Loading, ErrorState } from '../../components/ui';
+  EmptyRow,
+  InfoRow,
+  Modal,
+  RowMenu,
+  Toast,
+  UnderlineTabs,
+  brandLink,
+  dangerButton,
+  fieldLabel,
+  outlineButton,
+  primaryButton,
+  smallPrimary,
+  textLink,
+  underlineInput,
+  underlineSelect,
+} from '../../components/admin/AdminKit';
+import { RolePicker } from '../../components/admin/RolePicker';
 import {
   getManagedUsers,
   createUser,
@@ -40,7 +28,6 @@ import {
   updateUserRole,
   deleteUser,
   resetUserPassword,
-  ALL_SYSTEM_PERMISSIONS,
   getDefaultPermissionsForRole,
 } from '../../services/userService';
 import type {
@@ -53,14 +40,262 @@ import type {
 import type { UserRole } from '../../types/domain';
 import { useTranslation } from '../../i18n';
 
+const copy = {
+  vi: {
+    eyebrow: 'Quản lý người dùng',
+    title: 'Người dùng.',
+    line2: (n: number) => `${n.toLocaleString('vi-VN')} tài khoản trong hệ thống.`,
+    create: 'Tạo người dùng',
+    exportCsv: 'Xuất CSV',
+    refresh: 'Làm mới',
+    refreshing: 'Đang làm mới…',
+    search: 'Tìm kiếm',
+    searchPh: 'Tên, email, số điện thoại hoặc ID',
+    plan: 'Gói đăng ký',
+    allPlans: 'Tất cả gói',
+    status: 'Trạng thái',
+    allStatus: 'Tất cả',
+    sort: 'Sắp xếp',
+    sorts: { newest: 'Mới nhất', oldest: 'Cũ nhất', name_asc: 'Tên A–Z', tokens_desc: 'Dùng nhiều token' },
+    all: 'Tất cả',
+    showing: (n: number) => `Hiển thị ${n} người dùng`,
+    resetFilters: 'Xoá bộ lọc',
+    empty: 'Không tìm thấy người dùng phù hợp. Thử từ khoá khác hoặc xoá bớt bộ lọc.',
+    detail: 'Chi tiết',
+    more: 'Thao tác khác',
+    menu: { inspect: 'Xem nhanh', edit: 'Sửa thông tin', role: 'Phân quyền', lock: 'Khoá tài khoản', unlock: 'Mở khoá', del: 'Xoá tài khoản' },
+    toastCreate: (n: string) => `Đã tạo tài khoản "${n}".`,
+    toastUpdate: (n: string) => `Đã cập nhật tài khoản "${n}".`,
+    toastLock: (n: string) => `Đã khoá tài khoản "${n}".`,
+    toastUnlock: (n: string) => `Đã mở khoá tài khoản "${n}".`,
+    toastRole: (n: string, r: string, p: number) => `Đã chuyển "${n}" sang ${r} với ${p} quyền.`,
+    toastDelete: 'Đã xoá tài khoản.',
+    toastReset: (p: string) => `Đã đặt lại mật khẩu về mặc định: "${p}"`,
+    toastExport: 'Đã xuất danh sách người dùng CSV.',
+    errCreate: 'Lỗi khi tạo người dùng.',
+    errUpdate: 'Lỗi khi cập nhật.',
+    errLock: 'Lỗi khi thay đổi trạng thái.',
+    errRole: 'Lỗi khi đổi vai trò.',
+    errDelete: 'Không thể xoá người dùng.',
+    form: {
+      createTitle: 'Tạo tài khoản mới',
+      editTitle: 'Sửa thông tin',
+      name: 'Họ và tên *',
+      namePh: 'Ví dụ: Nguyễn Văn A',
+      email: 'Email *',
+      phone: 'Số điện thoại',
+      password: 'Mật khẩu ban đầu',
+      role: 'Vai trò *',
+      plan: 'Gói dịch vụ',
+      status: 'Trạng thái',
+      location: 'Địa điểm làm việc',
+      headline: 'Chức danh',
+      headlinePh: 'Ví dụ: Senior Backend Engineer / HR Consultant',
+      notes: 'Ghi chú nội bộ',
+      notesPh: 'Nguồn gốc tài khoản, lý do tạo hoặc yêu cầu hỗ trợ…',
+      cancel: 'Huỷ',
+      creating: 'Đang tạo…',
+      createBtn: 'Tạo tài khoản',
+      saving: 'Đang lưu…',
+      save: 'Lưu thay đổi',
+      resetPwd: 'Đặt lại mật khẩu mặc định',
+    },
+    planOptions: {
+      free: 'Miễn phí (20k token)',
+      pro: 'Pro (250k token)',
+      executive: 'Premium (1M token)',
+      consultant: 'Đối tác cố vấn (500k token)',
+      enterprise: 'Enterprise (2M token)',
+    } as Record<UserSubscriptionTier, string>,
+    statusOptions: { ACTIVE: 'Hoạt động', PENDING: 'Chờ xác thực OTP', SUSPENDED: 'Khoá tạm thời' } as Record<UserAccountStatus, string>,
+    lockModal: {
+      lockTitle: 'Khoá tài khoản',
+      unlockTitle: 'Mở khoá tài khoản',
+      lockText: (n: string, e: string) => `Khi bị khoá, "${n}" (${e}) sẽ không thể đăng nhập hoặc dùng các dịch vụ AI.`,
+      unlockText: (n: string, e: string) => `Kích hoạt lại "${n}" (${e})? Người dùng sẽ đăng nhập bình thường.`,
+      reason: 'Lý do khoá (ghi vào nhật ký) *',
+      reasonPh: 'Ví dụ: vi phạm tần suất gọi API, phát tán spam, yêu cầu bảo mật…',
+      confirmLock: 'Xác nhận khoá',
+      confirmUnlock: 'Mở khoá',
+    },
+    roleModal: {
+      title: 'Phân quyền',
+      step1: 'Vai trò',
+      step2: (a: number, b: number) => `Quyền hạn (${a}/${b})`,
+      selectAll: 'Chọn tất cả',
+      desc: {
+        CANDIDATE: 'Nộp CV, làm bài kiểm tra, chat AI',
+        CAREER_CONSULTANT: 'Tư vấn, xem CV và phản hồi',
+        ADMIN: 'Toàn quyền quản trị hệ thống',
+      } as Record<UserRole, string>,
+      saving: 'Đang lưu…',
+      save: 'Lưu phân quyền',
+    },
+    inspect: {
+      eyebrow: 'Hồ sơ người dùng',
+      plan: 'Gói đăng ký',
+      tokens: 'Token tháng này',
+      status: 'Trạng thái',
+      recent: 'Hoạt động gần đây',
+      full: 'Mở trang chi tiết',
+      close: 'Đóng',
+    },
+    deleteModal: {
+      title: 'Xoá tài khoản vĩnh viễn',
+      text: (n: string, e: string) =>
+        `Xoá tài khoản ${n} (${e})? Toàn bộ hồ sơ và lịch sử hoạt động liên quan sẽ bị loại khỏi hệ thống.`,
+      cancel: 'Huỷ',
+      deleting: 'Đang xoá…',
+      confirm: 'Xoá vĩnh viễn',
+    },
+  },
+  en: {
+    eyebrow: 'User management',
+    title: 'Users.',
+    line2: (n: number) => `${n.toLocaleString('en-US')} accounts on the platform.`,
+    create: 'Create user',
+    exportCsv: 'Export CSV',
+    refresh: 'Refresh',
+    refreshing: 'Refreshing…',
+    search: 'Search',
+    searchPh: 'Name, email, phone or ID',
+    plan: 'Plan',
+    allPlans: 'All plans',
+    status: 'Status',
+    allStatus: 'All',
+    sort: 'Sort',
+    sorts: { newest: 'Newest', oldest: 'Oldest', name_asc: 'Name A–Z', tokens_desc: 'Most tokens' },
+    all: 'All',
+    showing: (n: number) => `Showing ${n} users`,
+    resetFilters: 'Reset filters',
+    empty: 'No users match. Try another keyword or clear some filters.',
+    detail: 'Details',
+    more: 'More actions',
+    menu: { inspect: 'Quick view', edit: 'Edit details', role: 'Roles', lock: 'Suspend', unlock: 'Activate', del: 'Delete account' },
+    toastCreate: (n: string) => `Created account "${n}".`,
+    toastUpdate: (n: string) => `Updated account "${n}".`,
+    toastLock: (n: string) => `Suspended "${n}".`,
+    toastUnlock: (n: string) => `Activated "${n}".`,
+    toastRole: (n: string, r: string, p: number) => `Moved "${n}" to ${r} with ${p} permissions.`,
+    toastDelete: 'Deleted the account.',
+    toastReset: (p: string) => `Password reset to default: "${p}"`,
+    toastExport: 'Exported users to CSV.',
+    errCreate: 'Could not create the user.',
+    errUpdate: 'Could not update.',
+    errLock: 'Could not change status.',
+    errRole: 'Could not change role.',
+    errDelete: 'Could not delete the user.',
+    form: {
+      createTitle: 'New account',
+      editTitle: 'Edit details',
+      name: 'Full name *',
+      namePh: 'e.g. Jane Doe',
+      email: 'Email *',
+      phone: 'Phone',
+      password: 'Initial password',
+      role: 'Role *',
+      plan: 'Plan',
+      status: 'Status',
+      location: 'Location',
+      headline: 'Headline',
+      headlinePh: 'e.g. Senior Backend Engineer / HR Consultant',
+      notes: 'Internal notes',
+      notesPh: 'Where the account came from, why it was created…',
+      cancel: 'Cancel',
+      creating: 'Creating…',
+      createBtn: 'Create account',
+      saving: 'Saving…',
+      save: 'Save changes',
+      resetPwd: 'Reset password to default',
+    },
+    planOptions: {
+      free: 'Free (20k tokens)',
+      pro: 'Pro (250k tokens)',
+      executive: 'Premium (1M tokens)',
+      consultant: 'Consultant partner (500k tokens)',
+      enterprise: 'Enterprise (2M tokens)',
+    } as Record<UserSubscriptionTier, string>,
+    statusOptions: { ACTIVE: 'Active', PENDING: 'Awaiting OTP', SUSPENDED: 'Suspended' } as Record<UserAccountStatus, string>,
+    lockModal: {
+      lockTitle: 'Suspend account',
+      unlockTitle: 'Activate account',
+      lockText: (n: string, e: string) => `"${n}" (${e}) will not be able to sign in or use AI services.`,
+      unlockText: (n: string, e: string) => `Reactivate "${n}" (${e})? They will be able to sign in again.`,
+      reason: 'Reason (written to the audit log) *',
+      reasonPh: 'e.g. API rate abuse, spam, security request…',
+      confirmLock: 'Suspend',
+      confirmUnlock: 'Activate',
+    },
+    roleModal: {
+      title: 'Roles & permissions',
+      step1: 'Role',
+      step2: (a: number, b: number) => `Permissions (${a}/${b})`,
+      selectAll: 'Select all',
+      desc: {
+        CANDIDATE: 'Upload CVs, take tests, chat with AI',
+        CAREER_CONSULTANT: 'Consult, review CVs, give feedback',
+        ADMIN: 'Full system administration',
+      } as Record<UserRole, string>,
+      saving: 'Saving…',
+      save: 'Save permissions',
+    },
+    inspect: {
+      eyebrow: 'User profile',
+      plan: 'Plan',
+      tokens: 'Tokens this month',
+      status: 'Status',
+      recent: 'Recent activity',
+      full: 'Open full profile',
+      close: 'Close',
+    },
+    deleteModal: {
+      title: 'Delete account permanently',
+      text: (n: string, e: string) => `Delete ${n} (${e})? Their profile and activity history will be removed.`,
+      cancel: 'Cancel',
+      deleting: 'Deleting…',
+      confirm: 'Delete permanently',
+    },
+  },
+};
+
+const ROLE_LABEL: Record<'vi' | 'en', Record<UserRole, string>> = {
+  vi: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn', ADMIN: 'Quản trị viên' },
+  en: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Consultant', ADMIN: 'Administrator' },
+};
+
+const STATUS_LABEL: Record<'vi' | 'en', Record<UserAccountStatus, string>> = {
+  vi: { ACTIVE: 'Hoạt động', SUSPENDED: 'Bị khoá', PENDING: 'Chờ kích hoạt' },
+  en: { ACTIVE: 'Active', SUSPENDED: 'Suspended', PENDING: 'Pending' },
+};
+
+const PLAN_SHORT: Record<'vi' | 'en', Record<UserSubscriptionTier, string>> = {
+  vi: { free: 'Miễn phí', pro: 'Pro', executive: 'Premium', consultant: '–', enterprise: 'Enterprise' },
+  en: { free: 'Free', pro: 'Pro', executive: 'Premium', consultant: '–', enterprise: 'Enterprise' },
+};
+
+const statusTone = (s: UserAccountStatus) =>
+  s === 'ACTIVE' ? 'text-brand' : s === 'SUSPENDED' ? 'text-danger' : 'text-orange-600';
+
+const isRole = (v: string | null): v is UserRole => v === 'CANDIDATE' || v === 'CAREER_CONSULTANT' || v === 'ADMIN';
+
 export default function UserManagementPage() {
   const { isVietnamese } = useTranslation();
+  const lang = isVietnamese ? 'vi' : 'en';
+  const c = copy[lang];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Search & Filter state
+  // Search & Filter state (role can be opened from the sidebar via ?role=)
+  const roleParam = searchParams.get('role');
+  const selectedRole: UserRole | 'ALL' = isRole(roleParam) ? roleParam : 'ALL';
+  const setSelectedRole = (role: UserRole | 'ALL') => {
+    const next = new URLSearchParams(searchParams);
+    if (role === 'ALL') next.delete('role');
+    else next.set('role', role);
+    setSearchParams(next, { replace: true });
+  };
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole | 'ALL'>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<UserAccountStatus | 'ALL'>('ALL');
   const [selectedPlan, setSelectedPlan] = useState<UserSubscriptionTier | 'ALL'>('ALL');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name_asc' | 'tokens_desc'>('newest');
@@ -134,87 +369,52 @@ export default function UserManagementPage() {
         headline: '',
         notes: '',
       });
-      showToast(
-        isVietnamese
-          ? `Tạo tài khoản "${newUser.name}" (${newUser.role}) thành công!`
-          : `Created account "${newUser.name}" successfully!`
-      );
+      showToast(c.toastCreate(newUser.name));
     },
     onError: (err: Error) => {
-      showToast(err.message || 'Lỗi khi tạo người dùng.');
+      showToast(err.message || c.errCreate);
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
-      updateUser(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) => updateUser(id, payload),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['admin-managed-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
       setUserToEdit(null);
-      showToast(
-        isVietnamese
-          ? `Cập nhật thông tin tài khoản "${updated.name}" thành công!`
-          : `Updated account "${updated.name}" successfully!`
-      );
+      showToast(c.toastUpdate(updated.name));
     },
     onError: (err: Error) => {
-      showToast(err.message || 'Lỗi khi cập nhật.');
+      showToast(err.message || c.errUpdate);
     },
   });
 
   const lockMutation = useMutation({
-    mutationFn: ({
-      id,
-      status,
-      reason,
-    }: {
-      id: string;
-      status: 'ACTIVE' | 'SUSPENDED';
-      reason?: string;
-    }) => toggleLockUser(id, status, reason),
+    mutationFn: ({ id, status, reason }: { id: string; status: 'ACTIVE' | 'SUSPENDED'; reason?: string }) =>
+      toggleLockUser(id, status, reason),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin-managed-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
       setUserToLock(null);
       setLockReason('');
-      showToast(
-        res.status === 'SUSPENDED'
-          ? isVietnamese
-            ? `Đã khóa tài khoản "${res.name}"!`
-            : `Suspended account "${res.name}"!`
-          : isVietnamese
-            ? `Đã mở khóa tài khoản "${res.name}"!`
-            : `Activated account "${res.name}"!`
-      );
+      showToast(res.status === 'SUSPENDED' ? c.toastLock(res.name) : c.toastUnlock(res.name));
     },
     onError: (err: Error) => {
-      showToast(err.message || 'Lỗi khi thay đổi trạng thái.');
+      showToast(err.message || c.errLock);
     },
   });
 
   const roleMutation = useMutation({
-    mutationFn: ({
-      id,
-      role,
-      permissions,
-    }: {
-      id: string;
-      role: UserRole;
-      permissions: string[];
-    }) => updateUserRole(id, role, permissions),
+    mutationFn: ({ id, role, permissions }: { id: string; role: UserRole; permissions: string[] }) =>
+      updateUserRole(id, role, permissions),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin-managed-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
       setUserToRole(null);
-      showToast(
-        isVietnamese
-          ? `Đã chuyển vai trò "${res.name}" sang ${res.role} với ${res.permissions.length} quyền!`
-          : `Changed role of "${res.name}" to ${res.role} with ${res.permissions.length} permissions!`
-      );
+      showToast(c.toastRole(res.name, ROLE_LABEL[lang][res.role], res.permissions.length));
     },
     onError: (err: Error) => {
-      showToast(err.message || 'Lỗi khi đổi vai trò.');
+      showToast(err.message || c.errRole);
     },
   });
 
@@ -224,21 +424,17 @@ export default function UserManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-managed-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
       setUserToDelete(null);
-      showToast(isVietnamese ? 'Đã xóa tài khoản thành công!' : 'Deleted user account!');
+      showToast(c.toastDelete);
     },
     onError: (err: Error) => {
-      showToast(err.message || 'Không thể xóa người dùng.');
+      showToast(err.message || c.errDelete);
     },
   });
 
   const resetPasswordMutation = useMutation({
     mutationFn: (id: string) => resetUserPassword(id),
     onSuccess: (pwd) => {
-      showToast(
-        isVietnamese
-          ? `Đã đặt lại mật khẩu về mặc định: "${pwd}"`
-          : `Password reset to default: "${pwd}"`
-      );
+      showToast(c.toastReset(pwd));
     },
   });
 
@@ -307,12 +503,12 @@ export default function UserManagementPage() {
       'data:text/csv;charset=utf-8,' +
       encodeURIComponent(
         `ID,Ho Ten,Email,So Dien Thoai,Vai Tro,Trang Thai,Goi Cuoc,Tokens Da Dung,Xac Thuc,Ngay Tao\n` +
-        filteredUsers
-          .map(
-            (u) =>
-              `"${u.id}","${u.name}","${u.email}","${u.phone}","${u.role}","${u.status}","${u.planName}",${u.tokensUsedThisMonth},"${u.isVerified ? 'Da xac minh' : 'Chua xac minh'}","${u.createdAt}"`
-          )
-          .join('\n')
+          filteredUsers
+            .map(
+              (u) =>
+                `"${u.id}","${u.name}","${u.email}","${u.phone}","${u.role}","${u.status}","${u.planName}",${u.tokensUsedThisMonth},"${u.isVerified ? 'Da xac minh' : 'Chua xac minh'}","${u.createdAt}"`
+            )
+            .join('\n')
       );
 
     const anchor = document.createElement('a');
@@ -321,7 +517,7 @@ export default function UserManagementPage() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    showToast(isVietnamese ? 'Đã xuất danh sách người dùng CSV!' : 'Exported users to CSV!');
+    showToast(c.toastExport);
   };
 
   const openEditModal = (user: AdminManagedUser) => {
@@ -345,907 +541,464 @@ export default function UserManagementPage() {
     setSelectedPermissions(user.permissions || getDefaultPermissionsForRole(user.role));
   };
 
-  const getRoleBadge = (role: UserRole) => {
-    switch (role) {
-      case 'ADMIN':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 border border-rose-200">
-            <ShieldAlert size={12} />
-            <span>Admin</span>
-          </span>
-        );
-      case 'CAREER_CONSULTANT':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 border border-brand-200">
-            <ShieldCheck size={12} />
-            <span>Consultant</span>
-          </span>
-        );
-      case 'CANDIDATE':
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700 border border-brand-200">
-            <Users size={12} />
-            <span>Candidate</span>
-          </span>
-        );
-    }
+  const resetFilters = () => {
+    setSelectedRole('ALL');
+    setSelectedStatus('ALL');
+    setSelectedPlan('ALL');
+    setSearchQuery('');
   };
-
-  const getStatusBadge = (status: UserAccountStatus) => {
-    switch (status) {
-      case 'ACTIVE':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{isVietnamese ? 'Hoạt động' : 'Active'}</span>
-          </span>
-        );
-      case 'SUSPENDED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 border border-red-200">
-            <Lock size={10} />
-            <span>{isVietnamese ? 'Bị khóa' : 'Suspended'}</span>
-          </span>
-        );
-      case 'PENDING':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 border border-amber-200">
-            <Clock size={10} />
-            <span>{isVietnamese ? 'Chờ kích hoạt' : 'Pending'}</span>
-          </span>
-        );
-    }
-  };
+  const hasFilters = selectedRole !== 'ALL' || selectedStatus !== 'ALL' || selectedPlan !== 'ALL' || !!searchQuery;
 
   if (isLoading) return <Loading />;
   if (isError) return <ErrorState />;
 
   return (
-    <div className="space-y-6">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-sm animate-fade-in border border-slate-700">
-          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div>
+      <Toast message={toastMessage} />
 
-      {/* Breadcrumb Navigation */}
-      <nav className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/admin" className="hover:text-brand-600 transition">
-          {isVietnamese ? 'Bảng điều khiển Admin' : 'Admin Dashboard'}
-        </Link>
-        <span>/</span>
-        <span className="font-semibold text-slate-800">
-          {isVietnamese ? 'Quản lý Người dùng & Phân quyền' : 'User Management & Roles'}
-        </span>
-      </nav>
-
-      {/* Page Title & Actions */}
-      <PageTitle
-        title={isVietnamese ? 'Quản Lý Danh Sách Người Dùng' : 'User Accounts Management'}
-        subtitle={
-          isVietnamese
-            ? 'Theo dõi toàn bộ tài khoản, xem chi tiết hồ sơ, tạo mới, khóa/mở khóa và điều chỉnh phân quyền vai trò (Roles).'
-            : 'Directory of all platform users: inspect profiles, create/update accounts, toggle suspension, and manage role permissions.'
-        }
-        action={
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-            >
-              <RefreshCw size={14} className={isFetching ? 'animate-spin text-brand-600' : ''} />
-              <span>{isVietnamese ? 'Làm mới' : 'Refresh'}</span>
+      {/* Header */}
+      <header>
+        <div className="mb-[clamp(1.25rem,2.5vw,2rem)] flex flex-wrap items-center justify-between gap-4">
+          <p className="text-[13px] text-brand">{c.eyebrow}</p>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <button type="button" onClick={() => refetch()} disabled={isFetching} className={`${textLink} text-slate-600`}>
+              {isFetching ? c.refreshing : c.refresh}
             </button>
-
-            <Button variant="secondary" onClick={handleExportCsv} className="text-xs py-2 px-3 gap-1.5">
-              <Download size={14} />
-              <span>{isVietnamese ? 'Xuất CSV' : 'Export CSV'}</span>
-            </Button>
-
-            <Button
-              variant="primary"
-              onClick={() => setShowCreateModal(true)}
-              className="text-xs py-2 px-3.5 gap-1.5 shadow-sm"
-            >
-              <UserPlus size={15} />
-              <span>{isVietnamese ? 'Tạo Người Dùng Mới' : 'Create New User'}</span>
-            </Button>
+            <button type="button" onClick={handleExportCsv} className={`${textLink} text-slate-600`}>
+              {c.exportCsv}
+            </button>
+            <button type="button" onClick={() => setShowCreateModal(true)} className={smallPrimary}>
+              {c.create}
+            </button>
           </div>
-        }
-      />
+        </div>
+        <h1 className="text-[clamp(2.25rem,4.6vw,4rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {c.title}
+          <span className="block text-brand">{c.line2(counts.total)}</span>
+        </h1>
+      </header>
 
-      {/* Overview Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard
-          label={isVietnamese ? 'Tổng Người Dùng' : 'Total Users'}
-          value={counts.total.toLocaleString()}
-          detail={isVietnamese ? `${counts.active} đang hoạt động` : `${counts.active} active accounts`}
-          icon={<Users size={20} className="text-brand-600" />}
-        />
-        <StatCard
-          label={isVietnamese ? 'Ứng Viên (Candidates)' : 'Candidates'}
-          value={counts.candidates.toLocaleString()}
-          detail={isVietnamese ? 'Tài khoản tìm việc' : 'Job seeking accounts'}
-          icon={<UserCheck size={20} className="text-emerald-600" />}
-        />
-        <StatCard
-          label={isVietnamese ? 'Cố Vấn (Consultants)' : 'Career Consultants'}
-          value={counts.consultants.toLocaleString()}
-          detail={isVietnamese ? 'Chuyên gia nhân sự' : 'Verified career mentors'}
-          icon={<ShieldCheck size={20} className="text-brand-600" />}
-        />
-        <StatCard
-          label={isVietnamese ? 'Quản Trị Viên (Admins)' : 'Administrators'}
-          value={counts.admins.toLocaleString()}
-          detail={isVietnamese ? 'Đặc quyền Root / Ops' : 'Full access privileges'}
-          icon={<ShieldAlert size={20} className="text-rose-600" />}
-        />
-        <StatCard
-          label={isVietnamese ? 'Tài Khoản Bị Khóa' : 'Suspended Users'}
-          value={counts.suspended.toLocaleString()}
-          detail={isVietnamese ? 'Cần xem xét an ninh' : 'Policy violations'}
-          icon={<UserX size={20} className="text-amber-600" />}
-        />
+      {/* Filters */}
+      <div className="mt-[clamp(2rem,4vw,3rem)] grid gap-x-8 gap-y-6 md:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
+        <label className="block">
+          <span className={fieldLabel}>{c.search}</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={c.searchPh}
+            className={`${underlineInput} border-ink`}
+          />
+        </label>
+        <label className="block">
+          <span className={fieldLabel}>{c.plan}</span>
+          <select
+            value={selectedPlan}
+            onChange={(e) => setSelectedPlan(e.target.value as UserSubscriptionTier | 'ALL')}
+            className={`${underlineSelect} border-ink`}
+          >
+            <option value="ALL">{c.allPlans}</option>
+            {(['free', 'pro', 'executive', 'consultant', 'enterprise'] as const).map((p) => (
+              <option key={p} value={p}>
+                {c.planOptions[p].replace(/\s*\(.*\)$/, '')}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
-      {/* Search & Multi-criteria Filter Bar */}
-      <Card className="p-4 sm:p-5 space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
-          {/* Search Box */}
-          <div className="relative lg:col-span-5">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                isVietnamese
-                  ? 'Tìm theo tên, email, số điện thoại, ID hoặc vị trí...'
-                  : 'Search by name, email, phone, ID, or headline...'
-              }
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-10 pr-9 text-xs sm:text-sm outline-none transition focus:border-brand-500 focus:bg-surface"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X size={15} />
-              </button>
-            )}
-          </div>
+      <UnderlineTabs
+        className="mt-10"
+        tabs={[
+          { value: 'ALL' as const, label: c.all, count: counts.total },
+          { value: 'CANDIDATE' as const, label: ROLE_LABEL[lang].CANDIDATE, count: counts.candidates },
+          { value: 'CAREER_CONSULTANT' as const, label: ROLE_LABEL[lang].CAREER_CONSULTANT, count: counts.consultants },
+          { value: 'ADMIN' as const, label: ROLE_LABEL[lang].ADMIN, count: counts.admins },
+        ]}
+        value={selectedRole}
+        onChange={setSelectedRole}
+      />
 
-          {/* Role Filter */}
-          <div className="lg:col-span-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-[13px] text-slate-600">
+        <span>{c.showing(filteredUsers.length)}</span>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <label className="flex items-center gap-2">
+            <span>{c.status}</span>
             <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value as UserRole | 'ALL')}
-              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value as UserAccountStatus | 'ALL')}
+              className="cursor-pointer border-0 border-b border-slate-300 bg-transparent py-0.5 text-[13px] text-ink outline-none focus:border-brand"
             >
-              <option value="ALL">{isVietnamese ? 'Tất cả vai trò' : 'All Roles'}</option>
-              <option value="CANDIDATE">Ứng viên (Candidate)</option>
-              <option value="CAREER_CONSULTANT">Cố vấn (Consultant)</option>
-              <option value="ADMIN">Quản trị viên (Admin)</option>
+              <option value="ALL">
+                {c.allStatus} ({counts.total})
+              </option>
+              <option value="ACTIVE">
+                {STATUS_LABEL[lang].ACTIVE} ({counts.active})
+              </option>
+              <option value="PENDING">
+                {STATUS_LABEL[lang].PENDING} ({counts.pending})
+              </option>
+              <option value="SUSPENDED">
+                {STATUS_LABEL[lang].SUSPENDED} ({counts.suspended})
+              </option>
             </select>
-          </div>
-
-          {/* Plan Filter */}
-          <div className="lg:col-span-2">
-            <select
-              value={selectedPlan}
-              onChange={(e) => setSelectedPlan(e.target.value as UserSubscriptionTier | 'ALL')}
-              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
-            >
-              <option value="ALL">{isVietnamese ? 'Tất cả gói cước' : 'All Plans'}</option>
-              <option value="free">Khởi đầu (Free)</option>
-              <option value="pro">Chuyên nghiệp (Pro)</option>
-              <option value="executive">Cao cấp (VIP)</option>
-              <option value="consultant">Consultant Partner</option>
-              <option value="enterprise">Enterprise Admin</option>
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div className="lg:col-span-2">
+          </label>
+          <label className="flex items-center gap-2">
+            <span>{c.sort}</span>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="cursor-pointer border-0 border-b border-slate-300 bg-transparent py-0.5 text-[13px] text-ink outline-none focus:border-brand"
             >
-              <option value="newest">{isVietnamese ? 'Mới nhất' : 'Newest'}</option>
-              <option value="oldest">{isVietnamese ? 'Cũ nhất' : 'Oldest'}</option>
-              <option value="name_asc">{isVietnamese ? 'Tên A - Z' : 'Name A - Z'}</option>
-              <option value="tokens_desc">{isVietnamese ? 'Token dùng nhiều nhất' : 'Most Tokens'}</option>
+              {(['newest', 'oldest', 'name_asc', 'tokens_desc'] as const).map((s) => (
+                <option key={s} value={s}>
+                  {c.sorts[s]}
+                </option>
+              ))}
             </select>
-          </div>
-        </div>
-
-        {/* Status Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3">
-          <button
-            onClick={() => setSelectedStatus('ALL')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${selectedStatus === 'ALL'
-                ? 'bg-brand-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-          >
-            {isVietnamese ? 'Tất cả' : 'All'} ({counts.total})
-          </button>
-          <button
-            onClick={() => setSelectedStatus('ACTIVE')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${selectedStatus === 'ACTIVE'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-              }`}
-          >
-            {isVietnamese ? 'Đang hoạt động' : 'Active'} ({counts.active})
-          </button>
-          <button
-            onClick={() => setSelectedStatus('PENDING')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${selectedStatus === 'PENDING'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
-              }`}
-          >
-            {isVietnamese ? 'Chờ kích hoạt' : 'Pending'} ({counts.pending})
-          </button>
-          <button
-            onClick={() => setSelectedStatus('SUSPENDED')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${selectedStatus === 'SUSPENDED'
-                ? 'bg-red-600 text-white shadow-xs'
-                : 'bg-red-50 text-red-800 hover:bg-red-100'
-              }`}
-          >
-            {isVietnamese ? 'Đã bị khóa' : 'Suspended'} ({counts.suspended})
-          </button>
-
-          {(selectedRole !== 'ALL' || selectedStatus !== 'ALL' || selectedPlan !== 'ALL' || searchQuery) && (
-            <button
-              onClick={() => {
-                setSelectedRole('ALL');
-                setSelectedStatus('ALL');
-                setSelectedPlan('ALL');
-                setSearchQuery('');
-              }}
-              className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-red-600 cursor-pointer"
-            >
-              <X size={14} />
-              <span>{isVietnamese ? 'Đặt lại bộ lọc' : 'Reset filters'}</span>
+          </label>
+          {hasFilters && (
+            <button type="button" onClick={resetFilters} className={`${textLink} text-[13px]`}>
+              {c.resetFilters}
             </button>
           )}
         </div>
-      </Card>
+      </div>
 
-      {/* User Directory Table */}
+      {/* User rows */}
       {filteredUsers.length === 0 ? (
-        <Card className="py-14 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
-            <Filter size={24} />
-          </div>
-          <h3 className="text-base font-medium text-slate-900">
-            {isVietnamese ? 'Không tìm thấy người dùng phù hợp' : 'No users match criteria'}
-          </h3>
-          <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
-            {isVietnamese
-              ? 'Vui lòng thử tìm kiếm với từ khóa khác hoặc xóa bớt các tiêu chí lọc.'
-              : 'Try searching with a different keyword or reset filters.'}
-          </p>
-          <div className="mt-4">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setSelectedRole('ALL');
-                setSelectedStatus('ALL');
-                setSelectedPlan('ALL');
-                setSearchQuery('');
-              }}
-            >
-              {isVietnamese ? 'Xóa bộ lọc' : 'Reset filters'}
-            </Button>
-          </div>
-        </Card>
+        <div className="mt-6">
+          <EmptyRow>{c.empty}</EmptyRow>
+        </div>
       ) : (
-        <Card className="p-0 overflow-hidden border border-slate-200">
-          <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50 text-xs text-slate-500">
-            <span>
-              {isVietnamese
-                ? `Hiển thị ${filteredUsers.length} trên tổng số ${users.length} tài khoản`
-                : `Showing ${filteredUsers.length} of ${users.length} accounts`}
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase tracking-wider font-medium text-[11px]">
-                  <th className="py-3 px-4">Tài Khoản & Hồ Sơ</th>
-                  <th className="py-3 px-3">Vai Trò (Role)</th>
-                  <th className="py-3 px-3">Trạng Thái</th>
-                  <th className="py-3 px-3">Gói Cước & Hạn Mức</th>
-                  <th className="py-3 px-3">Tokens Tháng Này</th>
-                  <th className="py-3 px-3">Xác Thực</th>
-                  <th className="py-3 px-3">Hoạt Động Gần Nhất</th>
-                  <th className="py-3 px-4 text-right">Thao Tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((u) => {
-                  const tokenUsagePercent = Math.min(
-                    100,
-                    Math.round((u.tokensUsedThisMonth / u.tokenMonthlyQuota) * 100)
-                  );
-                  return (
-                    <tr key={u.id} className="hover:bg-slate-50/70 transition">
-                      {/* Avatar & Profile */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <img
-                            src={u.avatar}
-                            alt={u.name}
-                            className="h-10 w-10 shrink-0 rounded-xl object-cover border border-slate-200 shadow-2xs"
-                          />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <Link
-                                to={`/admin/users/${u.id}`}
-                                className="font-medium text-slate-900 text-sm hover:text-brand-600 transition truncate"
-                              >
-                                {u.name}
-                              </Link>
-                              <span className="font-mono text-slate-400 text-[11px]">#{u.id}</span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 truncate">{u.email}</p>
-                            {u.headline && (
-                              <p className="text-[10px] text-slate-400 truncate max-w-[200px]">
-                                {u.headline}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Role */}
-                      <td className="py-3.5 px-3">
-                        <div className="space-y-1">
-                          {getRoleBadge(u.role)}
-                          <p className="text-[10px] text-slate-400 font-medium">
-                            {u.permissions?.length || 0} quyền được cấp
-                          </p>
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3.5 px-3">
-                        <div className="space-y-1">
-                          {getStatusBadge(u.status)}
-                          {u.status === 'SUSPENDED' && u.suspendedReason && (
-                            <span
-                              className="block text-[10px] text-red-600 truncate max-w-[120px]"
-                              title={u.suspendedReason}
-                            >
-                              {u.suspendedReason}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Plan */}
-                      <td className="py-3.5 px-3">
-                        <span className="font-medium text-slate-800 block text-xs">{u.planName}</span>
-                        <span className="text-[10px] text-slate-400">
-                          Quota: {(u.tokenMonthlyQuota / 1000).toFixed(0)}k tokens
-                        </span>
-                      </td>
-
-                      {/* Token Bar */}
-                      <td className="py-3.5 px-3">
-                        <div className="w-28 space-y-1">
-                          <div className="flex justify-between text-[10px]">
-                            <span className="font-mono font-medium text-slate-800">
-                              {(u.tokensUsedThisMonth / 1000).toFixed(1)}k
-                            </span>
-                            <span className="text-slate-400">{tokenUsagePercent}%</span>
-                          </div>
-                          <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${tokenUsagePercent > 85 ? 'bg-red-500' : tokenUsagePercent > 50 ? 'bg-amber-500' : 'bg-brand-600'
-                                }`}
-                              style={{ width: `${tokenUsagePercent}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Verified */}
-                      <td className="py-3.5 px-3">
-                        {u.isVerified ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                            <CheckCircle2 size={12} className="text-emerald-600" />
-                            <span>Đã xác minh</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
-                            <Clock size={12} />
-                            <span>Chờ OTP</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Last Active */}
-                      <td className="py-3.5 px-3">
-                        <span className="text-slate-600 block">{u.lastActiveAt}</span>
-                        <span className="text-[10px] text-slate-400">Tạo: {u.createdAt}</span>
-                      </td>
-
-                      {/* Action Menu */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {/* Quick Inspect Modal */}
-                          <button
-                            onClick={() => setQuickInspectUser(u)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
-                            title="Xem nhanh chi tiết"
-                          >
-                            <Eye size={15} />
-                          </button>
-
-                          {/* Full Page Link */}
-                          <Link
-                            to={`/admin/users/${u.id}`}
-                            className="rounded-lg p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
-                            title="Mở trang chi tiết tài khoản"
-                          >
-                            <ArrowRight size={15} />
-                          </Link>
-
-                          {/* Edit User */}
-                          <button
-                            onClick={() => openEditModal(u)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
-                            title="Chỉnh sửa thông tin"
-                          >
-                            <Edit size={15} />
-                          </button>
-
-                          {/* Role & Permissions */}
-                          <button
-                            onClick={() => openRoleModal(u)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer"
-                            title="Phân quyền vai trò (Roles)"
-                          >
-                            <Shield size={15} />
-                          </button>
-
-                          {/* Lock / Unlock */}
-                          <button
-                            onClick={() => {
-                              setUserToLock(u);
-                              setLockReason(u.suspendedReason || '');
-                            }}
-                            className={`rounded-lg p-1.5 transition cursor-pointer ${u.status === 'SUSPENDED'
-                                ? 'text-emerald-600 hover:bg-emerald-50'
-                                : 'text-slate-500 hover:text-red-600 hover:bg-red-50'
-                              }`}
-                            title={u.status === 'SUSPENDED' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
-                          >
-                            {u.status === 'SUSPENDED' ? <Unlock size={15} /> : <Lock size={15} />}
-                          </button>
-
-                          {/* Delete User */}
-                          {u.email !== 'admin@example.com' && (
-                            <button
-                              onClick={() => setUserToDelete(u)}
-                              className="rounded-lg p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                              title="Xóa tài khoản"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <ul className="mt-2">
+          {filteredUsers.map((u) => (
+            <li
+              key={u.id}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 border-b border-border py-5 md:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_7rem_6.5rem_auto]"
+            >
+              <div className="min-w-0">
+                <Link to={`/admin/users/${u.id}`} className="block truncate text-[clamp(1rem,1.2vw,1.0625rem)] font-medium text-ink hover:text-brand">
+                  {u.name}
+                </Link>
+                <p className="mt-0.5 truncate text-sm text-slate-600">{u.email}</p>
+                <p className="mt-1 text-[13px] text-slate-600 md:hidden">
+                  {ROLE_LABEL[lang][u.role]} · {PLAN_SHORT[lang][u.planId]} ·{' '}
+                  <span className={statusTone(u.status)}>{STATUS_LABEL[lang][u.status]}</span> · {u.createdAt}
+                </p>
+              </div>
+              <span className="hidden text-sm text-ink md:block">{ROLE_LABEL[lang][u.role]}</span>
+              <span className="hidden text-sm text-slate-600 md:block">{PLAN_SHORT[lang][u.planId]}</span>
+              <span className={`hidden text-sm md:block ${statusTone(u.status)}`} title={u.suspendedReason}>
+                {STATUS_LABEL[lang][u.status]}
+              </span>
+              <span className="hidden text-[13px] tabular-nums text-slate-600 md:block">{u.createdAt}</span>
+              <div className="flex items-center justify-end gap-2">
+                <Link to={`/admin/users/${u.id}`} className={brandLink}>
+                  {c.detail}
+                </Link>
+                <RowMenu
+                  label={c.more}
+                  items={[
+                    { label: c.menu.inspect, onClick: () => setQuickInspectUser(u) },
+                    { label: c.menu.edit, onClick: () => openEditModal(u) },
+                    { label: c.menu.role, onClick: () => openRoleModal(u) },
+                    {
+                      label: u.status === 'SUSPENDED' ? c.menu.unlock : c.menu.lock,
+                      onClick: () => {
+                        setUserToLock(u);
+                        setLockReason(u.suspendedReason || '');
+                      },
+                    },
+                    {
+                      label: c.menu.del,
+                      tone: 'danger',
+                      hidden: u.email === 'admin@example.com',
+                      onClick: () => setUserToDelete(u),
+                    },
+                  ]}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 1: CREATE NEW USER                                                  */}
-      {/* ========================================================================= */}
+      {/* MODAL 1: CREATE NEW USER */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-          <div className="w-full max-w-xl rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <UserPlus size={20} className="text-brand-600" />
-                <h3 className="text-lg font-medium text-slate-900">
-                  {isVietnamese ? 'Tạo Tài Khoản Người Dùng Mới' : 'Create New User Account'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 cursor-pointer"
-              >
-                <X size={18} />
+        <Modal
+          title={c.form.createTitle}
+          eyebrow={c.eyebrow}
+          onClose={() => setShowCreateModal(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowCreateModal(false)} className={outlineButton}>
+                {c.form.cancel}
               </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                createMutation.mutate(createForm);
-              }}
-              className="space-y-3.5 text-xs text-slate-700"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Họ và tên *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    placeholder="Ví dụ: Nguyễn Văn A"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                  />
-                </div>
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Địa chỉ Email *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={createForm.email}
-                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                    placeholder="email@example.com"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Số điện thoại
-                  </label>
-                  <input
-                    type="text"
-                    value={createForm.phone}
-                    onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
-                    placeholder="0912 345 678"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                  />
-                </div>
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Mật khẩu ban đầu
-                  </label>
-                  <input
-                    type="text"
-                    value={createForm.initialPassword}
-                    onChange={(e) => setCreateForm({ ...createForm, initialPassword: e.target.value })}
-                    placeholder="password123"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Vai trò (Role) *
-                  </label>
-                  <select
-                    value={createForm.role}
-                    onChange={(e) => {
-                      const role = e.target.value as UserRole;
-                      const planId =
-                        role === 'ADMIN'
-                          ? 'enterprise'
-                          : role === 'CAREER_CONSULTANT'
-                            ? 'consultant'
-                            : 'pro';
-                      setCreateForm({ ...createForm, role, planId });
-                    }}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer font-medium"
-                  >
-                    <option value="CANDIDATE">Ứng viên (Candidate)</option>
-                    <option value="CAREER_CONSULTANT">Cố vấn (Consultant)</option>
-                    <option value="ADMIN">Quản trị viên (Admin)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Gói dịch vụ
-                  </label>
-                  <select
-                    value={createForm.planId}
-                    onChange={(e) => setCreateForm({ ...createForm, planId: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer"
-                  >
-                    <option value="free">Khởi đầu Free (20k tokens)</option>
-                    <option value="pro">Chuyên nghiệp Pro (250k tokens)</option>
-                    <option value="executive">Executive VIP (1M tokens)</option>
-                    <option value="consultant">Consultant Partner (500k tokens)</option>
-                    <option value="enterprise">Enterprise Admin (2M tokens)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Trạng thái kích hoạt
-                  </label>
-                  <select
-                    value={createForm.status}
-                    onChange={(e) => setCreateForm({ ...createForm, status: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer"
-                  >
-                    <option value="ACTIVE">Hoạt động ngay (Active)</option>
-                    <option value="PENDING">Chờ xác thực OTP (Pending)</option>
-                    <option value="SUSPENDED">Khóa tạm thời (Suspended)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="font-medium text-slate-800 block mb-1">
-                  Chức danh / Tiêu đề nghề nghiệp
-                </label>
-                <input
-                  type="text"
-                  value={createForm.headline}
-                  onChange={(e) => setCreateForm({ ...createForm, headline: e.target.value })}
-                  placeholder="Ví dụ: Senior Backend Engineer / HR Consultant"
-                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="font-medium text-slate-800 block mb-1">
-                  Ghi chú nội bộ dành cho Quản trị viên
-                </label>
-                <textarea
-                  rows={2}
-                  value={createForm.notes}
-                  onChange={(e) => setCreateForm({ ...createForm, notes: e.target.value })}
-                  placeholder="Ghi chú về nguồn gốc tài khoản, lý do tạo hoặc các yêu cầu hỗ trợ..."
-                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 leading-relaxed"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <Button variant="secondary" type="button" onClick={() => setShowCreateModal(false)}>
-                  Hủy
-                </Button>
-                <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={createMutation.isPending || !createForm.name.trim() || !createForm.email.trim()}
-                >
-                  {createMutation.isPending ? 'Đang tạo...' : 'Tạo Tài Khoản Ngay'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+              <button
+                type="submit"
+                form="admin-create-user"
+                disabled={createMutation.isPending || !createForm.name.trim() || !createForm.email.trim()}
+                className={primaryButton}
+              >
+                {createMutation.isPending ? c.form.creating : c.form.createBtn}
+              </button>
+            </>
+          }
+        >
+          <form
+            id="admin-create-user"
+            onSubmit={(e) => {
+              e.preventDefault();
+              createMutation.mutate(createForm);
+            }}
+            className="grid gap-x-8 gap-y-6 sm:grid-cols-2"
+          >
+            <label className="block">
+              <span className={fieldLabel}>{c.form.name}</span>
+              <input
+                type="text"
+                required
+                value={createForm.name}
+                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                placeholder={c.form.namePh}
+                className={underlineInput}
+              />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.email}</span>
+              <input
+                type="email"
+                required
+                value={createForm.email}
+                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                placeholder="email@example.com"
+                className={underlineInput}
+              />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.phone}</span>
+              <input
+                type="text"
+                value={createForm.phone}
+                onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                placeholder="0912 345 678"
+                className={underlineInput}
+              />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.password}</span>
+              <input
+                type="text"
+                value={createForm.initialPassword}
+                onChange={(e) => setCreateForm({ ...createForm, initialPassword: e.target.value })}
+                placeholder="password123"
+                className={`${underlineInput} font-mono`}
+              />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.role}</span>
+              <select
+                value={createForm.role}
+                onChange={(e) => {
+                  const role = e.target.value as UserRole;
+                  const planId = role === 'ADMIN' ? 'enterprise' : role === 'CAREER_CONSULTANT' ? 'consultant' : 'pro';
+                  setCreateForm({ ...createForm, role, planId });
+                }}
+                className={underlineSelect}
+              >
+                <option value="CANDIDATE">{ROLE_LABEL[lang].CANDIDATE}</option>
+                <option value="CAREER_CONSULTANT">{ROLE_LABEL[lang].CAREER_CONSULTANT}</option>
+                <option value="ADMIN">{ROLE_LABEL[lang].ADMIN}</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.plan}</span>
+              <select
+                value={createForm.planId}
+                onChange={(e) => setCreateForm({ ...createForm, planId: e.target.value as UserSubscriptionTier })}
+                className={underlineSelect}
+              >
+                {(['free', 'pro', 'executive', 'consultant', 'enterprise'] as const).map((p) => (
+                  <option key={p} value={p}>
+                    {c.planOptions[p]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.status}</span>
+              <select
+                value={createForm.status}
+                onChange={(e) => setCreateForm({ ...createForm, status: e.target.value as UserAccountStatus })}
+                className={underlineSelect}
+              >
+                {(['ACTIVE', 'PENDING', 'SUSPENDED'] as const).map((s) => (
+                  <option key={s} value={s}>
+                    {c.statusOptions[s]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.headline}</span>
+              <input
+                type="text"
+                value={createForm.headline}
+                onChange={(e) => setCreateForm({ ...createForm, headline: e.target.value })}
+                placeholder={c.form.headlinePh}
+                className={underlineInput}
+              />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className={fieldLabel}>{c.form.notes}</span>
+              <textarea
+                rows={2}
+                value={createForm.notes}
+                onChange={(e) => setCreateForm({ ...createForm, notes: e.target.value })}
+                placeholder={c.form.notesPh}
+                className={`${underlineInput} resize-none leading-7`}
+              />
+            </label>
+          </form>
+        </Modal>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 2: EDIT USER ACCOUNT                                                */}
-      {/* ========================================================================= */}
+      {/* MODAL 2: EDIT USER ACCOUNT */}
       {userToEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-          <div className="w-full max-w-xl rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Edit size={20} className="text-brand-600" />
-                <h3 className="text-lg font-medium text-slate-900">
-                  Chỉnh Sửa Tài Khoản: {userToEdit.name} (#{userToEdit.id})
-                </h3>
-              </div>
+        <Modal
+          title={`${c.form.editTitle}: ${userToEdit.name}`}
+          eyebrow={`#${userToEdit.id}`}
+          onClose={() => setUserToEdit(null)}
+          footer={
+            <>
               <button
-                onClick={() => setUserToEdit(null)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 cursor-pointer"
+                type="button"
+                onClick={() => resetPasswordMutation.mutate(userToEdit.id)}
+                disabled={resetPasswordMutation.isPending}
+                className={`${textLink} mr-auto text-slate-600`}
               >
-                <X size={18} />
+                {c.form.resetPwd}
               </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                updateMutation.mutate({ id: userToEdit.id, payload: editForm });
-              }}
-              className="space-y-3.5 text-xs text-slate-700"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Họ và tên *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.name || ''}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                  />
-                </div>
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Địa chỉ Email *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={editForm.email || ''}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Số điện thoại
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.phone || ''}
-                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Gói dịch vụ
-                  </label>
-                  <select
-                    value={editForm.planId}
-                    onChange={(e) => setEditForm({ ...editForm, planId: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer"
-                  >
-                    <option value="free">Khởi đầu Free</option>
-                    <option value="pro">Chuyên nghiệp Pro</option>
-                    <option value="executive">Executive VIP</option>
-                    <option value="consultant">Consultant Partner</option>
-                    <option value="enterprise">Enterprise Admin</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Trạng thái tài khoản
-                  </label>
-                  <select
-                    value={editForm.status}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500 bg-surface cursor-pointer"
-                  >
-                    <option value="ACTIVE">Hoạt động (Active)</option>
-                    <option value="PENDING">Chờ kích hoạt (Pending)</option>
-                    <option value="SUSPENDED">Bị khóa (Suspended)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Địa điểm làm việc
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.location || ''}
-                    onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                  />
-                </div>
-                <div>
-                  <label className="font-medium text-slate-800 block mb-1">
-                    Chức danh / Headline
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.headline || ''}
-                    onChange={(e) => setEditForm({ ...editForm, headline: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-medium text-slate-800 block mb-1">
-                  Ghi chú quản trị
-                </label>
-                <textarea
-                  rows={2}
-                  value={editForm.notes || ''}
-                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => resetPasswordMutation.mutate(userToEdit.id)}
-                  disabled={resetPasswordMutation.isPending}
-                  className="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:underline cursor-pointer font-semibold"
-                >
-                  <RefreshCw size={13} />
-                  <span>Đặt lại mật khẩu về mặc định</span>
-                </button>
-
-                <div className="flex gap-2">
-                  <Button variant="secondary" type="button" onClick={() => setUserToEdit(null)}>
-                    Hủy
-                  </Button>
-                  <Button variant="primary" type="submit" disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+              <button type="button" onClick={() => setUserToEdit(null)} className={outlineButton}>
+                {c.form.cancel}
+              </button>
+              <button type="submit" form="admin-edit-user" disabled={updateMutation.isPending} className={primaryButton}>
+                {updateMutation.isPending ? c.form.saving : c.form.save}
+              </button>
+            </>
+          }
+        >
+          <form
+            id="admin-edit-user"
+            onSubmit={(e) => {
+              e.preventDefault();
+              updateMutation.mutate({ id: userToEdit.id, payload: editForm });
+            }}
+            className="grid gap-x-8 gap-y-6 sm:grid-cols-2"
+          >
+            <label className="block">
+              <span className={fieldLabel}>{c.form.name}</span>
+              <input
+                type="text"
+                required
+                value={editForm.name || ''}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                className={underlineInput}
+              />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.email}</span>
+              <input
+                type="email"
+                required
+                value={editForm.email || ''}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                className={underlineInput}
+              />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.phone}</span>
+              <input
+                type="text"
+                value={editForm.phone || ''}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                className={underlineInput}
+              />
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.plan}</span>
+              <select
+                value={editForm.planId}
+                onChange={(e) => setEditForm({ ...editForm, planId: e.target.value as UserSubscriptionTier })}
+                className={underlineSelect}
+              >
+                {(['free', 'pro', 'executive', 'consultant', 'enterprise'] as const).map((p) => (
+                  <option key={p} value={p}>
+                    {c.planOptions[p].replace(/\s*\(.*\)$/, '')}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.status}</span>
+              <select
+                value={editForm.status}
+                onChange={(e) => setEditForm({ ...editForm, status: e.target.value as UserAccountStatus })}
+                className={underlineSelect}
+              >
+                {(['ACTIVE', 'PENDING', 'SUSPENDED'] as const).map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABEL[lang][s]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>{c.form.location}</span>
+              <input
+                type="text"
+                value={editForm.location || ''}
+                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                className={underlineInput}
+              />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className={fieldLabel}>{c.form.headline}</span>
+              <input
+                type="text"
+                value={editForm.headline || ''}
+                onChange={(e) => setEditForm({ ...editForm, headline: e.target.value })}
+                className={underlineInput}
+              />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className={fieldLabel}>{c.form.notes}</span>
+              <textarea
+                rows={2}
+                value={editForm.notes || ''}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                className={`${underlineInput} resize-none leading-7`}
+              />
+            </label>
+          </form>
+        </Modal>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 3: LOCK / UNLOCK USER MODAL                                         */}
-      {/* ========================================================================= */}
+      {/* MODAL 3: LOCK / UNLOCK USER */}
       {userToLock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 text-red-600">
-              {userToLock.status === 'SUSPENDED' ? <Unlock size={24} /> : <Lock size={24} />}
-              <h3 className="text-lg font-medium text-slate-900">
-                {userToLock.status === 'SUSPENDED'
-                  ? 'Mở Khóa Tài Khoản Người Dùng'
-                  : 'Xác Nhận Khóa Tài Khoản Người Dùng'}
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {userToLock.status === 'SUSPENDED'
-                ? `Bạn có chắc chắn muốn kích hoạt lại tài khoản "${userToLock.name}" (${userToLock.email}) không? Người dùng sẽ có thể đăng nhập bình thường.`
-                : `Khi bị khóa, tài khoản "${userToLock.name}" (${userToLock.email}) sẽ không thể đăng nhập hoặc gọi các dịch vụ AI trên nền tảng.`}
-            </p>
-
-            {userToLock.status !== 'SUSPENDED' && (
-              <div>
-                <label className="font-medium text-slate-800 text-xs block mb-1">
-                  Lý do khóa tài khoản (Audit Reason) *
-                </label>
-                <textarea
-                  rows={2}
-                  value={lockReason}
-                  onChange={(e) => setLockReason(e.target.value)}
-                  placeholder="Ví dụ: Vi phạm quy định về tần suất gọi API, phát tán nội dung spam, hoặc yêu cầu bảo mật..."
-                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-red-500"
-                />
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 text-xs">
-              <Button variant="secondary" onClick={() => setUserToLock(null)}>
-                Hủy
-              </Button>
-              <Button
-                variant="primary"
+        <Modal
+          title={userToLock.status === 'SUSPENDED' ? c.lockModal.unlockTitle : c.lockModal.lockTitle}
+          eyebrow={userToLock.name}
+          onClose={() => setUserToLock(null)}
+          width="max-w-lg"
+          footer={
+            <>
+              <button type="button" onClick={() => setUserToLock(null)} className={outlineButton}>
+                {c.form.cancel}
+              </button>
+              <button
+                type="button"
                 onClick={() =>
                   lockMutation.mutate({
                     id: userToLock.id,
@@ -1254,136 +1007,46 @@ export default function UserManagementPage() {
                   })
                 }
                 disabled={lockMutation.isPending}
-                className={
-                  userToLock.status === 'SUSPENDED'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-red-600 hover:bg-red-700'
-                }
+                className={userToLock.status === 'SUSPENDED' ? primaryButton : dangerButton}
               >
-                {userToLock.status === 'SUSPENDED' ? 'Mở Khóa Ngay' : 'Xác Nhận Khóa'}
-              </Button>
-            </div>
-          </div>
-        </div>
+                {userToLock.status === 'SUSPENDED' ? c.lockModal.confirmUnlock : c.lockModal.confirmLock}
+              </button>
+            </>
+          }
+        >
+          <p className="text-[15px] leading-7 text-slate-700">
+            {userToLock.status === 'SUSPENDED'
+              ? c.lockModal.unlockText(userToLock.name, userToLock.email)
+              : c.lockModal.lockText(userToLock.name, userToLock.email)}
+          </p>
+          {userToLock.status !== 'SUSPENDED' && (
+            <label className="mt-6 block">
+              <span className={fieldLabel}>{c.lockModal.reason}</span>
+              <textarea
+                rows={2}
+                value={lockReason}
+                onChange={(e) => setLockReason(e.target.value)}
+                placeholder={c.lockModal.reasonPh}
+                className={`${underlineInput} resize-none leading-7 focus:border-danger`}
+              />
+            </label>
+          )}
+        </Modal>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 4: ROLE ASSIGNMENT & PERMISSIONS MATRIX                             */}
-      {/* ========================================================================= */}
+      {/* MODAL 4: ROLE ASSIGNMENT & PERMISSIONS MATRIX */}
       {userToRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Shield size={20} className="text-brand-600" />
-                <h3 className="text-lg font-medium text-slate-900">
-                  Phân Quyền & Vai Trò: {userToRole.name}
-                </h3>
-              </div>
-              <button
-                onClick={() => setUserToRole(null)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 cursor-pointer"
-              >
-                <X size={18} />
+        <Modal
+          title={c.roleModal.title}
+          eyebrow={userToRole.name}
+          onClose={() => setUserToRole(null)}
+          footer={
+            <>
+              <button type="button" onClick={() => setUserToRole(null)} className={outlineButton}>
+                {c.form.cancel}
               </button>
-            </div>
-
-            <div className="space-y-4 text-xs text-slate-700">
-              {/* Select Role */}
-              <div>
-                <label className="font-medium text-slate-900 text-sm block mb-1">
-                  1. Chọn Vai Trò Hệ Thống (System Role)
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  {(['CANDIDATE', 'CAREER_CONSULTANT', 'ADMIN'] as const).map((role) => (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => {
-                        setNewAssignedRole(role);
-                        setSelectedPermissions(getDefaultPermissionsForRole(role));
-                      }}
-                      className={`rounded-xl border p-3 text-left transition cursor-pointer ${newAssignedRole === role
-                          ? 'border-brand-600 bg-brand-50/70 shadow-xs'
-                          : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100'
-                        }`}
-                    >
-                      <span className="font-medium text-slate-900 block text-xs">
-                        {role === 'ADMIN'
-                          ? 'Quản Trị Viên (Admin)'
-                          : role === 'CAREER_CONSULTANT'
-                            ? 'Cố Vấn (Consultant)'
-                            : 'Ứng Viên (Candidate)'}
-                      </span>
-                      <span className="text-[11px] text-slate-500 mt-1 block">
-                        {role === 'ADMIN'
-                          ? 'Toàn quyền kiểm soát hệ thống'
-                          : role === 'CAREER_CONSULTANT'
-                            ? 'Tư vấn, xem CV & phản hồi'
-                            : 'Nộp CV, làm bài test & chat AI'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Permissions Checklist */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="font-medium text-slate-900 text-sm">
-                    2. Ma Trận Quyền Hạn Chi Tiết ({selectedPermissions.length}/{ALL_SYSTEM_PERMISSIONS.length})
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedPermissions(ALL_SYSTEM_PERMISSIONS.map((p) => p.key))
-                    }
-                    className="text-brand-600 hover:underline font-semibold text-[11px]"
-                  >
-                    Chọn tất cả quyền
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1 border border-slate-200 rounded-xl p-3 bg-slate-50/30">
-                  {ALL_SYSTEM_PERMISSIONS.map((p) => {
-                    const isChecked = selectedPermissions.includes(p.key);
-                    return (
-                      <label
-                        key={p.key}
-                        className={`flex items-start gap-2.5 rounded-lg border p-2.5 cursor-pointer transition ${isChecked
-                            ? 'border-brand-300 bg-brand-50/50'
-                            : 'border-slate-200 bg-surface hover:bg-slate-50'
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedPermissions([...selectedPermissions, p.key]);
-                            } else {
-                              setSelectedPermissions(selectedPermissions.filter((k) => k !== p.key));
-                            }
-                          }}
-                          className="mt-0.5 rounded accent-brand-600"
-                        />
-                        <div className="min-w-0">
-                          <p className="font-medium text-slate-900 text-xs">{p.name}</p>
-                          <p className="text-[10px] text-slate-500">{p.description}</p>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-              <Button variant="secondary" onClick={() => setUserToRole(null)}>
-                Hủy
-              </Button>
-              <Button
-                variant="primary"
+              <button
+                type="button"
                 onClick={() =>
                   roleMutation.mutate({
                     id: userToRole.id,
@@ -1392,155 +1055,109 @@ export default function UserManagementPage() {
                   })
                 }
                 disabled={roleMutation.isPending}
-                className="bg-brand-600 hover:bg-brand-700"
+                className={primaryButton}
               >
-                {roleMutation.isPending ? 'Đang cập nhật...' : 'Lưu Phân Quyền'}
-              </Button>
-            </div>
-          </div>
-        </div>
+                {roleMutation.isPending ? c.roleModal.saving : c.roleModal.save}
+              </button>
+            </>
+          }
+        >
+          <RolePicker
+            lang={lang}
+            role={newAssignedRole}
+            onRole={(role) => {
+              setNewAssignedRole(role);
+              setSelectedPermissions(getDefaultPermissionsForRole(role));
+            }}
+            permissions={selectedPermissions}
+            onPermissions={setSelectedPermissions}
+          />
+        </Modal>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 5: QUICK INSPECT USER PROFILE                                       */}
-      {/* ========================================================================= */}
+      {/* MODAL 5: QUICK INSPECT USER PROFILE */}
       {quickInspectUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Users size={20} className="text-brand-600" />
-                <h3 className="text-lg font-medium text-slate-900">
-                  Hồ Sơ Người Dùng: {quickInspectUser.name}
-                </h3>
-              </div>
+        <Modal
+          title={quickInspectUser.name}
+          eyebrow={c.inspect.eyebrow}
+          onClose={() => setQuickInspectUser(null)}
+          width="max-w-xl"
+          footer={
+            <>
               <button
-                onClick={() => setQuickInspectUser(null)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs text-slate-700">
-              <div className="flex items-start gap-3.5 rounded-2xl bg-brand-50/60 p-4 border border-brand-100">
-                <img
-                  src={quickInspectUser.avatar}
-                  alt={quickInspectUser.name}
-                  className="h-14 w-14 rounded-xl object-cover border border-slate-200"
-                />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-slate-900 text-base">{quickInspectUser.name}</h4>
-                    {getRoleBadge(quickInspectUser.role)}
-                    {getStatusBadge(quickInspectUser.status)}
-                  </div>
-                  <p className="text-slate-600 font-medium">{quickInspectUser.headline}</p>
-                  <div className="flex items-center gap-3 text-slate-500 pt-0.5">
-                    <span className="flex items-center gap-1">
-                      <Mail size={12} /> {quickInspectUser.email}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Phone size={12} /> {quickInspectUser.phone}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Gói Đăng Ký</span>
-                  <strong className="text-slate-900 text-sm">{quickInspectUser.planName}</strong>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Token Tháng Này</span>
-                  <strong className="text-brand-700 text-sm">
-                    {quickInspectUser.tokensUsedThisMonth.toLocaleString()} /{' '}
-                    {(quickInspectUser.tokenMonthlyQuota / 1000).toFixed(0)}k
-                  </strong>
-                </div>
-              </div>
-
-              {quickInspectUser.bio && (
-                <div className="rounded-xl bg-slate-50 p-3 text-slate-600 italic border border-slate-100">
-                  "{quickInspectUser.bio}"
-                </div>
-              )}
-
-              {/* Recent activities preview */}
-              <div>
-                <span className="font-medium text-slate-900 uppercase tracking-wider text-[11px] block mb-1.5">
-                  Lịch Sử Hoạt Động Gần Nhất
-                </span>
-                <div className="space-y-1.5">
-                  {quickInspectUser.recentActivities.slice(0, 3).map((act) => (
-                    <div
-                      key={act.id}
-                      className="rounded-lg bg-slate-50 p-2.5 border border-slate-100 flex justify-between items-center text-[11px]"
-                    >
-                      <div>
-                        <strong className="text-slate-800 block">{act.action}</strong>
-                        <span className="text-slate-500">{act.details}</span>
-                      </div>
-                      <span className="text-slate-400 font-mono shrink-0 ml-2">{act.timestamp}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
-              <Button
-                variant="secondary"
+                type="button"
                 onClick={() => {
                   setQuickInspectUser(null);
                   navigate(`/admin/users/${quickInspectUser.id}`);
                 }}
-                className="gap-1.5 text-xs"
+                className={`${textLink} text-ink`}
               >
-                <span>Xem Toàn Bộ Trang Chi Tiết</span>
-                <ArrowRight size={13} />
-              </Button>
-              <Button variant="primary" onClick={() => setQuickInspectUser(null)} className="text-xs">
-                Đóng
-              </Button>
-            </div>
-          </div>
-        </div>
+                {c.inspect.full}
+              </button>
+              <button type="button" onClick={() => setQuickInspectUser(null)} className={primaryButton}>
+                {c.inspect.close}
+              </button>
+            </>
+          }
+        >
+          <p className="text-sm text-slate-600">
+            {ROLE_LABEL[lang][quickInspectUser.role]}
+            {quickInspectUser.headline ? ` · ${quickInspectUser.headline}` : ''}
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            {quickInspectUser.email} · {quickInspectUser.phone}
+          </p>
+          <dl className="mt-5">
+            <InfoRow label={c.inspect.plan}>{quickInspectUser.planName}</InfoRow>
+            <InfoRow label={c.inspect.tokens}>
+              {quickInspectUser.tokensUsedThisMonth.toLocaleString(isVietnamese ? 'vi-VN' : 'en-US')} /{' '}
+              {(quickInspectUser.tokenMonthlyQuota / 1000).toFixed(0)}k
+            </InfoRow>
+            <InfoRow label={c.inspect.status} tone={quickInspectUser.status === 'ACTIVE' ? 'brand' : 'danger'}>
+              {STATUS_LABEL[lang][quickInspectUser.status]}
+            </InfoRow>
+          </dl>
+          {quickInspectUser.bio && <p className="mt-5 text-[15px] leading-7 text-slate-700">{quickInspectUser.bio}</p>}
+          <h4 className="mt-7 border-b border-ink pb-2 text-[15px] font-medium text-ink">{c.inspect.recent}</h4>
+          <ul>
+            {quickInspectUser.recentActivities.slice(0, 3).map((act) => (
+              <li key={act.id} className="grid gap-1 border-b border-border py-3 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-5">
+                <span className="text-[13px] tabular-nums text-slate-500">{act.timestamp}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm text-ink">{act.action}</span>
+                  <span className="block text-[13px] text-slate-600">{act.details}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Modal>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 6: DELETE CONFIRMATION                                              */}
-      {/* ========================================================================= */}
+      {/* MODAL 6: DELETE CONFIRMATION */}
       {userToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 text-red-600">
-              <AlertTriangle size={24} />
-              <h3 className="text-lg font-medium text-slate-900">
-                Xác Nhận Xóa Tài Khoản Vĩnh Viễn
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Bạn có chắc chắn muốn xóa tài khoản <strong>{userToDelete.name}</strong> ({userToDelete.email}) không? Toàn bộ dữ liệu hồ sơ và lịch sử hoạt động liên quan sẽ bị loại bỏ khỏi hệ thống.
-            </p>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 text-xs">
-              <Button variant="secondary" onClick={() => setUserToDelete(null)}>
-                Hủy bỏ
-              </Button>
-              <Button
-                variant="primary"
+        <Modal
+          title={c.deleteModal.title}
+          eyebrow={userToDelete.name}
+          onClose={() => setUserToDelete(null)}
+          width="max-w-lg"
+          footer={
+            <>
+              <button type="button" onClick={() => setUserToDelete(null)} className={outlineButton}>
+                {c.deleteModal.cancel}
+              </button>
+              <button
+                type="button"
                 onClick={() => deleteMutation.mutate(userToDelete.id)}
                 disabled={deleteMutation.isPending}
-                className="bg-red-600 hover:bg-red-700"
+                className={dangerButton}
               >
-                {deleteMutation.isPending ? 'Đang xóa...' : 'Xóa Vĩnh Viễn'}
-              </Button>
-            </div>
-          </div>
-        </div>
+                {deleteMutation.isPending ? c.deleteModal.deleting : c.deleteModal.confirm}
+              </button>
+            </>
+          }
+        >
+          <p className="text-[15px] leading-7 text-slate-700">{c.deleteModal.text(userToDelete.name, userToDelete.email)}</p>
+        </Modal>
       )}
     </div>
   );

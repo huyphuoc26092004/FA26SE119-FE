@@ -1,35 +1,10 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  ArrowLeft,
-  ArrowRight,
-  BrainCircuit,
-  CheckCircle2,
-  Clock,
-  Code,
-  Cpu,
-  Edit3,
-  FileCheck2,
-  FileText,
-  FileUp,
-  FolderOpen,
-  Info,
-  Loader2,
-  Plus,
-  RefreshCw,
-  Save,
-  ScanText,
-  Lightbulb,
-  Trash2,
-  Upload,
-  X,
-  Zap,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { simulateAiCvExtraction, createResume } from '../../mocks/services/mockService';
-import type { Resume, WorkExperience, EducationItem, SkillItem } from '../../types/domain';
-import { Badge, Button, Card, Input, PageTitle } from '../../components/ui';
+import type { Resume, WorkExperience } from '../../types/domain';
 import { useTranslation } from '../../i18n';
 
 const SAMPLE_CV_PRESETS = [
@@ -56,8 +31,198 @@ const SAMPLE_CV_PRESETS = [
   },
 ];
 
+// Short page-only strings that have no i18n key yet.
+const copy = {
+  vi: {
+    back: 'Quay lại CV của tôi',
+    pageLabel: 'Tải CV lên',
+    headline: 'Có sẵn CV rồi.',
+    headlineAccent: 'Để AI đọc giúp bạn.',
+    intro:
+      'Tải lên file PDF hoặc DOCX. AI tự trích xuất thông tin và chấm điểm ATS, bạn chỉ cần kiểm tra lại.',
+    choose: 'Chọn file CV từ máy của bạn',
+    dropHint: 'hoặc kéo thả file vào đây',
+    formats: 'PDF hoặc DOCX · tối đa 10 MB',
+    browse: 'Duyệt file',
+    tryPrompt: 'Chỉ muốn xem thử? Dùng file mẫu:',
+    parsingHeadline: 'Đang đọc CV.',
+    parsingAccent: 'Chỉ mất vài giây.',
+    parsingFile: 'Đang phân tích tệp',
+    done: 'Xong',
+    running: 'Đang chạy',
+    reviewLabel: 'Kiểm tra CV',
+    reviewHeadline: 'Đã đọc xong CV.',
+    reviewAccent: 'Kiểm tra lại trước khi lưu.',
+    reviewIntro:
+      'Vui lòng kiểm tra và chỉnh sửa các thông tin AI đã trích xuất từ tệp CV trước khi lưu vào hệ thống.',
+    confidence: 'Độ chính xác trích xuất',
+    uploadAnother: 'Tải tệp khác',
+    sectionGeneral: 'Thông tin chung & liên hệ',
+    cvName: 'Tên bản CV *',
+    targetRole: 'Vị trí ứng tuyển mục tiêu *',
+    fullName: 'Họ và tên *',
+    email: 'Email *',
+    phone: 'Số điện thoại',
+    location: 'Địa điểm / thành phố',
+    summary: 'Tóm tắt chuyên môn (Professional Summary)',
+    sectionSkills: 'Kỹ năng chuyên môn',
+    skillsNote: 'Bấm × để xoá kỹ năng nhận diện sai, hoặc nhập để thêm kỹ năng còn thiếu.',
+    skillCount: (n: number) => `${n} kỹ năng`,
+    skillPlaceholder: 'Nhập kỹ năng bổ sung (VD: Docker, AWS, Next.js…)',
+    add: 'Thêm',
+    removeSkill: (s: string) => `Xoá ${s}`,
+    sectionExperience: 'Kinh nghiệm làm việc',
+    experienceNote: 'Kiểm tra thời gian, chức danh và mô tả công việc đã trích xuất.',
+    addRole: '+ Thêm vị trí',
+    role: 'Chức danh / vị trí',
+    company: 'Tên công ty',
+    start: 'Thời gian bắt đầu',
+    end: 'Thời gian kết thúc',
+    description: 'Mô tả trách nhiệm & thành tựu',
+    remove: 'Xoá',
+    atsTitle: 'Điểm ATS ước tính',
+    atsNote: 'Tương thích tốt với hệ thống sàng lọc tự động.',
+    format: 'Định dạng & bố cục',
+    keywords: 'Từ khoá chuyên môn',
+    quantified: 'Định lượng thành tích',
+    fileTitle: 'Thông tin tệp',
+    fileName: 'Tên tệp gốc',
+    fileSize: 'Kích thước',
+    extractedAt: 'Thời gian trích xuất',
+    model: 'Mô hình',
+    justNow: 'Vừa xong',
+    warnings: 'Ghi chú khi trích xuất',
+    showRaw: 'Xem văn bản thô',
+    hideRaw: 'Ẩn văn bản thô',
+    noRaw: 'Không có dữ liệu thô.',
+    saveNote: 'Kiểm tra kỹ các thông tin trước khi lưu bản CV.',
+  },
+  en: {
+    back: 'Back to my CVs',
+    pageLabel: 'Upload CV',
+    headline: 'Already have a CV?',
+    headlineAccent: 'Let AI read it for you.',
+    intro:
+      'Upload a PDF or DOCX file. AI extracts the details and scores it for ATS — you only need to review.',
+    choose: 'Choose a CV file from your computer',
+    dropHint: 'or drag and drop it here',
+    formats: 'PDF or DOCX · up to 10 MB',
+    browse: 'Browse files',
+    tryPrompt: 'Just looking? Use a sample file:',
+    parsingHeadline: 'Reading your CV.',
+    parsingAccent: 'This takes a few seconds.',
+    parsingFile: 'Analysing file',
+    done: 'Done',
+    running: 'Running',
+    reviewLabel: 'Review CV',
+    reviewHeadline: 'Your CV has been read.',
+    reviewAccent: 'Check it before saving.',
+    reviewIntro:
+      'Please review and correct the details AI extracted from your file before saving it to the system.',
+    confidence: 'Extraction accuracy',
+    uploadAnother: 'Upload another file',
+    sectionGeneral: 'General & contact details',
+    cvName: 'CV name *',
+    targetRole: 'Target position *',
+    fullName: 'Full name *',
+    email: 'Email *',
+    phone: 'Phone',
+    location: 'Location / city',
+    summary: 'Professional summary',
+    sectionSkills: 'Skills',
+    skillsNote: 'Click × to remove a wrongly detected skill, or type to add a missing one.',
+    skillCount: (n: number) => `${n} skills`,
+    skillPlaceholder: 'Add a skill (e.g. Docker, AWS, Next.js…)',
+    add: 'Add',
+    removeSkill: (s: string) => `Remove ${s}`,
+    sectionExperience: 'Work experience',
+    experienceNote: 'Check dates, titles and descriptions that were extracted.',
+    addRole: '+ Add position',
+    role: 'Job title',
+    company: 'Company',
+    start: 'Start date',
+    end: 'End date',
+    description: 'Responsibilities & achievements',
+    remove: 'Remove',
+    atsTitle: 'Estimated ATS score',
+    atsNote: 'Works well with modern automated screening systems.',
+    format: 'Format & layout',
+    keywords: 'Domain keywords',
+    quantified: 'Quantified results',
+    fileTitle: 'File details',
+    fileName: 'Original file',
+    fileSize: 'Size',
+    extractedAt: 'Extracted',
+    model: 'Model',
+    justNow: 'Just now',
+    warnings: 'Extraction notes',
+    showRaw: 'Show raw text',
+    hideRaw: 'Hide raw text',
+    noRaw: 'No raw data.',
+    saveNote: 'Check every detail before saving the CV.',
+  },
+};
+
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
+
+const primaryButton =
+  'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+
+const lineInput =
+  'w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-[15px] text-ink outline-none transition-colors duration-150 placeholder:text-slate-400 focus-visible:border-ink';
+
+/** Small label above an underlined control. */
+function Field({
+  label,
+  htmlFor,
+  className = '',
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <label htmlFor={htmlFor} className="block text-xs text-slate-600">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+/** Numbered section heading with a rule underneath. */
+function SectionHead({
+  index,
+  title,
+  note,
+  action,
+}: {
+  index: string;
+  title: string;
+  note?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="border-b border-ink pb-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
+          <span className="text-xs tabular-nums tracking-normal text-slate-500">{index}</span>
+          {title}
+        </h2>
+        {action}
+      </div>
+      {note && <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600">{note}</p>}
+    </div>
+  );
+}
+
 export default function UploadResumePage() {
-  const { t } = useTranslation();
+  const { t, isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,38 +348,49 @@ export default function UploadResumePage() {
     setExtractedData((prev) => ({ ...prev, experience: list }));
   };
 
+  const parsingSteps = [
+    { step: 1, label: t('resumes.parsingStep1') },
+    { step: 2, label: t('resumes.parsingStep2') },
+    { step: 3, label: t('resumes.parsingStep3') },
+    { step: 4, label: t('resumes.parsingStep4') },
+    { step: 5, label: t('resumes.parsingStep5') },
+  ];
+
+  const heading =
+    flowState === 'review'
+      ? { label: c.reviewLabel, main: c.reviewHeadline, accent: c.reviewAccent, intro: c.reviewIntro }
+      : flowState === 'parsing'
+      ? { label: c.pageLabel, main: c.parsingHeadline, accent: c.parsingAccent, intro: c.intro }
+      : { label: c.pageLabel, main: c.headline, accent: c.headlineAccent, intro: c.intro };
+
   return (
-    <>
-      <PageTitle
-        title={
-          flowState === 'review'
-            ? t('resumes.reviewTitle')
-            : t('resumes.uploadTitle')
-        }
-        subtitle={
-          flowState === 'review'
-            ? t('resumes.reviewSubtitle')
-            : t('resumes.uploadSubtitle')
-        }
-        action={
-          <Link to="/candidate/resumes">
-            <Button variant="secondary">
-              <ArrowLeft size={16} />
-              {t('resumes.backToList')}
-            </Button>
-          </Link>
-        }
-      />
+    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+      <Link to="/candidate/resumes" className={`${textLink} text-slate-600 hover:text-ink`}>
+        <ArrowLeft size={14} aria-hidden="true" />
+        {c.back}
+      </Link>
+
+      {/* Headline */}
+      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+        <p className="text-sm text-brand">{heading.label}</p>
+        <h1 className="mt-[clamp(1.25rem,3vw,2rem)] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {heading.main}
+          <span className="block text-brand">{heading.accent}</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[38rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {heading.intro}
+        </p>
+      </header>
 
       {/* STEP 1: FILE UPLOAD ZONE */}
       {flowState === 'upload' && (
-        <div className="space-y-8 max-w-4xl mx-auto animate-fade-in">
-          {/* Drag & Drop Area */}
+        <section className="mt-[clamp(2.5rem,5vw,3.5rem)]">
           <div
-            className={`rounded-2xl border-2 border-dashed p-10 text-center transition-all cursor-pointer bg-surface shadow-2xs ${
-              dragOver
-                ? 'border-brand-500 bg-brand-50/50 scale-[1.01]'
-                : 'border-slate-300 hover:border-brand-400 hover:bg-slate-50/50'
+            role="button"
+            tabIndex={0}
+            aria-label={c.choose}
+            className={`border-y border-t-slate-400 px-4 py-[clamp(3rem,7vw,4.5rem)] text-center transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-brand ${
+              dragOver ? 'border-b-brand bg-brand-50' : 'border-b-border hover:bg-slate-100/60'
             }`}
             onDragOver={(e: React.DragEvent) => {
               e.preventDefault();
@@ -223,6 +399,12 @@ export default function UploadResumePage() {
             onDragLeave={() => setDragOver(false)}
             onDrop={handleFileDrop}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
           >
             <input
               type="file"
@@ -231,212 +413,148 @@ export default function UploadResumePage() {
               accept=".pdf,.docx,.doc"
               className="hidden"
             />
-            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600 shadow-sm">
-              <FileUp size={32} />
-            </div>
-            <h3 className="text-lg font-medium text-slate-800 mb-1">{t('resumes.dropCvHere')}</h3>
-            <p className="text-xs text-slate-400 mb-5">{t('resumes.supportedFormats')}</p>
-            <Button variant="primary" type="button" className="shadow-xs">
-              <FolderOpen size={16} />
-              {t('resumes.browseFile')}
-            </Button>
+            <p className="text-[clamp(1.25rem,2vw,1.5rem)] font-normal tracking-[-0.01em] text-ink">
+              {c.choose}
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              {c.formats} · {c.dropHint}
+            </p>
+            <span className={`${textLink} mt-5 text-[15px] text-brand`}>{c.browse}</span>
           </div>
 
-          {/* Sample CV Presets for instant testing */}
-          <div>
-            <div className="mb-3">
-              <h4 className="font-medium text-slate-900 text-sm flex items-center gap-2">
-                <Lightbulb size={16} className="text-amber-500" />
-                {t('resumes.samplePresetsTitle')}
-              </h4>
-              <p className="text-xs text-slate-500">{t('resumes.samplePresetsDesc')}</p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              {SAMPLE_CV_PRESETS.map((preset) => (
-                <div
-                  key={preset.name}
-                  onClick={() => handleStartParsing(preset.name, preset.size)}
-                  className="group flex flex-col justify-between p-4 rounded-xl border border-slate-200/80 bg-surface hover:border-brand-400 hover:shadow-sm cursor-pointer transition"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600">
-                        <FileText size={18} />
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-2xs font-semibold text-slate-600">
-                        {preset.badge}
-                      </span>
-                    </div>
-                    <p className="font-semibold text-xs text-slate-800 line-clamp-1 group-hover:text-brand-600 transition">
-                      {preset.label}
-                    </p>
-                    <p className="text-2xs text-slate-400 mt-1 truncate">{preset.name}</p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-2xs text-brand-600 font-semibold">
-                    <span>{t('resumes.useSamplePreset')}</span>
-                    <ArrowRight size={13} className="transition-transform" />
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="mt-8 flex flex-wrap items-baseline gap-x-5 gap-y-3 text-sm text-slate-600">
+            <span>{c.tryPrompt}</span>
+            {SAMPLE_CV_PRESETS.map((preset) => (
+              <button
+                key={preset.name}
+                type="button"
+                title={preset.name}
+                onClick={() => handleStartParsing(preset.name, preset.size)}
+                className={`${textLink} text-ink`}
+              >
+                {preset.label}
+              </button>
+            ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* STEP 2: AI PARSING IN PROGRESS SIMULATION */}
+      {/* STEP 2: PARSING PROGRESS */}
       {flowState === 'parsing' && (
-        <Card className="max-w-2xl mx-auto my-8 p-8 text-center animate-fade-in border-brand-100">
-          <div className="relative mx-auto mb-6 grid h-20 w-20 place-items-center rounded-3xl bg-brand-600 text-white shadow-sm">
-            <Cpu size={36} className="animate-pulse" />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white" />
-            </span>
+        <section className="mt-[clamp(2.5rem,5vw,3.5rem)] max-w-3xl" aria-live="polite">
+          <div className="border-b border-ink pb-3">
+            <p className="text-[clamp(1.25rem,2vw,1.5rem)] font-normal tracking-[-0.01em] text-ink">
+              {t('resumes.parsingInProgress')}
+            </p>
+            <p className="mt-1.5 break-all text-sm text-slate-600">
+              {c.parsingFile}: <span className="text-ink">{selectedFileName}</span>
+            </p>
           </div>
-
-          <h3 className="text-xl font-semibold text-slate-900 mb-1">
-            {t('resumes.parsingInProgress')}
-          </h3>
-          <p className="text-xs text-slate-500 mb-6">
-            Đang phân tích tệp: <strong className="text-slate-800">{selectedFileName}</strong>
-          </p>
-
-          {/* Stepper progress */}
-          <div className="space-y-3 text-left max-w-md mx-auto">
-            {[
-              { step: 1, label: t('resumes.parsingStep1') },
-              { step: 2, label: t('resumes.parsingStep2') },
-              { step: 3, label: t('resumes.parsingStep3') },
-              { step: 4, label: t('resumes.parsingStep4') },
-              { step: 5, label: t('resumes.parsingStep5') },
-            ].map((s) => {
+          <div
+            className="h-[3px] w-full bg-slate-200"
+            role="progressbar"
+            aria-valuenow={Math.min(parsingStep, 5)}
+            aria-valuemin={0}
+            aria-valuemax={5}
+          >
+            <div
+              className="h-full bg-brand transition-[width] duration-300"
+              style={{ width: `${(Math.min(parsingStep, 5) / 5) * 100}%` }}
+            />
+          </div>
+          <ol>
+            {parsingSteps.map((s) => {
               const isDone = parsingStep > s.step;
               const isCurrent = parsingStep === s.step;
               return (
-                <div
+                <li
                   key={s.step}
-                  className={`flex items-center gap-3 p-2.5 rounded-xl transition ${
-                    isCurrent
-                      ? 'bg-brand-50 border border-brand-200 text-brand-900 font-semibold'
-                      : isDone
-                      ? 'text-slate-700'
-                      : 'text-slate-400 opacity-60'
-                  }`}
+                  className="flex items-baseline justify-between gap-6 border-b border-border py-4"
                 >
-                  {isDone ? (
-                    <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
-                  ) : isCurrent ? (
-                    <Loader2 size={18} className="animate-spin text-brand-600 shrink-0" />
-                  ) : (
-                    <div className="h-4 w-4 rounded-full border border-slate-300 shrink-0" />
-                  )}
-                  <span className="text-xs">{s.label}</span>
-                </div>
+                  <span
+                    className={`flex items-baseline gap-4 text-[15px] ${
+                      isDone || isCurrent ? 'text-ink' : 'text-slate-400'
+                    }`}
+                  >
+                    <span className="text-xs tabular-nums text-slate-500">0{s.step}</span>
+                    {s.label}
+                  </span>
+                  <span className={`shrink-0 text-sm ${isDone ? 'text-brand' : 'text-slate-500'}`}>
+                    {isDone ? c.done : isCurrent ? c.running : ''}
+                  </span>
+                </li>
               );
             })}
-          </div>
-        </Card>
+          </ol>
+        </section>
       )}
 
-      {/* STEP 3: REVIEW EXTRACTED CV INFORMATION & EDIT EXTRACTED INFORMATION */}
+      {/* STEP 3: REVIEW AND EDIT EXTRACTED INFORMATION */}
       {flowState === 'review' && (
-        <form onSubmit={handleConfirmAndSave} className="space-y-6 animate-fade-in">
-          {/* AI Banner Verification Notice */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-brand-700 p-5 text-white">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/20 text-amber-300 border border-white/30">
-                <BrainCircuit size={24} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-medium">
-                    AI đã bóc tách thông tin thành công!
-                  </h3>
-                  <span className="rounded-full bg-emerald-400/90 text-slate-900 px-2.5 py-0.5 text-xs font-semibold">
-                    {extractedData.extractedMeta?.confidenceScore ?? 96}% Chính xác
-                  </span>
-                </div>
-                <p className="mt-0.5 text-xs text-brand-100 max-w-2xl leading-relaxed">
-                  Vui lòng kiểm tra và chỉnh sửa lại các thông tin do AI tự động bóc tách từ tệp CV tải lên dưới đây trước khi lưu vào hệ thống.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setFlowState('upload')}
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs py-2 px-3"
-              >
-                <RefreshCw size={13} />
-                Tải lại tệp khác
-              </Button>
-            </div>
+        <form onSubmit={handleConfirmAndSave} className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+          <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
+            <button type="submit" className={primaryButton} disabled={saveCvMutation.isPending}>
+              {saveCvMutation.isPending ? t('resumes.saving') : t('resumes.confirmAndSave')}
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setFlowState('upload')}
+              className={`${textLink} text-[15px] text-ink`}
+            >
+              {c.uploadAnother}
+            </button>
+            <span className="text-sm text-slate-600">
+              {c.confidence}:{' '}
+              <span className="text-brand tabular-nums">
+                {extractedData.extractedMeta?.confidenceScore ?? 96}%
+              </span>
+            </span>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
-            {/* Left: Interactive Editable Form */}
-            <div className="space-y-6">
-              {/* Basic Info Card */}
-              <Card>
-                <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
-                  <h4 className="font-medium text-slate-900 text-sm">
-                    1. Thông tin chung & Liên hệ trích xuất
-                  </h4>
-                  <Badge tone="blue">AI Extracted</Badge>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                      Tên bản CV *
-                    </label>
-                    <Input
+          <div className="mt-[clamp(2.5rem,5vw,3.75rem)] grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)]">
+            {/* Left: editable form */}
+            <div className="min-w-0 space-y-[clamp(2.5rem,5vw,3.5rem)]">
+              {/* General info */}
+              <section>
+                <SectionHead index="01" title={c.sectionGeneral} />
+                <div className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2">
+                  <Field label={c.cvName} htmlFor="up-name">
+                    <input
+                      id="up-name"
                       required
                       value={extractedData.name || ''}
                       onChange={(e) =>
                         setExtractedData((prev) => ({ ...prev, name: e.target.value }))
                       }
-                      placeholder="Tên bản CV"
+                      className={lineInput}
                     />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                      Vị trí ứng tuyển mục tiêu *
-                    </label>
-                    <Input
+                  </Field>
+                  <Field label={c.targetRole} htmlFor="up-position">
+                    <input
+                      id="up-position"
                       required
                       value={extractedData.position || ''}
                       onChange={(e) =>
                         setExtractedData((prev) => ({ ...prev, position: e.target.value }))
                       }
-                      placeholder="Vị trí ứng tuyển"
+                      className={lineInput}
                     />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                      Họ và tên ứng viên *
-                    </label>
-                    <Input
+                  </Field>
+                  <Field label={c.fullName} htmlFor="up-fullname">
+                    <input
+                      id="up-fullname"
                       required
                       value={extractedData.fullName || ''}
                       onChange={(e) =>
                         setExtractedData((prev) => ({ ...prev, fullName: e.target.value }))
                       }
-                      placeholder="Họ và tên"
+                      className={lineInput}
                     />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                      Địa chỉ Email *
-                    </label>
-                    <Input
+                  </Field>
+                  <Field label={c.email} htmlFor="up-email">
+                    <input
+                      id="up-email"
                       type="email"
                       required
                       value={extractedData.email || ''}
@@ -444,70 +562,59 @@ export default function UploadResumePage() {
                         setExtractedData((prev) => ({ ...prev, email: e.target.value }))
                       }
                       placeholder="email@example.com"
+                      className={lineInput}
                     />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                      Số điện thoại
-                    </label>
-                    <Input
+                  </Field>
+                  <Field label={c.phone} htmlFor="up-phone">
+                    <input
+                      id="up-phone"
                       value={extractedData.phone || ''}
                       onChange={(e) =>
                         setExtractedData((prev) => ({ ...prev, phone: e.target.value }))
                       }
                       placeholder="(+84) 912 345 678"
+                      className={lineInput}
                     />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                      Địa điểm / Thành phố
-                    </label>
-                    <Input
+                  </Field>
+                  <Field label={c.location} htmlFor="up-location">
+                    <input
+                      id="up-location"
                       value={extractedData.location || ''}
                       onChange={(e) =>
                         setExtractedData((prev) => ({ ...prev, location: e.target.value }))
                       }
                       placeholder="Hồ Chí Minh, Việt Nam"
+                      className={lineInput}
                     />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                      Tóm tắt chuyên môn (Professional Summary)
-                    </label>
+                  </Field>
+                  <Field label={c.summary} htmlFor="up-summary" className="sm:col-span-2">
                     <textarea
-                      rows={3}
+                      id="up-summary"
+                      rows={4}
                       value={extractedData.summary || ''}
                       onChange={(e) =>
                         setExtractedData((prev) => ({ ...prev, summary: e.target.value }))
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500"
+                      className={`${lineInput} resize-y leading-7`}
                     />
-                  </div>
+                  </Field>
                 </div>
-              </Card>
+              </section>
 
-              {/* Skills Extracted Card */}
-              <Card>
-                <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-slate-900 text-sm">
-                      2. Kỹ năng chuyên môn trích xuất
-                    </h4>
-                    <p className="text-xs text-slate-400">
-                      Bấm vào dấu × để xoá kỹ năng nhận diện sai, hoặc gõ để thêm kỹ năng còn thiếu.
-                    </p>
-                  </div>
-                  <span className="text-xs font-medium text-brand-600">
-                    {extractedData.skills?.length || 0} kỹ năng
-                  </span>
-                </div>
-
-                {/* Add Skill Bar */}
-                <div className="flex gap-2 mb-4">
-                  <Input
+              {/* Skills */}
+              <section>
+                <SectionHead
+                  index="02"
+                  title={c.sectionSkills}
+                  note={c.skillsNote}
+                  action={
+                    <span className="text-[13px] text-slate-600">
+                      {c.skillCount(extractedData.skills?.length || 0)}
+                    </span>
+                  }
+                />
+                <div className="mt-5 flex items-end gap-4">
+                  <input
                     value={newSkillInput}
                     onChange={(e) => setNewSkillInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -516,261 +623,221 @@ export default function UploadResumePage() {
                         handleAddSkill(newSkillInput);
                       }
                     }}
-                    placeholder="Nhập kỹ năng bổ sung (VD: Docker, AWS, Next.js...)"
-                    className="max-w-md"
+                    placeholder={c.skillPlaceholder}
+                    aria-label={c.skillPlaceholder}
+                    className={`${lineInput} max-w-md`}
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
                     onClick={() => handleAddSkill(newSkillInput)}
+                    className={`${textLink} shrink-0 text-brand hover:text-ink`}
                   >
-                    <Plus size={15} /> Thêm
-                  </Button>
+                    {c.add}
+                  </button>
                 </div>
-
-                {/* Extracted Chips */}
-                <div className="flex flex-wrap gap-2">
+                <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2.5">
                   {extractedData.skills?.map((skill) => (
-                    <span
-                      key={skill}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/60 px-3 py-1.5 text-xs font-semibold text-brand-900"
-                    >
-                      <span>{skill}</span>
+                    <li key={skill} className="inline-flex items-center gap-1 text-sm text-ink">
+                      <span className="border-b border-slate-300 pb-px">{skill}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveSkill(skill)}
-                        className="text-brand-500 hover:text-red-600 transition cursor-pointer"
+                        aria-label={c.removeSkill(skill)}
+                        className="p-0.5 text-slate-400 transition-colors hover:text-danger cursor-pointer"
                       >
-                        <X size={14} />
+                        <X size={13} />
                       </button>
-                    </span>
+                    </li>
                   ))}
-                </div>
-              </Card>
+                </ul>
+              </section>
 
-              {/* Experience Extracted Card */}
-              <Card>
-                <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-slate-900 text-sm">
-                      3. Kinh nghiệm làm việc trích xuất
-                    </h4>
-                    <p className="text-xs text-slate-400">
-                      Kiểm tra thời gian, chức danh và mô tả công việc bóc tách được.
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleAddExperienceItem}
-                    className="text-xs py-1.5 px-2.5"
-                  >
-                    <Plus size={13} /> Thêm vị trí
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  {extractedData.experience?.map((exp, idx) => (
-                    <div
-                      key={exp.id || idx}
-                      className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 relative space-y-3"
+              {/* Experience */}
+              <section>
+                <SectionHead
+                  index="03"
+                  title={c.sectionExperience}
+                  note={c.experienceNote}
+                  action={
+                    <button
+                      type="button"
+                      onClick={handleAddExperienceItem}
+                      className={`${textLink} text-[13px] text-ink`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveExperience(idx)}
-                        className="absolute right-3 top-3 text-slate-400 hover:text-red-600 p-1 rounded"
-                        title="Xóa mục kinh nghiệm này"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-
-                      <div className="grid gap-3 sm:grid-cols-2 pr-8">
-                        <div>
-                          <label className="text-2xs font-semibold text-slate-500 mb-1 block">
-                            Chức danh / Vị trí
-                          </label>
-                          <Input
+                      {c.addRole}
+                    </button>
+                  }
+                />
+                <div>
+                  {extractedData.experience?.map((exp, idx) => (
+                    <div key={exp.id || idx} className="border-b border-border py-6">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <span className="text-xs tabular-nums text-slate-500">#{idx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExperience(idx)}
+                          className="text-[13px] text-danger transition-colors hover:text-ink cursor-pointer"
+                        >
+                          {c.remove}
+                        </button>
+                      </div>
+                      <div className="mt-3 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                        <Field label={c.role} htmlFor={`up-exp-role-${idx}`}>
+                          <input
+                            id={`up-exp-role-${idx}`}
                             value={exp.role}
-                            onChange={(e) =>
-                              handleUpdateExperience(idx, 'role', e.target.value)
-                            }
-                            placeholder="Vị trí công việc"
-                            className="bg-surface"
+                            onChange={(e) => handleUpdateExperience(idx, 'role', e.target.value)}
+                            className={lineInput}
                           />
-                        </div>
-                        <div>
-                          <label className="text-2xs font-semibold text-slate-500 mb-1 block">
-                            Tên công ty
-                          </label>
-                          <Input
+                        </Field>
+                        <Field label={c.company} htmlFor={`up-exp-company-${idx}`}>
+                          <input
+                            id={`up-exp-company-${idx}`}
                             value={exp.company}
                             onChange={(e) =>
                               handleUpdateExperience(idx, 'company', e.target.value)
                             }
-                            placeholder="Tên công ty"
-                            className="bg-surface"
+                            className={lineInput}
                           />
-                        </div>
-                        <div>
-                          <label className="text-2xs font-semibold text-slate-500 mb-1 block">
-                            Thời gian bắt đầu
-                          </label>
-                          <Input
+                        </Field>
+                        <Field label={c.start} htmlFor={`up-exp-start-${idx}`}>
+                          <input
+                            id={`up-exp-start-${idx}`}
                             value={exp.startDate}
                             onChange={(e) =>
                               handleUpdateExperience(idx, 'startDate', e.target.value)
                             }
                             placeholder="MM/YYYY"
-                            className="bg-surface"
+                            className={lineInput}
                           />
-                        </div>
-                        <div>
-                          <label className="text-2xs font-semibold text-slate-500 mb-1 block">
-                            Thời gian kết thúc
-                          </label>
-                          <Input
+                        </Field>
+                        <Field label={c.end} htmlFor={`up-exp-end-${idx}`}>
+                          <input
+                            id={`up-exp-end-${idx}`}
                             value={exp.endDate}
-                            onChange={(e) =>
-                              handleUpdateExperience(idx, 'endDate', e.target.value)
-                            }
-                            placeholder="MM/YYYY hoặc Hiện tại"
-                            className="bg-surface"
+                            onChange={(e) => handleUpdateExperience(idx, 'endDate', e.target.value)}
+                            placeholder="MM/YYYY"
+                            className={lineInput}
                           />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-2xs font-semibold text-slate-500 mb-1 block">
-                          Mô tả trách nhiệm & Thành tựu
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={exp.description}
-                          onChange={(e) =>
-                            handleUpdateExperience(idx, 'description', e.target.value)
-                          }
-                          className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
-                        />
+                        </Field>
+                        <Field
+                          label={c.description}
+                          htmlFor={`up-exp-desc-${idx}`}
+                          className="sm:col-span-2"
+                        >
+                          <textarea
+                            id={`up-exp-desc-${idx}`}
+                            rows={3}
+                            value={exp.description}
+                            onChange={(e) =>
+                              handleUpdateExperience(idx, 'description', e.target.value)
+                            }
+                            className={`${lineInput} resize-y leading-7`}
+                          />
+                        </Field>
                       </div>
                     </div>
                   ))}
                 </div>
-              </Card>
+              </section>
             </div>
 
-            {/* Right: AI Insights & File Metadata */}
-            <div className="space-y-6">
-              {/* ATS Estimation Card */}
-              <Card className="border-emerald-200 bg-surface">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-slate-900 text-sm">Điểm ATS ước tính</h4>
-                  <Badge tone="green">Đạt chuẩn ATS</Badge>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="grid h-16 w-16 place-items-center rounded-2xl border-4 border-emerald-400 bg-surface text-2xl font-semibold text-slate-900 shadow-sm">
-                    {extractedData.atsScore ?? 92}
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-800 text-sm">Độ sẵn sàng rất cao</p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      Tương thích tốt với hệ thống sàng lọc tự động hiện đại.
-                    </p>
-                  </div>
-                </div>
+            {/* Right: ATS estimate and file details */}
+            <aside className="min-w-0 space-y-12 lg:sticky lg:top-6 lg:self-start">
+              <section className="border-t border-ink pt-4">
+                <p className="text-[13px] text-slate-600">{c.atsTitle}</p>
+                <p className="mt-2 text-[clamp(2.75rem,4vw,3.5rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
+                  {extractedData.atsScore ?? 92}
+                </p>
+                <p className="mt-2.5 text-sm text-slate-600">{c.atsNote}</p>
+                <dl className="mt-5 text-sm">
+                  {[
+                    { label: c.format, value: '95%' },
+                    { label: c.keywords, value: '90%' },
+                    { label: c.quantified, value: '88%' },
+                  ].map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex justify-between gap-4 border-t border-border py-2.5 last:border-b"
+                    >
+                      <dt className="text-slate-600">{row.label}</dt>
+                      <dd className="text-ink tabular-nums">{row.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
 
-                <div className="mt-4 pt-3 border-t border-slate-200/60 space-y-2 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Định dạng & Bố cục:</span>
-                    <span className="font-semibold text-emerald-600">95%</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Từ khóa chuyên môn:</span>
-                    <span className="font-semibold text-emerald-600">90%</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Định lượng thành tích:</span>
-                    <span className="font-semibold text-brand-600">88%</span>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Extraction Metadata Card */}
-              <Card>
-                <h4 className="font-medium text-slate-900 text-sm mb-3">Thông tin tệp bóc tách</h4>
-                <div className="space-y-2.5 text-xs text-slate-600">
-                  <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">Tên tệp gốc:</span>
-                    <span className="font-medium text-slate-800 truncate max-w-[160px]">
-                      {extractedData.extractedMeta?.fileName || selectedFileName}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">Kích thước:</span>
-                    <span className="font-medium text-slate-800">
-                      {extractedData.extractedMeta?.fileSize || '1.2 MB'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">Thời gian trích xuất:</span>
-                    <span className="font-medium text-slate-800">
-                      {extractedData.extractedMeta?.extractedAt || 'Vừa xong'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">Mô hình AI:</span>
-                    <span className="font-semibold text-brand-600">Gemini OCR & Semantic Parser</span>
-                  </div>
-                </div>
+              <section className="border-t border-ink pt-4">
+                <p className="text-[13px] text-slate-600">{c.fileTitle}</p>
+                <dl className="mt-3 text-sm">
+                  {[
+                    {
+                      label: c.fileName,
+                      value: extractedData.extractedMeta?.fileName || selectedFileName,
+                    },
+                    { label: c.fileSize, value: extractedData.extractedMeta?.fileSize || '1.2 MB' },
+                    {
+                      label: c.extractedAt,
+                      value: extractedData.extractedMeta?.extractedAt || c.justNow,
+                    },
+                    { label: c.model, value: 'Gemini OCR & Semantic Parser' },
+                  ].map((row) => (
+                    <div
+                      key={row.label}
+                      className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-4 border-b border-border py-2.5"
+                    >
+                      <dt className="text-slate-600">{row.label}</dt>
+                      <dd className="break-words text-right text-ink">{row.value}</dd>
+                    </div>
+                  ))}
+                </dl>
 
                 {extractedData.extractedMeta?.extractionWarnings && (
-                  <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-2xs space-y-1">
-                    <div className="font-medium flex items-center gap-1.5">
-                      <AlertCircle size={13} />
-                      Ghi chú từ AI Agent:
-                    </div>
-                    {extractedData.extractedMeta.extractionWarnings.map((w, i) => (
-                      <p key={i}>• {w}</p>
-                    ))}
+                  <div className="mt-5 border-l-2 border-warning pl-4 text-[13px] leading-6 text-ink">
+                    <p className="text-warning">{c.warnings}</p>
+                    <ul className="mt-1 space-y-1">
+                      {extractedData.extractedMeta.extractionWarnings.map((w, i) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
-                {/* Raw OCR Text Toggle */}
-                <div className="mt-4 pt-3 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setShowRawText(!showRawText)}
-                    className="text-xs text-brand-600 hover:underline font-semibold flex items-center gap-1"
-                  >
-                    <ScanText size={13} />
-                    {showRawText ? 'Ẩn văn bản thô bóc tách' : 'Xem văn bản thô bóc tách'}
-                  </button>
-                  {showRawText && (
-                    <div className="mt-2 max-h-36 overflow-y-auto rounded-lg bg-slate-900 p-3 text-2xs font-mono text-emerald-400">
-                      {extractedData.extractedMeta?.rawTextSnippet || 'Không có dữ liệu thô.'}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setShowRawText(!showRawText)}
+                  className={`${textLink} mt-5 text-[13px] text-ink`}
+                >
+                  {showRawText ? c.hideRaw : c.showRaw}
+                </button>
+                {showRawText && (
+                  <pre className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap border-y border-border py-3 font-mono text-xs leading-5 text-slate-700">
+                    {extractedData.extractedMeta?.rawTextSnippet || c.noRaw}
+                  </pre>
+                )}
+              </section>
+            </aside>
           </div>
 
-          {/* Sticky Bottom Actions Bar */}
-          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-sm border border-slate-200">
-            <span className="text-xs text-slate-500">
-              Kiểm tra kỹ các thông tin trước khi xác nhận lưu bản CV.
-            </span>
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="secondary" onClick={() => setFlowState('upload')}>
+          {/* Bottom actions */}
+          <div className="mt-[clamp(3rem,6vw,4.5rem)] flex flex-col gap-5 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-slate-600">{c.saveNote}</p>
+            <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
+              <button
+                type="button"
+                onClick={() => setFlowState('upload')}
+                className={`${textLink} text-[15px] text-ink`}
+              >
                 {t('resumes.cancel')}
-              </Button>
-              <Button type="submit" variant="primary" disabled={saveCvMutation.isPending}>
-                <CheckCircle2 size={16} />
+              </button>
+              <button type="submit" className={primaryButton} disabled={saveCvMutation.isPending}>
                 {saveCvMutation.isPending ? t('resumes.saving') : t('resumes.confirmAndSave')}
-              </Button>
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
             </div>
           </div>
         </form>
       )}
-    </>
+    </div>
   );
 }

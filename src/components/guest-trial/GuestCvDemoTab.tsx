@@ -1,24 +1,14 @@
 import { useState } from 'react';
-import {
-  FileText,
-  Lightbulb,
-  CheckCircle2,
-  TrendingUp,
-  Award,
-  GraduationCap,
-  Building,
-  Mail,
-  Phone,
-  MapPin,
-  ArrowRight,
-  ShieldCheck,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { demoResumes, type DemoCvData } from './guestTrialData';
-import { Badge, Button, Card } from '../ui';
 import { useTranslation } from '../../i18n';
 
 interface GuestCvDemoTabProps {
   onSelectTemplateForBuilder?: (template: 'modern' | 'tech' | 'classic', cv: DemoCvData) => void;
+}
+
+function SectionLabel({ children }: { children: string }) {
+  return <h4 className="text-xs uppercase tracking-[0.14em] text-slate-500">{children}</h4>;
 }
 
 export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabProps) {
@@ -27,276 +17,224 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
 
   const currentCv = demoResumes.find((cv) => cv.id === selectedCvId) ?? demoResumes[0];
 
+  const breakdown = [
+    {
+      label: isVietnamese ? 'Cấu trúc và định dạng' : 'Structure & formatting',
+      value: currentCv.atsBreakdown.formatting,
+    },
+    {
+      label: isVietnamese ? 'Từ khoá chuyên ngành' : 'Keyword coverage',
+      value: currentCv.atsBreakdown.keywords,
+    },
+    {
+      label: isVietnamese ? 'Thành tích có số liệu' : 'Quantified impact',
+      value: currentCv.atsBreakdown.impact,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Intro Header */}
-      <div className="flex flex-col gap-4 rounded-2xl bg-brand-50/80 border border-brand-100 p-5 md:flex-row md:items-center md:justify-between">
+    <div>
+      {/* Intro */}
+      <header className="grid gap-4 border-b border-ink/80 pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100/70 px-3 py-1 text-xs font-semibold text-brand-800">
-            <Lightbulb size={13} className="text-brand-600" />
-            {isVietnamese ? 'Bộ Sưu Tập CV Demo Chuẩn ATS' : 'ATS-Optimized Demo CV Showcase'}
-          </span>
-          <h3 className="mt-2 text-lg font-medium text-slate-900 md:text-xl">
-            {isVietnamese
-              ? 'Khám phá các mẫu CV thực chiến đạt điểm ATS cao (>85/100)'
-              : 'Inspect battle-tested CVs with high ATS scores (>85/100)'}
+          <h3 className="text-2xl font-normal tracking-[-0.015em] text-ink">
+            {isVietnamese ? 'CV mẫu đạt điểm ATS cao' : 'Sample CVs with high ATS scores'}
           </h3>
-          <p className="mt-1 text-xs text-slate-600 md:text-sm">
+          <p className="mt-2 max-w-3xl text-base leading-relaxed text-slate-600">
             {isVietnamese
-              ? 'Xem cấu trúc câu từ hành động, cách lượng hoá thành tích và bộ từ khoá chuyên ngành được các chuyên gia tuyển dụng đánh giá cao.'
-              : 'Learn from high-converting phrasing, quantified impact, and keyword placement vetted by recruiters.'}
+              ? 'Xem cách viết câu bắt đầu bằng động từ, cách đưa số liệu vào thành tích và cách đặt từ khoá chuyên ngành.'
+              : 'See how each line starts with a verb, how results are quantified and where keywords are placed.'}
           </p>
         </div>
-      </div>
+        <p className="text-sm text-slate-500">
+          {isVietnamese
+            ? `${demoResumes.length} mẫu · điểm trên 85/100`
+            : `${demoResumes.length} samples · scores above 85/100`}
+        </p>
+      </header>
 
-      {/* Select Demo CV Pills */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {demoResumes.map((cv) => {
+      {/* CV picker */}
+      <div role="tablist" className="grid border-b border-border sm:grid-cols-3">
+        {demoResumes.map((cv, index) => {
           const isSelected = cv.id === currentCv.id;
           return (
             <button
               key={cv.id}
+              type="button"
+              role="tab"
+              aria-selected={isSelected}
               onClick={() => setSelectedCvId(cv.id)}
-              className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-all cursor-pointer ${
-                isSelected
-                  ? 'border-brand-600 bg-brand-50/40 shadow-sm ring-2 ring-brand-500/20'
-                  : 'border-slate-200 bg-surface hover:border-slate-300 hover:bg-slate-50/70'
-              }`}
+              className={`group -mb-px flex items-baseline gap-3 border-b-2 py-5 text-left transition-colors cursor-pointer sm:pr-6 ${
+                index > 0 ? 'border-t border-t-border sm:border-t-0' : ''
+              } ${isSelected ? 'border-b-brand' : 'border-b-transparent'}`}
             >
-              <div
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl font-medium ${
-                  isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'
+              <span
+                className={`w-6 shrink-0 text-xs tabular-nums ${
+                  isSelected ? 'text-brand' : 'text-slate-500'
                 }`}
               >
-                <FileText size={20} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-sm font-medium text-slate-900 truncate">{cv.name}</span>
-                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                    ATS {cv.atsScore}
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span
+                    className={`truncate text-lg ${
+                      isSelected ? 'text-brand' : 'text-ink group-hover:text-brand'
+                    }`}
+                  >
+                    {cv.name}
                   </span>
-                </div>
-                <p className="text-xs text-slate-500 truncate mt-0.5">{cv.title}</p>
-                <span className="mt-2 inline-block text-xs font-medium text-brand-600">
-                  {isVietnamese ? `Mẫu: ${cv.template.toUpperCase()}` : `Template: ${cv.template.toUpperCase()}`}
+                  <span className="shrink-0 text-sm tabular-nums text-slate-600">
+                    {cv.atsScore}
+                  </span>
                 </span>
-              </div>
+                <span className="mt-0.5 block truncate text-sm text-slate-600">{cv.title}</span>
+                <span className="mt-1 block text-xs uppercase tracking-[0.12em] text-slate-500">
+                  {isVietnamese ? `Mẫu ${cv.template}` : `${cv.template} template`}
+                </span>
+              </span>
             </button>
           );
         })}
       </div>
 
-      {/* Detailed CV Showcase Grid */}
-      <div className="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
-        {/* Left: Rendered Resume Document */}
-        <div className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm sm:p-8 space-y-6">
-          {/* Header of Resume */}
-          <div className="border-b border-slate-100 pb-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                  {currentCv.name}
-                </h2>
-                <p className="text-base font-semibold text-brand-600 sm:text-lg mt-0.5">
-                  {currentCv.title}
-                </p>
-              </div>
-              <Badge tone="green">
-                <ShieldCheck size={14} className="mr-1" />
-                ATS {currentCv.atsScore}/100
-              </Badge>
+      {/* CV document + analysis */}
+      <div className="mt-8 grid gap-[clamp(2rem,3.5vw,4rem)] xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,1fr)]">
+        {/* Rendered resume */}
+        <article className="rounded-panel border border-border bg-surface p-[clamp(1.5rem,3vw,3.5rem)]">
+          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-ink/80 pb-6">
+            <div>
+              <h2 className="text-3xl font-normal tracking-[-0.02em] text-ink">{currentCv.name}</h2>
+              <p className="mt-1 text-lg text-brand">{currentCv.title}</p>
             </div>
-
-            <div className="mt-4 flex flex-wrap gap-y-2 gap-x-4 text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1.5">
-                <Mail size={13} className="text-slate-400" />
-                {currentCv.email}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Phone size={13} className="text-slate-400" />
-                {currentCv.phone}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin size={13} className="text-slate-400" />
-                {currentCv.location}
-              </span>
-            </div>
-          </div>
-
-          {/* Professional Summary */}
-          <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              {isVietnamese ? 'Tóm Tắt Chuyên Nghiệp' : 'Professional Summary'}
-            </h4>
-            <p className="mt-2 text-sm leading-6 text-slate-700 bg-slate-50/60 p-3.5 rounded-xl border border-slate-100">
-              {currentCv.summary}
+            <p className="text-sm text-slate-600">
+              ATS <span className="text-ink">{currentCv.atsScore}</span>/100
             </p>
-          </div>
+            <p className="w-full text-sm text-slate-600">
+              {currentCv.email} · {currentCv.phone} · {currentCv.location}
+            </p>
+          </header>
 
-          {/* Core Competencies / Skills */}
-          <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              {isVietnamese ? 'Kỹ Năng Trọng Tâm' : 'Core Competencies'}
-            </h4>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {currentCv.skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 border border-brand-100"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
+          <section className="grid gap-3 border-b border-border py-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-8">
+            <SectionLabel>{isVietnamese ? 'Tóm tắt' : 'Summary'}</SectionLabel>
+            <p className="text-base leading-relaxed text-slate-700">{currentCv.summary}</p>
+          </section>
 
-          {/* Work Experience */}
-          <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              {isVietnamese ? 'Kinh Nghiệm Làm Việc' : 'Professional Experience'}
-            </h4>
-            <div className="mt-3 space-y-4">
+          <section className="grid gap-3 border-b border-border py-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-8">
+            <SectionLabel>{isVietnamese ? 'Kỹ năng' : 'Skills'}</SectionLabel>
+            <p className="text-base leading-relaxed text-slate-700">
+              {currentCv.skills.join(' · ')}
+            </p>
+          </section>
+
+          <section className="grid gap-3 border-b border-border py-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-8">
+            <SectionLabel>{isVietnamese ? 'Kinh nghiệm' : 'Experience'}</SectionLabel>
+            <div className="space-y-6">
               {currentCv.experience.map((exp, idx) => (
-                <div key={idx} className="relative pl-5 border-l-2 border-brand-200">
-                  <div className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-brand-600" />
-                  <div className="flex flex-wrap items-center justify-between gap-1">
-                    <span className="text-sm font-medium text-slate-900">{exp.role}</span>
-                    <span className="text-xs font-medium text-slate-400">{exp.period}</span>
+                <div key={idx}>
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <span className="text-lg text-ink">{exp.role}</span>
+                    <span className="text-sm tabular-nums text-slate-500">{exp.period}</span>
                   </div>
-                  <p className="text-xs font-semibold text-slate-600 inline-flex items-center gap-1 mt-0.5">
-                    <Building size={12} className="text-slate-400" />
-                    {exp.company}
-                  </p>
-                  <ul className="mt-2 space-y-1.5 list-disc list-inside text-xs leading-5 text-slate-600">
+                  <p className="mt-0.5 text-sm text-slate-600">{exp.company}</p>
+                  <ul className="mt-3 space-y-2">
                     {exp.highlights.map((h, hIdx) => (
-                      <li key={hIdx}>{h}</li>
+                      <li
+                        key={hIdx}
+                        className="relative pl-4 text-base leading-relaxed text-slate-700 before:absolute before:left-0 before:top-[0.8em] before:h-px before:w-2 before:bg-slate-400"
+                      >
+                        {h}
+                      </li>
                     ))}
                   </ul>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* Education */}
-          <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              {isVietnamese ? 'Học Vấn & Bằng Cấp' : 'Education'}
-            </h4>
-            <div className="mt-2 space-y-2">
+          <section className="grid gap-3 pt-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-8">
+            <SectionLabel>{isVietnamese ? 'Học vấn' : 'Education'}</SectionLabel>
+            <div className="space-y-4">
               {currentCv.education.map((edu, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 text-xs">
-                  <GraduationCap size={16} className="text-brand-600 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="font-medium text-slate-900">{edu.degree}</span>
-                    <p className="text-slate-500">
-                      {edu.school} · {edu.period}
-                    </p>
-                    {edu.honors && <p className="text-emerald-700 font-medium mt-0.5">{edu.honors}</p>}
-                  </div>
+                <div key={idx}>
+                  <p className="text-base text-ink">{edu.degree}</p>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    {edu.school} · {edu.period}
+                  </p>
+                  {edu.honors && <p className="mt-0.5 text-sm text-brand">{edu.honors}</p>}
                 </div>
               ))}
             </div>
-          </div>
-        </div>
+          </section>
+        </article>
 
-        {/* Right: ATS Analysis & Action Insights */}
-        <div className="space-y-5">
-          {/* ATS Score Card */}
-          <Card className="bg-surface">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                {isVietnamese ? 'Đánh Giá ATS Máy Quét' : 'ATS Evaluation Score'}
-              </span>
-              <TrendingUp size={16} className="text-emerald-600" />
-            </div>
-
+        {/* Analysis */}
+        <aside className="xl:sticky xl:top-8 xl:self-start">
+          <section className="border-t border-ink/80 pt-5">
+            <SectionLabel>{isVietnamese ? 'Điểm ATS' : 'ATS score'}</SectionLabel>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-4xl font-semibold text-slate-900">{currentCv.atsScore}</span>
-              <span className="text-sm font-semibold text-slate-400">/ 100</span>
-              <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
+              <span className="text-[clamp(3rem,4vw,4.5rem)] font-light leading-none text-ink">
+                {currentCv.atsScore}
+              </span>
+              <span className="text-base text-slate-500">/ 100</span>
+              <span className="ml-auto text-sm text-brand">
                 {isVietnamese ? 'Xuất sắc' : 'Excellent'}
               </span>
             </div>
 
-            <div className="mt-5 space-y-3 border-t border-slate-100 pt-4 text-xs">
-              <div>
-                <div className="flex justify-between text-slate-600 font-medium mb-1">
-                  <span>{isVietnamese ? 'Cấu trúc & Định dạng chuẩn' : 'Structure & Formatting'}</span>
-                  <span className="font-medium text-slate-900">{currentCv.atsBreakdown.formatting}%</span>
+            <dl className="mt-6">
+              {breakdown.map((item) => (
+                <div key={item.label} className="border-t border-border py-4">
+                  <div className="flex items-baseline justify-between gap-4 text-base">
+                    <dt className="text-slate-700">{item.label}</dt>
+                    <dd className="tabular-nums text-ink">{item.value}%</dd>
+                  </div>
+                  <div className="mt-2.5 h-0.5 bg-slate-200">
+                    <div className="h-0.5 bg-brand" style={{ width: `${item.value}%` }} />
+                  </div>
                 </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-brand-600"
-                    style={{ width: `${currentCv.atsBreakdown.formatting}%` }}
-                  />
-                </div>
-              </div>
+              ))}
+            </dl>
+          </section>
 
-              <div>
-                <div className="flex justify-between text-slate-600 font-medium mb-1">
-                  <span>{isVietnamese ? 'Mật độ từ khoá chuyên ngành' : 'Keyword Density'}</span>
-                  <span className="font-medium text-slate-900">{currentCv.atsBreakdown.keywords}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-brand-600"
-                    style={{ width: `${currentCv.atsBreakdown.keywords}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-600 font-medium mb-1">
-                  <span>{isVietnamese ? 'Chỉ số đo lường thành tích' : 'Quantified Impact Metrics'}</span>
-                  <span className="font-medium text-slate-900">{currentCv.atsBreakdown.impact}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-emerald-600"
-                    style={{ width: `${currentCv.atsBreakdown.impact}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* ATS Strengths Highlight */}
-          <Card className="border-emerald-200/80 bg-emerald-50/30">
-            <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-emerald-800">
-              <Award size={15} />
-              {isVietnamese ? 'Điểm Cộng Vượt Trội Của CV Này' : 'Key ATS Strengths'}
-            </h4>
-            <ul className="mt-3 space-y-2 text-xs text-slate-700">
+          <section className="mt-8 border-t border-ink/80 pt-5">
+            <SectionLabel>
+              {isVietnamese ? 'Điểm mạnh của CV này' : 'What this CV does well'}
+            </SectionLabel>
+            <ul className="mt-3">
               {currentCv.atsStrengths.map((strength, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                <li
+                  key={idx}
+                  className="flex gap-3 border-t border-border py-3.5 text-base leading-relaxed text-slate-700 first:border-t-0"
+                >
+                  <span className="w-6 shrink-0 pt-0.5 text-xs tabular-nums text-slate-500">
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
                   <span>{strength}</span>
                 </li>
               ))}
             </ul>
-          </Card>
+          </section>
 
-          {/* Action CTA */}
-          <Card className="bg-brand-600 text-white">
-            <h4 className="font-medium text-base">
-              {isVietnamese ? 'Muốn tạo một CV tương tự?' : 'Want a similar CV?'}
+          <section className="mt-8 rounded-panel bg-night p-[clamp(1.5rem,2.2vw,2.25rem)] text-white">
+            <h4 className="text-xl font-normal">
+              {isVietnamese ? 'Muốn có một CV tương tự?' : 'Want a CV like this?'}
             </h4>
-            <p className="mt-1 text-xs text-brand-100 leading-relaxed">
+            <p className="mt-2 text-base leading-relaxed text-white/70">
               {isVietnamese
-                ? 'Sử dụng AI Resume Builder dùng thử để tạo CV của riêng bạn với mẫu này chỉ trong 2 phút.'
-                : 'Use our Guest Trial AI Resume Builder to craft your own CV using this layout in 2 minutes.'}
+                ? 'Mở Resume Builder với mẫu này và thay thông tin của bạn vào, mất khoảng 2 phút.'
+                : 'Open the Resume Builder with this template and fill in your details in about 2 minutes.'}
             </p>
-            <Button
-              variant="secondary"
-              className="mt-4 w-full bg-surface text-brand-700 hover:bg-brand-50 text-xs font-medium"
+            <button
+              type="button"
+              className="mt-6 inline-flex min-h-12 w-full items-center justify-between gap-4 rounded-full bg-mint px-6 text-base font-medium text-night transition-colors hover:bg-white cursor-pointer"
               onClick={() => onSelectTemplateForBuilder?.(currentCv.template, currentCv)}
             >
-              {isVietnamese ? 'Tạo CV với mẫu này ngay' : 'Build CV with this template'}
-              <ArrowRight size={14} />
-            </Button>
-          </Card>
-        </div>
+              {isVietnamese ? 'Tạo CV với mẫu này' : 'Build a CV with this template'}
+              <ArrowRight size={18} aria-hidden="true" />
+            </button>
+          </section>
+        </aside>
       </div>
     </div>
   );

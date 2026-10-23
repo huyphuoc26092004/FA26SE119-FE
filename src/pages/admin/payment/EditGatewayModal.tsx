@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Settings,
-  Check,
-} from 'lucide-react';
 import type { PaymentGatewayConfig } from '../../../types/paymentManagement';
+import {
+  CheckBox,
+  Modal,
+  SubHead,
+  fieldLabel,
+  primaryButton,
+  textLink,
+  underlineInput,
+  underlineSelect,
+} from '../../../components/admin/AdminKit';
+
+function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
+  return (
+    <label className={`block ${wide ? 'sm:col-span-2' : ''}`}>
+      <span className={fieldLabel}>{label}</span>
+      {children}
+    </label>
+  );
+}
 
 interface EditGatewayModalProps {
   isOpen: boolean;
@@ -71,201 +85,82 @@ export const EditGatewayModal: React.FC<EditGatewayModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-xl my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80">
-          <div className="flex items-center gap-2.5 text-slate-800">
-            <div className="p-2 rounded-xl bg-brand-100 text-brand-700">
-              <Settings size={18} />
-            </div>
-            <div>
-              <h3 className="font-medium text-sm">Cấu hình Cổng thanh toán</h3>
-              <p className="text-[11px] text-slate-500">{gateway.name}</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-          >
-            <X size={18} />
+    <Modal
+      eyebrow="Cấu hình cổng thanh toán"
+      title={`${gateway.name}.`}
+      onClose={onClose}
+      width="max-w-xl"
+      footer={
+        <>
+          <button type="button" onClick={onClose} disabled={isSaving} className={`${textLink} text-slate-600`}>
+            Huỷ
           </button>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Trạng thái hoạt động
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as PaymentGatewayConfig['status'])}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
-              >
-                <option value="ACTIVE">Hoạt động bình thường (ACTIVE)</option>
-                <option value="MAINTENANCE">Đang bảo trì (MAINTENANCE)</option>
-                <option value="TESTING">Môi trường kiểm thử (TESTING)</option>
+          <button type="submit" form="edit-gateway-form" disabled={isSaving} className={primaryButton}>
+            {isSaving ? 'Đang lưu…' : 'Lưu cấu hình'}
+          </button>
+        </>
+      }
+    >
+      <form id="edit-gateway-form" onSubmit={handleSubmit} className="space-y-9">
+        <section>
+          <SubHead title="01  Trạng thái & phí" />
+          <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+            <Field label="Trạng thái" wide>
+              <select value={status} onChange={(e) => setStatus(e.target.value as PaymentGatewayConfig['status'])} className={underlineSelect}>
+                <option value="ACTIVE">Hoạt động bình thường</option>
+                <option value="MAINTENANCE">Đang bảo trì</option>
+                <option value="TESTING">Môi trường kiểm thử</option>
               </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Chế độ Test (Sandbox / Staging)
-              </label>
-              <div className="flex items-center gap-3 pt-2">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={testMode}
-                    onChange={(e) => setTestMode(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600" />
-                </label>
-                <span className="text-xs text-slate-600 font-medium">
-                  {testMode ? 'Bật Sandbox Test' : 'Chạy thật (Production)'}
-                </span>
-              </div>
-            </div>
+            </Field>
+            <Field label="Phí mỗi giao dịch (%)">
+              <input type="number" step={0.1} min={0} value={feePercent} onChange={(e) => setFeePercent(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
+            <Field label="Phí cố định (VNĐ)">
+              <input type="number" step={500} min={0} value={fixedFeeVND} onChange={(e) => setFixedFeeVND(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </Field>
           </div>
-
-          {/* Fees */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Phí % trên mỗi giao dịch (%)
-              </label>
-              <input
-                type="number"
-                step={0.1}
-                min={0}
-                value={feePercent}
-                onChange={(e) => setFeePercent(Number(e.target.value))}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Phí cố định mỗi giao dịch (VNĐ)
-              </label>
-              <input
-                type="number"
-                step={500}
-                min={0}
-                value={fixedFeeVND}
-                onChange={(e) => setFixedFeeVND(Number(e.target.value))}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
-              />
-            </div>
+          <div className="mt-4 border-t border-border">
+            <CheckBox
+              checked={testMode}
+              onChange={setTestMode}
+              label="Chế độ sandbox"
+              description={testMode ? 'Đang chạy môi trường thử, không trừ tiền thật.' : 'Đang chạy thật (production).'}
+            />
           </div>
+        </section>
 
-          {/* Account/Bank specifics */}
-          {gateway.gatewayId === 'vietqr' && (
-            <div className="space-y-3 pt-2 border-t border-slate-100">
-              <span className="text-xs font-medium text-slate-800 block">
-                Thông tin Tài khoản Ngân hàng nhận tiền Napas 24/7
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Số tài khoản ngân hàng
-                  </label>
-                  <input
-                    type="text"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 font-mono font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Tên ngân hàng & Chi nhánh
-                  </label>
-                  <input
-                    type="text"
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Tên chủ tài khoản thụ hưởng
-                  </label>
-                  <input
-                    type="text"
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 font-medium"
-                  />
-                </div>
-              </div>
+        {gateway.gatewayId === 'vietqr' && (
+          <section>
+            <SubHead title="02  Tài khoản nhận tiền Napas 24/7" />
+            <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+              <Field label="Số tài khoản">
+                <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className={`${underlineInput} tabular-nums`} />
+              </Field>
+              <Field label="Ngân hàng & chi nhánh">
+                <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} className={underlineInput} />
+              </Field>
+              <Field label="Chủ tài khoản thụ hưởng" wide>
+                <input type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)} className={underlineInput} />
+              </Field>
             </div>
-          )}
+          </section>
+        )}
 
-          {/* Merchant ID & Webhook */}
-          <div className="space-y-3 pt-2 border-t border-slate-100">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Merchant ID / Terminal ID / API Partner Code
-              </label>
-              <input
-                type="text"
-                value={merchantId}
-                onChange={(e) => setMerchantId(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 font-mono text-slate-800"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Webhook IPN URL (Callback xử lý tự động)
-              </label>
-              <input
-                type="text"
-                value={webhookUrl}
-                onChange={(e) => setWebhookUrl(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 font-mono text-slate-800"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Ghi chú hướng dẫn khách hàng & kế toán
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200"
-              />
-            </div>
+        <section>
+          <SubHead title={gateway.gatewayId === 'vietqr' ? '03  Kết nối' : '02  Kết nối'} />
+          <div className="mt-5 space-y-5">
+            <Field label="Merchant ID / Terminal ID / Partner code">
+              <input type="text" value={merchantId} onChange={(e) => setMerchantId(e.target.value)} className={`${underlineInput} font-mono text-sm`} />
+            </Field>
+            <Field label="Webhook IPN URL">
+              <input type="text" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} className={`${underlineInput} font-mono text-sm`} />
+            </Field>
+            <Field label="Ghi chú cho khách hàng & kế toán">
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`${underlineInput} resize-none`} />
+            </Field>
           </div>
-
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSaving}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-5 py-2 rounded-xl text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
-            >
-              <Check size={14} />
-              <span>{isSaving ? 'Đang lưu...' : 'Lưu cấu hình cổng'}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </section>
+      </form>
+    </Modal>
   );
 };

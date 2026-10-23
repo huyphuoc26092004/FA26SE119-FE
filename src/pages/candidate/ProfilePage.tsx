@@ -1,36 +1,11 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Award,
-  Briefcase,
-  CheckCircle2,
-  Clock,
-  Compass,
-  DollarSign,
-  Edit3,
-  ExternalLink,
-  FileText,
-  Github,
-  Globe,
-  LayoutGrid,
-  Linkedin,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  Save,
-  Lightbulb,
-  Target,
-  Trash2,
-  User,
-  X,
-  Zap,
-} from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Check, Plus, Save, X } from 'lucide-react';
 import { getCandidateProfile, updateCandidateProfile, getResumes } from '../../mocks/services/mockService';
 import type { CandidateProfile, SkillItem } from '../../types/domain';
-import { Badge, Button, Card, ErrorState, Input, Loading, PageTitle } from '../../components/ui';
+import { Button, ErrorState, Input, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 
 interface ProfilePageProps {
@@ -68,13 +43,165 @@ const PREFERRED_LOCATION_OPTIONS = [
   'Hybrid (Linh hoạt)',
 ];
 
+// Short page-only strings that have no i18n key yet.
+const copy = {
+  vi: {
+    pageLabel: 'Hồ sơ nghề nghiệp',
+    matchingReady: 'AI Matching Ready',
+    completion: (p: number) => `Hoàn thiện hồ sơ ${p}%`,
+    completionHigh: 'Rất ấn tượng! Hồ sơ đạt tiêu chuẩn cao',
+    completionNotice: 'Ảnh hưởng độ chính xác gợi ý của hệ thống',
+    links: 'Liên kết',
+    headline: 'Tiêu đề hồ sơ',
+    location: 'Địa điểm',
+    email: 'Email',
+    bio: 'Giới thiệu',
+    bioEmpty: 'Chưa cập nhật tiểu sử bản thân.',
+    level: 'Cấp bậc',
+    availability: 'Thời gian nhận việc',
+    preferencesNote:
+      'Các tiêu chí này được dùng để tự động xếp hạng những việc làm phù hợp nhất với bạn.',
+    softSkills: 'Kỹ năng mềm',
+    softEmpty: 'Chưa bổ sung kỹ năng mềm.',
+    otherSkills: 'Từ khoá kỹ năng khác',
+    atsScore: 'Điểm ATS',
+    activeCv: 'CV đang dùng',
+    allCvs: 'Danh sách CV',
+    manageCv: 'Quản lý CV',
+    exploreJobs: 'Khám phá việc làm',
+    updated: 'Cập nhật',
+    notLinked: 'Chưa liên kết',
+    editLabel: 'Chỉnh sửa hồ sơ',
+    personalNote:
+      'Thông tin hiển thị cho nhà tuyển dụng và được sử dụng trong các bản CV tạo tự động.',
+    preferencesEditNote:
+      'Thiết lập vị trí mong muốn, mức lương kỳ vọng và hình thức làm việc để AI đề xuất công việc chính xác nhất.',
+    skillsEditNote:
+      'Thêm hoặc xóa các kỹ năng và mức độ thành thạo tương ứng để AI đối sánh chính xác với yêu cầu tuyển dụng.',
+    currentSkills: 'Kỹ năng hiện có',
+    add: 'Thêm',
+    removeSkill: 'Xóa kỹ năng',
+    locationPlaceholder: 'Ví dụ: Hồ Chí Minh, Việt Nam',
+    customLocationPlaceholder: 'Thêm địa điểm khác (VD: Cần Thơ, Singapore...)',
+    careerFieldPlaceholder: 'Ví dụ: Công nghệ phần mềm / Fintech & AI Platform',
+  },
+  en: {
+    pageLabel: 'Career profile',
+    matchingReady: 'AI Matching Ready',
+    completion: (p: number) => `Profile ${p}% complete`,
+    completionHigh: 'Impressive! Your profile meets a high standard',
+    completionNotice: 'Affects how accurate recommendations are',
+    links: 'Links',
+    headline: 'Headline',
+    location: 'Location',
+    email: 'Email',
+    bio: 'About',
+    bioEmpty: 'No bio yet.',
+    level: 'Level',
+    availability: 'Availability',
+    preferencesNote: 'These criteria are used to rank the jobs that fit you best.',
+    softSkills: 'Soft skills',
+    softEmpty: 'No soft skills added yet.',
+    otherSkills: 'Other skill keywords',
+    atsScore: 'ATS score',
+    activeCv: 'Active CV',
+    allCvs: 'Your CVs',
+    manageCv: 'Manage CVs',
+    exploreJobs: 'Explore jobs',
+    updated: 'Updated',
+    notLinked: 'Not linked',
+    editLabel: 'Edit profile',
+    personalNote: 'Shown to recruiters and used in automatically generated CVs.',
+    preferencesEditNote:
+      'Set your target role, expected salary and work type so recommendations are as accurate as possible.',
+    skillsEditNote:
+      'Add or remove skills and their proficiency so matching follows job requirements closely.',
+    currentSkills: 'Current skills',
+    add: 'Add',
+    removeSkill: 'Remove skill',
+    locationPlaceholder: 'e.g. Ho Chi Minh City, Vietnam',
+    customLocationPlaceholder: 'Add another location (e.g. Can Tho, Singapore...)',
+    careerFieldPlaceholder: 'e.g. Software / Fintech & AI Platform',
+  },
+};
+
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
+
+const fieldControl =
+  'w-full rounded-control border border-slate-300 bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-150 placeholder:text-slate-500 focus-visible:border-brand';
+
+const chip = (active: boolean) =>
+  `rounded-full border px-3 py-1 text-xs transition-colors duration-150 cursor-pointer ${
+    active
+      ? 'border-ink bg-ink text-white'
+      : 'border-slate-300 text-slate-700 hover:border-ink hover:text-ink'
+  }`;
+
+const suggestion = (taken: boolean) =>
+  `rounded-full border px-2.5 py-1 text-xs transition-colors duration-150 ${
+    taken
+      ? 'border-transparent text-slate-400 line-through cursor-default'
+      : 'border-slate-300 text-slate-700 hover:border-brand hover:text-brand cursor-pointer'
+  }`;
+
+/** Numbered section heading with a dark rule underneath. */
+function SectionHead({
+  index,
+  title,
+  note,
+  action,
+}: {
+  index: string;
+  title: string;
+  note?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="border-b border-ink pb-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h2 className="flex items-baseline gap-3 text-[clamp(1.375rem,2.2vw,1.75rem)] font-normal tracking-[-0.01em] text-ink">
+          <span className="text-xs tabular-nums tracking-normal text-slate-500">{index}</span>
+          {title}
+        </h2>
+        {action}
+      </div>
+      {note && <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600">{note}</p>}
+    </div>
+  );
+}
+
+/** Label / value row separated by a thin divider; stacks on small screens. */
+function Row({ label, children, htmlFor }: { label: string; children: ReactNode; htmlFor?: string }) {
+  return (
+    <div className="grid gap-1.5 border-b border-border py-4 sm:grid-cols-[minmax(8rem,13rem)_1fr] sm:gap-8">
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="pt-0.5 text-[13px] text-slate-600 sm:pt-2.5">
+          {label}
+        </label>
+      ) : (
+        <p className="pt-0.5 text-[13px] text-slate-600">{label}</p>
+      )}
+      <div className="min-w-0 text-[15px] leading-7 text-ink">{children}</div>
+    </div>
+  );
+}
+
+/** Splits "Main text (detail)" so the detail can be shown in a quieter tone. */
+function splitDetail(value: string) {
+  const index = value.indexOf(' (');
+  if (index <= 0) return { main: value, detail: '' };
+  return { main: value.slice(0, index), detail: value.slice(index + 1) };
+}
+
 export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
   const { t, language } = useTranslation();
+  const c = language === 'vi' ? copy.vi : copy.en;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [isEditing, setIsEditing] = useState<boolean>(isEditMode);
-  const [activeTab, setActiveTab] = useState<'overview' | 'personal' | 'preferences' | 'skills' | 'resumes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'personal' | 'preferences' | 'skills' | 'resumes' | 'links'>('overview');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
   // Form states for editing
@@ -226,17 +353,16 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
     return <ErrorState />;
   }
 
-  // Helper for proficiency badge color
-  const getLevelBadgeTone = (level?: string) => {
+  // Proficiency shown as coloured text instead of a badge
+  const getLevelTextClass = (level?: string) => {
     switch (level) {
       case 'Expert':
-        return 'green';
       case 'Advanced':
-        return 'blue';
+        return 'text-brand';
       case 'Intermediate':
-        return 'amber';
+        return 'text-warning';
       default:
-        return 'gray';
+        return 'text-slate-500';
     }
   };
 
@@ -255,1007 +381,455 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
     }
   };
 
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Opens the edit form and jumps to the matching section
+  const editSection = (section: string) => {
+    if (!isEditing) startEditing();
+    setTimeout(() => scrollToSection(`profile-edit-${section}`), 60);
+  };
+
+  const editLink = (section: string) => (
+    <button type="button" onClick={() => editSection(section)} className={`${textLink} text-ink`}>
+      {t('profile.editProfile')}
+    </button>
+  );
+
+  const headlineParts = profile.headline.split(' · ').filter(Boolean);
+  const role = headlineParts[0] || profile.targetPosition;
+  const metaLine = [headlineParts[1], profile.experienceLevel, ...headlineParts.slice(2)].filter(Boolean);
+
+  const salaryText =
+    profile.expectedSalary ||
+    `${profile.salaryMin?.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`;
+  const salary = splitDetail(salaryText);
+  const availability = splitDetail(profile.availability || 'Sẵn sàng trong vòng 2 tuần');
+  const employmentType = (profile.employmentType || t('profile.employmentTypeValue')).split(' / ').join(' · ');
+
+  const detailedSkills = profile.detailedSkills ?? [];
+  const detailedNames = new Set(detailedSkills.map((s) => s.name));
+  const otherSkills = detailedSkills.length > 0 ? profile.skills.filter((s) => !detailedNames.has(s)) : [];
+  const skillRows: SkillItem[] =
+    detailedSkills.length > 0 ? detailedSkills : profile.skills.map((name) => ({ name, level: 'Advanced' }));
+
+  const bestResume = resumes?.[0];
+  const atsScore = bestResume?.atsScore ?? 88;
+
+  const socialLinks = [
+    { label: 'LinkedIn', url: profile.linkedin },
+    { label: 'GitHub', url: profile.github },
+    { label: 'Portfolio', url: profile.website },
+  ];
+
+  const checklist = [
+    t('profile.checklistPersonalInfo'),
+    t('profile.checklistPreferences'),
+    `${t('profile.checklistSkills')} (${profile.skills?.length || 0})`,
+    t('profile.checklistSocial'),
+  ];
+
+  const viewAnchors = [
+    { id: 'personal', label: t('profile.tabPersonal') },
+    { id: 'preferences', label: t('profile.tabPreferences') },
+    { id: 'skills', label: t('profile.tabSkills') },
+    { id: 'resumes', label: t('profile.tabResumes') },
+    { id: 'links', label: c.links },
+  ] as const;
+
+  const editAnchors = viewAnchors.filter((a) => a.id !== 'resumes');
+
+  const anchors = isEditing ? editAnchors : viewAnchors;
+  const sectionPrefix = isEditing ? 'profile-edit-' : 'profile-';
+
+  const currentSkills = formData.skills || profile.skills;
+  const currentDetailed = formData.detailedSkills || profile.detailedSkills || [];
+  const currentSoft = formData.softSkills || profile.softSkills || [];
+  const currentLocations = formData.preferredLocations || profile.preferredLocations || [];
+
   return (
-    <>
-      <PageTitle
-        title={isEditing ? t('profile.editTitle') : t('profile.title')}
-        subtitle={isEditing ? t('profile.editSubtitle') : t('profile.subtitle')}
-        action={
-          isEditing ? (
-            <div className="flex items-center gap-3">
+    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+      {/* Header */}
+      <header>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-brand">{isEditing ? c.editLabel : c.pageLabel}</p>
+          <p className="inline-flex items-center gap-2 text-[13px] text-slate-600">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true" />
+            {c.matchingReady}
+          </p>
+        </div>
+
+        {isEditing ? (
+          <>
+            <h1 className="mt-[clamp(1.25rem,3vw,2rem)] text-[clamp(2rem,4.2vw,3.5rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+              {t('profile.editTitle')}
+            </h1>
+            <p className="mt-4 max-w-2xl text-[15px] leading-7 text-slate-600">{t('profile.editSubtitle')}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button type="button" variant="secondary" onClick={cancelEditing}>
                 <ArrowLeft size={16} />
                 {t('profile.cancel')}
               </Button>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleSave}
-                disabled={updateMutation.isPending}
-              >
+              <Button type="button" variant="primary" onClick={handleSave} disabled={updateMutation.isPending}>
                 <Save size={16} />
                 {updateMutation.isPending ? t('profile.saving') : t('profile.saveChanges')}
               </Button>
             </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-3">
-              <Link to="/candidate/resumes">
-                <Button variant="secondary">
-                  <FileText size={16} />
-                  {t('profile.viewAllResumes')}
-                </Button>
-              </Link>
-              <Button variant="primary" onClick={startEditing}>
-                <Edit3 size={16} />
-                {t('profile.editProfile')}
-              </Button>
-            </div>
-          )
-        }
-      />
+          </>
+        ) : (
+          <>
+            <h1 className="mt-[clamp(1.25rem,3vw,2rem)] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+              {profile.name}.
+              <span className="block text-brand">
+                {role}
+                {role.endsWith('.') ? '' : '.'}
+              </span>
+            </h1>
+            <p className="mt-5 text-[15px] leading-7 text-slate-600">{metaLine.join(' · ')}</p>
 
-      {/* Success Notification Alert */}
+            <div className="mt-[clamp(1.5rem,3vw,2.25rem)] flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
+              <div className="w-full max-w-[34rem]">
+                <div
+                  className="h-[3px] w-full bg-slate-200"
+                  role="progressbar"
+                  aria-valuenow={profile.completion}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={t('dashboard.profileCompletion')}
+                >
+                  <div
+                    className="h-full bg-brand transition-[width] duration-500"
+                    style={{ width: `${profile.completion}%` }}
+                  />
+                </div>
+                <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-[13px] text-slate-600">
+                  <span>{c.completion(profile.completion)}</span>
+                  <span>{profile.completion >= 90 ? c.completionHigh : c.completionNotice}</span>
+                </div>
+                <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-slate-600">
+                  {checklist.map((item) => (
+                    <li key={item} className="inline-flex items-center gap-1.5">
+                      <Check size={13} className="text-brand" aria-hidden="true" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+                <Link to="/candidate/resumes" className={`${textLink} text-ink`}>
+                  {t('profile.viewAllResumes')}
+                </Link>
+                <Button variant="primary" onClick={startEditing}>
+                  {t('profile.editProfile')}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Anchor links */}
+        <nav className="mt-[clamp(1.75rem,3.5vw,2.5rem)] flex flex-wrap gap-x-5 gap-y-3" aria-label={c.pageLabel}>
+          {anchors.map((anchor) => (
+            <button
+              key={anchor.id}
+              type="button"
+              onClick={() => {
+                setActiveTab(anchor.id);
+                scrollToSection(`${sectionPrefix}${anchor.id}`);
+              }}
+              className={`${textLink} ${activeTab === anchor.id ? 'text-brand' : 'text-ink'}`}
+            >
+              {anchor.label}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      {/* Success notification */}
       {saveSuccessMsg && (
-        <div className="mb-6 flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 shadow-sm animate-fade-in">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 size={22} className="text-emerald-600 shrink-0" />
-            <p className="font-semibold text-sm">{saveSuccessMsg}</p>
-          </div>
+        <div
+          role="status"
+          className="mt-8 flex items-center justify-between gap-4 border-y border-brand-200 py-3 text-sm text-brand"
+        >
+          <span className="inline-flex items-center gap-2">
+            <Check size={16} aria-hidden="true" />
+            {saveSuccessMsg}
+          </span>
           <button
+            type="button"
             onClick={() => setSaveSuccessMsg(null)}
-            className="text-emerald-600 hover:text-emerald-800 p-1"
+            className="p-1 text-brand transition-colors hover:text-ink cursor-pointer"
+            aria-label="Close"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
       )}
 
       {/* VIEW PROFILE MODE */}
       {!isEditing && (
-        <div className="space-y-6">
-          {/* Hero Profile Header Card */}
-          <Card className="overflow-hidden p-0 border border-slate-200/80 shadow-sm">
-            <div className="h-32 bg-brand-700 relative">
-              <div className="absolute right-4 bottom-4 flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-white text-xs font-medium">
-                <Lightbulb size={14} className="text-amber-300" />
-                <span>AI Matching Ready</span>
-              </div>
-            </div>
+        <div className="space-y-[clamp(3rem,6vw,4.5rem)] pt-[clamp(3rem,6vw,4.5rem)]">
+          {/* 01 Personal info */}
+          <section id="profile-personal" className="scroll-mt-6">
+            <SectionHead index="01" title={t('profile.tabPersonal')} action={editLink('personal')} />
+            <Row label={t('profile.fullName')}>{profile.name}</Row>
+            <Row label={c.headline}>{profile.headline}</Row>
+            <Row label={c.location}>{profile.location}</Row>
+            <Row label={c.email}>
+              {profile.email ? (
+                <a href={`mailto:${profile.email}`} className="transition-colors hover:text-brand">
+                  {profile.email}
+                </a>
+              ) : (
+                '—'
+              )}
+            </Row>
+            <Row label={t('profile.phoneLabel')}>
+              {profile.phone ? (
+                <a href={`tel:${profile.phone}`} className="transition-colors hover:text-brand">
+                  {profile.phone}
+                </a>
+              ) : (
+                '—'
+              )}
+            </Row>
+            <Row label={c.bio}>
+              <span className={profile.bio ? 'text-slate-700' : 'text-slate-500'}>
+                {profile.bio || c.bioEmpty}
+              </span>
+            </Row>
+          </section>
 
-            <div className="px-6 pb-6 pt-0">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className="relative -mt-12 shrink-0">
-                    <div className="grid h-24 w-24 place-items-center rounded-2xl bg-surface p-1.5 border-2 border-white">
-                      <div className="grid h-full w-full place-items-center rounded-xl bg-brand-600 text-3xl font-semibold text-white shadow-inner">
-                        {profile.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .slice(-2)
-                          .join('')}
-                      </div>
-                    </div>
-                    <span className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500" />
-                  </div>
+          {/* 02 Goals & preferences */}
+          <section id="profile-preferences" className="scroll-mt-6">
+            <SectionHead
+              index="02"
+              title={t('profile.tabPreferences')}
+              note={c.preferencesNote}
+              action={editLink('preferences')}
+            />
+            <Row label={t('profile.careerGoal')}>
+              <span className="text-slate-700">“{profile.careerGoal || t('profile.careerGoalText')}”</span>
+            </Row>
+            <Row label={t('profile.targetPosition')}>{profile.targetPosition}</Row>
+            <Row label={c.level}>{profile.experienceLevel}</Row>
+            <Row label={t('profile.expectedSalary')}>
+              <span className="text-brand">{salary.main}</span>
+              {salary.detail && <span className="text-slate-600"> {salary.detail}</span>}
+              {profile.salaryMin ? (
+                <span className="mt-0.5 block text-[13px] text-slate-600">
+                  {t('profile.minSalary')}: {profile.salaryMin.toLocaleString()} {profile.salaryCurrency || 'VNĐ'}
+                </span>
+              ) : null}
+            </Row>
+            <Row label={t('profile.employmentType')}>{employmentType}</Row>
+            <Row label={t('profile.preferredLocation')}>
+              {profile.preferredLocations && profile.preferredLocations.length > 0
+                ? profile.preferredLocations.join(' · ')
+                : profile.location}
+            </Row>
+            <Row label={t('profile.careerField')}>{profile.careerField || t('profile.careerFieldValue')}</Row>
+            <Row label={c.availability}>
+              {availability.main}
+              {availability.detail && <span className="text-slate-600"> {availability.detail}</span>}
+            </Row>
+          </section>
 
-                  <div className="pt-2 sm:pt-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-2xl font-medium text-slate-900">{profile.name}</h2>
-                      <Badge tone="blue">{profile.experienceLevel}</Badge>
-                    </div>
-                    <p className="mt-1 text-sm font-medium text-slate-600">{profile.headline}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 self-stretch sm:self-auto">
-                  <Button variant="secondary" onClick={startEditing} className="w-full sm:w-auto">
-                    <Edit3 size={15} />
-                    {t('profile.editProfile')}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Meta Chips & Social Links */}
-              <div className="flex flex-wrap items-center gap-y-2 gap-x-4 border-t border-slate-100 pt-4 text-xs sm:text-sm text-slate-600">
-                <div className="flex items-center gap-1.5">
-                  <MapPin size={15} className="text-slate-400" />
-                  <span>{profile.location}</span>
-                </div>
-                {profile.email && (
-                  <a
-                    href={`mailto:${profile.email}`}
-                    className="flex items-center gap-1.5 hover:text-brand-600 transition"
-                  >
-                    <Mail size={15} className="text-slate-400" />
-                    <span>{profile.email}</span>
-                  </a>
-                )}
-                {profile.phone && (
-                  <a
-                    href={`tel:${profile.phone}`}
-                    className="flex items-center gap-1.5 hover:text-brand-600 transition"
-                  >
-                    <Phone size={15} className="text-slate-400" />
-                    <span>{profile.phone}</span>
-                  </a>
-                )}
-                {profile.website && (
-                  <a
-                    href={profile.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-brand-600 hover:text-brand-700 font-medium transition"
-                  >
-                    <Globe size={15} />
-                    <span>Portfolio</span>
-                    <ExternalLink size={12} />
-                  </a>
-                )}
-                {profile.linkedin && (
-                  <a
-                    href={profile.linkedin}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-brand-700 hover:underline font-medium transition"
-                  >
-                    <Linkedin size={15} />
-                    <span>LinkedIn</span>
-                    <ExternalLink size={12} />
-                  </a>
-                )}
-                {profile.github && (
-                  <a
-                    href={profile.github}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-slate-800 hover:underline font-medium transition"
-                  >
-                    <Github size={15} />
-                    <span>GitHub</span>
-                    <ExternalLink size={12} />
-                  </a>
-                )}
-              </div>
-
-              {/* Profile Completion Meter */}
-              <div className="mt-5 rounded-xl bg-slate-50 p-4 border border-slate-100">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-xs uppercase tracking-wider text-slate-500">
-                      {t('dashboard.profileCompletion')}
-                    </span>
-                    <span className="font-medium text-slate-900 text-sm">
-                      {profile.completion}%
-                    </span>
-                  </div>
-                  <span className="text-xs text-slate-500">
-                    {profile.completion >= 90
-                      ? 'Rất ấn tượng! Hồ sơ đạt tiêu chuẩn cao'
-                      : t('profile.profileCompletionNotice')}
-                  </span>
-                </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full rounded-full bg-brand-600 transition-all duration-500"
-                    style={{ width: `${profile.completion}%` }}
-                  />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-slate-700 border border-slate-200">
-                    <CheckCircle2 size={13} className="text-emerald-500" />
-                    {t('profile.checklistPersonalInfo')}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-slate-700 border border-slate-200">
-                    <CheckCircle2 size={13} className="text-emerald-500" />
-                    {t('profile.checklistPreferences')}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-slate-700 border border-slate-200">
-                    <CheckCircle2 size={13} className="text-emerald-500" />
-                    {t('profile.checklistSkills')} ({profile.skills?.length || 0})
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-slate-700 border border-slate-200">
-                    <CheckCircle2 size={13} className="text-emerald-500" />
-                    {t('profile.checklistSocial')}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Navigation Tabs Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-px scrollbar-none">
-            {[
-              { id: 'overview', label: t('profile.tabOverview'), icon: LayoutGrid },
-              { id: 'personal', label: t('profile.tabPersonal'), icon: User },
-              { id: 'preferences', label: t('profile.tabPreferences'), icon: Target },
-              { id: 'skills', label: t('profile.tabSkills'), icon: Award },
-              { id: 'resumes', label: t('profile.tabResumes'), icon: FileText },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition whitespace-nowrap cursor-pointer ${
-                    isActive
-                      ? 'border-brand-600 text-brand-600 bg-brand-50/40 rounded-t-lg'
-                      : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800'
-                  }`}
+          {/* 03 Skills */}
+          <section id="profile-skills" className="scroll-mt-6">
+            <SectionHead index="03" title={t('profile.tabSkills')} action={editLink('skills')} />
+            <ul className="grid sm:grid-cols-2 sm:gap-x-[clamp(2rem,4vw,3.5rem)]">
+              {skillRows.map((item) => (
+                <li
+                  key={item.name}
+                  className="flex items-baseline justify-between gap-4 border-b border-border py-3"
                 >
-                  <Icon size={16} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
+                  <span className="min-w-0 text-[15px] text-ink">{item.name}</span>
+                  <span className={`shrink-0 text-[13px] ${getLevelTextClass(item.level)}`}>
+                    {formatLevelName(item.level)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {otherSkills.length > 0 && <Row label={c.otherSkills}>{otherSkills.join(' · ')}</Row>}
+            <Row label={c.softSkills}>
+              {profile.softSkills && profile.softSkills.length > 0 ? (
+                profile.softSkills.join(' · ')
+              ) : (
+                <span className="text-slate-500">{c.softEmpty}</span>
+              )}
+            </Row>
+          </section>
 
-          {/* TAB 1: OVERVIEW */}
-          {activeTab === 'overview' && (
-            <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-              <div className="space-y-6">
-                {/* Career Goal & Objective Statement */}
-                <Card className="bg-surface">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 text-brand-700 font-medium">
-                      <Target size={18} />
-                      <h3 className="text-base">{t('profile.careerGoal')}</h3>
-                    </div>
-                    <Button variant="ghost" onClick={startEditing} className="text-xs h-7 px-2">
-                      <Edit3 size={12} />
-                      {t('profile.editProfile')}
-                    </Button>
-                  </div>
-                  <p className="text-sm leading-relaxed text-slate-700 italic border-l-4 border-brand-600 pl-4 py-1">
-                    "{profile.careerGoal || t('profile.careerGoalText')}"
-                  </p>
-                </Card>
-
-                {/* Professional Snapshot Grid */}
-                <Card>
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                    <h3 className="font-medium text-slate-900">{t('profile.careerPreferences')}</h3>
-                    <Button variant="ghost" onClick={startEditing} className="text-xs h-7 px-2">
-                      <Edit3 size={12} />
-                      {t('profile.editProfile')}
-                    </Button>
-                  </div>
-
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.targetPosition')}
-                      </p>
-                      <p className="mt-1.5 font-semibold text-slate-800">{profile.targetPosition}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.experienceLevel')}
-                      </p>
-                      <p className="mt-1.5 font-semibold text-slate-800">{profile.experienceLevel}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.expectedSalary')}
-                      </p>
-                      <p className="mt-1.5 font-semibold text-emerald-600">
-                        {profile.expectedSalary ||
-                          `${profile.salaryMin?.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.employmentType')}
-                      </p>
-                      <p className="mt-1.5 font-semibold text-slate-800">
-                        {profile.employmentType || t('profile.employmentTypeValue')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.preferredLocation')}
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {profile.preferredLocations && profile.preferredLocations.length > 0 ? (
-                          profile.preferredLocations.map((loc) => (
-                            <span
-                              key={loc}
-                              className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
-                            >
-                              {loc}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-sm text-slate-800">{profile.location}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.availabilityLabel')}
-                      </p>
-                      <p className="mt-1.5 font-medium text-slate-700">
-                        {profile.availability || 'Sẵn sàng trong vòng 2 tuần'}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Highlighted Skills Cloud */}
-                <Card>
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                    <h3 className="font-medium text-slate-900">{t('profile.skillsAndExpertise')}</h3>
-                    <Button variant="ghost" onClick={startEditing} className="text-xs h-7 px-2">
-                      <Edit3 size={12} />
-                      {t('profile.editProfile')}
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {profile.detailedSkills && profile.detailedSkills.length > 0
-                      ? profile.detailedSkills.map((item) => (
-                          <span
-                            key={item.name}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-surface px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs"
-                          >
-                            <span>{item.name}</span>
-                            <Badge tone={getLevelBadgeTone(item.level)}>
-                              {formatLevelName(item.level)}
-                            </Badge>
-                          </span>
-                        ))
-                      : profile.skills.map((skill) => (
-                          <Badge key={skill} tone="blue">
-                            {skill}
-                          </Badge>
-                        ))}
-                  </div>
-
-                  {profile.softSkills && profile.softSkills.length > 0 && (
-                    <div className="mt-5 pt-4 border-t border-slate-100">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                        {t('profile.softSkillsLabel')}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.softSkills.map((soft) => (
-                          <span
-                            key={soft}
-                            className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
-                          >
-                            {soft}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              </div>
-
-              {/* Side Column: CV ATS Snapshot & Quick Links */}
-              <div className="space-y-6">
-                <Card className="border-brand-100 bg-surface">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-slate-900">{t('profile.atsPerformance')}</h3>
-                    <Badge tone="green">{t('dashboard.atsScoreReady')}</Badge>
-                  </div>
-                  <div className="mt-5 flex items-center gap-4">
-                    <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-surface text-2xl font-semibold text-slate-800 shadow-sm">
-                      {resumes?.[0]?.atsScore ?? 88}
-                    </div>
-                    <div>
-                      <p className="font-medium text-slate-900">
-                        {resumes?.[0]?.name ?? 'Frontend Developer CV (Default)'}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {t('profile.bestCvScore')}: {resumes?.[0]?.atsScore ?? 88}/100
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-5 pt-4 border-t border-slate-200/60 flex items-center justify-between">
-                    <Link
-                      to="/candidate/resumes"
-                      className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
-                    >
-                      {t('profile.viewAllResumes')} <ExternalLink size={12} />
-                    </Link>
-                    <Link
-                      to="/candidate/jobs"
-                      className="text-xs font-semibold text-slate-600 hover:text-slate-900"
-                    >
-                      {t('dashboard.viewAllJobs')} →
-                    </Link>
-                  </div>
-                </Card>
-
-                {/* Developer / Portfolio Profiles */}
-                <Card>
-                  <h3 className="font-medium text-slate-900 mb-3">{t('profile.socialLinks')}</h3>
-                  <div className="space-y-3">
-                    {profile.linkedin && (
-                      <a
-                        href={profile.linkedin}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition group"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-100 text-brand-700">
-                            <Linkedin size={16} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-800">LinkedIn</p>
-                            <p className="text-xs text-slate-400 truncate max-w-[180px]">
-                              {profile.linkedin.replace('https://', '')}
-                            </p>
-                          </div>
-                        </div>
-                        <ExternalLink size={14} className="text-slate-400 group-hover:text-brand-600" />
-                      </a>
-                    )}
-                    {profile.github && (
-                      <a
-                        href={profile.github}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition group"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="grid h-8 w-8 place-items-center rounded-lg bg-slate-800 text-white">
-                            <Github size={16} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-800">GitHub</p>
-                            <p className="text-xs text-slate-400 truncate max-w-[180px]">
-                              {profile.github.replace('https://', '')}
-                            </p>
-                          </div>
-                        </div>
-                        <ExternalLink size={14} className="text-slate-400 group-hover:text-slate-800" />
-                      </a>
-                    )}
-                    {profile.website && (
-                      <a
-                        href={profile.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition group"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-                            <Globe size={16} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-800">Portfolio</p>
-                            <p className="text-xs text-slate-400 truncate max-w-[180px]">
-                              {profile.website.replace('https://', '')}
-                            </p>
-                          </div>
-                        </div>
-                        <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-700" />
-                      </a>
-                    )}
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: PERSONAL INFO */}
-          {activeTab === 'personal' && (
-            <div className="space-y-6">
-              <Card>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
-                  <h3 className="font-medium text-slate-900 text-lg">{t('profile.personalInfo')}</h3>
-                  <Button variant="secondary" onClick={startEditing}>
-                    <Edit3 size={14} />
-                    {t('profile.editProfile')}
-                  </Button>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Bio */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {t('profile.bioLabel')}
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-700 bg-slate-50/80 p-4 rounded-xl border border-slate-100">
-                      {profile.bio || 'Chưa cập nhật tiểu sử bản thân.'}
-                    </p>
-                  </div>
-
-                  {/* Contact Grid */}
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-4 border-t border-slate-100">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.fullName')}
-                      </p>
-                      <p className="mt-1.5 font-semibold text-slate-800">{profile.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.headlineLabel')}
-                      </p>
-                      <p className="mt-1.5 font-medium text-slate-800">{profile.headline}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.locationLabel')}
-                      </p>
-                      <p className="mt-1.5 font-medium text-slate-800">{profile.location}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.emailLabel')}
-                      </p>
-                      <p className="mt-1.5 font-medium text-slate-800">{profile.email || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        {t('profile.phoneLabel')}
-                      </p>
-                      <p className="mt-1.5 font-medium text-slate-800">{profile.phone || '—'}</p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Developer & Social Profiles */}
-              <Card>
-                <h3 className="font-medium text-slate-900 text-lg mb-4">{t('profile.socialLinks')}</h3>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="p-4 rounded-xl border border-slate-200/70 bg-slate-50/40">
-                    <div className="flex items-center gap-2 text-brand-700 font-semibold mb-2">
-                      <Linkedin size={18} />
-                      <span>LinkedIn</span>
-                    </div>
-                    {profile.linkedin ? (
-                      <a
-                        href={profile.linkedin}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-brand-600 hover:underline break-all"
-                      >
-                        {profile.linkedin}
-                      </a>
-                    ) : (
-                      <span className="text-xs text-slate-400">Chưa liên kết</span>
-                    )}
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-slate-200/70 bg-slate-50/40">
-                    <div className="flex items-center gap-2 text-slate-800 font-semibold mb-2">
-                      <Github size={18} />
-                      <span>GitHub</span>
-                    </div>
-                    {profile.github ? (
-                      <a
-                        href={profile.github}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-brand-600 hover:underline break-all"
-                      >
-                        {profile.github}
-                      </a>
-                    ) : (
-                      <span className="text-xs text-slate-400">Chưa liên kết</span>
-                    )}
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-slate-200/70 bg-slate-50/40">
-                    <div className="flex items-center gap-2 text-emerald-700 font-semibold mb-2">
-                      <Globe size={18} />
-                      <span>Portfolio Website</span>
-                    </div>
-                    {profile.website ? (
-                      <a
-                        href={profile.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-brand-600 hover:underline break-all"
-                      >
-                        {profile.website}
-                      </a>
-                    ) : (
-                      <span className="text-xs text-slate-400">Chưa liên kết</span>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* TAB 3: CAREER PREFERENCES */}
-          {activeTab === 'preferences' && (
-            <div className="space-y-6">
-              <Card>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
-                  <div>
-                    <h3 className="font-medium text-slate-900 text-lg">
-                      {t('profile.careerPreferences')}
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Cài đặt các tiêu chí công việc mong muốn để thuật toán AI Agent tự động xếp hạng việc làm tương thích nhất.
-                    </p>
-                  </div>
-                  <Button variant="secondary" onClick={startEditing}>
-                    <Edit3 size={14} />
-                    {t('profile.editProfile')}
-                  </Button>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {t('profile.targetRole')}
-                    </p>
-                    <p className="mt-2 text-base font-medium text-slate-900">{profile.targetPosition}</p>
-                    <span className="mt-2 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-                      {profile.experienceLevel}
-                    </span>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {t('profile.expectedSalary')}
-                    </p>
-                    <p className="mt-2 text-base font-medium text-emerald-600">
-                      {profile.expectedSalary ||
-                        `${profile.salaryMin?.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Lương tối thiểu:{' '}
-                      <span className="font-semibold text-slate-700">
-                        {profile.salaryMin ? profile.salaryMin.toLocaleString() : '35,000,000'}{' '}
-                        {profile.salaryCurrency || 'VNĐ'}
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {t('profile.employmentTypeLabel')}
-                    </p>
-                    <p className="mt-2 text-base font-medium text-slate-900">
-                      {profile.employmentType || t('profile.employmentTypeValue')}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">Linh hoạt theo thỏa thuận dự án</p>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {t('profile.preferredLocationsLabel')}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {profile.preferredLocations && profile.preferredLocations.length > 0 ? (
-                        profile.preferredLocations.map((loc) => (
-                          <Badge key={loc} tone="blue">
-                            {loc}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-slate-700">{profile.location}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {t('profile.industryLabel')}
-                    </p>
-                    <p className="mt-2 text-base font-semibold text-slate-900">
-                      {profile.careerField || t('profile.careerFieldValue')}
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {t('profile.availabilityLabel')}
-                    </p>
-                    <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800">
-                      <Clock size={16} className="text-brand-600" />
-                      <span>{profile.availability || 'Sẵn sàng trong vòng 2 tuần'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Career Objective Text */}
-                <div className="mt-6 pt-5 border-t border-slate-100">
-                  <h4 className="font-medium text-slate-900 mb-2">{t('profile.careerObjective')}</h4>
-                  <p className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    {profile.careerGoal || t('profile.careerGoalText')}
-                  </p>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* TAB 4: SKILLS & EXPERTISE */}
-          {activeTab === 'skills' && (
-            <div className="space-y-6">
-              <Card>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
-                  <div>
-                    <h3 className="font-medium text-slate-900 text-lg">
-                      {t('profile.technicalSkills')}
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Các kỹ năng kỹ thuật, framework, ngôn ngữ và công cụ bạn đã làm chủ.
-                    </p>
-                  </div>
-                  <Button variant="secondary" onClick={startEditing}>
-                    <Plus size={14} />
-                    {t('profile.addSkillButton')}
-                  </Button>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {profile.detailedSkills && profile.detailedSkills.length > 0
-                    ? profile.detailedSkills.map((item) => (
-                        <div
-                          key={item.name}
-                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-surface shadow-2xs hover:border-brand-300 transition"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-brand-500" />
-                            <span className="font-semibold text-sm text-slate-900">{item.name}</span>
-                          </div>
-                          <Badge tone={getLevelBadgeTone(item.level)}>
-                            {formatLevelName(item.level)}
-                          </Badge>
-                        </div>
-                      ))
-                    : profile.skills.map((skill) => (
-                        <div
-                          key={skill}
-                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-surface"
-                        >
-                          <span className="font-semibold text-sm text-slate-900">{skill}</span>
-                          <Badge tone="blue">{t('profile.levelAdvanced')}</Badge>
-                        </div>
-                      ))}
-                </div>
-              </Card>
-
-              {/* Soft Skills */}
-              <Card>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                  <h3 className="font-medium text-slate-900 text-lg">{t('profile.softSkillsLabel')}</h3>
-                  <Button variant="ghost" onClick={startEditing} className="text-xs">
-                    <Edit3 size={13} />
-                    {t('profile.editProfile')}
-                  </Button>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5">
-                  {profile.softSkills && profile.softSkills.length > 0 ? (
-                    profile.softSkills.map((soft) => (
-                      <span
-                        key={soft}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-100 px-3.5 py-1.5 text-xs font-semibold text-brand-800"
-                      >
-                        <Lightbulb size={13} className="text-brand-500" />
-                        {soft}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-slate-400">Chưa bổ sung kỹ năng mềm.</p>
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* TAB 5: RESUMES & ATS */}
-          {activeTab === 'resumes' && (
-            <div className="space-y-6">
-              <Card>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
-                  <div>
-                    <h3 className="font-medium text-slate-900 text-lg">{t('profile.tabResumes')}</h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Danh sách hồ sơ ứng tuyển liên kết với tài khoản của bạn.
-                    </p>
-                  </div>
-                  <Link to="/candidate/resumes">
-                    <Button variant="primary">
-                      <Plus size={14} />
-                      {t('resumes.uploadCv')}
-                    </Button>
-                  </Link>
-                </div>
-
-                <div className="divide-y divide-slate-100">
-                  {resumes?.map((resume) => (
-                    <div
+          {/* 04 CV & ATS */}
+          <section id="profile-resumes" className="scroll-mt-6">
+            <SectionHead
+              index="04"
+              title={t('profile.tabResumes')}
+              action={
+                <Link to="/candidate/resumes" className={`${textLink} text-ink`}>
+                  {t('profile.editProfile')}
+                </Link>
+              }
+            />
+            <Row label={c.atsScore}>
+              <span className="text-[clamp(1.75rem,3vw,2.25rem)] leading-none tracking-[-0.02em] text-brand tabular-nums">
+                {atsScore}
+              </span>
+              <span className="text-sm text-slate-600">
+                {' '}
+                / 100 · {t('dashboard.atsScoreReady')}
+              </span>
+            </Row>
+            <Row label={c.activeCv}>{bestResume?.name ?? 'Frontend Developer CV (Default)'}</Row>
+            {resumes && resumes.length > 0 && (
+              <Row label={c.allCvs}>
+                <ul className="-mt-1">
+                  {resumes.map((resume) => (
+                    <li
                       key={resume.id}
-                      className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      className="flex flex-col gap-2 border-b border-border py-3 first:pt-1 last:border-b-0 last:pb-0 md:flex-row md:items-center md:justify-between md:gap-6"
                     >
-                      <div className="flex items-center gap-3.5">
-                        <div className="grid h-12 w-12 place-items-center rounded-xl bg-brand-50 text-brand-600 font-medium">
-                          <FileText size={22} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-900">{resume.name}</p>
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            {resume.position} · {resume.language} · Cập nhật {resume.updatedAt}
-                          </p>
-                        </div>
+                      <div className="min-w-0">
+                        <p className="text-[15px] text-ink">{resume.name}</p>
+                        <p className="text-[13px] text-slate-600">
+                          {resume.position} · {resume.language} · {c.updated} {resume.updatedAt}
+                        </p>
                       </div>
-
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-slate-400">ATS:</span>
-                          <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 border border-emerald-200">
-                            {resume.atsScore}/100
-                          </span>
-                        </div>
-                        <Badge tone={resume.status === 'Ready' ? 'green' : 'amber'}>
+                      <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
+                        <span className="text-slate-600">
+                          ATS <span className="text-brand tabular-nums">{resume.atsScore}/100</span>
+                        </span>
+                        <span className={resume.status === 'Ready' ? 'text-brand' : 'text-warning'}>
                           {resume.status}
-                        </Badge>
-                        <Link to="/candidate/resumes">
-                          <Button variant="secondary" className="text-xs py-1.5 px-3">
-                            {t('resumes.viewDetails')}
-                          </Button>
+                        </span>
+                        <Link to="/candidate/resumes" className={`${textLink} text-ink text-[13px]`}>
+                          {t('resumes.viewDetails')}
                         </Link>
                       </div>
-                    </div>
+                    </li>
                   ))}
-                </div>
-              </Card>
-            </div>
-          )}
+                </ul>
+              </Row>
+            )}
+            <Row label={c.manageCv}>
+              <span className="flex flex-wrap gap-x-6 gap-y-2">
+                <Link to="/candidate/resumes" className={`${textLink} text-ink`}>
+                  {t('profile.viewAllResumes')}
+                  <ArrowUpRight size={14} aria-hidden="true" />
+                </Link>
+                <Link to="/candidate/resumes" className={`${textLink} text-ink`}>
+                  {t('resumes.uploadCv')}
+                  <Plus size={14} aria-hidden="true" />
+                </Link>
+                <Link to="/candidate/jobs" className={`${textLink} text-slate-600 hover:text-ink`}>
+                  {c.exploreJobs}
+                </Link>
+              </span>
+            </Row>
+          </section>
+
+          {/* 05 Links */}
+          <section id="profile-links" className="scroll-mt-6">
+            <SectionHead index="05" title={t('profile.socialLinks')} action={editLink('links')} />
+            {socialLinks.map((item) => (
+              <Row key={item.label} label={item.label}>
+                {item.url ? (
+                  <a href={item.url} target="_blank" rel="noreferrer" className={`${textLink} break-all text-[15px] text-ink`}>
+                    {item.url.replace(/^https?:\/\//, '')}
+                    <ArrowUpRight size={14} className="shrink-0" aria-hidden="true" />
+                  </a>
+                ) : (
+                  <span className="text-slate-500">{c.notLinked}</span>
+                )}
+              </Row>
+            ))}
+          </section>
         </div>
       )}
 
       {/* EDIT PROFILE MODE */}
       {isEditing && (
-        <form onSubmit={handleSave} className="space-y-6 animate-fade-in">
-          {/* Card 1: Thông tin cá nhân & Liên hệ */}
-          <Card>
-            <div className="border-b border-slate-100 pb-3 mb-5">
-              <h3 className="text-lg font-medium text-slate-900">{t('profile.personalInfo')}</h3>
-              <p className="mt-1 text-xs text-slate-500">
-                Thông tin hiển thị cho nhà tuyển dụng và được sử dụng trong các bản CV tạo tự động.
-              </p>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.fullName')} *
-                </label>
+        <form onSubmit={handleSave} className="animate-fade-in">
+          <div className="space-y-[clamp(3rem,6vw,4.5rem)] pt-[clamp(3rem,6vw,4.5rem)]">
+            {/* 01 Personal info */}
+            <section id="profile-edit-personal" className="scroll-mt-6">
+              <SectionHead index="01" title={t('profile.tabPersonal')} note={c.personalNote} />
+              <Row label={`${t('profile.fullName')} *`} htmlFor="pf-name">
                 <Input
+                  id="pf-name"
                   required
                   value={formData.name ?? profile.name}
                   onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder={t('profile.fullName')}
                 />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.headlineLabel')} *
-                </label>
+              </Row>
+              <Row label={`${c.headline} *`} htmlFor="pf-headline">
                 <Input
+                  id="pf-headline"
                   required
                   value={formData.headline ?? profile.headline}
                   onChange={(e) => setFormData((prev) => ({ ...prev, headline: e.target.value }))}
                   placeholder={t('profile.headlinePlaceholder')}
                 />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.emailLabel')} *
-                </label>
+              </Row>
+              <Row label={`${c.email} *`} htmlFor="pf-email">
                 <Input
+                  id="pf-email"
                   type="email"
                   required
                   value={formData.email ?? profile.email ?? ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                   placeholder="name@example.com"
                 />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.phoneLabel')}
-                </label>
+              </Row>
+              <Row label={t('profile.phoneLabel')} htmlFor="pf-phone">
                 <Input
+                  id="pf-phone"
                   type="tel"
                   value={formData.phone ?? profile.phone ?? ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                   placeholder="(+84) 912 345 678"
                 />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.locationLabel')}
-                </label>
+              </Row>
+              <Row label={c.location} htmlFor="pf-location">
                 <Input
+                  id="pf-location"
                   value={formData.location ?? profile.location}
                   onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-                  placeholder="Ví dụ: Hồ Chí Minh, Việt Nam"
+                  placeholder={c.locationPlaceholder}
                 />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.bioLabel')}
-                </label>
+              </Row>
+              <Row label={c.bio} htmlFor="pf-bio">
                 <textarea
+                  id="pf-bio"
                   rows={4}
                   value={formData.bio ?? profile.bio ?? ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                   placeholder={t('profile.bioPlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className={`${fieldControl} leading-6`}
                 />
-              </div>
-            </div>
+              </Row>
+            </section>
 
-            {/* Social Links */}
-            <div className="mt-6 pt-5 border-t border-slate-100">
-              <h4 className="text-sm font-medium text-slate-800 mb-3">{t('profile.socialLinks')}</h4>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-500">LinkedIn</label>
-                  <div className="relative">
-                    <Input
-                      value={formData.linkedin ?? profile.linkedin ?? ''}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, linkedin: e.target.value }))}
-                      placeholder="https://linkedin.com/in/username"
-                      className="pl-8"
-                    />
-                    <Linkedin size={15} className="absolute left-2.5 top-3 text-slate-400" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-500">GitHub</label>
-                  <div className="relative">
-                    <Input
-                      value={formData.github ?? profile.github ?? ''}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, github: e.target.value }))}
-                      placeholder="https://github.com/username"
-                      className="pl-8"
-                    />
-                    <Github size={15} className="absolute left-2.5 top-3 text-slate-400" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-500">Portfolio</label>
-                  <div className="relative">
-                    <Input
-                      value={formData.website ?? profile.website ?? ''}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
-                      placeholder="https://yourportfolio.dev"
-                      className="pl-8"
-                    />
-                    <Globe size={15} className="absolute left-2.5 top-3 text-slate-400" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Card 2: Mục tiêu nghề nghiệp & Nguyện vọng việc làm (Career Preferences) */}
-          <Card>
-            <div className="border-b border-slate-100 pb-3 mb-5">
-              <h3 className="text-lg font-medium text-slate-900">{t('profile.careerPreferences')}</h3>
-              <p className="mt-1 text-xs text-slate-500">
-                Thiết lập vị trí mong muốn, mức lương kỳ vọng và hình thức làm việc để AI đề xuất công việc chính xác nhất.
-              </p>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.targetRole')} *
-                </label>
+            {/* 02 Goals & preferences */}
+            <section id="profile-edit-preferences" className="scroll-mt-6">
+              <SectionHead index="02" title={t('profile.tabPreferences')} note={c.preferencesEditNote} />
+              <Row label={t('profile.careerGoal')} htmlFor="pf-goal">
+                <textarea
+                  id="pf-goal"
+                  rows={3}
+                  value={formData.careerGoal ?? profile.careerGoal ?? ''}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, careerGoal: e.target.value }))}
+                  placeholder={t('profile.careerObjectivePlaceholder')}
+                  className={`${fieldControl} leading-6`}
+                />
+              </Row>
+              <Row label={`${t('profile.targetPosition')} *`} htmlFor="pf-target">
                 <Input
+                  id="pf-target"
                   required
                   value={formData.targetPosition ?? profile.targetPosition}
                   onChange={(e) =>
@@ -1263,18 +837,15 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   }
                   placeholder={t('profile.targetRolePlaceholder')}
                 />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.levelLabel')} *
-                </label>
+              </Row>
+              <Row label={`${c.level} *`} htmlFor="pf-level">
                 <select
+                  id="pf-level"
                   value={formData.experienceLevel ?? profile.experienceLevel}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, experienceLevel: e.target.value }))
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
+                  className={fieldControl}
                 >
                   <option value="Entry-level (0-1 năm)">Fresher / Entry-level (0 - 1 năm)</option>
                   <option value="Junior (1-2 năm)">Junior Level (1 - 2 năm)</option>
@@ -1283,67 +854,11 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   <option value="Lead / Principal (6+ years)">Tech Lead / Principal (6+ năm)</option>
                   <option value="Engineering Manager">Engineering Manager / Director</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.employmentTypeLabel')}
-                </label>
-                <select
-                  value={formData.employmentType ?? profile.employmentType ?? 'Full-time / Hybrid / Remote'}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, employmentType: e.target.value }))
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
-                >
-                  <option value="Full-time / Toàn thời gian">Full-time (Toàn thời gian)</option>
-                  <option value="Full-time / Hybrid / Remote">Full-time / Hybrid / Remote (Linh hoạt)</option>
-                  <option value="Remote Only / Làm việc từ xa">Remote Only (100% Từ xa)</option>
-                  <option value="Part-time / Bán thời gian">Part-time (Bán thời gian)</option>
-                  <option value="Contract / Freelance">Contract / Freelance (Hợp đồng dự án)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.availabilityLabel')}
-                </label>
-                <select
-                  value={
-                    formData.availability ??
-                    profile.availability ??
-                    'Sẵn sàng trong vòng 2 tuần (2-week notice period)'
-                  }
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, availability: e.target.value }))
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
-                >
-                  <option value="Sẵn sàng nhận việc ngay lập tức (Immediately)">
-                    Sẵn sàng ngay lập tức (Immediately)
-                  </option>
-                  <option value="Sẵn sàng trong vòng 2 tuần (2-week notice period)">
-                    Sẵn sàng trong vòng 2 tuần (2-week notice period)
-                  </option>
-                  <option value="Sẵn sàng trong vòng 1 tháng (1-month notice period)">
-                    Sẵn sàng trong vòng 1 tháng (1-month notice period)
-                  </option>
-                  <option value="Đang cân nhắc các cơ hội tốt (Open to offers)">
-                    Đang mở rộng cân nhắc cơ hội (Open to offers)
-                  </option>
-                </select>
-              </div>
-
-              {/* Salary Min / Max / Currency */}
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.salaryRange')}
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <span className="text-xs text-slate-500 mb-1 block">
-                      {t('profile.minSalary')}
-                    </span>
+              </Row>
+              <Row label={t('profile.expectedSalary')}>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-slate-600">{t('profile.minSalary')}</span>
                     <Input
                       type="number"
                       step={1000000}
@@ -1359,11 +874,9 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                       }
                       placeholder="35000000"
                     />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-500 mb-1 block">
-                      {t('profile.maxSalary')}
-                    </span>
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-slate-600">{t('profile.maxSalary')}</span>
                     <Input
                       type="number"
                       step={1000000}
@@ -1381,11 +894,9 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                       }
                       placeholder="55000000"
                     />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-500 mb-1 block">
-                      {t('profile.salaryUnit')}
-                    </span>
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-slate-600">{t('profile.salaryUnit')}</span>
                     <select
                       value={formData.salaryCurrency ?? profile.salaryCurrency ?? 'VNĐ'}
                       onChange={(e) =>
@@ -1394,45 +905,62 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                           salaryCurrency: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
+                      className={fieldControl}
                     >
                       <option value="VNĐ">VNĐ (Việt Nam Đồng)</option>
                       <option value="USD">USD (Đô la Mỹ)</option>
                     </select>
-                  </div>
+                  </label>
                 </div>
-              </div>
-
-              {/* Preferred Locations Multi-Tags */}
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.preferredLocationsLabel')}
-                </label>
-                <div className="flex flex-wrap gap-2 mb-3">
+              </Row>
+              <Row label={t('profile.employmentType')} htmlFor="pf-employment">
+                <select
+                  id="pf-employment"
+                  value={formData.employmentType ?? profile.employmentType ?? 'Full-time / Hybrid / Remote'}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, employmentType: e.target.value }))
+                  }
+                  className={fieldControl}
+                >
+                  <option value="Full-time / Toàn thời gian">Full-time (Toàn thời gian)</option>
+                  <option value="Full-time / Hybrid / Remote">Full-time / Hybrid / Remote (Linh hoạt)</option>
+                  <option value="Remote Only / Làm việc từ xa">Remote Only (100% Từ xa)</option>
+                  <option value="Part-time / Bán thời gian">Part-time (Bán thời gian)</option>
+                  <option value="Contract / Freelance">Contract / Freelance (Hợp đồng dự án)</option>
+                </select>
+              </Row>
+              <Row label={t('profile.preferredLocation')}>
+                <div className="flex flex-wrap gap-2">
                   {PREFERRED_LOCATION_OPTIONS.map((loc) => {
-                    const isSelected = (
-                      formData.preferredLocations ||
-                      profile.preferredLocations ||
-                      []
-                    ).includes(loc);
+                    const isSelected = currentLocations.includes(loc);
                     return (
                       <button
                         key={loc}
                         type="button"
+                        aria-pressed={isSelected}
                         onClick={() => handleToggleLocation(loc)}
-                        className={`rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${
-                          isSelected
-                            ? 'bg-brand-600 text-white shadow-xs'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
+                        className={chip(isSelected)}
                       >
                         {isSelected ? '✓ ' : '+ '}
                         {loc}
                       </button>
                     );
                   })}
+                  {currentLocations
+                    .filter((loc) => !PREFERRED_LOCATION_OPTIONS.includes(loc))
+                    .map((loc) => (
+                      <button
+                        key={loc}
+                        type="button"
+                        aria-pressed
+                        onClick={() => handleToggleLocation(loc)}
+                        className={chip(true)}
+                      >
+                        ✓ {loc}
+                      </button>
+                    ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="mt-3 flex max-w-md gap-2">
                   <Input
                     value={newLocationInput}
                     onChange={(e) => setNewLocationInput(e.target.value)}
@@ -1442,174 +970,157 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                         handleAddCustomLocation();
                       }
                     }}
-                    placeholder="Thêm địa điểm khác (VD: Cần Thơ, Singapore...)"
-                    className="max-w-xs"
+                    placeholder={c.customLocationPlaceholder}
                   />
                   <Button type="button" variant="secondary" onClick={handleAddCustomLocation}>
-                    Thêm
+                    {c.add}
                   </Button>
                 </div>
-              </div>
-
-              {/* Industry / Domain */}
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.industryLabel')}
-                </label>
+              </Row>
+              <Row label={t('profile.careerField')} htmlFor="pf-field">
                 <Input
+                  id="pf-field"
                   value={formData.careerField ?? profile.careerField ?? ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, careerField: e.target.value }))}
-                  placeholder="Ví dụ: Công nghệ phần mềm / Fintech & AI Platform"
+                  placeholder={c.careerFieldPlaceholder}
                 />
-              </div>
-
-              {/* Career Goal */}
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  {t('profile.careerObjective')}
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.careerGoal ?? profile.careerGoal ?? ''}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, careerGoal: e.target.value }))}
-                  placeholder={t('profile.careerObjectivePlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* Card 3: Kỹ năng chuyên môn & Kỹ năng mềm (Skills Management) */}
-          <Card>
-            <div className="border-b border-slate-100 pb-3 mb-5">
-              <h3 className="text-lg font-medium text-slate-900">{t('profile.technicalSkills')}</h3>
-              <p className="mt-1 text-xs text-slate-500">
-                Thêm hoặc xóa các kỹ năng và mức độ thành thạo tương ứng để AI đối sánh chính xác với yêu cầu tuyển dụng.
-              </p>
-            </div>
-
-            {/* Add Skill Bar */}
-            <div className="mb-6 flex flex-wrap gap-2 items-center bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-              <div className="flex-1 min-w-[200px]">
-                <Input
-                  value={newSkillName}
-                  onChange={(e) => setNewSkillName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddSkill();
-                    }
-                  }}
-                  placeholder={t('profile.addSkillPlaceholder')}
-                  className="bg-surface"
-                />
-              </div>
-              <div className="w-40">
+              </Row>
+              <Row label={c.availability} htmlFor="pf-availability">
                 <select
-                  value={newSkillLevel}
-                  onChange={(e) => setNewSkillLevel(e.target.value as any)}
-                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
+                  id="pf-availability"
+                  value={
+                    formData.availability ??
+                    profile.availability ??
+                    'Sẵn sàng trong vòng 2 tuần (2-week notice period)'
+                  }
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, availability: e.target.value }))
+                  }
+                  className={fieldControl}
                 >
-                  <option value="Expert">{t('profile.levelExpert')}</option>
-                  <option value="Advanced">{t('profile.levelAdvanced')}</option>
-                  <option value="Intermediate">{t('profile.levelIntermediate')}</option>
-                  <option value="Beginner">{t('profile.levelBeginner')}</option>
+                  <option value="Sẵn sàng nhận việc ngay lập tức (Immediately)">
+                    Sẵn sàng ngay lập tức (Immediately)
+                  </option>
+                  <option value="Sẵn sàng trong vòng 2 tuần (2-week notice period)">
+                    Sẵn sàng trong vòng 2 tuần (2-week notice period)
+                  </option>
+                  <option value="Sẵn sàng trong vòng 1 tháng (1-month notice period)">
+                    Sẵn sàng trong vòng 1 tháng (1-month notice period)
+                  </option>
+                  <option value="Đang cân nhắc các cơ hội tốt (Open to offers)">
+                    Đang mở rộng cân nhắc cơ hội (Open to offers)
+                  </option>
                 </select>
-              </div>
-              <Button type="button" variant="primary" onClick={() => handleAddSkill()}>
-                <Plus size={16} />
-                {t('profile.addSkillButton')}
-              </Button>
-            </div>
+              </Row>
+            </section>
 
-            {/* Quick Skill Suggestions */}
-            <div className="mb-5">
-              <p className="text-xs text-slate-500 font-medium mb-2">
-                {t('profile.suggestedSkills')}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {POPULAR_TECH_SKILLS.map((item) => {
-                  const currentSkills = formData.skills || profile.skills;
-                  const alreadyHas = currentSkills.includes(item);
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      disabled={alreadyHas}
-                      onClick={() => handleAddSkill(item, 'Advanced')}
-                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-                        alreadyHas
-                          ? 'bg-slate-100 text-slate-400 cursor-default'
-                          : 'bg-brand-50 text-brand-700 hover:bg-brand-100'
-                      }`}
-                    >
-                      + {item}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Current Active Skills List */}
-            <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
-              {(formData.skills || profile.skills).map((skillName) => {
-                const detailed = (formData.detailedSkills || profile.detailedSkills || []).find(
-                  (s) => s.name === skillName
-                );
-                return (
-                  <span
-                    key={skillName}
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs"
+            {/* 03 Skills */}
+            <section id="profile-edit-skills" className="scroll-mt-6">
+              <SectionHead index="03" title={t('profile.tabSkills')} note={c.skillsEditNote} />
+              <Row label={t('profile.addSkillButton')} htmlFor="pf-new-skill">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    id="pf-new-skill"
+                    value={newSkillName}
+                    onChange={(e) => setNewSkillName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSkill();
+                      }
+                    }}
+                    placeholder={t('profile.addSkillPlaceholder')}
+                  />
+                  <select
+                    value={newSkillLevel}
+                    onChange={(e) => setNewSkillLevel(e.target.value as typeof newSkillLevel)}
+                    className={`${fieldControl} sm:w-44`}
+                    aria-label={t('profile.skillLevelLabel')}
                   >
-                    <span>{skillName}</span>
-                    <Badge tone={getLevelBadgeTone(detailed?.level)}>
-                      {formatLevelName(detailed?.level)}
-                    </Badge>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(skillName)}
-                      className="ml-1 text-slate-400 hover:text-red-600 transition p-0.5 rounded cursor-pointer"
-                      title="Xóa kỹ năng"
-                    >
-                      <X size={14} />
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
+                    <option value="Expert">{t('profile.levelExpert')}</option>
+                    <option value="Advanced">{t('profile.levelAdvanced')}</option>
+                    <option value="Intermediate">{t('profile.levelIntermediate')}</option>
+                    <option value="Beginner">{t('profile.levelBeginner')}</option>
+                  </select>
+                  <Button type="button" variant="primary" onClick={() => handleAddSkill()}>
+                    <Plus size={16} />
+                    {c.add}
+                  </Button>
+                </div>
+                <p className="mt-3 text-xs text-slate-600">{t('profile.suggestedSkills')}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {POPULAR_TECH_SKILLS.map((item) => {
+                    const alreadyHas = currentSkills.includes(item);
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        disabled={alreadyHas}
+                        onClick={() => handleAddSkill(item, 'Advanced')}
+                        className={suggestion(alreadyHas)}
+                      >
+                        + {item}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Row>
 
-            {/* Soft Skills Section */}
-            <div className="mt-8 pt-6 border-t border-slate-100">
-              <h4 className="text-sm font-medium text-slate-800 mb-2">
-                {t('profile.softSkillsLabel')}
-              </h4>
-
-              <div className="flex gap-2 mb-3">
-                <Input
-                  value={newSoftSkill}
-                  onChange={(e) => setNewSoftSkill(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddSoftSkill();
-                    }
-                  }}
-                  placeholder={t('profile.addSoftSkillPlaceholder')}
-                  className="max-w-md"
-                />
-                <Button type="button" variant="secondary" onClick={() => handleAddSoftSkill()}>
-                  <Plus size={15} />
-                  Thêm
-                </Button>
+              <div className="border-b border-border py-4">
+                <p className="text-[13px] text-slate-600">
+                  {c.currentSkills} ({currentSkills.length})
+                </p>
+                <ul className="mt-1 grid sm:grid-cols-2 sm:gap-x-[clamp(2rem,4vw,3.5rem)]">
+                  {currentSkills.map((skillName) => {
+                    const detailed = currentDetailed.find((s) => s.name === skillName);
+                    return (
+                      <li
+                        key={skillName}
+                        className="flex items-center justify-between gap-4 border-b border-border py-2.5 last:border-b-0 sm:[&:nth-last-child(2):nth-child(odd)]:border-b-0"
+                      >
+                        <span className="min-w-0 text-[15px] text-ink">{skillName}</span>
+                        <span className="flex shrink-0 items-center gap-3">
+                          <span className={`text-[13px] ${getLevelTextClass(detailed?.level)}`}>
+                            {formatLevelName(detailed?.level)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSkill(skillName)}
+                            className="p-1 text-slate-400 transition-colors hover:text-danger cursor-pointer"
+                            title={c.removeSkill}
+                            aria-label={`${c.removeSkill}: ${skillName}`}
+                          >
+                            <X size={14} />
+                          </button>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
 
-              <div className="mb-3">
-                <p className="text-xs text-slate-500 mb-1.5">
-                  {t('profile.suggestedSoftSkills')}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
+              <Row label={c.softSkills} htmlFor="pf-new-soft">
+                <div className="flex max-w-xl gap-2">
+                  <Input
+                    id="pf-new-soft"
+                    value={newSoftSkill}
+                    onChange={(e) => setNewSoftSkill(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSoftSkill();
+                      }
+                    }}
+                    placeholder={t('profile.addSoftSkillPlaceholder')}
+                  />
+                  <Button type="button" variant="secondary" onClick={() => handleAddSoftSkill()}>
+                    <Plus size={15} />
+                    {c.add}
+                  </Button>
+                </div>
+                <p className="mt-3 text-xs text-slate-600">{t('profile.suggestedSoftSkills')}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {POPULAR_SOFT_SKILLS.map((item) => {
-                    const currentSoft = formData.softSkills || profile.softSkills || [];
                     const alreadyHas = currentSoft.includes(item);
                     return (
                       <button
@@ -1617,45 +1128,70 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                         type="button"
                         disabled={alreadyHas}
                         onClick={() => handleAddSoftSkill(item)}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-                          alreadyHas
-                            ? 'bg-slate-100 text-slate-400 cursor-default'
-                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                        }`}
+                        className={suggestion(alreadyHas)}
                       >
                         + {item}
                       </button>
                     );
                   })}
                 </div>
-              </div>
+                {currentSoft.length > 0 && (
+                  <ul className="mt-4 border-t border-border">
+                    {currentSoft.map((soft) => (
+                      <li
+                        key={soft}
+                        className="flex items-center justify-between gap-4 border-b border-border py-2.5 last:border-b-0"
+                      >
+                        <span className="min-w-0">{soft}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSoftSkill(soft)}
+                          className="p-1 text-slate-400 transition-colors hover:text-danger cursor-pointer"
+                          aria-label={`${c.removeSkill}: ${soft}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Row>
+            </section>
 
-              <div className="flex flex-wrap gap-2 pt-2">
-                {(formData.softSkills || profile.softSkills || []).map((soft) => (
-                  <span
-                    key={soft}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
-                  >
-                    <span>{soft}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSoftSkill(soft)}
-                      className="text-slate-400 hover:text-red-600 transition cursor-pointer"
-                    >
-                      <X size={13} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </Card>
+            {/* 04 Links */}
+            <section id="profile-edit-links" className="scroll-mt-6">
+              <SectionHead index="04" title={t('profile.socialLinks')} />
+              <Row label="LinkedIn" htmlFor="pf-linkedin">
+                <Input
+                  id="pf-linkedin"
+                  value={formData.linkedin ?? profile.linkedin ?? ''}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, linkedin: e.target.value }))}
+                  placeholder="https://linkedin.com/in/username"
+                />
+              </Row>
+              <Row label="GitHub" htmlFor="pf-github">
+                <Input
+                  id="pf-github"
+                  value={formData.github ?? profile.github ?? ''}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, github: e.target.value }))}
+                  placeholder="https://github.com/username"
+                />
+              </Row>
+              <Row label="Portfolio" htmlFor="pf-website">
+                <Input
+                  id="pf-website"
+                  value={formData.website ?? profile.website ?? ''}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
+                  placeholder="https://yourportfolio.dev"
+                />
+              </Row>
+            </section>
+          </div>
 
-          {/* Bottom Action Floating Bar */}
-          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-sm border border-slate-200">
-            <span className="text-xs text-slate-500">
-              {t('profile.profileCompletionNotice')}
-            </span>
-            <div className="flex items-center gap-3">
+          {/* Sticky save bar */}
+          <div className="sticky bottom-0 z-20 mt-10 flex flex-col gap-3 border-t border-ink bg-canvas/95 py-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+            <span className="text-[13px] text-slate-600">{t('profile.profileCompletionNotice')}</span>
+            <div className="flex shrink-0 items-center gap-3">
               <Button type="button" variant="secondary" onClick={cancelEditing}>
                 {t('profile.cancel')}
               </Button>
@@ -1667,6 +1203,6 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
           </div>
         </form>
       )}
-    </>
+    </div>
   );
 }

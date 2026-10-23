@@ -1,23 +1,41 @@
 import React, { useState } from 'react';
-import {
-  Zap,
-  Settings,
-  Plus,
-  Trash2,
-  Edit,
-  Save,
-  CheckCircle2,
-  Lightbulb,
-  UserCheck,
-  Coins,
-  Cpu,
-} from 'lucide-react';
 import type {
   AdminTokenTopupPack,
   TokenConsumptionRule,
   TokenPolicySettings,
   UserQuotaOverride,
 } from '../../../types/subscriptionManagement';
+import {
+  CheckBox,
+  EmptyRow,
+  Modal,
+  RowMenu,
+  SectionHead,
+  brandLink,
+  dangerLink,
+  fieldLabel,
+  primaryButton,
+  smallPrimary,
+  textLink,
+  underlineInput,
+  underlineSelect,
+} from '../../../components/admin/AdminKit';
+
+const n = (v: number) => v.toLocaleString('vi-VN');
+const inlineNumber =
+  'w-24 border-0 border-b border-brand bg-transparent py-1 text-right text-sm tabular-nums text-ink outline-none';
+
+function PolicyRow({ label, hint, children }: { label: string; hint: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-x-8 gap-y-3 border-b border-border py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:items-center">
+      <div>
+        <p className="text-[15px] text-ink">{label}</p>
+        <p className="mt-0.5 text-[13px] text-slate-500">{hint}</p>
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
 
 interface TokenQuotaManagementTabProps {
   rules: TokenConsumptionRule[];
@@ -135,561 +153,287 @@ export const TokenQuotaManagementTab: React.FC<TokenQuotaManagementTabProps> = (
     setEditingRuleKey(null);
   };
 
+  const ruleGrid = 'md:grid-cols-[minmax(0,1fr)_9rem_8rem_7rem_6rem_7rem]';
+  const ovrGrid = 'md:grid-cols-[minmax(0,1fr)_9rem_9rem_8rem_6rem]';
+
   return (
-    <div className="space-y-8">
-      {/* 1. Global Token Quota Policy Configuration */}
-      <div className="rounded-3xl border border-slate-200/80 bg-surface p-6 md:p-7 shadow-2xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div>
-            <h2 className="text-lg font-medium text-slate-900 flex items-center gap-2">
-              <Settings size={20} className="text-brand-600" />
-              <span>Chính sách hạn ngạch Token toàn hệ thống (Global Token Policy)</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Quy định cơ chế xử lý khi chạm ngưỡng hạn ngạch, chính sách cộng dồn (Rollover) và cảnh báo sử dụng
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {policySavedFeedback && (
-              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 animate-fade-in">
-                <CheckCircle2 size={15} />
-                Đã lưu thành công!
-              </span>
-            )}
-            <button
-              onClick={handleSavePolicySubmit}
-              disabled={isSavingPolicy}
-              className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-            >
-              <Save size={14} />
-              <span>{isSavingPolicy ? 'Đang lưu...' : 'Lưu cấu hình'}</span>
+    <div className="space-y-[clamp(3rem,6vw,4.5rem)]">
+      {/* 01 Policy */}
+      <section>
+        <SectionHead
+          index="01"
+          title="Chính sách hạn mức"
+          meta={policySavedFeedback ? <span className="text-brand">Đã lưu.</span> : 'Áp dụng toàn hệ thống'}
+          action={
+            <button type="button" onClick={handleSavePolicySubmit} disabled={isSavingPolicy} className={smallPrimary}>
+              {isSavingPolicy ? 'Đang lưu…' : 'Lưu cấu hình'}
             </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Soft limit */}
-          <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
-            <label className="block text-xs font-medium text-slate-800">
-              Cảnh báo Soft-Limit (%)
-            </label>
-            <p className="text-[11px] text-slate-500">
-              Gửi email cảnh báo & hiển thị banner khi user tiêu thụ đạt ngưỡng này.
-            </p>
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="number"
-                min="50"
-                max="95"
-                value={softLimit}
-                onChange={(e) => setSoftLimit(Number(e.target.value))}
-                className="w-24 rounded-xl border border-slate-300 bg-surface px-3 py-1.5 text-sm font-medium text-slate-800 focus:outline-hidden"
-              />
-              <span className="text-xs font-semibold text-slate-600">% hạn ngạch</span>
+          }
+        />
+        <PolicyRow label="Cảnh báo sớm" hint="Gửi email và hiện banner khi người dùng dùng tới ngưỡng này.">
+          <label className="flex items-baseline gap-3">
+            <input type="number" min="50" max="95" value={softLimit} onChange={(e) => setSoftLimit(Number(e.target.value))} className={`${underlineInput} w-24 tabular-nums`} />
+            <span className="whitespace-nowrap text-[13px] text-slate-600">% hạn mức</span>
+          </label>
+        </PolicyRow>
+        <PolicyRow label="Khi dùng hết 100%" hint="Cách xử lý yêu cầu khi tài khoản hết token trong tháng.">
+          <select value={hardLimitAction} onChange={(e) => setHardLimitAction(e.target.value as TokenPolicySettings['hardLimitAction'])} className={underlineSelect}>
+            <option value="FALLBACK_FLASH">Chuyển sang Gemini Flash</option>
+            <option value="BLOCK">Chặn, yêu cầu nạp thêm</option>
+            <option value="THROTTLE">Giảm tốc, 1 request / 30 giây</option>
+          </select>
+        </PolicyRow>
+        <PolicyRow label="Cộng dồn token" hint="Chuyển token chưa dùng sang chu kỳ sau.">
+          <div className="flex flex-wrap items-center gap-x-6">
+            <div className="flex-1 [&>label]:border-b-0">
+              <CheckBox checked={allowRollover} onChange={setAllowRollover} label="Cho phép cộng dồn" />
             </div>
-          </div>
-
-          {/* Hard limit action */}
-          <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
-            <label className="block text-xs font-medium text-slate-800">
-              Hành động khi chạm Hard-Limit (100%)
-            </label>
-            <p className="text-[11px] text-slate-500">
-              Xử lý yêu cầu khi tài khoản đã dùng hết hạn mức token trong tháng.
-            </p>
-            <select
-              value={hardLimitAction}
-              onChange={(e) =>
-                setHardLimitAction(e.target.value as TokenPolicySettings['hardLimitAction'])
-              }
-              className="w-full rounded-xl border border-slate-300 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-hidden"
-            >
-              <option value="FALLBACK_FLASH">Fallback Flash (Chuyển sang Gemini Flash nhẹ)</option>
-              <option value="BLOCK">Chặn toàn bộ (Yêu cầu nạp thêm gói Top-up)</option>
-              <option value="THROTTLE">Hạ băng thông (Giới hạn 1 request / 30s)</option>
-            </select>
-          </div>
-
-          {/* Rollover policy */}
-          <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
-            <label className="block text-xs font-medium text-slate-800">
-              Chính sách cộng dồn (Token Rollover)
-            </label>
-            <p className="text-[11px] text-slate-500">
-              Cho phép chuyển số token chưa sử dụng sang chu kỳ thanh toán tiếp theo.
-            </p>
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none">
-                <input
-                  type="checkbox"
-                  checked={allowRollover}
-                  onChange={(e) => setAllowRollover(e.target.checked)}
-                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-4 h-4"
-                />
-                <span>Kích hoạt Rollover</span>
+            {allowRollover && (
+              <label className="flex items-baseline gap-2 whitespace-nowrap text-[13px] text-slate-600">
+                Tối đa
+                <input type="number" min="10" max="100" value={maxRollover} onChange={(e) => setMaxRollover(Number(e.target.value))} className={`${underlineInput} w-16 text-center tabular-nums`} />
+                %
               </label>
-
-              {allowRollover && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-slate-500">Tối đa:</span>
-                  <input
-                    type="number"
-                    min="10"
-                    max="100"
-                    value={maxRollover}
-                    onChange={(e) => setMaxRollover(Number(e.target.value))}
-                    className="w-16 rounded-lg border border-slate-300 bg-surface px-2 py-1 text-xs font-medium text-slate-800 text-center"
-                  />
-                  <span className="text-xs text-slate-600">%</span>
-                </div>
-              )}
-            </div>
+            )}
           </div>
+        </PolicyRow>
+        <PolicyRow label="Token dùng thử" hint="Cấp cho ứng viên ngay khi đăng ký tài khoản.">
+          <label className="flex items-baseline gap-3">
+            <input type="number" min="5000" step="5000" value={trialTokens} onChange={(e) => setTrialTokens(Number(e.target.value))} className={`${underlineInput} w-32 tabular-nums`} />
+            <span className="text-[13px] text-slate-600">token</span>
+          </label>
+        </PolicyRow>
+      </section>
+
+      {/* 02 Rules */}
+      <section>
+        <SectionHead index="02" title="Định mức theo tính năng" meta={`${rules.length} tính năng`} />
+        <div className={`hidden gap-x-6 border-b border-border py-3 text-[13px] text-slate-500 md:grid ${ruleGrid}`}>
+          <span>Tính năng</span>
+          <span className="text-right">Token / lượt</span>
+          <span className="text-right">Chi phí</span>
+          <span className="text-right">Tháng này</span>
+          <span>Trạng thái</span>
+          <span />
         </div>
-
-        {/* Free trial grant row */}
-        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-          <div>
-            <span className="font-medium text-slate-800">Token dùng thử miễn phí khi đăng ký mới (Free Tier Trial):</span>
-            <p className="text-[11px] text-slate-500 mt-0.5">Số lượng Token cấp phát cho ứng viên ngay khi đăng ký tài khoản thành công.</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <input
-              type="number"
-              min="5000"
-              step="5000"
-              value={trialTokens}
-              onChange={(e) => setTrialTokens(Number(e.target.value))}
-              className="w-28 rounded-xl border border-slate-300 bg-surface px-3 py-1.5 text-xs font-medium text-brand-700 text-center"
-            />
-            <span className="font-semibold text-slate-700">Tokens</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Feature Token Consumption Rules Table */}
-      <div className="rounded-3xl border border-slate-200/80 bg-surface overflow-hidden shadow-2xs">
-        <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
-              <Zap size={18} className="text-amber-500" />
-              <span>Định mức tiêu thụ Token theo tính năng (Feature Consumption Rules)</span>
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Số lượng AI Tokens trừ vào tài khoản người dùng và chi phí hệ thống ước tính cho từng tác vụ
-            </p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
-              <tr>
-                <th className="py-3 px-4">Tính năng AI</th>
-                <th className="py-3 px-4">Mô hình AI chỉ định</th>
-                <th className="py-3 px-4">Định mức Token / Lượt</th>
-                <th className="py-3 px-4">Chi phí ước tính</th>
-                <th className="py-3 px-4">Lượt dùng tháng này</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rules.map((rule) => {
-                const isEditing = editingRuleKey === rule.featureKey;
-                const isEnabled = rule.status === 'ENABLED';
-
-                return (
-                  <tr key={rule.featureKey} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3.5 px-4">
-                      <div className="font-medium text-slate-900">{rule.featureName}</div>
-                      <span className="text-[11px] text-slate-400 line-clamp-1">{rule.description}</span>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200/60 font-mono">
-                        <Cpu size={11} />
-                        <span>{rule.modelAssigned}</span>
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4 font-medium text-brand-700">
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          step="100"
-                          value={ruleTokensInput}
-                          onChange={(e) => setRuleTokensInput(Number(e.target.value))}
-                          className="w-24 rounded-lg border border-brand-400 px-2 py-1 text-xs font-medium text-brand-700"
-                        />
-                      ) : (
-                        <span>{rule.baseTokensPerAction.toLocaleString()} Tokens</span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 font-semibold text-slate-700">
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          step="10"
-                          value={ruleCostInput}
-                          onChange={(e) => setRuleCostInput(Number(e.target.value))}
-                          className="w-20 rounded-lg border border-brand-400 px-2 py-1 text-xs font-semibold text-slate-800"
-                        />
-                      ) : (
-                        <span>{rule.estimatedCostVND.toLocaleString('vi-VN')} đ</span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 font-semibold text-slate-800">
-                      {rule.monthlyUsageCount?.toLocaleString() || 0} lượt
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <button
-                        onClick={() =>
-                          onUpdateRule(rule.featureKey, {
-                            status: isEnabled ? 'DISABLED' : 'ENABLED',
-                          })
-                        }
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium transition cursor-pointer ${
-                          isEnabled
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-500 border border-slate-200'
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isEnabled ? 'bg-emerald-500' : 'bg-slate-400'
-                          }`}
-                        />
-                        <span>{isEnabled ? 'BẬT' : 'TẮT'}</span>
-                      </button>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right">
-                      {isEditing ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => saveRuleEdit(rule.featureKey)}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-1 shadow-2xs"
-                          >
-                            <Save size={12} />
-                            <span>Lưu</span>
-                          </button>
-                          <button
-                            onClick={() => setEditingRuleKey(null)}
-                            className="px-2 py-1 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs transition"
-                          >
-                            Hủy
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => startEditRule(rule)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-slate-100 transition"
-                          title="Sửa định mức"
-                        >
-                          <Edit size={14} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 3. Token Top-up Addon Packs Manager */}
-      <div className="rounded-3xl border border-slate-200/80 bg-surface p-6 md:p-7 shadow-2xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-          <div>
-            <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
-              <Coins size={18} className="text-emerald-600" />
-              <span>Gói nạp Token bổ sung (Token Top-up Addon Packs)</span>
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Các gói nạp nhanh cho người dùng khi có nhu cầu sử dụng vượt hạn mức hàng tháng
-            </p>
-          </div>
-
-          <button
-            onClick={handleOpenAddPack}
-            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto"
-          >
-            <Plus size={14} />
-            <span>Thêm gói nạp</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {topupPacks.map((pack) => (
-            <div
-              key={pack.id}
-              className={`relative p-5 rounded-2xl border bg-surface flex flex-col justify-between transition shadow-2xs ${
-                pack.popular
-                  ? 'border-amber-400 ring-2 ring-amber-500/20 bg-amber-50/20'
-                  : 'border-slate-200/80 hover:border-slate-300'
-              }`}
-            >
-              {pack.popular && (
-                <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500 text-white flex items-center gap-1 shadow-2xs">
-                  <Lightbulb size={11} />
-                  <span>Phổ biến</span>
-                </span>
-              )}
-
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-slate-900">{pack.name}</h4>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-semibold text-slate-900">
-                    {pack.priceVND.toLocaleString('vi-VN')}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-500">đ</span>
-                </div>
-
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Token cơ bản:</span>
-                    <strong className="text-brand-700">{pack.tokens.toLocaleString()}</strong>
-                  </div>
-                  {pack.bonusTokens > 0 && (
-                    <div className="flex justify-between text-emerald-700 font-semibold">
-                      <span>+ Thưởng thêm:</span>
-                      <span>+{pack.bonusTokens.toLocaleString()}</span>
-                    </div>
+        <ul>
+          {rules.map((rule) => {
+            const isEditing = editingRuleKey === rule.featureKey;
+            const isEnabled = rule.status === 'ENABLED';
+            return (
+              <li key={rule.featureKey} className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2 border-b border-border py-4 ${ruleGrid}`}>
+                <div className="min-w-0">
+                  <p className={`text-[15px] ${isEnabled ? 'text-ink' : 'text-slate-500'}`}>{rule.featureName}</p>
+                  <p className="mt-0.5 line-clamp-1 text-[13px] text-slate-500">
+                    {rule.modelAssigned} · {rule.description}
+                  </p>
+                  {!isEditing && (
+                    <p className="mt-1 text-[13px] text-slate-600 md:hidden">
+                      {n(rule.baseTokensPerAction)} token · {n(rule.estimatedCostVND)}đ
+                    </p>
                   )}
-                  <div className="flex justify-between pt-1 border-t border-slate-100 font-medium text-slate-900">
-                    <span>Tổng nhận:</span>
-                    <span>{(pack.tokens + pack.bonusTokens).toLocaleString()} Tokens</span>
-                  </div>
                 </div>
-              </div>
-
-              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-[11px] text-slate-400 font-medium">
-                  Đã bán: <strong>{pack.totalSold || 0}</strong> lượt
+                <span className={`text-right text-sm tabular-nums text-ink ${isEditing ? '' : 'hidden md:block'}`}>
+                  {isEditing ? (
+                    <input type="number" step="100" aria-label="Token mỗi lượt" value={ruleTokensInput} onChange={(e) => setRuleTokensInput(Number(e.target.value))} className={inlineNumber} />
+                  ) : (
+                    n(rule.baseTokensPerAction)
+                  )}
                 </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleOpenEditPack(pack)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-slate-100 transition"
-                    title="Chỉnh sửa gói nạp"
-                  >
-                    <Edit size={14} />
-                  </button>
-                  <button
-                    onClick={() => onDeleteTopupPack(pack.id)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-slate-100 transition"
-                    title="Xóa gói nạp"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. User Quota Overrides & Grants */}
-      <div className="rounded-3xl border border-slate-200/80 bg-surface p-6 md:p-7 shadow-2xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-          <div>
-            <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
-              <UserCheck size={18} className="text-brand-600" />
-              <span>Hạn mức Token đặc thù & Thưởng cấp phát (User Quota Overrides)</span>
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Danh sách tài khoản được nâng hạn mức VIP cá nhân hoặc nhận token đền bù / hỗ trợ trải nghiệm
-            </p>
-          </div>
-
-          <button
-            onClick={onOpenGrantModal}
-            className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto"
-          >
-            <Plus size={14} />
-            <span>Cấp Token / Hạn mức cá nhân</span>
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
-              <tr>
-                <th className="py-3 px-4">Ứng viên / Tài khoản</th>
-                <th className="py-3 px-4">Hạn mức tháng gốc</th>
-                <th className="py-3 px-4">Hạn mức tùy chỉnh</th>
-                <th className="py-3 px-4">Token thưởng cộng thêm</th>
-                <th className="py-3 px-4">Lý do cấp phát</th>
-                <th className="py-3 px-4">Hiệu lực</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {overrides.map((ovr) => {
-                const isActive = ovr.status === 'ACTIVE';
-
-                return (
-                  <tr key={ovr.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3.5 px-4">
-                      <div className="font-medium text-slate-900">{ovr.userName}</div>
-                      <span className="text-[11px] text-slate-400 font-mono">{ovr.userEmail}</span>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-slate-600 font-medium">
-                      {ovr.originalMonthlyQuota.toLocaleString()} Tokens
-                    </td>
-
-                    <td className="py-3.5 px-4 font-medium text-brand-700">
-                      {ovr.customMonthlyQuota.toLocaleString()} Tokens
-                    </td>
-
-                    <td className="py-3.5 px-4 font-medium text-amber-600">
-                      {ovr.bonusTokensGranted > 0 ? `+${ovr.bonusTokensGranted.toLocaleString()} Tokens` : '—'}
-                    </td>
-
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <p className="text-slate-700 line-clamp-1">{ovr.reason}</p>
-                      <span className="text-[10px] text-slate-400">Cấp bởi: {ovr.grantedBy} ({ovr.grantedAt})</span>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-slate-600 font-medium">
-                      {ovr.expiresAt || 'Vĩnh viễn'}
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
-                          isActive
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-500'
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isActive ? 'bg-emerald-500' : 'bg-slate-400'
-                          }`}
-                        />
-                        <span>{isActive ? 'HOẠT ĐỘNG' : 'ĐÃ THU HỒI'}</span>
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right">
-                      {isActive && (
-                        <button
-                          onClick={() => onRevokeOverride(ovr.id)}
-                          className="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:text-red-600 hover:bg-red-50 text-[11px] font-semibold transition"
-                        >
-                          Thu hồi
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Top-up Pack Edit Modal */}
-      {isPackModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in">
-          <div className="relative w-full max-w-md bg-surface rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
-            <h3 className="text-base font-medium text-slate-900">
-              {editingPack ? 'Chỉnh sửa gói nạp Token' : 'Thêm gói nạp Token mới'}
-            </h3>
-            <form onSubmit={handleSavePack} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Tên gói nạp
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={packName}
-                  onChange={(e) => setPackName(e.target.value)}
-                  placeholder="Ví dụ: Gói nạp 500K Tokens"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Số Token cơ bản
-                  </label>
-                  <input
-                    type="number"
-                    step="10000"
-                    required
-                    value={packTokens}
-                    onChange={(e) => setPackTokens(Number(e.target.value))}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Token thưởng thêm
-                  </label>
-                  <input
-                    type="number"
-                    step="5000"
-                    value={packBonus}
-                    onChange={(e) => setPackBonus(Number(e.target.value))}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Giá bán (VND)
-                </label>
-                <input
-                  type="number"
-                  step="1000"
-                  required
-                  value={packPrice}
-                  onChange={(e) => setPackPrice(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden font-medium text-emerald-700"
-                />
-              </div>
-
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 pt-1 select-none">
-                <input
-                  type="checkbox"
-                  checked={packPopular}
-                  onChange={(e) => setPackPopular(e.target.checked)}
-                  className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4"
-                />
-                <span>Đánh dấu gói phổ biến (Popular Badge)</span>
-              </label>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <span className={`text-right text-sm tabular-nums text-slate-700 ${isEditing ? '' : 'hidden md:block'}`}>
+                  {isEditing ? (
+                    <input type="number" step="10" aria-label="Chi phí ước tính" value={ruleCostInput} onChange={(e) => setRuleCostInput(Number(e.target.value))} className={inlineNumber} />
+                  ) : (
+                    `${n(rule.estimatedCostVND)}đ`
+                  )}
+                </span>
+                <span className="hidden text-right text-sm tabular-nums text-slate-700 md:block">{n(rule.monthlyUsageCount || 0)}</span>
                 <button
                   type="button"
-                  onClick={() => setIsPackModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                  onClick={() => onUpdateRule(rule.featureKey, { status: isEnabled ? 'DISABLED' : 'ENABLED' })}
+                  className={`hidden text-left text-sm md:block ${isEnabled ? 'text-brand' : 'text-slate-500'} hover:underline`}
+                  title={isEnabled ? 'Bấm để tắt' : 'Bấm để bật'}
                 >
-                  Hủy
+                  {isEnabled ? 'Đang bật' : 'Đang tắt'}
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition shadow-xs"
-                >
-                  Lưu gói nạp
-                </button>
-              </div>
-            </form>
+                <span className="flex justify-end gap-x-5 text-[13px]">
+                  {isEditing ? (
+                    <>
+                      <button type="button" onClick={() => saveRuleEdit(rule.featureKey)} className={`${brandLink} text-[13px]`}>
+                        Lưu
+                      </button>
+                      <button type="button" onClick={() => setEditingRuleKey(null)} className={`${textLink} text-[13px] text-slate-600`}>
+                        Huỷ
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={() => startEditRule(rule)} className={`${textLink} text-[13px] text-ink`}>
+                      Sửa
+                    </button>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {/* 03 Top-up packs */}
+      <section>
+        <SectionHead
+          index="03"
+          title="Gói nạp token"
+          meta="Cho người dùng cần thêm ngoài hạn mức tháng"
+          action={
+            <button type="button" onClick={handleOpenAddPack} className={`${textLink} text-[13px] text-ink`}>
+              Thêm gói nạp
+            </button>
+          }
+        />
+        {topupPacks.length === 0 ? (
+          <EmptyRow>Chưa có gói nạp nào.</EmptyRow>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4">
+            {topupPacks.map((pack, i) => (
+              <article
+                key={pack.id}
+                className={`flex flex-col border-b border-border py-6 sm:px-6 ${i % 2 === 1 ? 'sm:border-l' : 'sm:pl-0'} ${
+                  i % 4 !== 0 ? 'lg:border-l lg:pl-6' : 'lg:border-l-0 lg:pl-0'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-[15px] text-ink">
+                    {pack.name}
+                    {pack.popular && <span className="ml-2 text-[13px] text-brand">Phổ biến</span>}
+                  </p>
+                  <RowMenu
+                    label={`Thao tác cho ${pack.name}`}
+                    items={[
+                      { label: 'Chỉnh sửa', onClick: () => handleOpenEditPack(pack) },
+                      { label: 'Xoá gói nạp', onClick: () => onDeleteTopupPack(pack.id), tone: 'danger' },
+                    ]}
+                  />
+                </div>
+                <p className="mt-3 text-[clamp(1.75rem,2.6vw,2.25rem)] leading-none tracking-[-0.02em] tabular-nums text-ink">
+                  {n(pack.priceVND)}đ
+                </p>
+                <p className="mt-3 text-[13px] leading-6 text-slate-600">
+                  {n(pack.tokens)} token
+                  {pack.bonusTokens > 0 && <span className="text-brand"> + {n(pack.bonusTokens)} thưởng</span>}
+                  <br />
+                  Tổng nhận <span className="text-ink">{n(pack.tokens + pack.bonusTokens)}</span>
+                </p>
+                <p className="mt-auto pt-4 text-[13px] text-slate-500">Đã bán {n(pack.totalSold || 0)} lượt</p>
+              </article>
+            ))}
           </div>
+        )}
+      </section>
+
+      {/* 04 Overrides */}
+      <section>
+        <SectionHead
+          index="04"
+          title="Hạn mức riêng & token thưởng"
+          meta={`${overrides.filter((o) => o.status === 'ACTIVE').length} đang hiệu lực`}
+          action={
+            <button type="button" onClick={onOpenGrantModal} className={smallPrimary}>
+              Cấp token
+            </button>
+          }
+        />
+        <div className={`hidden gap-x-6 border-b border-border py-3 text-[13px] text-slate-500 md:grid ${ovrGrid}`}>
+          <span>Tài khoản & lý do</span>
+          <span className="text-right">Hạn mức gốc → mới</span>
+          <span className="text-right">Token thưởng</span>
+          <span>Hiệu lực</span>
+          <span />
         </div>
+        {overrides.length === 0 ? (
+          <EmptyRow>Chưa cấp hạn mức riêng cho tài khoản nào.</EmptyRow>
+        ) : (
+          <ul>
+            {overrides.map((ovr) => {
+              const isActive = ovr.status === 'ACTIVE';
+              return (
+                <li key={ovr.id} className={`grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6 gap-y-1 border-b border-border py-5 ${ovrGrid} ${isActive ? '' : 'opacity-60'}`}>
+                  <div className="min-w-0">
+                    <p className="text-[15px] text-ink">
+                      {ovr.userName} <span className="text-[13px] text-slate-500">· {ovr.userEmail}</span>
+                    </p>
+                    <p className="mt-0.5 line-clamp-1 text-[13px] text-slate-700">{ovr.reason}</p>
+                    <p className="mt-0.5 text-[13px] text-slate-500">
+                      {ovr.grantedBy} · {ovr.grantedAt}
+                      {!isActive && ' · Đã thu hồi'}
+                    </p>
+                    <p className="mt-1 text-[13px] text-slate-600 md:hidden">
+                      {n(ovr.originalMonthlyQuota)} → {n(ovr.customMonthlyQuota)}
+                      {ovr.bonusTokensGranted > 0 && ` · +${n(ovr.bonusTokensGranted)}`}
+                    </p>
+                  </div>
+                  <span className="hidden text-right text-sm tabular-nums md:block">
+                    <span className="text-slate-500">{n(ovr.originalMonthlyQuota)}</span>
+                    <span className="block text-[15px] text-ink">{n(ovr.customMonthlyQuota)}</span>
+                  </span>
+                  <span className="hidden text-right text-sm tabular-nums text-brand md:block">
+                    {ovr.bonusTokensGranted > 0 ? `+${n(ovr.bonusTokensGranted)}` : '—'}
+                  </span>
+                  <span className="hidden text-[13px] text-slate-600 md:block">{ovr.expiresAt || 'Vĩnh viễn'}</span>
+                  <span className="text-right">
+                    {isActive && (
+                      <button type="button" onClick={() => onRevokeOverride(ovr.id)} className={`${dangerLink} text-[13px]`}>
+                        Thu hồi
+                      </button>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {isPackModalOpen && (
+        <Modal
+          eyebrow="Gói nạp token"
+          title={editingPack ? 'Chỉnh sửa gói nạp.' : 'Thêm gói nạp.'}
+          onClose={() => setIsPackModalOpen(false)}
+          width="max-w-md"
+          footer={
+            <>
+              <button type="button" onClick={() => setIsPackModalOpen(false)} className={`${textLink} text-slate-600`}>
+                Huỷ
+              </button>
+              <button type="submit" form="topup-pack-form" className={primaryButton}>
+                Lưu gói nạp
+              </button>
+            </>
+          }
+        >
+          <form id="topup-pack-form" onSubmit={handleSavePack} className="space-y-5">
+            <label className="block">
+              <span className={fieldLabel}>Tên gói</span>
+              <input type="text" required value={packName} onChange={(e) => setPackName(e.target.value)} placeholder="Gói nạp 500K token" className={underlineInput} />
+            </label>
+            <div className="grid grid-cols-2 gap-x-8">
+              <label className="block">
+                <span className={fieldLabel}>Token cơ bản</span>
+                <input type="number" step="10000" required value={packTokens} onChange={(e) => setPackTokens(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+              </label>
+              <label className="block">
+                <span className={fieldLabel}>Token thưởng</span>
+                <input type="number" step="5000" value={packBonus} onChange={(e) => setPackBonus(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+              </label>
+            </div>
+            <label className="block">
+              <span className={fieldLabel}>Giá bán (VNĐ)</span>
+              <input type="number" step="1000" required value={packPrice} onChange={(e) => setPackPrice(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </label>
+            <div className="border-t border-border">
+              <CheckBox checked={packPopular} onChange={setPackPopular} label="Đánh dấu “Phổ biến”" />
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

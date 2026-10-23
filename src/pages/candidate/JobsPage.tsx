@@ -1,19 +1,19 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight, Bookmark, ChevronDown, RotateCcw, Search, X } from 'lucide-react';
+import { ArrowRight, Bookmark, Check, ChevronDown, RotateCcw, Search, X } from 'lucide-react';
+import { getJobs, getSavedJobIds, getAppliedJobIds } from '../../mocks/services/mockService';
 import {
-  getJobs,
-  getSavedJobIds,
-  toggleSaveJob,
-  applyJobExternal,
-  getAppliedJobIds,
-} from '../../mocks/services/mockService';
+  markJobApplied,
+  openApplySource,
+  refreshJobActivity,
+  toggleSavedJob,
+} from '../../services/jobActivityService';
 import type { Job } from '../../types/domain';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 
-// Design tokens (Jobie ai template): ink #14231e, accent #0b6b52, muted #5d6b65, rule #14231e/15
+// Design tokens (CCV template): ink #14231e, accent #0b6b52, muted #5d6b65, rule #14231e/15
 const fieldBase =
   'w-full appearance-none border-0 border-b border-ink/40 bg-transparent py-3 pr-6 text-base text-ink outline-none transition focus:border-brand cursor-pointer md:text-[1.0625rem]';
 const textLink =
@@ -25,11 +25,9 @@ export default function JobsPage() {
   const queryClient = useQueryClient();
   const isCandidate = locationState.pathname.startsWith('/candidate');
   const getJobDetailUrl = (id: string) => (isCandidate ? `/candidate/jobs/${id}` : `/jobs/${id}`);
-  const getJobMatchUrl = (id: string) =>
-    isCandidate ? `/candidate/jobs/${id}/match` : `/jobs/${id}`;
 
-  // Tabs: 'all' | 'recommended' | 'saved'
-  const [activeTab, setActiveTab] = useState<'all' | 'recommended' | 'saved'>('all');
+  // Tabs: 'all' | 'recommended' | 'saved' | 'applied'
+  const [activeTab, setActiveTab] = useState<'all' | 'recommended' | 'saved' | 'applied'>('all');
 
   // Multi-criteria filters
   const [search, setSearch] = useState('');
@@ -65,25 +63,30 @@ export default function JobsPage() {
 
   // Mutations
   const toggleSaveMutation = useMutation({
-    mutationFn: (jobId: string) => toggleSaveJob(jobId),
+    mutationFn: (jobId: string) => toggleSavedJob(jobId),
     onSuccess: (res) => {
       queryClient.setQueryData(['savedJobs'], res.ids);
+      refreshJobActivity(queryClient);
       setToastMessage(res.saved ? t('jobs.savedSuccess') : t('jobs.unsavedSuccess'));
       setTimeout(() => setToastMessage(null), 3000);
     },
   });
 
   const applyMutation = useMutation({
-    mutationFn: (jobId: string) => applyJobExternal(jobId),
+    mutationFn: (jobId: string) => markJobApplied(jobId),
     onSuccess: (res) => {
       queryClient.setQueryData(['appliedJobs'], res.ids);
-      const url = redirectJob?.externalSource?.sourceUrl || 'https://itviec.com';
+      refreshJobActivity(queryClient);
       setRedirectJob(null);
       setToastMessage(t('jobs.appliedSuccess'));
       setTimeout(() => setToastMessage(null), 4000);
-      window.open(url, '_blank', 'noopener,noreferrer');
     },
   });
+
+  const confirmApply = (job: Job) => {
+    openApplySource(job);
+    applyMutation.mutate(job.id);
+  };
 
   const isFilterActive = useMemo(() => {
     return (
@@ -134,6 +137,8 @@ export default function JobsPage() {
         tabMatch = job.match >= 85;
       } else if (activeTab === 'saved') {
         tabMatch = savedIds.includes(job.id);
+      } else if (activeTab === 'applied') {
+        tabMatch = appliedIds.includes(job.id);
       }
 
       return searchMatch && locationMatch && expMatch && typeMatch && salaryMatch && tabMatch;
@@ -147,16 +152,17 @@ export default function JobsPage() {
     }
 
     return list;
-  }, [allJobs, search, location, experienceLevel, jobType, salaryMin, activeTab, savedIds, sortBy]);
+  }, [allJobs, search, location, experienceLevel, jobType, salaryMin, activeTab, savedIds, appliedIds, sortBy]);
 
   const recommendedCount = useMemo(() => {
     return allJobs?.filter((j) => j.match >= 85).length || 0;
   }, [allJobs]);
 
-  const tabs: { key: 'all' | 'recommended' | 'saved'; label: string }[] = [
+  const tabs: { key: 'all' | 'recommended' | 'saved' | 'applied'; label: string }[] = [
     { key: 'all', label: `${t('jobs.allJobsTab')} (${allJobs?.length || 0})` },
     { key: 'recommended', label: `${t('jobs.aiRecommendedTab')} (${recommendedCount})` },
     { key: 'saved', label: `${t('jobs.savedJobsTab')} (${savedIds.length})` },
+    { key: 'applied', label: `Đã ứng tuyển (${appliedIds.length})` },
   ];
 
   const filters = (
@@ -312,7 +318,7 @@ export default function JobsPage() {
                 to="/candidate/cv-job-fit"
                 className={`${textLink} mt-5 inline-flex items-center gap-1.5`}
               >
-                <span>Phân tích Fit CV–Job cụ thể</span>
+                <span>Xem độ phù hợp CV với một việc</span>
                 <ArrowRight size={14} />
               </Link>
             )}
@@ -436,9 +442,6 @@ export default function JobsPage() {
                             >
                               {job.title}
                             </Link>
-                            {isApplied && (
-                              <span className="text-sm text-brand">✓ Đã ứng tuyển</span>
-                            )}
                           </div>
                           <p className="mt-1.5 text-base text-slate-600">
                             {job.company} · {job.location} · {job.posted}
@@ -471,7 +474,7 @@ export default function JobsPage() {
                             <div className="h-full bg-brand" style={{ width: `${job.match}%` }} />
                           </div>
                           <p className="mt-2 text-sm text-slate-600">
-                            Semantic Match ·{' '}
+                            Độ phù hợp ·{' '}
                             {job.match >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng cao'}
                           </p>
                         </div>
@@ -482,12 +485,9 @@ export default function JobsPage() {
                         <Link to={getJobDetailUrl(job.id)} className={textLink}>
                           Chi tiết
                         </Link>
-                        <Link to={getJobMatchUrl(job.id)} className={textLink}>
-                          Khớp nối AI
-                        </Link>
                         {isCandidate && (
                           <Link to={`/candidate/cv-job-fit?jobId=${job.id}`} className={textLink}>
-                            So khớp CV
+                            Xem độ phù hợp
                           </Link>
                         )}
                         <button
@@ -499,14 +499,24 @@ export default function JobsPage() {
                           <Bookmark size={15} className={isSaved ? 'fill-brand' : ''} />
                           <span>{isSaved ? 'Đã lưu' : 'Lưu'}</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setRedirectJob(job)}
-                          className="ml-auto inline-flex min-h-12 items-center gap-3 rounded-full bg-ink px-6 text-base text-white transition hover:bg-brand cursor-pointer"
-                        >
-                          <span>Ứng tuyển</span>
-                          <ArrowRight size={16} />
-                        </button>
+                        {isApplied ? (
+                          <span
+                            className="ml-auto inline-flex min-h-12 items-center gap-2.5 rounded-full border border-brand px-6 text-base text-brand"
+                            title="Bạn đã ứng tuyển việc này. Trợ lý và trang Độ phù hợp CV sẽ dùng nó để hỗ trợ bạn."
+                          >
+                            <Check size={16} aria-hidden="true" />
+                            <span>Đã ứng tuyển</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setRedirectJob(job)}
+                            className="ml-auto inline-flex min-h-12 items-center gap-3 rounded-full bg-ink px-6 text-base text-white transition hover:bg-brand cursor-pointer"
+                          >
+                            <span>Ứng tuyển</span>
+                            <ArrowRight size={16} />
+                          </button>
+                        )}
                       </div>
                     </li>
                   );
@@ -560,7 +570,7 @@ export default function JobsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => applyMutation.mutate(redirectJob.id)}
+                  onClick={() => confirmApply(redirectJob)}
                   disabled={applyMutation.isPending}
                   className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-2.5 text-sm text-white transition hover:bg-brand disabled:opacity-50 cursor-pointer"
                 >

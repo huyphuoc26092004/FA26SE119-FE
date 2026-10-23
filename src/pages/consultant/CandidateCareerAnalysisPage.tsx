@@ -1,45 +1,241 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  FileText,
-  Target,
-  Award,
-  BookOpen,
-  Briefcase,
-  FolderGit2,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  Calendar,
-  Lightbulb,
-  DollarSign,
-  ChevronRight,
-  ShieldCheck,
-  Save,
-  X,
-  Layers,
-  Globe,
-} from 'lucide-react';
-import { Card, Badge, Button, Loading, ErrorState } from '../../components/ui';
+import { ArrowLeft, ArrowRight, Check, ExternalLink } from 'lucide-react';
+import { Loading, ErrorState } from '../../components/ui';
 import ConsultationAdviceBuilder from '../../components/consultation/ConsultationAdviceBuilder';
+import {
+  Avatar,
+  Headline,
+  Modal,
+  SectionHead,
+  StatRow,
+  SubHead,
+  ThinBar,
+  UnderlineTabs,
+  pad2,
+  primaryButton,
+  textLink,
+} from '../../components/consultation/ConsultantKit';
 import {
   getCandidateCareerAnalysis,
   saveCandidateCareerAdvice,
 } from '../../services/consultationService';
+import type { CandidateCareerAnalysis } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
+
+type Tab = 'profile' | 'ats' | 'assessment' | 'gap' | 'advice';
+type Readiness = CandidateCareerAnalysis['readinessLevel'];
+type SkillStatus = 'strong' | 'present' | 'gap' | 'missing';
+
+const copy = {
+  vi: {
+    back: 'Danh sách ứng viên',
+    backToList: 'Quay lại danh sách ứng viên',
+    openRequest: (id: string) => `Mở yêu cầu ${id}`,
+    giveAdvice: 'Viết lời khuyên',
+    readiness: {
+      Ready: 'Sẵn sàng ứng tuyển',
+      'Near Ready': 'Gần đạt chuẩn',
+      Developing: 'Đang phát triển',
+      'Early Stage': 'Giai đoạn đầu',
+    } as Record<Readiness, string>,
+    line2: (r: number, ats: number) => `Sẵn sàng ${r}%, ATS ${ats}/100.`,
+    stats: {
+      fit: 'Độ phù hợp',
+      fitDetail: (t: string) => `với ${t}`,
+      readiness: 'Độ sẵn sàng',
+      ats: 'Điểm ATS',
+      atsDetail: (g: string) => `Hạng ${g}`,
+      profile: 'Hồ sơ hoàn thiện',
+      profileDetail: (a: string) => a,
+    },
+    tabs: {
+      profile: 'Hồ sơ',
+      ats: 'CV & ATS',
+      assessment: 'Đánh giá kỹ năng',
+      gap: 'Khoảng trống',
+      advice: 'Lời khuyên',
+    },
+    goal: 'Mục tiêu nghề nghiệp',
+    experience: 'Kinh nghiệm làm việc',
+    years: (n: number) => `${n} năm`,
+    projects: 'Dự án tiêu biểu',
+    skills: 'Kỹ năng',
+    technical: 'Chuyên môn',
+    soft: 'Kỹ năng mềm',
+    level: 'Nâng cao',
+    education: 'Học vấn',
+    preferences: 'Mong muốn',
+    availability: 'Có thể bắt đầu',
+    employment: 'Hình thức',
+    expected: 'Lương kỳ vọng',
+    atsLine: (p: number) => `Xác suất vượt vòng lọc CV tự động: ${p}%`,
+    updated: 'Cập nhật',
+    viewCv: 'Xem toàn văn CV',
+    breakdown: 'Chỉ số thành phần',
+    dims: {
+      formatting: ['Định dạng & khả năng đọc', 'Một cột, không bảng chia, phông chữ chuẩn ATS.'],
+      keyword: ['Từ khoá chuẩn ngành', 'Khớp 10/14 từ khoá trọng tâm của vị trí Senior Frontend.'],
+      impact: ['Định lượng kết quả (STAR)', 'Cần bổ sung % đo lường kết quả theo công thức STAR.'],
+      structure: ['Đầy đủ cấu trúc', 'Có đủ Kinh nghiệm, Học vấn, Kỹ năng, Dự án.'],
+    },
+    keywords: 'Đối chiếu từ khoá',
+    matched: 'Đã có trong CV',
+    missing: 'Còn thiếu',
+    improvements: 'Đề xuất cải thiện',
+    assessmentIntro:
+      'Kết quả trắc nghiệm giúp bạn kiểm chứng những gì ứng viên kê khai trên CV trước buổi tư vấn.',
+    tests: 'Bài đánh giá đã làm',
+    time: 'Thời gian',
+    grade: 'Hạng',
+    correct: (a: number, b: number) => `${a}/${b} câu đúng`,
+    strengths: 'Điểm mạnh',
+    weaknesses: 'Cần lưu ý',
+    prompt: 'Gợi ý khi phỏng vấn',
+    target: 'Vị trí mục tiêu',
+    benchmark: 'Chuẩn tham chiếu',
+    weeks: (n: number) => (n > 0 ? 'tuần để đạt chuẩn' : 'đã đạt chuẩn'),
+    compare: 'Năng lực so với yêu cầu',
+    compareMeta: 'vạch đứng là mức yêu cầu',
+    candidateLevel: 'Ứng viên',
+    required: 'Yêu cầu',
+    status: { strong: 'Vững', present: 'Đã có', gap: 'Khoảng trống', missing: 'Chưa có' } as Record<SkillStatus, string>,
+    critical: 'Bắt buộc',
+    gaps: 'Khoảng trống cốt lõi',
+    quickWins: 'Thu hẹp nhanh (1–2 tuần)',
+    roadmap: 'Lộ trình 4 tuần gợi ý',
+    salaryRef: 'Tham khảo mức lương thị trường',
+    salaryRefHint: 'Dữ liệu tham khảo, chỉ dùng khi ứng viên hỏi về đàm phán.',
+    median: 'Trung vị thị trường',
+    range: 'Khoảng thị trường',
+    candidateExpected: 'Ứng viên kỳ vọng',
+    verdict: 'Nhận định',
+    verdictText: 'Hợp lý và khả thi',
+    strategy: 'Chiến thuật thương lượng',
+    perMonth: 'đ/tháng',
+    notesTitle: 'Ghi chú nhanh về ứng viên',
+    notesPlaceholder:
+      'Ghi chú sơ bộ về điểm mạnh kỹ thuật, phong thái giao tiếp hoặc chiến lược tư vấn cho ứng viên này…',
+    saveNote: 'Lưu ghi chú',
+    saved: 'Đã lưu',
+    noAdvice: 'Chưa có dữ liệu lời khuyên cho ứng viên này.',
+    cvSummary: 'Tóm tắt mục tiêu',
+    cvExperience: 'Kinh nghiệm gần nhất',
+    close: 'Đóng',
+  },
+  en: {
+    back: 'Candidates',
+    backToList: 'Back to candidates',
+    openRequest: (id: string) => `Open request ${id}`,
+    giveAdvice: 'Write advice',
+    readiness: {
+      Ready: 'Ready to apply',
+      'Near Ready': 'Near ready',
+      Developing: 'Developing',
+      'Early Stage': 'Early stage',
+    } as Record<Readiness, string>,
+    line2: (r: number, ats: number) => `${r}% ready, ATS ${ats}/100.`,
+    stats: {
+      fit: 'Fit',
+      fitDetail: (t: string) => `for ${t}`,
+      readiness: 'Readiness',
+      ats: 'ATS score',
+      atsDetail: (g: string) => `Grade ${g}`,
+      profile: 'Profile complete',
+      profileDetail: (a: string) => a,
+    },
+    tabs: {
+      profile: 'Profile',
+      ats: 'CV & ATS',
+      assessment: 'Skill tests',
+      gap: 'Skill gap',
+      advice: 'Advice',
+    },
+    goal: 'Career goal',
+    experience: 'Work experience',
+    years: (n: number) => `${n} yrs`,
+    projects: 'Selected projects',
+    skills: 'Skills',
+    technical: 'Technical',
+    soft: 'Soft skills',
+    level: 'Advanced',
+    education: 'Education',
+    preferences: 'Preferences',
+    availability: 'Available from',
+    employment: 'Employment',
+    expected: 'Expected salary',
+    atsLine: (p: number) => `Chance to pass automated CV screening: ${p}%`,
+    updated: 'Updated',
+    viewCv: 'View full CV',
+    breakdown: 'Score breakdown',
+    dims: {
+      formatting: ['Formatting & parsing', 'Single column, no tables, ATS-safe fonts.'],
+      keyword: ['Industry keywords', 'Matches 10 of 14 core keywords for Senior Frontend.'],
+      impact: ['Quantified impact (STAR)', 'Add measurable results using the STAR formula.'],
+      structure: ['Complete structure', 'Experience, Education, Skills and Projects present.'],
+    },
+    keywords: 'Keyword check',
+    matched: 'Found in CV',
+    missing: 'Missing',
+    improvements: 'Suggested improvements',
+    assessmentIntro: 'Test results help you verify what the candidate claims on the CV before the session.',
+    tests: 'Completed tests',
+    time: 'Time',
+    grade: 'Grade',
+    correct: (a: number, b: number) => `${a}/${b} correct`,
+    strengths: 'Strengths',
+    weaknesses: 'Watch out',
+    prompt: 'Interview prompt',
+    target: 'Target role',
+    benchmark: 'Benchmark',
+    weeks: (n: number) => (n > 0 ? 'weeks to ready' : 'ready now'),
+    compare: 'Skills vs requirement',
+    compareMeta: 'the tick marks the required level',
+    candidateLevel: 'Candidate',
+    required: 'Required',
+    status: { strong: 'Strong', present: 'Present', gap: 'Gap', missing: 'Missing' } as Record<SkillStatus, string>,
+    critical: 'Critical',
+    gaps: 'Critical gaps',
+    quickWins: 'Quick wins (1–2 weeks)',
+    roadmap: 'Suggested 4-week plan',
+    salaryRef: 'Market salary reference',
+    salaryRefHint: 'Reference data, use only if the candidate asks about negotiation.',
+    median: 'Market median',
+    range: 'Market range',
+    candidateExpected: 'Candidate expects',
+    verdict: 'Verdict',
+    verdictText: 'Reasonable and achievable',
+    strategy: 'Negotiation approach',
+    perMonth: 'VND/month',
+    notesTitle: 'Quick notes on this candidate',
+    notesPlaceholder: 'First observations on technical strength, communication style or your advisory plan…',
+    saveNote: 'Save note',
+    saved: 'Saved',
+    noAdvice: 'No advice data for this candidate yet.',
+    cvSummary: 'Summary',
+    cvExperience: 'Recent experience',
+    close: 'Close',
+  },
+};
+
+const SOFT_SKILLS = ['Problem Solving & Architecture', 'Team Leadership & Mentoring', 'Agile / Scrum'];
+
+function statusTone(status: SkillStatus) {
+  if (status === 'strong') return 'text-brand';
+  if (status === 'present') return 'text-ink';
+  if (status === 'gap') return 'text-warning';
+  return 'text-danger';
+}
 
 export default function CandidateCareerAnalysisPage() {
   const { candidateId } = useParams<{ candidateId: string }>();
   const navigate = useNavigate();
-  const { t, isVietnamese } = useTranslation();
+  const { isVietnamese } = useTranslation();
+  const lang = isVietnamese ? 'vi' : 'en';
+  const c = copy[lang];
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'ats' | 'assessment' | 'gap' | 'advice'>('profile');
+  const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [showCvModal, setShowCvModal] = useState(false);
   const [consultantNote, setConsultantNote] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
@@ -64,829 +260,559 @@ export default function CandidateCareerAnalysisPage() {
     return (
       <div className="py-12 text-center">
         <ErrorState />
-        <div className="mt-4">
-          <Button variant="secondary" onClick={() => navigate('/consultant/candidates')}>
-            Quay lại danh sách ứng viên
-          </Button>
-        </div>
+        <button type="button" onClick={() => navigate('/consultant/candidates')} className={`${textLink} mt-6 text-ink`}>
+          {c.backToList}
+        </button>
       </div>
     );
   }
 
   const { candidate, resumeDetails, skillAssessments, skillGap, salaryBenchmark } = analysis;
+  const latestRequest = analysis.consultationHistory[0];
 
-  const getReadinessBadge = (level: typeof analysis.readinessLevel) => {
-    switch (level) {
-      case 'Ready':
-        return <Badge tone="green">{t('consultation.ready')}</Badge>;
-      case 'Near Ready':
-        return <Badge tone="blue">{t('consultation.nearReady')}</Badge>;
-      case 'Developing':
-        return <Badge tone="amber">{t('consultation.developing')}</Badge>;
-      case 'Early Stage':
-        return <Badge tone="gray">{t('consultation.earlyStage')}</Badge>;
-    }
-  };
-
-  const getSkillStatusBadge = (status: 'strong' | 'present' | 'gap' | 'missing') => {
-    switch (status) {
-      case 'strong':
-        return (
-          <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-            <CheckCircle2 size={11} />
-            {isVietnamese ? 'Vững vàng' : 'Strong'}
-          </span>
-        );
-      case 'present':
-        return (
-          <span className="inline-flex items-center gap-1 rounded bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700">
-            {isVietnamese ? 'Hiện có' : 'Present'}
-          </span>
-        );
-      case 'gap':
-        return (
-          <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-            <AlertCircle size={11} />
-            {isVietnamese ? 'Khoảng trống' : 'Gap'}
-          </span>
-        );
-      case 'missing':
-        return (
-          <span className="inline-flex items-center gap-1 rounded bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
-            <X size={11} />
-            {isVietnamese ? 'Chưa có' : 'Missing'}
-          </span>
-        );
-    }
-  };
+  const dims = [
+    { key: 'formatting', score: resumeDetails.formattingScore },
+    { key: 'keyword', score: resumeDetails.keywordScore },
+    { key: 'impact', score: resumeDetails.impactScore },
+    { key: 'structure', score: resumeDetails.structureScore },
+  ] as const;
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="pb-[clamp(3rem,6vw,5rem)]">
+      {/* Back + actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-[13px]">
         <Link
           to="/consultant/candidates"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 transition"
+          className="inline-flex items-center gap-1.5 text-slate-600 transition-colors hover:text-brand"
         >
           <ArrowLeft size={14} />
-          <span>{isVietnamese ? 'Quay lại danh sách ứng viên' : 'Back to Candidates'}</span>
+          {c.back}
         </Link>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {analysis.consultantAdvice && (
-            <button
-              onClick={() => setActiveTab('advice')}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 bg-brand-50 border border-brand-200/80 px-3 py-1.5 rounded-xl hover:bg-brand-100 transition shadow-xs cursor-pointer"
-            >
-              <Lightbulb size={13} className="text-brand-600" />
-              <span>{isVietnamese ? 'Cung cấp Lời khuyên 4 Trụ Cột' : 'Provide 4-Pillar Advice'}</span>
-            </button>
-          )}
-
-          {analysis.consultationHistory.length > 0 && (
-            <Link
-              to={`/consultant/consultations/${analysis.consultationHistory[0].id}`}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 bg-brand-50 border border-brand-200/80 px-3 py-1.5 rounded-xl hover:bg-brand-100 transition shadow-xs"
-            >
-              <Calendar size={13} />
-              <span>
-                {isVietnamese ? 'Mở phiên tư vấn đang giao' : 'Open Assigned Consultation'} #{analysis.consultationHistory[0].id}
-              </span>
-              <ChevronRight size={13} />
-            </Link>
-          )}
-        </div>
+        {latestRequest && (
+          <Link to={`/consultant/consultations/${latestRequest.id}`} className={`${textLink} text-[13px] text-ink`}>
+            {c.openRequest(latestRequest.id)}
+            <ArrowRight size={13} />
+          </Link>
+        )}
       </div>
 
-      {/* Hero Header Card */}
-      <Card className="border-slate-200/90 shadow-sm bg-surface p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-4">
-            <img
-              src={candidate.avatar}
-              alt={candidate.name}
-              className="h-20 w-20 shrink-0 rounded-2xl object-cover border-2 border-white ring-2 ring-brand-100"
-            />
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight">
-                  {candidate.name}
-                </h1>
-                <ShieldCheck size={18} className="text-brand-600" />
-                {getReadinessBadge(analysis.readinessLevel)}
-                <span className="font-semibold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  ATS {resumeDetails.atsScore}/100
-                </span>
-              </div>
+      {/* Headline */}
+      <Headline
+        eyebrow={c.readiness[analysis.readinessLevel]}
+        line1={`${candidate.name}.`}
+        line2={c.line2(analysis.readinessScore, resumeDetails.atsScore)}
+        intro={
+          <>
+            <span>
+              {candidate.currentTitle} <span className="text-slate-400">→</span>{' '}
+              <span className="text-ink">{candidate.targetRole}</span>
+            </span>
+            <span className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+              <span>{candidate.email}</span>
+              <span>{candidate.phone}</span>
+              <span>{candidate.location}</span>
+              {candidate.github && (
+                <a href={candidate.github} target="_blank" rel="noreferrer" className={`${textLink} text-sm text-slate-600`}>
+                  GitHub
+                  <ExternalLink size={12} />
+                </a>
+              )}
+            </span>
+          </>
+        }
+        aside={<Avatar src={candidate.avatar} name={candidate.name} size="lg" />}
+      >
+        {analysis.consultantAdvice && (
+          <button type="button" onClick={() => setActiveTab('advice')} className={primaryButton}>
+            {c.giveAdvice}
+            <ArrowRight size={16} />
+          </button>
+        )}
+      </Headline>
 
-              <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                <span className="text-slate-800">{candidate.currentTitle}</span>
-                <span className="text-slate-400 mx-1.5">→</span>
-                <span className="font-medium text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md">
-                  {candidate.targetRole}
-                </span>
-              </p>
-
-              {/* Contact Chips */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 pt-1">
-                <span className="flex items-center gap-1">
-                  <Mail size={13} className="text-slate-400" />
-                  <span>{candidate.email}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <Phone size={13} className="text-slate-400" />
-                  <span>{candidate.phone}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <MapPin size={13} className="text-slate-400" />
-                  <span>{candidate.location}</span>
-                </span>
-                {candidate.github && (
-                  <a
-                    href={candidate.github}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-brand-600 hover:underline"
-                  >
-                    <Globe size={13} />
-                    <span>GitHub</span>
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Metrics Column */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 shrink-0 border-t lg:border-t-0 pt-3 lg:pt-0">
-            <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100 text-center">
-              <span className="text-[10px] uppercase font-medium text-slate-400 block">
-                Mức Lương Kỳ Vọng
-              </span>
-              <span className="font-medium text-xs text-slate-800 line-clamp-1">
-                {analysis.expectedSalary.split('(')[0]}
-              </span>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100 text-center">
-              <span className="text-[10px] uppercase font-medium text-slate-400 block">
-                Độ Phù Hợp (Fit)
-              </span>
-              <span className="font-semibold text-sm text-brand-700">
-                {skillGap.overallFitScore}%
-              </span>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100 text-center col-span-2 sm:col-span-1">
-              <span className="text-[10px] uppercase font-medium text-slate-400 block">
-                Độ Sẵn Sàng (Readiness)
-              </span>
-              <span className="font-semibold text-sm text-emerald-700">
-                {analysis.readinessScore}%
-              </span>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Main Tab Bar */}
-      <div className="flex border-b border-slate-200 overflow-x-auto space-x-2">
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${activeTab === 'profile'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <User size={16} />
-          <span>{t('consultation.tabCareerProfile')}</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('ats')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${activeTab === 'ats'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <FileText size={16} />
-          <span>{t('consultation.tabCvAtsAnalysis')}</span>
-          <span className="rounded-full bg-emerald-100 px-1.5 py-0.2 text-[10px] font-medium text-emerald-800">
-            {resumeDetails.atsScore}
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab('assessment')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${activeTab === 'assessment'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <Award size={16} />
-          <span>{t('consultation.tabSkillAssessments')}</span>
-          <span className="rounded-full bg-brand-100 px-1.5 py-0.2 text-[10px] font-medium text-brand-800">
-            {skillAssessments.length}
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab('gap')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${activeTab === 'gap'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <Target size={16} />
-          <span>{t('consultation.tabSkillGapFit')}</span>
-          <span className="rounded-full bg-brand-100 px-1.5 py-0.2 text-[10px] font-medium text-brand-800">
-            {skillGap.overallFitScore}%
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab('advice')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${activeTab === 'advice'
-              ? 'border-brand-600 text-brand-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <Lightbulb size={16} className="text-brand-600" />
-          <span>{t('consultation.tabConsultantAdvice')}</span>
-          <span className="rounded-full bg-brand-100 px-1.5 py-0.2 text-[10px] font-medium text-brand-800">
-            4 Pillars
-          </span>
-        </button>
+      <div className="mt-[clamp(2rem,4vw,3rem)]">
+        <StatRow
+          items={[
+            {
+              label: c.stats.fit,
+              value: (
+                <>
+                  {skillGap.overallFitScore}
+                  <span className="text-[0.55em] text-slate-400">%</span>
+                </>
+              ),
+              detail: c.stats.fitDetail(skillGap.targetJobTitle),
+            },
+            {
+              label: c.stats.readiness,
+              value: (
+                <>
+                  {analysis.readinessScore}
+                  <span className="text-[0.55em] text-slate-400">%</span>
+                </>
+              ),
+              detail: c.readiness[analysis.readinessLevel],
+            },
+            {
+              label: c.stats.ats,
+              value: (
+                <>
+                  {resumeDetails.atsScore}
+                  <span className="text-[0.55em] text-slate-400">/100</span>
+                </>
+              ),
+              detail: c.stats.atsDetail(resumeDetails.grade),
+            },
+            {
+              label: c.stats.profile,
+              value: (
+                <>
+                  {analysis.profileCompletion}
+                  <span className="text-[0.55em] text-slate-400">%</span>
+                </>
+              ),
+              detail: c.stats.profileDetail(analysis.availability),
+            },
+          ]}
+        />
       </div>
 
-      {/* TAB CONTENT PANELS */}
-      <div className="space-y-6">
-        {/* TAB 1: Career Profile & Background */}
+      {/* Tabs */}
+      <div className="mt-10">
+        <UnderlineTabs
+          size="lg"
+          value={activeTab}
+          onChange={setActiveTab}
+          tabs={[
+            { value: 'profile', label: c.tabs.profile },
+            { value: 'ats', label: c.tabs.ats, count: resumeDetails.atsScore },
+            { value: 'assessment', label: c.tabs.assessment, count: skillAssessments.length },
+            { value: 'gap', label: c.tabs.gap, count: `${skillGap.overallFitScore}%` },
+            { value: 'advice', label: c.tabs.advice },
+          ]}
+        />
+      </div>
+
+      <div className="mt-[clamp(2rem,4vw,3rem)]">
+        {/* ── Profile ───────────────────────────────────────────── */}
         {activeTab === 'profile' && (
-          <div className="grid gap-6 xl:grid-cols-[1.8fr_1.2fr]">
-            {/* Left: Goals, Work History & Projects */}
-            <div className="space-y-6">
-              {/* Career Goal */}
-              <Card>
-                <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                  <Target size={17} className="text-brand-600" />
-                  <h3 className="font-medium text-sm text-slate-900">
-                    {isVietnamese ? 'Mục Tiêu Sự Nghiệp & Định Hướng' : 'Career Objective'}
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+          <div className="grid gap-x-[clamp(2rem,4vw,4.5rem)] gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)]">
+            <div className="min-w-0 space-y-14">
+              <section>
+                <SectionHead index="01" title={c.goal} />
+                <p className="pt-5 text-[clamp(1.0625rem,1.5vw,1.3125rem)] leading-[1.7] text-ink">
                   {analysis.careerGoal}
                 </p>
-              </Card>
+              </section>
 
-              {/* Work Experience */}
-              <Card>
-                <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Briefcase size={17} className="text-brand-600" />
-                    <h3 className="font-medium text-sm text-slate-900">
-                      {t('consultation.workExperienceTitle')}
-                    </h3>
-                  </div>
-                  <Badge tone="blue">{candidate.yearsOfExperience} năm</Badge>
-                </div>
-
-                <div className="space-y-5 text-xs">
+              <section>
+                <SectionHead index="02" title={c.experience} meta={c.years(candidate.yearsOfExperience)} />
+                <ol>
                   {resumeDetails.workExperience.map((exp, idx) => (
-                    <div key={idx} className="relative pl-5 before:absolute before:left-1 before:top-2 before:bottom-0 before:w-0.5 before:bg-brand-200">
-                      <span className="absolute -left-1 top-1.5 h-2.5 w-2.5 rounded-full bg-brand-600 ring-4 ring-white" />
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center justify-between gap-1">
-                          <h4 className="font-medium text-slate-900 text-sm">{exp.role}</h4>
-                          <span className="font-mono text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                            {exp.duration}
-                          </span>
-                        </div>
-                        <p className="font-semibold text-brand-700">{exp.company}</p>
-                        <p className="text-slate-600 text-xs pt-1">{exp.description}</p>
-                        <ul className="mt-2 space-y-1 pl-4 list-disc text-slate-700">
+                    <li key={idx} className="grid gap-x-8 gap-y-2 border-b border-border py-6 md:grid-cols-[10rem_minmax(0,1fr)]">
+                      <p className="text-[13px] tabular-nums text-slate-500">{exp.duration}</p>
+                      <div className="min-w-0">
+                        <h4 className="text-[17px] text-ink">{exp.role}</h4>
+                        <p className="text-sm text-brand">{exp.company}</p>
+                        <p className="mt-2 text-[15px] leading-7 text-slate-600">{exp.description}</p>
+                        <ul className="mt-3 space-y-1.5">
                           {exp.highlights.map((hl, hIdx) => (
-                            <li key={hIdx} className="leading-relaxed">
+                            <li key={hIdx} className="flex gap-3 text-sm leading-6 text-slate-700">
+                              <span className="mt-[0.7rem] h-px w-3 shrink-0 bg-slate-400" aria-hidden />
                               {hl}
                             </li>
                           ))}
                         </ul>
                       </div>
-                    </div>
+                    </li>
                   ))}
-                </div>
-              </Card>
+                </ol>
+              </section>
 
-              {/* Featured Projects */}
-              <Card>
-                <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <FolderGit2 size={17} className="text-brand-600" />
-                  <h3 className="font-medium text-sm text-slate-900">
-                    {t('consultation.projectsTitle')}
-                  </h3>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2 text-xs">
+              <section>
+                <SectionHead index="03" title={c.projects} />
+                <ol>
                   {resumeDetails.projects.map((proj, idx) => (
-                    <div key={idx} className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 space-y-2">
-                      <div className="flex items-start justify-between gap-1">
-                        <h4 className="font-medium text-slate-900 text-sm">{proj.name}</h4>
-                        {proj.link && (
-                          <a href={proj.link} target="_blank" rel="noreferrer" className="text-brand-600 hover:text-brand-800">
-                            <ExternalLink size={14} />
-                          </a>
-                        )}
+                    <li key={idx} className="grid gap-x-8 gap-y-2 border-b border-border py-6 md:grid-cols-[10rem_minmax(0,1fr)]">
+                      <p className="text-[13px] text-slate-500">
+                        <span className="tabular-nums text-slate-400">{pad2(idx + 1)}</span> · {proj.role}
+                      </p>
+                      <div className="min-w-0">
+                        <h4 className="flex items-baseline gap-2 text-[17px] text-ink">
+                          {proj.name}
+                          {proj.link && (
+                            <a
+                              href={proj.link}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={proj.name}
+                              className="text-slate-400 transition-colors hover:text-brand"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
+                          )}
+                        </h4>
+                        <p className="mt-1.5 text-[15px] leading-7 text-slate-600">{proj.description}</p>
+                        <p className="mt-2 text-[13px] text-slate-500">{proj.techStack.join(' · ')}</p>
                       </div>
-                      <p className="text-slate-500 font-medium text-[11px]">{proj.role}</p>
-                      <p className="text-slate-600 leading-relaxed">{proj.description}</p>
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {proj.techStack.map((tech) => (
-                          <span key={tech} className="rounded bg-surface border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                    </li>
                   ))}
-                </div>
-              </Card>
+                </ol>
+              </section>
             </div>
 
-            {/* Right: Skill Matrix & Education */}
-            <div className="space-y-6">
-              {/* Skill Matrix */}
-              <Card>
-                <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <Layers size={17} className="text-brand-600" />
-                    <h3 className="font-medium text-sm text-slate-900">
-                      {t('consultation.skillMatrixTitle')}
-                    </h3>
-                  </div>
-                </div>
+            <aside className="min-w-0 space-y-12">
+              <section>
+                <SectionHead index="04" title={c.skills} />
+                <p className="mt-5 text-[13px] text-slate-500">{c.technical}</p>
+                <ul className="mt-1">
+                  {candidate.topSkills.map((sk) => (
+                    <li key={sk} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 text-sm">
+                      <span className="text-ink">{sk}</span>
+                      <span className="text-[13px] text-slate-500">{c.level}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-5 text-[13px] text-slate-500">{c.soft}</p>
+                <p className="mt-1 text-sm leading-6 text-ink">{SOFT_SKILLS.join(' · ')}</p>
+              </section>
 
-                <div className="space-y-4 text-xs">
-                  <div>
-                    <span className="font-medium text-slate-400 uppercase tracking-wider text-[11px] block mb-2">
-                      {t('consultation.technicalSkills')}
-                    </span>
-                    <div className="space-y-2">
-                      {candidate.topSkills.map((sk) => (
-                        <div key={sk} className="flex items-center justify-between">
-                          <span className="font-semibold text-slate-800">{sk}</span>
-                          <span className="font-medium text-brand-700 bg-brand-50 px-2 py-0.5 rounded text-[11px]">
-                            Advanced / Expert
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-3">
-                    <span className="font-medium text-slate-400 uppercase tracking-wider text-[11px] block mb-2">
-                      {t('consultation.softSkills')}
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium text-xs">
-                        Problem Solving & Architecture
-                      </span>
-                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium text-xs">
-                        Team Leadership & Mentoring
-                      </span>
-                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium text-xs">
-                        Agile / Scrum
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Education */}
-              <Card>
-                <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                  <BookOpen size={17} className="text-brand-600" />
-                  <h3 className="font-medium text-sm text-slate-900">
-                    {t('consultation.educationTitle')}
-                  </h3>
-                </div>
-                <div className="space-y-3 text-xs">
+              <section>
+                <SectionHead index="05" title={c.education} />
+                <ul>
                   {resumeDetails.education.map((edu, idx) => (
-                    <div key={idx} className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                      <p className="font-medium text-slate-900 text-sm">{edu.school}</p>
-                      <p className="text-brand-700 font-semibold">{edu.degree}</p>
-                      <div className="flex items-center justify-between text-slate-500 pt-1 text-[11px]">
+                    <li key={idx} className="border-b border-border py-4">
+                      <p className="text-[15px] text-ink">{edu.school}</p>
+                      <p className="text-sm text-slate-600">{edu.degree}</p>
+                      <p className="mt-1 flex justify-between text-[13px] tabular-nums text-slate-500">
                         <span>{edu.years}</span>
-                        {edu.gpa && <span className="font-medium text-emerald-700">GPA: {edu.gpa}</span>}
-                      </div>
+                        {edu.gpa && <span>GPA {edu.gpa}</span>}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section>
+                <SectionHead index="06" title={c.preferences} />
+                <dl className="text-sm">
+                  {[
+                    [c.availability, analysis.availability],
+                    [c.employment, analysis.employmentType],
+                    [c.expected, analysis.expectedSalary.split('(')[0]],
+                  ].map(([label, value]) => (
+                    <div key={label} className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-3 border-b border-border py-2.5">
+                      <dt className="text-slate-500">{label}</dt>
+                      <dd className="text-ink">{value}</dd>
                     </div>
                   ))}
-                </div>
-              </Card>
-            </div>
+                </dl>
+              </section>
+            </aside>
           </div>
         )}
 
-        {/* TAB 2: CV & ATS Deep Audit */}
+        {/* ── CV & ATS ──────────────────────────────────────────── */}
         {activeTab === 'ats' && (
-          <div className="space-y-6">
-            {/* ATS Overview Header Banner */}
-            <Card className="border-emerald-200 bg-emerald-50/50 p-6">
-              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-emerald-600 text-white font-semibold text-2xl shadow-sm">
-                    {resumeDetails.atsScore}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-medium text-slate-900">
-                        {resumeDetails.name}
-                      </h3>
-                      <Badge tone="green">Grade {resumeDetails.grade}</Badge>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1">
-                      Xác suất vượt qua vòng lọc CV tự động của doanh nghiệp:{' '}
-                      <strong className="text-emerald-700 font-medium">{resumeDetails.passProbability}%</strong>
-                    </p>
-                    <span className="text-[11px] text-slate-400 block mt-0.5">
-                      Cập nhật lần cuối: {resumeDetails.lastUpdated}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  <Button
-                    variant="primary"
-                    className="gap-1.5 text-xs shadow-xs"
-                    onClick={() => setShowCvModal(true)}
-                  >
-                    <FileText size={15} />
-                    <span>Xem toàn văn bản CV</span>
-                  </Button>
-                </div>
-              </div>
-            </Card>
-
-            {/* 4 ATS Dimension Breakdown Gauges */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-600">{t('consultation.formattingScore')}</span>
-                  <span className="font-semibold text-sm text-emerald-600">{resumeDetails.formattingScore}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${resumeDetails.formattingScore}%` }} />
-                </div>
-                <span className="text-[11px] text-slate-500 mt-2 block">
-                  Định dạng 1 cột, không dùng bảng chia, phông chữ chuẩn ATS.
-                </span>
-              </Card>
-
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-600">{t('consultation.keywordRelevance')}</span>
-                  <span className="font-semibold text-sm text-brand-600">{resumeDetails.keywordScore}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-brand-500" style={{ width: `${resumeDetails.keywordScore}%` }} />
-                </div>
-                <span className="text-[11px] text-slate-500 mt-2 block">
-                  Khớp 10/14 từ khóa trọng tâm của vị trí Senior Frontend.
-                </span>
-              </Card>
-
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-600">{t('consultation.impactMetricsScore')}</span>
-                  <span className="font-semibold text-sm text-amber-600">{resumeDetails.impactScore}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-amber-500" style={{ width: `${resumeDetails.impactScore}%` }} />
-                </div>
-                <span className="text-[11px] text-slate-500 mt-2 block">
-                  Cần bổ sung thêm % đo lường kết quả theo công thức STAR.
-                </span>
-              </Card>
-
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-600">{t('consultation.structureScore')}</span>
-                  <span className="font-semibold text-sm text-brand-600">{resumeDetails.structureScore}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-brand-500" style={{ width: `${resumeDetails.structureScore}%` }} />
-                </div>
-                <span className="text-[11px] text-slate-500 mt-2 block">
-                  Cấu trúc đầy đủ: Kinh nghiệm, Học vấn, Kỹ năng, Dự án.
-                </span>
-              </Card>
-            </div>
-
-            {/* Keyword Deep Comparison */}
-            <Card>
-              <h3 className="font-medium text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2">
-                So Sánh Đối Chiếu Từ Khóa Chuyên Ngành (ATS Keyword Audit)
-              </h3>
-
-              <div className="grid gap-5 md:grid-cols-2 text-xs">
-                {/* Matched */}
-                <div className="rounded-xl bg-emerald-50/50 p-4 border border-emerald-100 space-y-2">
-                  <div className="flex items-center gap-1.5 font-medium text-emerald-800">
-                    <CheckCircle2 size={16} className="text-emerald-600" />
-                    <span>{t('consultation.matchedKeywords')} ({resumeDetails.matchedKeywords.length})</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {resumeDetails.matchedKeywords.map((kw) => (
-                      <span key={kw} className="rounded-md bg-surface border border-emerald-200 px-2 py-1 text-emerald-800 font-medium">
-                        ✓ {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Missing */}
-                <div className="rounded-xl bg-amber-50/50 p-4 border border-amber-100 space-y-2">
-                  <div className="flex items-center gap-1.5 font-medium text-amber-800">
-                    <AlertCircle size={16} className="text-amber-600" />
-                    <span>{t('consultation.missingKeywords')} ({resumeDetails.missingKeywords.length})</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {resumeDetails.missingKeywords.map((kw) => (
-                      <span key={kw} className="rounded-md bg-surface border border-amber-200 px-2 py-1 text-amber-800 font-medium">
-                        + {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* AI Improvement Recommendations */}
-            <Card className="border-brand-200">
-              <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                <Lightbulb size={17} className="text-brand-600" />
-                <h3 className="font-medium text-sm text-slate-900">
-                  {t('consultation.aiSuggestions')}
-                </h3>
-              </div>
-              <div className="space-y-2 text-xs">
-                {resumeDetails.improvements.map((imp, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 rounded-xl bg-brand-50/40 p-3 border border-brand-100/60">
-                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-600 text-white font-medium text-[10px]">
-                      {idx + 1}
-                    </span>
-                    <p className="text-slate-800 leading-relaxed font-medium">{imp}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* TAB 3: Skill Assessments Verification */}
-        {activeTab === 'assessment' && (
-          <div className="space-y-6">
-            <Card className="border-brand-200 bg-brand-50/40">
-              <div className="flex items-center gap-2 mb-1">
-                <Award size={18} className="text-brand-600" />
-                <h3 className="font-medium text-sm text-brand-900">
-                  Kiểm Định Năng Lực Trắc Nghiệm Thực Tế (AI Verified Skills)
-                </h3>
-              </div>
-              <p className="text-xs text-slate-600">
-                Các bài đánh giá kỹ năng trắc nghiệm chuyên sâu giúp Cố vấn xác thực độ chính xác của những gì ứng viên kê khai trên CV.
+          <div className="space-y-14">
+            <section className="grid gap-6 border-y border-ink py-6 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-10">
+              <p className="text-[clamp(3.5rem,7vw,5.5rem)] font-normal leading-none tracking-[-0.04em] tabular-nums text-ink">
+                {resumeDetails.atsScore}
+                <span className="ml-1 text-[0.3em] tracking-normal text-slate-400">/100</span>
               </p>
-            </Card>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {skillAssessments.map((test) => (
-                <Card key={test.topicId} className="space-y-3.5 border-slate-200/90 hover:border-brand-300 transition">
-                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
-                    <div>
-                      <h4 className="font-medium text-slate-900 text-sm">{test.topicName}</h4>
-                      <span className="text-[11px] text-slate-400">
-                        {test.completedAt} · Thời gian: {test.timeSpent}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-lg font-semibold text-brand-700 block">
-                        {test.score}%
-                      </span>
-                      <span className="text-[10px] font-medium uppercase bg-brand-100 text-brand-800 px-1.5 py-0.2 rounded">
-                        Hạng {test.grade}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-xs">
-                    <div>
-                      <span className="font-medium text-slate-500 uppercase tracking-wider text-[10px] block mb-1">
-                        Điểm Mạnh Nhận Diện Được
-                      </span>
-                      <ul className="space-y-1">
-                        {test.strengths.map((s, idx) => (
-                          <li key={idx} className="flex items-center gap-1.5 text-emerald-800">
-                            <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
-                            <span>{s}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <span className="font-medium text-slate-500 uppercase tracking-wider text-[10px] block mb-1">
-                        Lỗ Hổng Cần Lưu Ý
-                      </span>
-                      <ul className="space-y-1">
-                        {test.weaknesses.map((w, idx) => (
-                          <li key={idx} className="flex items-center gap-1.5 text-amber-800">
-                            <AlertCircle size={12} className="text-amber-600 shrink-0" />
-                            <span>{w}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Consultant Prompt */}
-                    <div className="rounded-xl bg-brand-50 p-3 border border-brand-100 text-[11px] text-brand-900">
-                      <strong className="block text-brand-800 font-medium mb-0.5">
-                        {t('consultation.consultantAdvisoryNote')}:
-                      </strong>
-                      <p className="italic">{test.consultantPrompt}</p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: Skill Gap & Fit Analysis */}
-        {activeTab === 'gap' && (
-          <div className="space-y-6">
-            {/* Target Benchmark Hero Card */}
-            <Card className="border-brand-200 bg-brand-600 text-white p-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <span className="rounded-md bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
-                    {t('consultation.targetBenchmark')}
+              <div className="min-w-0">
+                <p className="text-[clamp(1.125rem,1.6vw,1.375rem)] text-ink">
+                  {resumeDetails.name}
+                  <span className="ml-3 text-sm text-brand">
+                    {c.grade} {resumeDetails.grade}
                   </span>
-                  <h3 className="mt-1.5 text-xl font-medium text-white">
-                    {skillGap.targetJobTitle}
-                  </h3>
-                  <p className="text-xs text-brand-100 mt-0.5">
-                    Benchmark tiêu chuẩn: {skillGap.companyBenchmark}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">{c.atsLine(resumeDetails.passProbability)}</p>
+                <p className="mt-0.5 text-[13px] text-slate-400">
+                  {c.updated} {resumeDetails.lastUpdated}
+                </p>
+              </div>
+              <button type="button" onClick={() => setShowCvModal(true)} className={`${textLink} justify-self-start text-ink`}>
+                {c.viewCv}
+              </button>
+            </section>
+
+            <section>
+              <SectionHead index="01" title={c.breakdown} />
+              <div className="grid gap-x-10 sm:grid-cols-2">
+                {dims.map((d) => {
+                  const [label, note] = c.dims[d.key];
+                  return (
+                    <div key={d.key} className="border-b border-border py-5">
+                      <div className="mb-2.5 flex items-baseline justify-between gap-4">
+                        <span className="text-[15px] text-ink">{label}</span>
+                        <span className="text-[clamp(1.25rem,1.8vw,1.5rem)] leading-none tabular-nums text-ink">
+                          {d.score}
+                          <span className="text-xs text-slate-400">%</span>
+                        </span>
+                      </div>
+                      <ThinBar value={d.score} tone={d.score < 70 ? 'warning' : 'brand'} />
+                      <p className="mt-2.5 text-[13px] text-slate-500">{note}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section>
+              <SectionHead index="02" title={c.keywords} />
+              <div className="grid gap-x-10 md:grid-cols-2">
+                <div>
+                  <p className="border-b border-border py-3 text-[13px] text-slate-500">
+                    {c.matched} <span className="tabular-nums">· {resumeDetails.matchedKeywords.length}</span>
                   </p>
+                  <ul>
+                    {resumeDetails.matchedKeywords.map((kw) => (
+                      <li key={kw} className="flex items-center gap-3 border-b border-border py-2.5 text-sm text-ink">
+                        <Check size={14} className="shrink-0 text-brand" />
+                        {kw}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-
-                <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-white/20 pt-3 md:pt-0 md:pl-5">
-                  <div className="text-center">
-                    <span className="text-[11px] uppercase tracking-wider text-brand-100 block">
-                      Độ Phù Hợp (Fit)
-                    </span>
-                    <span className="text-2xl font-semibold text-white">
-                      {skillGap.overallFitScore}%
-                    </span>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-[11px] uppercase tracking-wider text-brand-100 block">
-                      Thời Gian Đạt Chuẩn
-                    </span>
-                    <span className="text-2xl font-semibold text-emerald-300">
-                      ~{skillGap.estimatedWeeksToReady} tuần
-                    </span>
-                  </div>
+                <div>
+                  <p className="border-b border-border py-3 text-[13px] text-slate-500">
+                    {c.missing} <span className="tabular-nums">· {resumeDetails.missingKeywords.length}</span>
+                  </p>
+                  <ul>
+                    {resumeDetails.missingKeywords.map((kw) => (
+                      <li key={kw} className="flex items-center gap-3 border-b border-border py-2.5 text-sm text-slate-700">
+                        <span className="h-px w-3.5 shrink-0 bg-amber-500" aria-hidden />
+                        {kw}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-            </Card>
+            </section>
 
-            {/* Detailed Skills Comparison Table */}
-            <Card>
-              <h3 className="font-medium text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2.5">
-                Bảng So Sánh Năng Lực Ứng Viên vs Yêu Cầu Vị Trí Mục Tiêu
-              </h3>
-
-              <div className="divide-y divide-slate-100 text-xs">
-                {skillGap.skillsAnalysis.map((sk) => (
-                  <div key={sk.name} className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div className="min-w-0 space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-900 text-sm">{sk.name}</span>
-                        {getSkillStatusBadge(sk.status)}
-                        {sk.importance === 'critical' && (
-                          <span className="text-[10px] font-medium text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.2 rounded">
-                            Bắt buộc
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-slate-400">{sk.category}</span>
-                    </div>
-
-                    <div className="flex items-center gap-4 shrink-0">
-                      <div className="w-36 space-y-1">
-                        <div className="flex justify-between text-[11px]">
-                          <span className="text-slate-500">Ứng viên: <strong>{sk.candidateLevel}%</strong></span>
-                          <span className="text-slate-500">Chuẩn: <strong>{sk.requiredLevel}%</strong></span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${sk.candidateLevel >= sk.requiredLevel ? 'bg-emerald-500' : 'bg-amber-500'
-                              }`}
-                            style={{ width: `${sk.candidateLevel}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <section>
+              <SectionHead index="03" title={c.improvements} />
+              <ol>
+                {resumeDetails.improvements.map((imp, idx) => (
+                  <li key={idx} className="flex gap-5 border-b border-border py-4">
+                    <span className="pt-1 text-xs tabular-nums text-slate-400">{pad2(idx + 1)}</span>
+                    <p className="text-[15px] leading-7 text-ink">{imp}</p>
+                  </li>
                 ))}
-              </div>
-            </Card>
-
-            {/* Critical Gaps & Quick Wins 2-column */}
-            <div className="grid gap-6 md:grid-cols-2 text-xs">
-              {/* Critical Gaps */}
-              <Card className="border-red-200 bg-red-50/20">
-                <div className="flex items-center gap-2 mb-2.5 text-red-800 font-medium text-sm">
-                  <AlertCircle size={16} className="text-red-600" />
-                  <span>{t('consultation.criticalGapsTitle')}</span>
-                </div>
-                <div className="space-y-2">
-                  {skillGap.criticalGaps.map((gap, idx) => (
-                    <div key={idx} className="rounded-xl bg-surface p-3 border border-red-100 text-slate-800 leading-relaxed">
-                      {gap}
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Quick Wins */}
-              <Card className="border-emerald-200 bg-emerald-50/20">
-                <div className="flex items-center gap-2 mb-2.5 text-emerald-800 font-medium text-sm">
-                  <Lightbulb size={16} className="text-emerald-600" />
-                  <span>{t('consultation.quickWinsTitle')}</span>
-                </div>
-                <div className="space-y-2">
-                  {skillGap.quickWins.map((win, idx) => (
-                    <div key={idx} className="rounded-xl bg-surface p-3 border border-emerald-100 text-slate-800 leading-relaxed">
-                      {win}
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* 4-Week Action Roadmap */}
-            <Card>
-              <h3 className="font-medium text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2.5">
-                {t('consultation.actionRoadmapTitle')} (Gợi ý Cố vấn hướng dẫn ứng viên)
-              </h3>
-              <div className="grid gap-2.5 sm:grid-cols-2 text-xs">
-                {skillGap.actionRoadmap.map((step, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 rounded-xl bg-slate-50 p-3 border border-slate-100">
-                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-brand-600 text-white font-medium text-xs">
-                      {idx + 1}
-                    </span>
-                    <p className="text-slate-800 leading-relaxed font-medium">{step}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Market Salary Valuation & Negotiation Strategy */}
-            <Card className="border-amber-200 bg-amber-50/30">
-              <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-2.5">
-                <DollarSign size={18} className="text-amber-600" />
-                <h3 className="font-medium text-sm text-slate-900">
-                  {t('consultation.salaryBenchmarkTitle')}
-                </h3>
-              </div>
-
-              <div className="space-y-4 text-xs">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
-                  <div className="rounded-xl bg-surface p-3 border border-slate-200">
-                    <span className="text-[11px] text-slate-400 block">{t('consultation.marketMedianSalary')}</span>
-                    <span className="font-medium text-sm text-slate-900">
-                      {salaryBenchmark.medianVND.toLocaleString('vi-VN')} đ/tháng (${salaryBenchmark.medianUSD})
-                    </span>
-                  </div>
-                  <div className="rounded-xl bg-surface p-3 border border-slate-200">
-                    <span className="text-[11px] text-slate-400 block">{t('consultation.candidateExpectedSalary')}</span>
-                    <span className="font-medium text-sm text-brand-700">
-                      {salaryBenchmark.candidateExpected}
-                    </span>
-                  </div>
-                  <div className="rounded-xl bg-surface p-3 border border-slate-200 col-span-2 sm:col-span-1">
-                    <span className="text-[11px] text-slate-400 block">Đánh Giá Thị Trường</span>
-                    <span className="font-medium text-sm text-emerald-600">Hợp lý & Khả thi</span>
-                  </div>
-                </div>
-
-                <div className="rounded-xl bg-amber-50/60 p-3.5 border border-amber-200/80 text-amber-950">
-                  <strong className="block font-medium mb-1">
-                    {t('consultation.salaryStrategy')}:
-                  </strong>
-                  <p className="leading-relaxed">{salaryBenchmark.negotiationStrategy}</p>
-                </div>
-              </div>
-            </Card>
+              </ol>
+            </section>
           </div>
         )}
 
-        {/* TAB 5: Provide Consultation Advice across 4 Core Pillars */}
-        {activeTab === 'advice' && analysis.consultantAdvice && (
-          <Card className="border-brand-200 shadow-xs">
+        {/* ── Skill tests ───────────────────────────────────────── */}
+        {activeTab === 'assessment' && (
+          <section>
+            <SectionHead index="01" title={c.tests} meta={skillAssessments.length} />
+            <p className="mt-4 max-w-2xl text-[15px] leading-7 text-slate-600">{c.assessmentIntro}</p>
+            <ol className="mt-4">
+              {skillAssessments.map((test, idx) => (
+                <li key={test.topicId} className="border-b border-border py-7">
+                  <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+                    <div className="min-w-0">
+                      <p className="text-xs tabular-nums text-slate-400">{pad2(idx + 1)}</p>
+                      <h4 className="mt-1 text-[clamp(1.125rem,1.6vw,1.375rem)] text-ink">{test.topicName}</h4>
+                      <p className="mt-1 text-[13px] text-slate-500">
+                        {test.completedAt} · {c.time} {test.timeSpent} · {c.correct(test.correctAnswers, test.totalQuestions)}
+                      </p>
+                    </div>
+                    <p className="text-right">
+                      <span className="text-[clamp(2rem,3.5vw,2.75rem)] leading-none tabular-nums text-ink">
+                        {test.score}
+                        <span className="text-[0.45em] text-slate-400">%</span>
+                      </span>
+                      <span className="ml-3 text-sm text-brand">
+                        {c.grade} {test.grade}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="mt-4">
+                    <ThinBar value={test.score} />
+                  </div>
+                  <div className="mt-5 grid gap-x-10 gap-y-5 md:grid-cols-2">
+                    <div>
+                      <p className="text-[13px] text-slate-500">{c.strengths}</p>
+                      <ul className="mt-2 space-y-1.5">
+                        {test.strengths.map((s, i) => (
+                          <li key={i} className="flex gap-2.5 text-sm leading-6 text-ink">
+                            <Check size={14} className="mt-1 shrink-0 text-brand" />
+                            {s}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-[13px] text-slate-500">{c.weaknesses}</p>
+                      <ul className="mt-2 space-y-1.5">
+                        {test.weaknesses.map((w, i) => (
+                          <li key={i} className="flex gap-2.5 text-sm leading-6 text-slate-700">
+                            <span className="mt-[0.7rem] h-px w-3 shrink-0 bg-amber-500" aria-hidden />
+                            {w}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <p className="mt-5 border-l-2 border-brand pl-4 text-sm leading-6 text-slate-700">
+                    <span className="mb-0.5 block text-[13px] text-brand">{c.prompt}</span>
+                    {test.consultantPrompt}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {/* ── Skill gap ─────────────────────────────────────────── */}
+        {activeTab === 'gap' && (
+          <div className="space-y-14">
+            <section className="grid gap-6 border-y border-ink py-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div className="min-w-0">
+                <p className="text-[13px] text-slate-500">{c.target}</p>
+                <h3 className="mt-1 text-[clamp(1.375rem,2.4vw,2rem)] font-normal leading-tight tracking-[-0.015em] text-ink">
+                  {skillGap.targetJobTitle}
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  {c.benchmark}: {skillGap.companyBenchmark}
+                </p>
+              </div>
+              <div className="flex gap-10">
+                <p>
+                  <span className="block text-[clamp(2.25rem,4vw,3.25rem)] leading-none tabular-nums text-brand">
+                    {skillGap.overallFitScore}
+                    <span className="text-[0.45em]">%</span>
+                  </span>
+                  <span className="text-[13px] text-slate-500">{skillGap.fitLevel}</span>
+                </p>
+                <p>
+                  <span className="block text-[clamp(2.25rem,4vw,3.25rem)] leading-none tabular-nums text-ink">
+                    {skillGap.estimatedWeeksToReady}
+                  </span>
+                  <span className="text-[13px] text-slate-500">{c.weeks(skillGap.estimatedWeeksToReady)}</span>
+                </p>
+              </div>
+            </section>
+
+            <section>
+              <SectionHead index="01" title={c.compare} meta={c.compareMeta} />
+              <ul>
+                {skillGap.skillsAnalysis.map((sk) => (
+                  <li
+                    key={sk.name}
+                    className="grid gap-x-8 gap-y-2 border-b border-border py-4 md:grid-cols-[minmax(0,1fr)_minmax(12rem,20rem)] md:items-center"
+                  >
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-baseline gap-x-3 text-[15px] text-ink">
+                        {sk.name}
+                        <span className={`text-[13px] ${statusTone(sk.status)}`}>{c.status[sk.status]}</span>
+                        {sk.importance === 'critical' && <span className="text-[13px] text-danger">{c.critical}</span>}
+                      </p>
+                      <p className="text-[13px] text-slate-500">{sk.category}</p>
+                    </div>
+                    <div>
+                      <div className="mb-2 flex justify-between text-xs tabular-nums text-slate-500">
+                        <span>
+                          {c.candidateLevel} <span className="text-ink">{sk.candidateLevel}%</span>
+                        </span>
+                        <span>
+                          {c.required} <span className="text-ink">{sk.requiredLevel}%</span>
+                        </span>
+                      </div>
+                      <ThinBar
+                        value={sk.candidateLevel}
+                        marker={sk.requiredLevel}
+                        tone={sk.candidateLevel >= sk.requiredLevel ? 'brand' : 'warning'}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <div className="grid gap-x-10 gap-y-14 md:grid-cols-2">
+              <section>
+                <SectionHead index="02" title={c.gaps} />
+                <ol>
+                  {skillGap.criticalGaps.map((gap, idx) => (
+                    <li key={idx} className="flex gap-4 border-b border-border py-4 text-[15px] leading-7 text-ink">
+                      <span className="pt-1 text-xs tabular-nums text-slate-400">{pad2(idx + 1)}</span>
+                      {gap}
+                    </li>
+                  ))}
+                </ol>
+              </section>
+              <section>
+                <SectionHead index="03" title={c.quickWins} />
+                <ol>
+                  {skillGap.quickWins.map((win, idx) => (
+                    <li key={idx} className="flex gap-4 border-b border-border py-4 text-[15px] leading-7 text-ink">
+                      <span className="pt-1 text-xs tabular-nums text-slate-400">{pad2(idx + 1)}</span>
+                      {win}
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            </div>
+
+            <section>
+              <SectionHead index="04" title={c.roadmap} />
+              <ol className="grid sm:grid-cols-2 sm:gap-x-10">
+                {skillGap.actionRoadmap.map((step, idx) => (
+                  <li key={idx} className="flex gap-4 border-b border-border py-4">
+                    <span className="text-[clamp(1.25rem,1.8vw,1.5rem)] leading-none tabular-nums text-brand">
+                      {pad2(idx + 1)}
+                    </span>
+                    <p className="text-[15px] leading-7 text-ink">{step}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            {/* Salary benchmark kept as quiet reference, collapsed by default */}
+            <details className="group border-y border-border">
+              <summary className="flex cursor-pointer list-none items-baseline justify-between gap-4 py-4 text-sm text-slate-600 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+                <span>
+                  {c.salaryRef}
+                  <span className="ml-2 text-[13px] text-slate-400">· {salaryBenchmark.trackName}</span>
+                </span>
+                <span className="text-lg leading-none text-slate-400 transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <div className="pb-6">
+                <p className="text-[13px] text-slate-500">{c.salaryRefHint}</p>
+                <dl className="mt-3 text-sm">
+                  {[
+                    [
+                      c.median,
+                      `${salaryBenchmark.medianVND.toLocaleString('vi-VN')} ${c.perMonth} ($${salaryBenchmark.medianUSD})`,
+                    ],
+                    [
+                      c.range,
+                      `${salaryBenchmark.minVND.toLocaleString('vi-VN')} – ${salaryBenchmark.maxVND.toLocaleString('vi-VN')} ${c.perMonth}`,
+                    ],
+                    [c.candidateExpected, salaryBenchmark.candidateExpected],
+                    [c.verdict, c.verdictText],
+                  ].map(([label, value]) => (
+                    <div key={label} className="grid gap-1 border-b border-border py-2.5 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-4">
+                      <dt className="text-slate-500">{label}</dt>
+                      <dd className="tabular-nums text-ink">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-4 text-[13px] text-slate-500">{c.strategy}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-700">{salaryBenchmark.negotiationStrategy}</p>
+              </div>
+            </details>
+          </div>
+        )}
+
+        {/* ── Advice ────────────────────────────────────────────── */}
+        {activeTab === 'advice' &&
+          (analysis.consultantAdvice ? (
             <ConsultationAdviceBuilder
               initialAdvice={analysis.consultantAdvice}
               candidateName={candidate.name}
@@ -896,105 +822,81 @@ export default function CandidateCareerAnalysisPage() {
                 await saveCandidateCareerAdvice(candidate.id, newAdv);
               }}
             />
-          </Card>
-        )}
+          ) : (
+            <p className="border-y border-border py-10 text-center text-sm text-slate-500">{c.noAdvice}</p>
+          ))}
       </div>
 
-      {/* Consultant Advisory Scratchpad */}
-      <Card className="border-brand-100 bg-surface">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Lightbulb size={16} className="text-brand-600" />
-            <h3 className="font-medium text-sm text-slate-900">
-              {isVietnamese ? 'Ghi Chú Nhanh của Cố Vấn về Ứng Viên' : 'Consultant Quick Notes'}
-            </h3>
-          </div>
-          {noteSaved && (
-            <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-              <CheckCircle2 size={13} />
-              {isVietnamese ? 'Đã lưu ghi chú!' : 'Note saved!'}
-            </span>
-          )}
-        </div>
+      {/* Quick notes */}
+      <section className="mt-[clamp(3rem,6vw,5rem)]">
+        <SubHead
+          title={c.notesTitle}
+          action={
+            noteSaved && (
+              <span className="inline-flex items-center gap-1.5 text-[13px] text-brand">
+                <Check size={13} />
+                {c.saved}
+              </span>
+            )
+          }
+        />
         <textarea
           rows={3}
           value={consultantNote}
           onChange={(e) => setConsultantNote(e.target.value)}
-          placeholder={
-            isVietnamese
-              ? 'Nhập ghi chú sơ bộ về điểm mạnh kỹ thuật, phong thái giao tiếp hoặc chiến lược tư vấn cho ứng viên này...'
-              : 'Enter preliminary observations on candidate technical competence, communication style, or advisory plan...'
-          }
-          className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500"
+          placeholder={c.notesPlaceholder}
+          className="mt-3 w-full resize-y border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-[15px] leading-7 text-ink outline-none placeholder:text-slate-400 focus:border-brand"
         />
-        <div className="flex justify-end mt-2">
-          <Button variant="secondary" onClick={handleSaveNote} className="text-xs py-1.5 px-3">
-            <Save size={13} />
-            <span>{isVietnamese ? 'Lưu ghi chú' : 'Save Note'}</span>
-          </Button>
+        <div className="mt-3 flex justify-end">
+          <button type="button" onClick={handleSaveNote} className={`${textLink} text-ink`}>
+            {c.saveNote}
+          </button>
         </div>
-      </Card>
+      </section>
 
-      {/* Full Resume Modal */}
+      {/* Full CV */}
       {showCvModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-surface p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <FileText size={20} className="text-brand-600" />
-                <h3 className="text-lg font-medium text-slate-900">
-                  {resumeDetails.name}
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowCvModal(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
-              >
-                <X size={20} />
-              </button>
+        <Modal
+          eyebrow="CV"
+          title={resumeDetails.name}
+          onClose={() => setShowCvModal(false)}
+          footer={
+            <button type="button" onClick={() => setShowCvModal(false)} className={primaryButton}>
+              {c.close}
+            </button>
+          }
+        >
+          <div className="flex items-baseline justify-between gap-4 border-b border-border pb-4">
+            <div>
+              <p className="text-lg text-ink">{candidate.name}</p>
+              <p className="text-sm text-slate-600">{candidate.currentTitle}</p>
             </div>
-
-            <div className="space-y-4 text-xs text-slate-700">
-              <div className="flex items-center justify-between rounded-xl bg-brand-50 p-3.5">
-                <div>
-                  <p className="font-medium text-slate-900 text-sm">{candidate.name}</p>
-                  <p className="text-slate-600">{candidate.currentTitle}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-medium text-emerald-800 bg-emerald-100 px-2 py-1 rounded">
-                    ATS Score: {resumeDetails.atsScore}/100
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-slate-900 uppercase tracking-wider text-xs mb-1">
-                  Tóm Tắt Mục Tiêu
-                </h4>
-                <p className="rounded-lg bg-slate-50 p-3 leading-relaxed">{analysis.careerGoal}</p>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-slate-900 uppercase tracking-wider text-xs mb-1">
-                  Kinh Nghiệm Gần Nhất
-                </h4>
-                {resumeDetails.workExperience.map((exp, idx) => (
-                  <div key={idx} className="mb-2 p-2.5 rounded-lg border border-slate-100 bg-slate-50">
-                    <p className="font-medium text-slate-800">{exp.role} @ {exp.company}</p>
-                    <p className="text-[11px] text-slate-500 mb-1">{exp.duration}</p>
-                    <p>{exp.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-3 border-t border-slate-100">
-              <Button variant="primary" onClick={() => setShowCvModal(false)}>
-                Đóng xem trước
-              </Button>
-            </div>
+            <p className="text-right">
+              <span className="block text-[clamp(1.75rem,3vw,2.25rem)] leading-none tabular-nums text-ink">
+                {resumeDetails.atsScore}
+              </span>
+              <span className="text-xs text-slate-500">ATS / 100</span>
+            </p>
           </div>
-        </div>
+          <div className="py-4">
+            <p className="text-[13px] text-slate-500">01 · {c.cvSummary}</p>
+            <p className="mt-1.5 text-[15px] leading-7 text-slate-700">{analysis.careerGoal}</p>
+          </div>
+          <div className="border-t border-border py-4">
+            <p className="text-[13px] text-slate-500">02 · {c.cvExperience}</p>
+            <ul>
+              {resumeDetails.workExperience.map((exp, idx) => (
+                <li key={idx} className="border-b border-border py-3 last:border-b-0">
+                  <p className="text-[15px] text-ink">
+                    {exp.role} <span className="text-slate-400">·</span> {exp.company}
+                  </p>
+                  <p className="text-[13px] tabular-nums text-slate-500">{exp.duration}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-700">{exp.description}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Modal>
       )}
     </div>
   );

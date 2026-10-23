@@ -1,28 +1,8 @@
 import { useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  Award,
-  Briefcase,
-  Check,
-  CheckCircle2,
-  ExternalLink,
-  FolderGit2,
-  Globe,
-  GraduationCap,
-  Heart,
-  Plus,
-  Save,
-  Sliders,
-  Lightbulb,
-  Trash2,
-  Trophy,
-  User,
-  Users,
-  Wrench,
-  X,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, X } from 'lucide-react';
 import { getResumeById, updateResume } from '../../mocks/services/mockService';
 import type {
   Resume,
@@ -34,7 +14,7 @@ import type {
   AwardItem,
   ReferenceItem,
 } from '../../types/domain';
-import { Badge, Button, Card, ErrorState, Input, Loading, PageTitle } from '../../components/ui';
+import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 
 const POPULAR_SKILLS = [
@@ -71,9 +51,511 @@ interface EnabledSections {
   references: boolean;
 }
 
+type OptionalSection = keyof EnabledSections;
+
+const OPTIONAL_SECTIONS: OptionalSection[] = [
+  'projects',
+  'certifications',
+  'interests',
+  'languages',
+  'awards',
+  'references',
+];
+
+// Short page-only strings that have no i18n key yet.
+const formCopy = {
+  vi: {
+    back: 'Quay lại CV của tôi',
+    cancel: 'Huỷ bỏ',
+    saveDraft: 'Lưu bản nháp',
+    saveDraftLong: 'Lưu làm bản nháp',
+    finish: 'Hoàn tất & đánh giá ATS',
+    finishSave: 'Hoàn tất & lưu CV',
+    atsEstimate: 'Điểm ATS ước tính',
+    atsCurrent: 'Điểm ATS hiện tại',
+    atsGreat: 'CV rất tốt cho ATS, sẵn sàng để ứng tuyển.',
+    atsFair: 'CV ở mức khá, bổ sung thêm thông tin để tăng điểm.',
+    atsLive: 'Cập nhật theo các trường thông tin và mục bổ sung bạn chọn.',
+    optionalTitle: 'Mục bổ sung cho CV',
+    optionalCount: (n: number) => `${n}/6 đang chọn`,
+    optional: {
+      projects: 'Dự án nổi bật',
+      certifications: 'Chứng chỉ & bằng',
+      interests: 'Sở thích cá nhân',
+      languages: 'Ngoại ngữ',
+      awards: 'Giải thưởng',
+      references: 'Người tham chiếu',
+    } as Record<OptionalSection, string>,
+    hideSection: 'Ẩn mục',
+    remove: 'Xoá',
+    required: '* Bắt buộc',
+    infoTitle: 'Thông tin CV & liên hệ',
+    cvName: 'Tên CV *',
+    cvNamePh: 'Ví dụ: Senior Frontend Engineer CV',
+    position: 'Vị trí ứng tuyển mục tiêu *',
+    positionPh: 'Ví dụ: Frontend Engineer / Tech Lead',
+    cvLanguage: 'Ngôn ngữ CV',
+    fullName: 'Họ và tên trên CV *',
+    email: 'Email *',
+    phone: 'Số điện thoại',
+    location: 'Địa điểm / nơi cư trú',
+    summary: 'Tóm tắt chuyên môn (Professional Summary)',
+    summaryPh:
+      'Mô tả ngắn gọn về kinh nghiệm, thế mạnh và giá trị bạn mang lại cho doanh nghiệp…',
+    summaryCount: (n: number) => `${n} ký tự · nên từ 120`,
+    experienceTitle: 'Kinh nghiệm làm việc',
+    addExperience: '+ Thêm kinh nghiệm',
+    role: 'Chức danh',
+    rolePh: 'Ví dụ: Senior Frontend Engineer',
+    company: 'Tên công ty',
+    companyPh: 'Ví dụ: Nexus Tech Global',
+    from: 'Từ tháng/năm (MM/YYYY)',
+    to: 'Đến (hoặc "Hiện tại")',
+    toPh: 'Hiện tại hoặc MM/YYYY',
+    responsibilities: 'Mô tả trách nhiệm & thành tích',
+    responsibilitiesPh: 'Mô tả công việc và các số liệu thành tích cụ thể…',
+    educationTitle: 'Học vấn & bằng cấp',
+    addEducation: '+ Thêm học vấn',
+    school: 'Trường / cơ sở đào tạo',
+    schoolPh: 'Ví dụ: Đại học Bách Khoa',
+    degree: 'Bằng cấp & chuyên ngành',
+    degreePh: 'Ví dụ: Cử nhân Khoa học Máy tính',
+    period: 'Niên khoá',
+    gpa: 'GPA / xếp loại',
+    gpaPh: 'Ví dụ: 3.6 / 4.0 (Giỏi)',
+    skillsTitle: 'Kỹ năng chuyên môn',
+    skillCount: (n: number) => `${n} kỹ năng`,
+    skillPh: 'Nhập kỹ năng rồi nhấn Thêm (VD: Tailwind, GraphQL)',
+    add: 'Thêm',
+    popular: 'Gợi ý phổ biến',
+    removeItem: (s: string) => `Xoá ${s}`,
+    projectsTitle: 'Dự án tiêu biểu',
+    addProject: '+ Thêm dự án',
+    projectName: 'Tên dự án *',
+    projectNamePh: 'Ví dụ: AI Career Intelligence Portal',
+    projectRole: 'Vai trò trong dự án',
+    projectRolePh: 'Ví dụ: Lead Frontend Developer',
+    projectLink: 'Đường dẫn demo / GitHub',
+    open: 'Mở',
+    techStack: 'Công nghệ sử dụng (ngăn cách bằng dấu phẩy)',
+    projectDesc: 'Mô tả & thành tích',
+    projectDescPh: 'Mục tiêu dự án, giải pháp và kết quả (VD: phục vụ 10,000+ người dùng)…',
+    noProjects: 'Chưa có dự án nào.',
+    certificationsTitle: 'Chứng chỉ & chứng nhận',
+    addCertification: '+ Thêm chứng chỉ',
+    certName: 'Tên chứng chỉ *',
+    certNamePh: 'Ví dụ: AWS Certified Solutions Architect',
+    issuer: 'Tổ chức cấp bằng',
+    issuerPh: 'Ví dụ: Amazon Web Services',
+    certDate: 'Năm cấp',
+    certLink: 'Đường dẫn xác thực',
+    noCertifications: 'Chưa có chứng chỉ nào.',
+    interestsTitle: 'Sở thích & điểm mạnh cá nhân',
+    interestPh: 'Nhập sở thích hoặc điểm mạnh rồi nhấn Thêm',
+    noInterests: 'Chưa thêm sở thích nào.',
+    languagesTitle: 'Ngoại ngữ',
+    addLanguage: '+ Thêm ngoại ngữ',
+    languageName: 'Ngôn ngữ',
+    languageNamePh: 'Tiếng Anh, Tiếng Nhật…',
+    languageLevel: 'Trình độ',
+    languageLevelPh: 'Bản ngữ, C1, IELTS 7.5, JLPT N2…',
+    noLanguages: 'Chưa có ngoại ngữ nào.',
+    awardsTitle: 'Giải thưởng & thành tựu',
+    addAward: '+ Thêm giải thưởng',
+    awardTitle: 'Tên giải thưởng',
+    awardTitlePh: 'Ví dụ: Giải Nhất Hackathon Web AI',
+    awardIssuer: 'Đơn vị trao giải',
+    awardYear: 'Năm',
+    awardDesc: 'Mô tả',
+    noAwards: 'Chưa có giải thưởng nào.',
+    referencesTitle: 'Người tham chiếu',
+    addReference: '+ Thêm người tham chiếu',
+    refName: 'Họ và tên',
+    refPosition: 'Chức vụ & công ty',
+    noReferences: 'Chưa có người tham chiếu nào.',
+    checklistTitle: 'Ước tính điểm ATS',
+    pass: 'Đạt',
+    notEnough: 'Chưa đủ',
+    off: 'Chưa bật',
+    checkTitle: 'Tiêu đề & chức danh mục tiêu',
+    checkContact: 'Thông tin liên hệ (email, số điện thoại)',
+    checkSummary: 'Tóm tắt chuyên môn',
+    checkExperience: 'Kinh nghiệm làm việc',
+    checkEducation: 'Học vấn',
+    checkSkills: (n: number) => `Kỹ năng (từ ${n} kỹ năng)`,
+    checkProjects: 'Dự án có liên kết',
+    checkCertifications: 'Chứng chỉ có xác thực',
+    checkInterests: 'Sở thích cá nhân',
+  },
+  en: {
+    back: 'Back to my CVs',
+    cancel: 'Cancel',
+    saveDraft: 'Save draft',
+    saveDraftLong: 'Save as draft',
+    finish: 'Finish & score ATS',
+    finishSave: 'Finish & save CV',
+    atsEstimate: 'Estimated ATS score',
+    atsCurrent: 'Current ATS score',
+    atsGreat: 'Strong CV for ATS, ready to apply.',
+    atsFair: 'A fair CV — add more detail to raise the score.',
+    atsLive: 'Updates with the fields and optional sections you choose.',
+    optionalTitle: 'Optional CV sections',
+    optionalCount: (n: number) => `${n}/6 selected`,
+    optional: {
+      projects: 'Key projects',
+      certifications: 'Certificates & degrees',
+      interests: 'Interests',
+      languages: 'Languages',
+      awards: 'Awards',
+      references: 'References',
+    } as Record<OptionalSection, string>,
+    hideSection: 'Hide section',
+    remove: 'Remove',
+    required: '* Required',
+    infoTitle: 'CV & contact details',
+    cvName: 'CV name *',
+    cvNamePh: 'e.g. Senior Frontend Engineer CV',
+    position: 'Target position *',
+    positionPh: 'e.g. Frontend Engineer / Tech Lead',
+    cvLanguage: 'CV language',
+    fullName: 'Full name on CV *',
+    email: 'Email *',
+    phone: 'Phone',
+    location: 'Location',
+    summary: 'Professional summary',
+    summaryPh: 'Briefly describe your experience, strengths and the value you bring…',
+    summaryCount: (n: number) => `${n} characters · 120+ recommended`,
+    experienceTitle: 'Work experience',
+    addExperience: '+ Add experience',
+    role: 'Job title',
+    rolePh: 'e.g. Senior Frontend Engineer',
+    company: 'Company',
+    companyPh: 'e.g. Nexus Tech Global',
+    from: 'From (MM/YYYY)',
+    to: 'To (or "Present")',
+    toPh: 'Present or MM/YYYY',
+    responsibilities: 'Responsibilities & achievements',
+    responsibilitiesPh: 'Describe the work and concrete, measurable results…',
+    educationTitle: 'Education',
+    addEducation: '+ Add education',
+    school: 'School / institution',
+    schoolPh: 'e.g. University of Technology',
+    degree: 'Degree & major',
+    degreePh: 'e.g. BSc Computer Science',
+    period: 'Period',
+    gpa: 'GPA / classification',
+    gpaPh: 'e.g. 3.6 / 4.0',
+    skillsTitle: 'Skills',
+    skillCount: (n: number) => `${n} skills`,
+    skillPh: 'Type a skill and press Add (e.g. Tailwind, GraphQL)',
+    add: 'Add',
+    popular: 'Popular suggestions',
+    removeItem: (s: string) => `Remove ${s}`,
+    projectsTitle: 'Key projects',
+    addProject: '+ Add project',
+    projectName: 'Project name *',
+    projectNamePh: 'e.g. AI Career Intelligence Portal',
+    projectRole: 'Your role',
+    projectRolePh: 'e.g. Lead Frontend Developer',
+    projectLink: 'Demo / GitHub link',
+    open: 'Open',
+    techStack: 'Tech stack (comma separated)',
+    projectDesc: 'Description & results',
+    projectDescPh: 'Goal, solution and outcome (e.g. served 10,000+ users)…',
+    noProjects: 'No projects yet.',
+    certificationsTitle: 'Certifications',
+    addCertification: '+ Add certificate',
+    certName: 'Certificate name *',
+    certNamePh: 'e.g. AWS Certified Solutions Architect',
+    issuer: 'Issuer',
+    issuerPh: 'e.g. Amazon Web Services',
+    certDate: 'Year',
+    certLink: 'Credential URL',
+    noCertifications: 'No certificates yet.',
+    interestsTitle: 'Interests & personal strengths',
+    interestPh: 'Type an interest or strength and press Add',
+    noInterests: 'No interests added yet.',
+    languagesTitle: 'Languages',
+    addLanguage: '+ Add language',
+    languageName: 'Language',
+    languageNamePh: 'English, Japanese…',
+    languageLevel: 'Level',
+    languageLevelPh: 'Native, C1, IELTS 7.5, JLPT N2…',
+    noLanguages: 'No languages yet.',
+    awardsTitle: 'Awards & achievements',
+    addAward: '+ Add award',
+    awardTitle: 'Award',
+    awardTitlePh: 'e.g. 1st prize, AI Web Hackathon',
+    awardIssuer: 'Awarded by',
+    awardYear: 'Year',
+    awardDesc: 'Description',
+    noAwards: 'No awards yet.',
+    referencesTitle: 'References',
+    addReference: '+ Add reference',
+    refName: 'Full name',
+    refPosition: 'Position & company',
+    noReferences: 'No references yet.',
+    checklistTitle: 'ATS estimate',
+    pass: 'Pass',
+    notEnough: 'Not enough',
+    off: 'Off',
+    checkTitle: 'Title & target position',
+    checkContact: 'Contact details (email, phone)',
+    checkSummary: 'Professional summary',
+    checkExperience: 'Work experience',
+    checkEducation: 'Education',
+    checkSkills: (n: number) => `Skills (${n}+ skills)`,
+    checkProjects: 'Projects with links',
+    checkCertifications: 'Verified certificates',
+    checkInterests: 'Interests',
+  },
+};
+
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
+
+const primaryButton =
+  'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+
+const lineInput =
+  'w-full min-w-0 border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-[15px] text-ink outline-none transition-colors duration-150 placeholder:text-slate-400 focus-visible:border-ink';
+
+const lineTextarea = `${lineInput} resize-y leading-7`;
+
+/** Small label above an underlined control. */
+function Field({
+  label,
+  htmlFor,
+  className = '',
+  aside,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  className?: string;
+  aside?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <div className="flex items-baseline justify-between gap-4">
+        <label htmlFor={htmlFor} className="block text-xs text-slate-600">
+          {label}
+        </label>
+        {aside}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Numbered section heading with a dark rule underneath. */
+function SectionHead({
+  index,
+  title,
+  action,
+}: {
+  index: string;
+  title: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-ink pb-3">
+      <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
+        <span className="text-xs tabular-nums tracking-normal text-slate-500">{index}</span>
+        {title}
+      </h2>
+      {action && <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">{action}</div>}
+    </div>
+  );
+}
+
+/** "#1 … Remove" line that opens each repeatable item. */
+function ItemHead({ index, onRemove, label }: { index: number; onRemove: () => void; label: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <span className="text-xs tabular-nums text-slate-500">#{index}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="text-[13px] text-danger transition-colors hover:text-ink cursor-pointer"
+      >
+        {label}
+      </button>
+    </div>
+  );
+}
+
+/** Removable text tags (skills, interests). */
+function TagList({
+  items,
+  onRemove,
+  removeLabel,
+  empty,
+}: {
+  items: string[];
+  onRemove: (item: string) => void;
+  removeLabel: (item: string) => string;
+  empty?: string;
+}) {
+  if (!items.length && empty) return <p className="mt-4 text-sm text-slate-500">{empty}</p>;
+  return (
+    <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2.5">
+      {items.map((item) => (
+        <li key={item} className="inline-flex items-center gap-1 text-sm text-ink">
+          <span className="border-b border-slate-300 pb-px">{item}</span>
+          <button
+            type="button"
+            onClick={() => onRemove(item)}
+            aria-label={removeLabel(item)}
+            className="p-0.5 text-slate-400 transition-colors hover:text-danger cursor-pointer"
+          >
+            <X size={13} />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Suggestions shown as "+ item" text buttons; used items are struck through. */
+function Suggestions({
+  label,
+  items,
+  taken,
+  onAdd,
+}: {
+  label: string;
+  items: string[];
+  taken: string[];
+  onAdd: (item: string) => void;
+}) {
+  return (
+    <div className="mt-4">
+      <p className="text-xs text-slate-600">{label}</p>
+      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1.5">
+        {items.map((item) => {
+          const has = taken.includes(item);
+          return (
+            <button
+              key={item}
+              type="button"
+              disabled={has}
+              onClick={() => onAdd(item)}
+              className={`text-[13px] transition-colors ${
+                has
+                  ? 'text-slate-400 line-through cursor-default'
+                  : 'border-b border-brand-300 text-brand hover:border-ink hover:text-ink cursor-pointer'
+              }`}
+            >
+              + {item}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Input + "Add" text button on one underlined line. */
+function AddLine({
+  value,
+  onChange,
+  onAdd,
+  placeholder,
+  addLabel,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onAdd: () => void;
+  placeholder: string;
+  addLabel: string;
+}) {
+  return (
+    <div className="mt-5 flex items-end gap-4">
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            onAdd();
+          }
+        }}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className={lineInput}
+      />
+      <button type="button" onClick={onAdd} className={`${textLink} shrink-0 text-brand hover:text-ink`}>
+        {addLabel}
+      </button>
+    </div>
+  );
+}
+
+/** Underlined input with an optional "Open" link for URLs. */
+function LinkInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  openLabel,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  openLabel: string;
+}) {
+  return (
+    <div className="flex items-end gap-3">
+      <input
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={lineInput}
+      />
+      {value && (
+        <a
+          href={value}
+          target="_blank"
+          rel="noreferrer"
+          className={`${textLink} mb-2 shrink-0 text-[13px] text-brand hover:text-ink`}
+        >
+          {openLabel}
+          <ArrowUpRight size={13} aria-hidden="true" />
+        </a>
+      )}
+    </div>
+  );
+}
+
+const emptyNote = 'border-b border-border py-6 text-sm text-slate-500';
+const itemBlock = 'border-b border-border py-6';
+const itemGrid3 = 'mt-3 grid gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-3';
+const itemGrid2 = 'mt-3 grid gap-x-8 gap-y-5 sm:grid-cols-2';
+
+// Headline strings for this page.
+const pageCopy = {
+  vi: {
+    pageLabel: 'Chỉnh sửa CV',
+    headline: 'Cập nhật CV.',
+    headlineAccent: 'Giữ CV luôn mới và chuẩn ATS.',
+    saveNote: 'Lưu các cập nhật để đồng bộ điểm ATS và hồ sơ ứng tuyển.',
+  },
+  en: {
+    pageLabel: 'Edit CV',
+    headline: 'Update your CV.',
+    headlineAccent: 'Keep it current and ATS-ready.',
+    saveNote: 'Save your changes to sync the ATS score and your applications.',
+  },
+};
+
 export default function EditResumePage() {
   const { resumeId } = useParams<{ resumeId: string }>();
-  const { t } = useTranslation();
+  const { t, isVietnamese } = useTranslation();
+  const c = isVietnamese ? formCopy.vi : formCopy.en;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -412,1102 +894,750 @@ export default function EditResumePage() {
     setFormData((prev) => ({ ...prev, references: list }));
   };
 
+  const p = isVietnamese ? pageCopy.vi : pageCopy.en;
+  const activeOptional = OPTIONAL_SECTIONS.filter((key) => enabledSections[key]);
+  const sectionNumber = (key: OptionalSection) =>
+    String(5 + activeOptional.indexOf(key)).padStart(2, '0');
+
   return (
-    <>
-      <PageTitle
-        title={t('resumes.editTitle')}
-        subtitle={`${t('resumes.editSubtitle')} · ${cv.name}`}
-        action={
-          <div className="flex items-center gap-3">
-            <Link to={`/candidate/resumes/${cv.id}`}>
-              <Button variant="secondary">
-                <ArrowLeft size={16} />
-                {t('resumes.cancel')}
-              </Button>
-            </Link>
-            <Button
-              variant="primary"
-              type="button"
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-            >
-              <Save size={16} />
-              {updateMutation.isPending ? t('resumes.saving') : t('resumes.saveCv')}
-            </Button>
+    <form onSubmit={handleSave} className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+      <Link to={`/candidate/resumes/${cv.id}`} className={`${textLink} text-slate-600 hover:text-ink`}>
+        <ArrowLeft size={14} aria-hidden="true" />
+        {t('resumes.backToList')}
+      </Link>
+
+      {/* Headline */}
+      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
+        <p className="text-sm text-brand">{p.pageLabel}</p>
+        <h1 className="mt-[clamp(1.25rem,3vw,2rem)] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {p.headline}
+          <span className="block text-brand">{p.headlineAccent}</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[38rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {t('resumes.editSubtitle')} <span className="text-ink">{cv.name}</span>
+        </p>
+
+        <div className="mt-[clamp(1.75rem,3.5vw,2.5rem)] flex flex-wrap items-center gap-x-7 gap-y-4">
+          <button
+            type="button"
+            className={primaryButton}
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? t('resumes.saving') : t('resumes.saveCv')}
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+          <Link to={`/candidate/resumes/${cv.id}`} className={`${textLink} text-[15px] text-slate-500 hover:text-ink`}>
+            {t('resumes.cancel')}
+          </Link>
+        </div>
+      </header>
+
+      {/* Current ATS score */}
+      <section className="mt-[clamp(2.5rem,5vw,3.5rem)] grid gap-4 border-y border-t-ink border-b-border py-5 sm:grid-cols-[minmax(10rem,14rem)_1fr] sm:items-center sm:gap-10">
+        <div>
+          <p className="text-[13px] text-slate-600">{c.atsCurrent}</p>
+          <p className="mt-2 text-[clamp(2.5rem,4vw,3.25rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
+            {cv.atsScore || '—'}
+          </p>
+        </div>
+        <div>
+          <div
+            className="h-[3px] w-full bg-slate-200"
+            role="progressbar"
+            aria-valuenow={cv.atsScore || 0}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={c.atsCurrent}
+          >
+            <div className="h-full bg-brand" style={{ width: `${cv.atsScore || 0}%` }} />
           </div>
-        }
-      />
+          <p className="mt-3 text-sm text-ink">{(cv.atsScore || 0) >= 80 ? c.atsGreat : c.atsFair}</p>
+        </div>
+      </section>
 
-      <form onSubmit={handleSave} className="space-y-6 max-w-4xl animate-fade-in">
-        {/* SECTION PICKER */}
-        <Card className="border-brand-200 bg-brand-50/50">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-600 text-white">
-                <Sliders size={15} />
-              </span>
-              <div>
-                <h3 className="text-sm font-medium text-slate-900">
-                  Tùy chọn mục bổ sung cho CV
-                </h3>
-                <p className="text-2xs text-slate-500">
-                  Tick chọn các phần bạn muốn hiển thị và điền vào bản CV của mình
-                </p>
-              </div>
-            </div>
-            <span className="text-2xs font-semibold text-brand-700 bg-brand-100/70 px-2 py-0.5 rounded-full">
-              {Object.values(enabledSections).filter(Boolean).length}/6 mục đang chọn
-            </span>
-          </div>
+      {/* Optional sections picker */}
+      <section className="mt-[clamp(2.5rem,5vw,3.5rem)]">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h2 className="text-[17px] text-ink">{c.optionalTitle}</h2>
+          <span className="text-[13px] text-slate-600">
+            {c.optionalCount(Object.values(enabledSections).filter(Boolean).length)}
+          </span>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-7 gap-y-3">
+          {OPTIONAL_SECTIONS.map((key) => (
+            <label key={key} className="inline-flex items-center gap-2 text-sm text-ink cursor-pointer">
+              <input
+                type="checkbox"
+                checked={enabledSections[key]}
+                onChange={() => toggleSection(key)}
+                className="h-4 w-4 shrink-0 cursor-pointer accent-brand"
+              />
+              {c.optional[key]}
+            </label>
+          ))}
+        </div>
+      </section>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
-            {/* Projects Toggle */}
-            <button
-              type="button"
-              onClick={() => toggleSection('projects')}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                enabledSections.projects
-                  ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-surface hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
-                    enabledSections.projects
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  <FolderGit2 size={13} />
-                </span>
-                <div
-                  className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
-                    enabledSections.projects
-                      ? 'bg-brand-600 border-brand-600 text-white'
-                      : 'border-slate-300 bg-white'
-                  }`}
-                >
-                  {enabledSections.projects && <Check size={11} strokeWidth={3} />}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-900">Dự án nổi bật</p>
-                <p className="text-2xs text-slate-500 mt-0.5">Gắn link Demo / GitHub</p>
-              </div>
-            </button>
-
-            {/* Certifications Toggle */}
-            <button
-              type="button"
-              onClick={() => toggleSection('certifications')}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                enabledSections.certifications
-                  ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-surface hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
-                    enabledSections.certifications
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  <Award size={13} />
-                </span>
-                <div
-                  className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
-                    enabledSections.certifications
-                      ? 'bg-brand-600 border-brand-600 text-white'
-                      : 'border-slate-300 bg-white'
-                  }`}
-                >
-                  {enabledSections.certifications && <Check size={11} strokeWidth={3} />}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-900">Chứng chỉ & Bằng</p>
-                <p className="text-2xs text-slate-500 mt-0.5">Chứng chỉ xác thực</p>
-              </div>
-            </button>
-
-            {/* Interests Toggle */}
-            <button
-              type="button"
-              onClick={() => toggleSection('interests')}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                enabledSections.interests
-                  ? 'border-rose-500 bg-rose-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-surface hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
-                    enabledSections.interests
-                      ? 'bg-rose-600 text-white'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  <Heart size={13} />
-                </span>
-                <div
-                  className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
-                    enabledSections.interests
-                      ? 'bg-rose-600 border-rose-600 text-white'
-                      : 'border-slate-300 bg-white'
-                  }`}
-                >
-                  {enabledSections.interests && <Check size={11} strokeWidth={3} />}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-900">Sở thích cá nhân</p>
-                <p className="text-2xs text-slate-500 mt-0.5">Văn hóa & cá tính</p>
-              </div>
-            </button>
-
-            {/* Languages Toggle */}
-            <button
-              type="button"
-              onClick={() => toggleSection('languages')}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                enabledSections.languages
-                  ? 'border-amber-500 bg-amber-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-surface hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
-                    enabledSections.languages
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  <Globe size={13} />
-                </span>
-                <div
-                  className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
-                    enabledSections.languages
-                      ? 'bg-amber-600 border-amber-600 text-white'
-                      : 'border-slate-300 bg-white'
-                  }`}
-                >
-                  {enabledSections.languages && <Check size={11} strokeWidth={3} />}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-900">Ngoại ngữ</p>
-                <p className="text-2xs text-slate-500 mt-0.5">Trình độ & chứng chỉ</p>
-              </div>
-            </button>
-
-            {/* Awards Toggle */}
-            <button
-              type="button"
-              onClick={() => toggleSection('awards')}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                enabledSections.awards
-                  ? 'border-emerald-500 bg-emerald-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-surface hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
-                    enabledSections.awards
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  <Trophy size={13} />
-                </span>
-                <div
-                  className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
-                    enabledSections.awards
-                      ? 'bg-emerald-600 border-emerald-600 text-white'
-                      : 'border-slate-300 bg-white'
-                  }`}
-                >
-                  {enabledSections.awards && <Check size={11} strokeWidth={3} />}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-900">Giải thưởng</p>
-                <p className="text-2xs text-slate-500 mt-0.5">Thành tích & vinh danh</p>
-              </div>
-            </button>
-
-            {/* References Toggle */}
-            <button
-              type="button"
-              onClick={() => toggleSection('references')}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                enabledSections.references
-                  ? 'border-brand-500 bg-brand-50/80 shadow-2xs'
-                  : 'border-slate-200 bg-surface hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-lg text-xs ${
-                    enabledSections.references
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  <Users size={13} />
-                </span>
-                <div
-                  className={`h-4 w-4 rounded-md border flex items-center justify-center transition ${
-                    enabledSections.references
-                      ? 'bg-brand-600 border-brand-600 text-white'
-                      : 'border-slate-300 bg-white'
-                  }`}
-                >
-                  {enabledSections.references && <Check size={11} strokeWidth={3} />}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-900">Người tham chiếu</p>
-                <p className="text-2xs text-slate-500 mt-0.5">Bảo chứng uy tín</p>
-              </div>
-            </button>
-          </div>
-        </Card>
-
-        {/* Section 1: Basic Info */}
-        <Card>
-          <div className="border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
-              <User size={15} />
-            </span>
-            <h3 className="text-base font-medium text-slate-900">
-              Thông tin chung & Liên hệ
-            </h3>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">Tên bản CV *</label>
-              <Input
+      <div className="mt-[clamp(2.5rem,5vw,3.5rem)] space-y-[clamp(3rem,6vw,4.5rem)]">
+        {/* 01 · CV & contact */}
+        <section>
+          <SectionHead
+            index="01"
+            title={c.infoTitle}
+            action={<span className="text-[13px] text-slate-500">{c.required}</span>}
+          />
+          <div className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2">
+            <Field label={c.cvName} htmlFor="cv-name">
+              <input
+                id="cv-name"
                 required
                 value={formData.name || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder={c.cvNamePh}
+                className={lineInput}
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">Vị trí ứng tuyển *</label>
-              <Input
+            </Field>
+            <Field label={c.position} htmlFor="cv-position">
+              <input
+                id="cv-position"
                 required
                 value={formData.position || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
+                placeholder={c.positionPh}
+                className={lineInput}
               />
+            </Field>
+            <div className="min-w-0">
+              <p className="text-xs text-slate-600">{c.cvLanguage}</p>
+              <div className="mt-2 flex gap-5 border-b border-slate-300 pb-2" role="radiogroup" aria-label={c.cvLanguage}>
+                {[
+                  { value: 'Vietnamese', label: 'Tiếng Việt' },
+                  { value: 'English', label: 'English' },
+                ].map((option) => {
+                  const active = (formData.language || 'English') === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setFormData((prev) => ({ ...prev, language: option.value }))}
+                      className={`border-b pb-px text-[15px] transition-colors cursor-pointer ${
+                        active ? 'border-brand text-brand' : 'border-transparent text-slate-500 hover:text-ink'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">Họ và tên *</label>
-              <Input
+            <Field label={c.fullName} htmlFor="cv-fullname">
+              <input
+                id="cv-fullname"
                 required
                 value={formData.fullName || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, fullName: e.target.value }))}
+                placeholder="Alex Morgan"
+                className={lineInput}
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">Địa chỉ Email *</label>
-              <Input
+            </Field>
+            <Field label={c.email} htmlFor="cv-email">
+              <input
+                id="cv-email"
                 type="email"
                 required
                 value={formData.email || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="alex.morgan@example.com"
+                className={lineInput}
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">Số điện thoại</label>
-              <Input
+            </Field>
+            <Field label={c.phone} htmlFor="cv-phone">
+              <input
+                id="cv-phone"
                 value={formData.phone || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                placeholder="(+84) 912 345 678"
+                className={lineInput}
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">Địa điểm</label>
-              <Input
+            </Field>
+            <Field label={c.location} htmlFor="cv-location" className="sm:col-span-2">
+              <input
+                id="cv-location"
                 value={formData.location || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                placeholder="Hồ Chí Minh, Việt Nam"
+                className={lineInput}
               />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                Tóm tắt chuyên môn (Summary)
-              </label>
+            </Field>
+            <Field
+              label={c.summary}
+              htmlFor="cv-summary"
+              className="sm:col-span-2"
+              aside={
+                <span className="shrink-0 text-xs text-slate-500 tabular-nums">
+                  {c.summaryCount((formData.summary || '').length)}
+                </span>
+              }
+            >
               <textarea
-                rows={3}
+                id="cv-summary"
+                rows={4}
                 value={formData.summary || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, summary: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500"
+                placeholder={c.summaryPh}
+                className={lineTextarea}
               />
-            </div>
+            </Field>
           </div>
-        </Card>
+        </section>
 
-        {/* Section 2: Skills */}
-        <Card>
-          <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-600">
-                <Wrench size={15} />
-              </span>
-              <h3 className="text-base font-medium text-slate-900">Kỹ năng chuyên môn</h3>
-            </div>
-            <span className="text-xs font-medium text-brand-600">
-              {formData.skills?.length || 0} kỹ năng
-            </span>
-          </div>
-
-          <div className="flex gap-2 mb-3">
-            <Input
-              value={newSkillInput}
-              onChange={(e) => setNewSkillInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddSkill(newSkillInput);
-                }
-              }}
-              placeholder="Nhập kỹ năng mới (VD: Kubernetes, GraphQL...)"
-              className="max-w-md"
-            />
-            <Button type="button" variant="secondary" onClick={() => handleAddSkill(newSkillInput)}>
-              <Plus size={15} /> Thêm
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap gap-2 pt-2">
-            {formData.skills?.map((s) => (
-              <span
-                key={s}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs"
-              >
-                <span>{s}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSkill(s)}
-                  className="text-slate-400 hover:text-red-600 transition cursor-pointer"
-                >
-                  <X size={13} />
-                </button>
-              </span>
-            ))}
-          </div>
-        </Card>
-
-        {/* Section 3: Work Experience */}
-        <Card>
-          <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
-                <Briefcase size={15} />
-              </span>
-              <h3 className="text-base font-medium text-slate-900">Kinh nghiệm làm việc</h3>
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleAddExperience}
-              className="text-xs py-1.5 px-3"
-            >
-              <Plus size={13} /> Thêm vị trí
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {formData.experience?.map((exp, idx) => (
-              <div
-                key={exp.id || idx}
-                className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 relative space-y-3"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleRemoveExperience(idx)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                  title="Xóa mục này"
-                >
-                  <Trash2 size={15} />
-                </button>
-
-                <div className="grid gap-3 sm:grid-cols-2 pr-8">
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Chức danh</label>
-                    <Input
-                      value={exp.role}
-                      onChange={(e) => handleUpdateExperience(idx, 'role', e.target.value)}
-                      placeholder="Chức danh"
-                      className="bg-surface"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Tên công ty</label>
-                    <Input
-                      value={exp.company}
-                      onChange={(e) => handleUpdateExperience(idx, 'company', e.target.value)}
-                      placeholder="Tên công ty"
-                      className="bg-surface"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Từ ngày</label>
-                    <Input
-                      value={exp.startDate}
-                      onChange={(e) => handleUpdateExperience(idx, 'startDate', e.target.value)}
-                      placeholder="MM/YYYY"
-                      className="bg-surface"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Đến ngày</label>
-                    <Input
-                      value={exp.endDate}
-                      onChange={(e) => handleUpdateExperience(idx, 'endDate', e.target.value)}
-                      placeholder="Hiện tại"
-                      className="bg-surface"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-2xs font-semibold text-slate-500 mb-1 block">
-                    Mô tả trách nhiệm & thành tích
-                  </label>
+        {/* 02 · Experience */}
+        <section>
+          <SectionHead
+            index="02"
+            title={c.experienceTitle}
+            action={
+              <button type="button" onClick={handleAddExperience} className={`${textLink} text-[13px] text-ink`}>
+                {c.addExperience}
+              </button>
+            }
+          />
+          {formData.experience?.map((exp, idx) => (
+            <div key={exp.id || idx} className={itemBlock}>
+              <ItemHead index={idx + 1} onRemove={() => handleRemoveExperience(idx)} label={c.remove} />
+              <div className={itemGrid3}>
+                <Field label={c.role} htmlFor={`exp-role-${idx}`}>
+                  <input
+                    id={`exp-role-${idx}`}
+                    value={exp.role}
+                    onChange={(e) => handleUpdateExperience(idx, 'role', e.target.value)}
+                    placeholder={c.rolePh}
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.company} htmlFor={`exp-company-${idx}`}>
+                  <input
+                    id={`exp-company-${idx}`}
+                    value={exp.company}
+                    onChange={(e) => handleUpdateExperience(idx, 'company', e.target.value)}
+                    placeholder={c.companyPh}
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.from} htmlFor={`exp-start-${idx}`}>
+                  <input
+                    id={`exp-start-${idx}`}
+                    value={exp.startDate}
+                    onChange={(e) => handleUpdateExperience(idx, 'startDate', e.target.value)}
+                    placeholder="03/2022"
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.to} htmlFor={`exp-end-${idx}`}>
+                  <input
+                    id={`exp-end-${idx}`}
+                    value={exp.endDate}
+                    onChange={(e) => handleUpdateExperience(idx, 'endDate', e.target.value)}
+                    placeholder={c.toPh}
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.responsibilities} htmlFor={`exp-desc-${idx}`} className="sm:col-span-2 xl:col-span-3">
                   <textarea
-                    rows={2}
+                    id={`exp-desc-${idx}`}
+                    rows={3}
                     value={exp.description}
                     onChange={(e) => handleUpdateExperience(idx, 'description', e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
+                    placeholder={c.responsibilitiesPh}
+                    className={lineTextarea}
                   />
-                </div>
+                </Field>
               </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Section 4: Education */}
-        <Card>
-          <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
-                <GraduationCap size={15} />
-              </span>
-              <h3 className="text-base font-medium text-slate-900">Học vấn & Bằng cấp</h3>
             </div>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleAddEducation}
-              className="text-xs py-1.5 px-3"
-            >
-              <Plus size={13} /> Thêm học vấn
-            </Button>
-          </div>
+          ))}
+        </section>
 
-          <div className="space-y-4">
-            {(formData.education || []).map((edu, idx) => (
-              <div
-                key={edu.id || idx}
-                className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 relative space-y-3"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleRemoveEducation(idx)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                  title="Xóa học vấn này"
-                >
-                  <Trash2 size={15} />
-                </button>
-
-                <div className="grid gap-3 sm:grid-cols-2 pr-8">
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Trường đào tạo</label>
-                    <Input
-                      value={edu.school}
-                      onChange={(e) => handleUpdateEducation(idx, 'school', e.target.value)}
-                      placeholder="Tên trường học"
-                      className="bg-surface"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Bằng cấp & Ngành</label>
-                    <Input
-                      value={edu.degree}
-                      onChange={(e) => handleUpdateEducation(idx, 'degree', e.target.value)}
-                      placeholder="Bằng cấp"
-                      className="bg-surface"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Thời gian</label>
-                    <Input
-                      value={`${edu.startDate || ''} - ${edu.endDate || ''}`}
-                      onChange={(e) => {
-                        const parts = e.target.value.split('-');
-                        handleUpdateEducation(idx, 'startDate', parts[0]?.trim());
-                        handleUpdateEducation(idx, 'endDate', parts[1]?.trim());
-                      }}
-                      placeholder="2016 - 2020"
-                      className="bg-surface"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-500 mb-1 block">Điểm GPA</label>
-                    <Input
-                      value={edu.gpa || ''}
-                      onChange={(e) => handleUpdateEducation(idx, 'gpa', e.target.value)}
-                      placeholder="3.6 / 4.0"
-                      className="bg-surface"
-                    />
-                  </div>
-                </div>
+        {/* 03 · Education */}
+        <section>
+          <SectionHead
+            index="03"
+            title={c.educationTitle}
+            action={
+              <button type="button" onClick={handleAddEducation} className={`${textLink} text-[13px] text-ink`}>
+                {c.addEducation}
+              </button>
+            }
+          />
+          {formData.education?.map((edu, idx) => (
+            <div key={edu.id || idx} className={itemBlock}>
+              <ItemHead index={idx + 1} onRemove={() => handleRemoveEducation(idx)} label={c.remove} />
+              <div className={itemGrid3}>
+                <Field label={c.school} htmlFor={`edu-school-${idx}`}>
+                  <input
+                    id={`edu-school-${idx}`}
+                    value={edu.school}
+                    onChange={(e) => handleUpdateEducation(idx, 'school', e.target.value)}
+                    placeholder={c.schoolPh}
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.degree} htmlFor={`edu-degree-${idx}`}>
+                  <input
+                    id={`edu-degree-${idx}`}
+                    value={edu.degree}
+                    onChange={(e) => handleUpdateEducation(idx, 'degree', e.target.value)}
+                    placeholder={c.degreePh}
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.period} htmlFor={`edu-period-${idx}`}>
+                  <input
+                    id={`edu-period-${idx}`}
+                    value={`${edu.startDate || ''} - ${edu.endDate || ''}`}
+                    onChange={(e) => {
+                      const parts = e.target.value.split('-');
+                      handleUpdateEducation(idx, 'startDate', parts[0]?.trim());
+                      handleUpdateEducation(idx, 'endDate', parts[1]?.trim());
+                    }}
+                    placeholder="2016 - 2020"
+                    className={lineInput}
+                  />
+                </Field>
+                <Field label={c.gpa} htmlFor={`edu-gpa-${idx}`}>
+                  <input
+                    id={`edu-gpa-${idx}`}
+                    value={edu.gpa || ''}
+                    onChange={(e) => handleUpdateEducation(idx, 'gpa', e.target.value)}
+                    placeholder={c.gpaPh}
+                    className={lineInput}
+                  />
+                </Field>
               </div>
-            ))}
-          </div>
-        </Card>
+            </div>
+          ))}
+        </section>
 
-        {/* Section 5: Projects */}
+        {/* 04 · Skills */}
+        <section>
+          <SectionHead
+            index="04"
+            title={c.skillsTitle}
+            action={<span className="text-[13px] text-slate-600">{c.skillCount(formData.skills?.length || 0)}</span>}
+          />
+          <AddLine
+            value={newSkillInput}
+            onChange={setNewSkillInput}
+            onAdd={() => handleAddSkill(newSkillInput)}
+            placeholder={c.skillPh}
+            addLabel={c.add}
+          />
+          <Suggestions
+            label={c.popular}
+            items={POPULAR_SKILLS}
+            taken={formData.skills || []}
+            onAdd={handleAddSkill}
+          />
+          <TagList items={formData.skills || []} onRemove={handleRemoveSkill} removeLabel={c.removeItem} />
+        </section>
+
+        {/* Projects */}
         {enabledSections.projects && (
-          <Card className="border-brand-100">
-            <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
-                  <FolderGit2 size={15} />
-                </span>
-                <h3 className="text-base font-medium text-slate-900">
-                  Dự án nổi bật (Key Projects)
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleAddProject}
-                  className="text-xs py-1.5 px-3"
-                >
-                  <Plus size={13} /> Thêm dự án
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => toggleSection('projects')}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 cursor-pointer"
-                >
-                  Ẩn mục
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {(formData.projects || []).map((proj, idx) => (
-                <div
-                  key={proj.id || idx}
-                  className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 relative space-y-3"
-                >
+          <section>
+            <SectionHead
+              index={sectionNumber('projects')}
+              title={c.projectsTitle}
+              action={
+                <>
+                  <button type="button" onClick={handleAddProject} className={`${textLink} text-[13px] text-ink`}>
+                    {c.addProject}
+                  </button>
                   <button
                     type="button"
-                    onClick={() => handleRemoveProject(idx)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                    title="Xóa dự án này"
+                    onClick={() => toggleSection('projects')}
+                    className="text-[13px] text-slate-500 transition-colors hover:text-ink cursor-pointer"
                   >
-                    <Trash2 size={15} />
+                    {c.hideSection}
                   </button>
-
-                  <div className="grid gap-3 sm:grid-cols-2 pr-8">
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Tên dự án *</label>
-                      <Input
-                        value={proj.name}
-                        onChange={(e) => handleUpdateProject(idx, 'name', e.target.value)}
-                        placeholder="Tên dự án"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Vai trò đảm nhiệm</label>
-                      <Input
-                        value={proj.role || ''}
-                        onChange={(e) => handleUpdateProject(idx, 'role', e.target.value)}
-                        placeholder="Vai trò"
-                        className="bg-surface"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">
-                        Đường dẫn dự án / Live Demo / GitHub (dành cho bên tuyển dụng xem)
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={proj.link || ''}
-                          onChange={(e) => handleUpdateProject(idx, 'link', e.target.value)}
-                          placeholder="https://github.com/... hoặc https://my-demo.com"
-                          className="bg-surface font-mono text-xs"
-                        />
-                        {proj.link && (
-                          <a
-                            href={proj.link}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100 border border-brand-200 transition"
-                          >
-                            <ExternalLink size={13} /> Mở xem thử
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">
-                        Công nghệ sử dụng (ngăn cách bằng dấu phẩy)
-                      </label>
-                      <Input
-                        value={
-                          Array.isArray(proj.techStack)
-                            ? proj.techStack.join(', ')
-                            : proj.techStack || ''
-                        }
-                        onChange={(e) =>
-                          handleUpdateProject(
-                            idx,
-                            'techStack',
-                            e.target.value
-                              .split(',')
-                              .map((s) => s.trim())
-                              .filter(Boolean)
-                          )
-                        }
-                        placeholder="React, TypeScript, Node.js"
-                        className="bg-surface"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-2xs font-semibold text-slate-600 mb-1 block">
-                      Mô tả kết quả & đóng góp
-                    </label>
+                </>
+              }
+            />
+            {(formData.projects || []).map((proj, idx) => (
+              <div key={proj.id || idx} className={itemBlock}>
+                <ItemHead index={idx + 1} onRemove={() => handleRemoveProject(idx)} label={c.remove} />
+                <div className={itemGrid3}>
+                  <Field label={c.projectName} htmlFor={`proj-name-${idx}`}>
+                    <input
+                      id={`proj-name-${idx}`}
+                      value={proj.name}
+                      onChange={(e) => handleUpdateProject(idx, 'name', e.target.value)}
+                      placeholder={c.projectNamePh}
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.projectRole} htmlFor={`proj-role-${idx}`}>
+                    <input
+                      id={`proj-role-${idx}`}
+                      value={proj.role || ''}
+                      onChange={(e) => handleUpdateProject(idx, 'role', e.target.value)}
+                      placeholder={c.projectRolePh}
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.projectLink} htmlFor={`proj-link-${idx}`}>
+                    <LinkInput
+                      id={`proj-link-${idx}`}
+                      value={proj.link || ''}
+                      onChange={(value) => handleUpdateProject(idx, 'link', value)}
+                      placeholder="https://github.com/username/project"
+                      openLabel={c.open}
+                    />
+                  </Field>
+                  <Field label={c.techStack} htmlFor={`proj-tech-${idx}`} className="sm:col-span-2 xl:col-span-3">
+                    <input
+                      id={`proj-tech-${idx}`}
+                      value={Array.isArray(proj.techStack) ? proj.techStack.join(', ') : proj.techStack || ''}
+                      onChange={(e) =>
+                        handleUpdateProject(
+                          idx,
+                          'techStack',
+                          e.target.value
+                            .split(',')
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                        )
+                      }
+                      placeholder="React, TypeScript, Tailwind CSS, REST APIs"
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.projectDesc} htmlFor={`proj-desc-${idx}`} className="sm:col-span-2 xl:col-span-3">
                     <textarea
-                      rows={2}
+                      id={`proj-desc-${idx}`}
+                      rows={3}
                       value={proj.description}
                       onChange={(e) => handleUpdateProject(idx, 'description', e.target.value)}
-                      placeholder="Mô tả công việc và thành tựu trong dự án..."
-                      className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
+                      placeholder={c.projectDescPh}
+                      className={lineTextarea}
                     />
-                  </div>
+                  </Field>
                 </div>
-              ))}
-            </div>
-          </Card>
+              </div>
+            ))}
+            {(formData.projects || []).length === 0 && <p className={emptyNote}>{c.noProjects}</p>}
+          </section>
         )}
 
-        {/* Section 6: Certifications */}
+        {/* Certifications */}
         {enabledSections.certifications && (
-          <Card className="border-brand-100">
-            <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
-                  <Award size={15} />
-                </span>
-                <h3 className="text-base font-medium text-slate-900">
-                  Chứng chỉ & Chứng nhận (Certifications)
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleAddCertification}
-                  className="text-xs py-1.5 px-3"
-                >
-                  <Plus size={13} /> Thêm chứng chỉ
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => toggleSection('certifications')}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 cursor-pointer"
-                >
-                  Ẩn mục
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {(formData.certifications || []).map((cert, idx) => (
-                <div
-                  key={cert.id || idx}
-                  className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 relative space-y-3"
-                >
+          <section>
+            <SectionHead
+              index={sectionNumber('certifications')}
+              title={c.certificationsTitle}
+              action={
+                <>
                   <button
                     type="button"
-                    onClick={() => handleRemoveCertification(idx)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                    title="Xóa chứng chỉ này"
+                    onClick={handleAddCertification}
+                    className={`${textLink} text-[13px] text-ink`}
                   >
-                    <Trash2 size={15} />
+                    {c.addCertification}
                   </button>
-
-                  <div className="grid gap-3 sm:grid-cols-2 pr-8">
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Tên chứng chỉ *</label>
-                      <Input
-                        value={cert.name}
-                        onChange={(e) => handleUpdateCertification(idx, 'name', e.target.value)}
-                        placeholder="Tên chứng chỉ"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Tổ chức cấp *</label>
-                      <Input
-                        value={cert.issuer}
-                        onChange={(e) => handleUpdateCertification(idx, 'issuer', e.target.value)}
-                        placeholder="Tổ chức cấp"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Thời gian cấp</label>
-                      <Input
-                        value={cert.date}
-                        onChange={(e) => handleUpdateCertification(idx, 'date', e.target.value)}
-                        placeholder="Năm cấp"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Link xác thực</label>
-                      <Input
-                        value={cert.link || ''}
-                        onChange={(e) => handleUpdateCertification(idx, 'link', e.target.value)}
-                        placeholder="https://..."
-                        className="bg-surface font-mono text-xs"
-                      />
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('certifications')}
+                    className="text-[13px] text-slate-500 transition-colors hover:text-ink cursor-pointer"
+                  >
+                    {c.hideSection}
+                  </button>
+                </>
+              }
+            />
+            {(formData.certifications || []).map((cert, idx) => (
+              <div key={cert.id || idx} className={itemBlock}>
+                <ItemHead index={idx + 1} onRemove={() => handleRemoveCertification(idx)} label={c.remove} />
+                <div className={itemGrid3}>
+                  <Field label={c.certName} htmlFor={`cert-name-${idx}`}>
+                    <input
+                      id={`cert-name-${idx}`}
+                      value={cert.name}
+                      onChange={(e) => handleUpdateCertification(idx, 'name', e.target.value)}
+                      placeholder={c.certNamePh}
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.issuer} htmlFor={`cert-issuer-${idx}`}>
+                    <input
+                      id={`cert-issuer-${idx}`}
+                      value={cert.issuer}
+                      onChange={(e) => handleUpdateCertification(idx, 'issuer', e.target.value)}
+                      placeholder={c.issuerPh}
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.certDate} htmlFor={`cert-date-${idx}`}>
+                    <input
+                      id={`cert-date-${idx}`}
+                      value={cert.date}
+                      onChange={(e) => handleUpdateCertification(idx, 'date', e.target.value)}
+                      placeholder="2023"
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.certLink} htmlFor={`cert-link-${idx}`} className="sm:col-span-2 xl:col-span-3">
+                    <LinkInput
+                      id={`cert-link-${idx}`}
+                      value={cert.link || ''}
+                      onChange={(value) => handleUpdateCertification(idx, 'link', value)}
+                      placeholder="https://credly.com/badges/…"
+                      openLabel={c.open}
+                    />
+                  </Field>
                 </div>
-              ))}
-            </div>
-          </Card>
+              </div>
+            ))}
+            {(formData.certifications || []).length === 0 && <p className={emptyNote}>{c.noCertifications}</p>}
+          </section>
         )}
 
-        {/* Section 7: Interests */}
+        {/* Interests */}
         {enabledSections.interests && (
-          <Card className="border-rose-100">
-            <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-rose-50 text-rose-600">
-                  <Heart size={15} />
-                </span>
-                <h3 className="text-base font-medium text-slate-900">
-                  Sở thích & Điểm mạnh cá nhân (Interests)
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => toggleSection('interests')}
-                className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 cursor-pointer"
-              >
-                Ẩn mục
-              </button>
-            </div>
-
-            <div className="flex gap-2 mb-3">
-              <Input
-                value={newInterestInput}
-                onChange={(e) => setNewInterestInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddInterest(newInterestInput);
-                  }
-                }}
-                placeholder="Nhập sở thích..."
-                className="max-w-md"
-              />
-              <Button type="button" variant="secondary" onClick={() => handleAddInterest(newInterestInput)}>
-                <Plus size={15} /> Thêm
-              </Button>
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
-              {(formData.interests || []).map((interest) => (
-                <span
-                  key={interest}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/50 px-3 py-1.5 text-xs font-semibold text-rose-900 shadow-2xs"
-                >
-                  <span>{interest}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveInterest(interest)}
-                    className="text-rose-400 hover:text-rose-700 transition cursor-pointer"
-                  >
-                    <X size={13} />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Section 8: Languages */}
-        {enabledSections.languages && (
-          <Card className="border-amber-100">
-            <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-600">
-                  <Globe size={15} />
-                </span>
-                <h3 className="text-base font-medium text-slate-900">Ngoại ngữ (Languages)</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleAddLanguage}
-                  className="text-xs py-1.5 px-3"
-                >
-                  <Plus size={13} /> Thêm ngoại ngữ
-                </Button>
+          <section>
+            <SectionHead
+              index={sectionNumber('interests')}
+              title={c.interestsTitle}
+              action={
                 <button
                   type="button"
-                  onClick={() => toggleSection('languages')}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 cursor-pointer"
+                  onClick={() => toggleSection('interests')}
+                  className="text-[13px] text-slate-500 transition-colors hover:text-ink cursor-pointer"
                 >
-                  Ẩn mục
+                  {c.hideSection}
                 </button>
-              </div>
-            </div>
+              }
+            />
+            <AddLine
+              value={newInterestInput}
+              onChange={setNewInterestInput}
+              onAdd={() => handleAddInterest(newInterestInput)}
+              placeholder={c.interestPh}
+              addLabel={c.add}
+            />
+            <Suggestions
+              label={c.popular}
+              items={POPULAR_INTERESTS}
+              taken={formData.interests || []}
+              onAdd={handleAddInterest}
+            />
+            <TagList
+              items={formData.interests || []}
+              onRemove={handleRemoveInterest}
+              removeLabel={c.removeItem}
+              empty={c.noInterests}
+            />
+          </section>
+        )}
 
-            <div className="space-y-3">
-              {(formData.languages || []).map((lang, idx) => (
-                <div
-                  key={lang.id || idx}
-                  className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/40 relative flex items-center gap-3 pr-10"
-                >
-                  <div className="flex-1">
-                    <label className="text-2xs font-semibold text-slate-600 mb-1 block">Ngôn ngữ</label>
-                    <Input
+        {/* Languages */}
+        {enabledSections.languages && (
+          <section>
+            <SectionHead
+              index={sectionNumber('languages')}
+              title={c.languagesTitle}
+              action={
+                <>
+                  <button type="button" onClick={handleAddLanguage} className={`${textLink} text-[13px] text-ink`}>
+                    {c.addLanguage}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('languages')}
+                    className="text-[13px] text-slate-500 transition-colors hover:text-ink cursor-pointer"
+                  >
+                    {c.hideSection}
+                  </button>
+                </>
+              }
+            />
+            {(formData.languages || []).map((lang, idx) => (
+              <div key={lang.id || idx} className={itemBlock}>
+                <ItemHead index={idx + 1} onRemove={() => handleRemoveLanguage(idx)} label={c.remove} />
+                <div className={itemGrid2}>
+                  <Field label={c.languageName} htmlFor={`lang-name-${idx}`}>
+                    <input
+                      id={`lang-name-${idx}`}
                       value={lang.name}
                       onChange={(e) => handleUpdateLanguage(idx, 'name', e.target.value)}
-                      placeholder="Tiếng Anh, Tiếng Nhật..."
-                      className="bg-surface"
+                      placeholder={c.languageNamePh}
+                      className={lineInput}
                     />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-2xs font-semibold text-slate-600 mb-1 block">Trình độ</label>
-                    <Input
+                  </Field>
+                  <Field label={c.languageLevel} htmlFor={`lang-level-${idx}`}>
+                    <input
+                      id={`lang-level-${idx}`}
                       value={lang.level}
                       onChange={(e) => handleUpdateLanguage(idx, 'level', e.target.value)}
-                      placeholder="Thành thạo, IELTS 7.5..."
-                      className="bg-surface"
+                      placeholder={c.languageLevelPh}
+                      className={lineInput}
                     />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveLanguage(idx)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                    title="Xóa ngoại ngữ này"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  </Field>
                 </div>
-              ))}
-            </div>
-          </Card>
+              </div>
+            ))}
+            {(formData.languages || []).length === 0 && <p className={emptyNote}>{c.noLanguages}</p>}
+          </section>
         )}
 
-        {/* Section 9: Awards */}
+        {/* Awards */}
         {enabledSections.awards && (
-          <Card className="border-emerald-100">
-            <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
-                  <Trophy size={15} />
-                </span>
-                <h3 className="text-base font-medium text-slate-900">Giải thưởng & Thành tựu</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleAddAward}
-                  className="text-xs py-1.5 px-3"
-                >
-                  <Plus size={13} /> Thêm giải thưởng
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => toggleSection('awards')}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 cursor-pointer"
-                >
-                  Ẩn mục
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {(formData.awards || []).map((award, idx) => (
-                <div
-                  key={award.id || idx}
-                  className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 relative space-y-3"
-                >
+          <section>
+            <SectionHead
+              index={sectionNumber('awards')}
+              title={c.awardsTitle}
+              action={
+                <>
+                  <button type="button" onClick={handleAddAward} className={`${textLink} text-[13px] text-ink`}>
+                    {c.addAward}
+                  </button>
                   <button
                     type="button"
-                    onClick={() => handleRemoveAward(idx)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                    title="Xóa giải thưởng này"
+                    onClick={() => toggleSection('awards')}
+                    className="text-[13px] text-slate-500 transition-colors hover:text-ink cursor-pointer"
                   >
-                    <Trash2 size={15} />
+                    {c.hideSection}
                   </button>
-
-                  <div className="grid gap-3 sm:grid-cols-2 pr-8">
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Tên giải thưởng</label>
-                      <Input
-                        value={award.title}
-                        onChange={(e) => handleUpdateAward(idx, 'title', e.target.value)}
-                        placeholder="Giải thưởng"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Đơn vị trao giải</label>
-                      <Input
-                        value={award.issuer}
-                        onChange={(e) => handleUpdateAward(idx, 'issuer', e.target.value)}
-                        placeholder="Đơn vị cấp"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Năm</label>
-                      <Input
-                        value={award.year}
-                        onChange={(e) => handleUpdateAward(idx, 'year', e.target.value)}
-                        placeholder="2023"
-                        className="bg-surface max-w-xs"
-                      />
-                    </div>
-                  </div>
+                </>
+              }
+            />
+            {(formData.awards || []).map((award, idx) => (
+              <div key={award.id || idx} className={itemBlock}>
+                <ItemHead index={idx + 1} onRemove={() => handleRemoveAward(idx)} label={c.remove} />
+                <div className={itemGrid3}>
+                  <Field label={c.awardTitle} htmlFor={`award-title-${idx}`}>
+                    <input
+                      id={`award-title-${idx}`}
+                      value={award.title}
+                      onChange={(e) => handleUpdateAward(idx, 'title', e.target.value)}
+                      placeholder={c.awardTitlePh}
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.awardIssuer} htmlFor={`award-issuer-${idx}`}>
+                    <input
+                      id={`award-issuer-${idx}`}
+                      value={award.issuer}
+                      onChange={(e) => handleUpdateAward(idx, 'issuer', e.target.value)}
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.awardYear} htmlFor={`award-year-${idx}`}>
+                    <input
+                      id={`award-year-${idx}`}
+                      value={award.year}
+                      onChange={(e) => handleUpdateAward(idx, 'year', e.target.value)}
+                      placeholder="2023"
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.awardDesc} htmlFor={`award-desc-${idx}`} className="sm:col-span-2 xl:col-span-3">
+                    <textarea
+                      id={`award-desc-${idx}`}
+                      rows={2}
+                      value={award.description || ''}
+                      onChange={(e) => handleUpdateAward(idx, 'description', e.target.value)}
+                      className={lineTextarea}
+                    />
+                  </Field>
                 </div>
-              ))}
-            </div>
-          </Card>
+              </div>
+            ))}
+            {(formData.awards || []).length === 0 && <p className={emptyNote}>{c.noAwards}</p>}
+          </section>
         )}
 
-        {/* Section 10: References */}
+        {/* References */}
         {enabledSections.references && (
-          <Card className="border-brand-100">
-            <div className="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
-                  <Users size={15} />
-                </span>
-                <h3 className="text-base font-medium text-slate-900">Người tham chiếu (References)</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleAddReference}
-                  className="text-xs py-1.5 px-3"
-                >
-                  <Plus size={13} /> Thêm người tham chiếu
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => toggleSection('references')}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 cursor-pointer"
-                >
-                  Ẩn mục
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {(formData.references || []).map((refItem, idx) => (
-                <div
-                  key={refItem.id || idx}
-                  className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 relative space-y-3"
-                >
+          <section>
+            <SectionHead
+              index={sectionNumber('references')}
+              title={c.referencesTitle}
+              action={
+                <>
+                  <button type="button" onClick={handleAddReference} className={`${textLink} text-[13px] text-ink`}>
+                    {c.addReference}
+                  </button>
                   <button
                     type="button"
-                    onClick={() => handleRemoveReference(idx)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                    title="Xóa người tham chiếu này"
+                    onClick={() => toggleSection('references')}
+                    className="text-[13px] text-slate-500 transition-colors hover:text-ink cursor-pointer"
                   >
-                    <Trash2 size={15} />
+                    {c.hideSection}
                   </button>
-
-                  <div className="grid gap-3 sm:grid-cols-2 pr-8">
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Họ và tên</label>
-                      <Input
-                        value={refItem.fullName}
-                        onChange={(e) => handleUpdateReference(idx, 'fullName', e.target.value)}
-                        placeholder="Họ và tên"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Chức vụ & Công ty</label>
-                      <Input
-                        value={refItem.position}
-                        onChange={(e) => handleUpdateReference(idx, 'position', e.target.value)}
-                        placeholder="Chức vụ tại công ty"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Email</label>
-                      <Input
-                        value={refItem.email || ''}
-                        onChange={(e) => handleUpdateReference(idx, 'email', e.target.value)}
-                        placeholder="Email"
-                        className="bg-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-2xs font-semibold text-slate-600 mb-1 block">Số điện thoại</label>
-                      <Input
-                        value={refItem.phone || ''}
-                        onChange={(e) => handleUpdateReference(idx, 'phone', e.target.value)}
-                        placeholder="SĐT"
-                        className="bg-surface"
-                      />
-                    </div>
-                  </div>
+                </>
+              }
+            />
+            {(formData.references || []).map((refItem, idx) => (
+              <div key={refItem.id || idx} className={itemBlock}>
+                <ItemHead index={idx + 1} onRemove={() => handleRemoveReference(idx)} label={c.remove} />
+                <div className={itemGrid2}>
+                  <Field label={c.refName} htmlFor={`ref-name-${idx}`}>
+                    <input
+                      id={`ref-name-${idx}`}
+                      value={refItem.fullName}
+                      onChange={(e) => handleUpdateReference(idx, 'fullName', e.target.value)}
+                      placeholder="Trần Minh Đức"
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.refPosition} htmlFor={`ref-position-${idx}`}>
+                    <input
+                      id={`ref-position-${idx}`}
+                      value={refItem.position}
+                      onChange={(e) => handleUpdateReference(idx, 'position', e.target.value)}
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.email.replace(' *', '')} htmlFor={`ref-email-${idx}`}>
+                    <input
+                      id={`ref-email-${idx}`}
+                      value={refItem.email || ''}
+                      onChange={(e) => handleUpdateReference(idx, 'email', e.target.value)}
+                      placeholder="duc.tran@company.com"
+                      className={lineInput}
+                    />
+                  </Field>
+                  <Field label={c.phone} htmlFor={`ref-phone-${idx}`}>
+                    <input
+                      id={`ref-phone-${idx}`}
+                      value={refItem.phone || ''}
+                      onChange={(e) => handleUpdateReference(idx, 'phone', e.target.value)}
+                      placeholder="(+84) 903 888 999"
+                      className={lineInput}
+                    />
+                  </Field>
                 </div>
-              ))}
-            </div>
-          </Card>
+              </div>
+            ))}
+            {(formData.references || []).length === 0 && <p className={emptyNote}>{c.noReferences}</p>}
+          </section>
         )}
+      </div>
 
-        {/* Sticky Actions Bar */}
-        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-sm border border-slate-200">
-          <span className="text-xs text-slate-500">
-            Lưu các cập nhật để đồng bộ điểm chuẩn ATS và hồ sơ ứng tuyển.
-          </span>
-          <div className="flex items-center gap-3">
-            <Link to={`/candidate/resumes/${cv.id}`}>
-              <Button type="button" variant="secondary">
-                {t('resumes.cancel')}
-              </Button>
-            </Link>
-            <Button type="submit" variant="primary" disabled={updateMutation.isPending}>
-              <Save size={16} />
-              {updateMutation.isPending ? t('resumes.saving') : t('resumes.saveCv')}
-            </Button>
-          </div>
+      {/* Bottom actions */}
+      <div className="mt-[clamp(3rem,6vw,4.5rem)] flex flex-col gap-5 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-slate-600">{p.saveNote}</p>
+        <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
+          <Link to={`/candidate/resumes/${cv.id}`} className={`${textLink} text-[15px] text-ink`}>
+            {t('resumes.cancel')}
+          </Link>
+          <button type="submit" className={primaryButton} disabled={updateMutation.isPending}>
+            {updateMutation.isPending ? t('resumes.saving') : t('resumes.saveCv')}
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
         </div>
-      </form>
-    </>
+      </div>
+    </form>
   );
 }

@@ -1,38 +1,112 @@
 import { useState, useMemo } from 'react';
-import {
-  AlertTriangle,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  Copy,
-  Download,
-  Edit3,
-  FileCheck2,
-  FileText,
-  Filter,
-  LayoutGrid,
-  List,
-  MoreVertical,
-  Plus,
-  Search,
-  Lightbulb,
-  Star,
-  Target,
-  Trash2,
-  Upload,
-  X,
-  Zap,
-} from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Search, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getResumes, deleteResume, setDefaultResume } from '../../mocks/services/mockService';
 import type { Resume } from '../../types/domain';
-import { Badge, Button, Card, EmptyState, ErrorState, Input, Loading, PageTitle } from '../../components/ui';
+import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 
+// Short page-only strings that have no i18n key yet.
+const copy = {
+  vi: {
+    pageLabel: 'CV của tôi',
+    headline: (n: number) => (n > 0 ? `${n} bản CV.` : 'Chưa có CV nào.'),
+    subline: (hasDefault: boolean, n: number) =>
+      n === 0
+        ? 'Bắt đầu bản đầu tiên.'
+        : hasDefault
+        ? '1 bản đang dùng để ứng tuyển.'
+        : 'Chọn một bản để ứng tuyển.',
+    intro:
+      'Quản lý các bản CV, xem điểm ATS và chọn bản chính để hệ thống dùng khi gợi ý việc làm.',
+    createWithAi: 'Tạo CV bằng AI',
+    upload: 'Tải CV lên (PDF, DOCX)',
+    createManual: 'Tạo CV thủ công',
+    colName: 'Tên CV',
+    colAts: 'Điểm ATS',
+    colUpdated: 'Cập nhật',
+    primary: 'CV chính · đang dùng để ứng tuyển',
+    secondary: 'Bản phụ',
+    view: 'Xem CV',
+    edit: 'Chỉnh sửa',
+    setPrimary: 'Đặt làm CV chính',
+    review: 'Đánh giá ATS',
+    jobFit: 'So khớp việc làm',
+    remove: 'Xoá',
+    listView: 'Danh sách',
+    gridView: 'Lưới',
+    filterLabel: 'Lọc',
+    status: 'Trạng thái',
+    noMatch: 'Không có CV nào khớp với bộ lọc hiện tại.',
+    clearFilters: 'Xoá bộ lọc',
+    emptyHint:
+      'Tải lên bản CV sẵn có để AI trích xuất và tính điểm ATS, hoặc tạo CV mới từng bước theo chuẩn tuyển dụng.',
+    improvePrompt: 'Muốn tăng điểm ATS? Để AI phân tích CV chính và gợi ý chỉnh sửa.',
+    improveLink: 'Phân tích & cải thiện bằng AI',
+    defaultToast: 'Đã đặt làm CV chính.',
+    deleteQuestion: 'Bạn có chắc chắn muốn xoá bản CV',
+    deleting: 'Đang xoá…',
+    closeToast: 'Đóng thông báo',
+    clearSearch: 'Xoá tìm kiếm',
+  },
+  en: {
+    pageLabel: 'My CVs',
+    headline: (n: number) => (n > 0 ? `${n} CV${n > 1 ? 's' : ''}.` : 'No CVs yet.'),
+    subline: (hasDefault: boolean, n: number) =>
+      n === 0
+        ? 'Start your first one.'
+        : hasDefault
+        ? '1 in use for applications.'
+        : 'Pick one to apply with.',
+    intro:
+      'Manage your CVs, check ATS scores and choose the primary CV the system uses for job recommendations.',
+    createWithAi: 'Create CV with AI',
+    upload: 'Upload CV (PDF, DOCX)',
+    createManual: 'Create CV manually',
+    colName: 'CV name',
+    colAts: 'ATS score',
+    colUpdated: 'Updated',
+    primary: 'Primary CV · used for applications',
+    secondary: 'Secondary',
+    view: 'View CV',
+    edit: 'Edit',
+    setPrimary: 'Make primary',
+    review: 'ATS review',
+    jobFit: 'Job fit',
+    remove: 'Delete',
+    listView: 'List',
+    gridView: 'Grid',
+    filterLabel: 'Filter',
+    status: 'Status',
+    noMatch: 'No CVs match the current filters.',
+    clearFilters: 'Clear filters',
+    emptyHint:
+      'Upload an existing CV so AI can extract it and score it for ATS, or build a new CV step by step.',
+    improvePrompt: 'Want a higher ATS score? Let AI analyse your primary CV and suggest edits.',
+    improveLink: 'Analyse & improve with AI',
+    defaultToast: 'Set as primary CV.',
+    deleteQuestion: 'Are you sure you want to delete the CV',
+    deleting: 'Deleting…',
+    closeToast: 'Close notification',
+    clearSearch: 'Clear search',
+  },
+};
+
+const textLink =
+  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
+
+const primaryButton =
+  'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+
+const toggle = (active: boolean) =>
+  `pb-1 text-sm transition-colors duration-150 cursor-pointer whitespace-nowrap border-b ${
+    active ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'
+  }`;
+
 export default function ResumesPage() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const { t, isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
   const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,7 +134,7 @@ export default function ResumesPage() {
     mutationFn: (id: string) => setDefaultResume(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resumes'] });
-      setSuccessToast('Đã đặt làm CV mặc định thành công!');
+      setSuccessToast(c.defaultToast);
       setTimeout(() => setSuccessToast(null), 4000);
     },
   });
@@ -78,17 +152,6 @@ export default function ResumesPage() {
     });
   }, [resumes, searchQuery, statusFilter]);
 
-  const getStatusBadgeTone = (status: string) => {
-    switch (status) {
-      case 'Ready':
-        return 'green';
-      case 'Draft':
-        return 'gray';
-      default:
-        return 'amber';
-    }
-  };
-
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'Ready':
@@ -100,565 +163,367 @@ export default function ResumesPage() {
     }
   };
 
-  const getAtsColorClass = (score: number) => {
-    if (score >= 85) return 'text-emerald-600 bg-emerald-50 border-emerald-200';
-    if (score >= 70) return 'text-brand-600 bg-brand-50 border-brand-200';
-    if (score >= 50) return 'text-amber-600 bg-amber-50 border-amber-200';
-    return 'text-slate-500 bg-slate-50 border-slate-200';
-  };
+  const total = resumes?.length ?? 0;
+  const defaultCv = resumes?.find((cv) => cv.isDefault);
+  const analysisTarget = defaultCv ?? resumes?.[0];
+  const isFiltered = searchQuery !== '' || statusFilter !== 'All';
+
+  const subline = (cv: Resume) =>
+    cv.isDefault ? (
+      <p className="mt-1 text-sm text-brand">{c.primary}</p>
+    ) : (
+      <p className="mt-1 text-sm text-slate-600">
+        {c.secondary} · {cv.position} · {getStatusLabel(cv.status)}
+      </p>
+    );
+
+  const secondaryLinks = (cv: Resume) => (
+    <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-slate-600">
+      <Link to={`/candidate/resumes/${cv.id}/analysis`} className={`${textLink} text-[13px]`}>
+        {c.review}
+      </Link>
+      <Link to={`/candidate/cv-job-fit?cvId=${cv.id}`} className={`${textLink} text-[13px]`}>
+        {c.jobFit}
+      </Link>
+      <button
+        type="button"
+        onClick={() => setDeleteModalCv(cv)}
+        className={`${textLink} text-[13px] hover:text-danger`}
+      >
+        {c.remove}
+      </button>
+    </div>
+  );
+
+  const primaryLinks = (cv: Resume) => (
+    <div className="flex flex-wrap gap-x-5 gap-y-2 sm:flex-col sm:items-start sm:gap-y-2">
+      <Link to={`/candidate/resumes/${cv.id}`} className={`${textLink} text-ink`}>
+        {c.view}
+      </Link>
+      <Link to={`/candidate/resumes/${cv.id}/edit`} className={`${textLink} text-ink`}>
+        {c.edit}
+      </Link>
+      {!cv.isDefault && (
+        <button
+          type="button"
+          onClick={() => setDefaultMutation.mutate(cv.id)}
+          disabled={setDefaultMutation.isPending}
+          className={`${textLink} text-brand hover:text-ink disabled:opacity-50`}
+        >
+          {c.setPrimary}
+        </button>
+      )}
+    </div>
+  );
 
   return (
-    <>
-      <PageTitle
-        title={t('resumes.title')}
-        subtitle={t('resumes.subtitle')}
-        action={
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Link to="/candidate/resumes/upload">
-              <Button variant="secondary" className="shadow-xs">
-                <Upload size={16} className="text-brand-600" />
-                {t('resumes.uploadCv')}
-              </Button>
-            </Link>
-            <Link to="/candidate/resumes/create">
-              <Button variant="secondary" className="shadow-xs">
-                <Plus size={16} />
-                {t('resumes.createCv')}
-              </Button>
-            </Link>
-            <Link to="/candidate/resumes/ai-builder">
-              <Button
-                variant="primary"
-                className="shadow-xs bg-brand-600 hover:bg-brand-700 text-white border-0"
-              >
-                <Lightbulb size={16} className="text-amber-300 animate-pulse" />
-                {t('resumes.aiResumeBuilder')}
-              </Button>
-            </Link>
-          </div>
-        }
-      />
+    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+      {/* Headline */}
+      <header>
+        <p className="text-sm text-brand">{c.pageLabel}</p>
+        <h1 className="mt-[clamp(1.25rem,3vw,2rem)] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {c.headline(total)}
+          <span className="block text-brand">{c.subline(!!defaultCv, total)}</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[38rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {c.intro}
+        </p>
 
-      {/* AI Resume Builder Feature Banner */}
-      <div className="mb-6 rounded-2xl bg-brand-900 p-5 text-white relative overflow-hidden">
-        <div className="absolute -right-8 -bottom-8 w-48 h-48 bg-brand-500/20 rounded-full hidden pointer-events-none" />
-        <div className="absolute right-32 -top-8 w-40 h-40 bg-brand-500/20 rounded-full hidden pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-500/20 border border-brand-400/30 text-amber-300 shadow-inner">
-              <Lightbulb size={24} />
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-medium text-white">
-                  {t('resumes.aiResumeBuilder')} (AI Resume Builder)
-                </h3>
-                <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-950">
-                  Mới
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-brand-200/90 max-w-2xl leading-relaxed">
-                Chọn định hướng nghề nghiệp (Frontend, Backend, AI/ML, Fullstack...), AI sẽ tự động sinh nội dung CV chuẩn ATS với thành tích STAR bằng <strong className="text-white">Tiếng Việt</strong> hoặc <strong className="text-white">Tiếng Anh</strong> và cho phép chuyển đổi ngôn ngữ tức thì.
-              </p>
-            </div>
-          </div>
-          <Link to="/candidate/resumes/ai-builder" className="shrink-0 w-full md:w-auto">
-            <Button
-              variant="primary"
-              className="w-full md:w-auto bg-surface text-slate-900 hover:bg-slate-100 font-medium border-0 shadow-sm text-xs py-2 px-4"
-            >
-              <Lightbulb size={14} className="text-brand-600" />
-              Tạo CV bằng AI ngay →
-            </Button>
+        <div className="mt-[clamp(1.75rem,3.5vw,2.5rem)] flex flex-wrap items-center gap-x-7 gap-y-4">
+          <Link to="/candidate/resumes/ai-builder" className={primaryButton}>
+            {c.createWithAi}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+          <Link to="/candidate/resumes/upload" className={`${textLink} text-[15px] text-ink`}>
+            {c.upload}
+          </Link>
+          <Link to="/candidate/resumes/create" className={`${textLink} text-[15px] text-ink`}>
+            {c.createManual}
           </Link>
         </div>
-      </div>
+      </header>
 
-      {/* Success Toast */}
+      {/* Toast */}
       {successToast && (
-        <div className="mb-6 flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 shadow-sm animate-fade-in">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
-            <p className="font-semibold text-sm">{successToast}</p>
-          </div>
+        <div
+          role="status"
+          className="mt-8 flex items-center justify-between gap-4 border-y border-brand-200 py-3 text-sm text-brand"
+        >
+          <p>{successToast}</p>
           <button
+            type="button"
             onClick={() => setSuccessToast(null)}
-            className="text-emerald-600 hover:text-emerald-800 p-1"
+            aria-label={c.closeToast}
+            className="p-1 text-brand transition-colors hover:text-ink cursor-pointer"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Input
+      {/* Search, filters and view toggle */}
+      <section className="mt-[clamp(2.5rem,5vw,3.75rem)] flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative w-full lg:max-w-sm">
+          <Search
+            size={16}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('resumes.searchPlaceholder')}
-            className="pl-9 pr-8"
+            aria-label={t('resumes.searchPlaceholder')}
+            className="w-full border-0 border-b border-slate-300 bg-transparent py-2.5 pl-7 pr-8 text-sm text-ink outline-none transition-colors placeholder:text-slate-500 focus-visible:border-ink"
           />
-          <Search size={16} className="absolute left-3 top-3 text-slate-400" />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600"
+              aria-label={c.clearSearch}
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-ink cursor-pointer"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           )}
         </div>
 
-        {/* Status Filters and View Switcher */}
-        <div className="flex items-center gap-3 flex-wrap justify-between md:justify-end">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0">
+        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2" role="group" aria-label={c.filterLabel}>
             {[
               { id: 'All', label: t('resumes.filterAll') },
               { id: 'Ready', label: t('resumes.filterReady') },
               { id: 'Needs Review', label: t('resumes.filterReview') },
               { id: 'Draft', label: t('resumes.filterDraft') },
-            ].map((item) => {
-              const active = statusFilter === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setStatusFilter(item.id as any)}
-                  className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition whitespace-nowrap cursor-pointer ${
-                    active
-                      ? 'bg-brand-600 text-white shadow-xs'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={statusFilter === item.id}
+                onClick={() => setStatusFilter(item.id as any)}
+                className={toggle(statusFilter === item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center rounded-xl border border-slate-200 bg-surface p-1 shadow-2xs">
+          <div className="flex items-center gap-4 sm:border-l sm:border-border sm:pl-5">
             <button
               type="button"
+              aria-pressed={viewMode === 'list'}
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition cursor-pointer ${
-                viewMode === 'list'
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-              title="Xem dạng danh sách"
+              className={toggle(viewMode === 'list')}
             >
-              <List size={14} />
-              <span>Danh sách</span>
+              {c.listView}
             </button>
             <button
               type="button"
+              aria-pressed={viewMode === 'grid'}
               onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition cursor-pointer ${
-                viewMode === 'grid'
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-              title="Xem dạng lưới"
+              className={toggle(viewMode === 'grid')}
             >
-              <LayoutGrid size={14} />
-              <span>Lưới</span>
+              {c.gridView}
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Main Content */}
-      {isPending ? (
-        <Loading />
-      ) : isError ? (
-        <ErrorState />
-      ) : !filteredResumes.length ? (
-        <Card className="text-center py-12">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600 mb-4">
-            <FileText size={32} />
-          </div>
-          <h3 className="text-lg font-medium text-slate-800 mb-1">{t('resumes.emptyResumes')}</h3>
-          <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
-            Tải lên bản CV sẵn có để AI trích xuất và tính điểm ATS, hoặc tạo CV mới từng bước theo chuẩn tuyển dụng.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link to="/candidate/resumes/ai-builder">
-              <Button
-                variant="primary"
-                className="bg-brand-600 hover:bg-brand-700 text-white border-0 shadow-sm"
-              >
-                <Lightbulb size={16} className="text-amber-300" />
-                {t('resumes.aiResumeBuilder')}
-              </Button>
-            </Link>
-            <Link to="/candidate/resumes/upload">
-              <Button variant="secondary">
-                <Upload size={16} />
-                {t('resumes.uploadCv')}
-              </Button>
-            </Link>
-            <Link to="/candidate/resumes/create">
-              <Button variant="secondary">
-                <Plus size={16} />
-                {t('resumes.createCv')}
-              </Button>
-            </Link>
-          </div>
-        </Card>
-      ) : viewMode === 'list' ? (
-        <div className="space-y-3.5">
-          {filteredResumes.map((cv) => (
-            <div
-              key={cv.id}
-              className={`group relative overflow-hidden rounded-2xl border bg-surface p-4 sm:p-5 transition-all  hover:border-brand-300 ${
-                cv.isDefault ? 'border-brand-300 ring-1 ring-brand-200/60' : 'border-slate-200/80'
-              }`}
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                {/* Left Section: Icon, Title, Position, Skills */}
-                <div className="flex items-start gap-4 min-w-0 flex-1">
-                  <div className="relative shrink-0">
-                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700 shadow-2xs transition-transform">
-                      <FileText size={24} />
-                    </span>
-                    {cv.isDefault && (
-                      <span
-                        className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-amber-400 text-white shadow-xs"
-                        title={t('resumes.defaultBadge')}
-                      >
-                        <Star size={11} className="fill-white" />
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <Link
-                        to={`/candidate/resumes/${cv.id}`}
-                        className="text-base font-medium text-slate-900 hover:text-brand-600 transition line-clamp-1"
-                      >
-                        {cv.name}
-                      </Link>
-                      {cv.isDefault && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                          <Star size={10} className="fill-amber-400 text-amber-500" />
-                          CV chính
-                        </span>
-                      )}
-                      <Badge tone={getStatusBadgeTone(cv.status)}>
-                        {getStatusLabel(cv.status)}
-                      </Badge>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mb-2.5">
-                      <span className="font-semibold text-slate-700">{cv.position}</span>
-                      <span>•</span>
-                      <span>{cv.language}</span>
-                      <span>•</span>
-                      <span className="text-slate-400">Cập nhật: {cv.updatedAt}</span>
-                    </div>
-
-                    {/* Skills Preview */}
-                    {cv.skills && cv.skills.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {cv.skills.slice(0, 5).map((s) => (
-                          <span
-                            key={s}
-                            className="rounded-md bg-slate-50 border border-slate-200/80 px-2 py-0.5 text-xs text-slate-600"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                        {cv.skills.length > 5 && (
-                          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 font-medium">
-                            +{cv.skills.length - 5}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
+      {/* Main content */}
+      <section className="mt-6">
+        {isPending ? (
+          <Loading />
+        ) : isError ? (
+          <ErrorState />
+        ) : !filteredResumes.length ? (
+          <div className="border-y border-t-slate-400 border-b-border py-12">
+            {isFiltered && total > 0 ? (
+              <div className="flex flex-wrap items-baseline justify-between gap-4">
+                <p className="text-[15px] text-slate-600">{c.noMatch}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('All');
+                  }}
+                  className={`${textLink} text-ink`}
+                >
+                  {c.clearFilters}
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-[clamp(1.25rem,2vw,1.5rem)] font-normal tracking-[-0.01em] text-ink">
+                  {t('resumes.emptyResumes')}
+                </p>
+                <p className="mt-2 max-w-xl text-[15px] leading-7 text-slate-600">{c.emptyHint}</p>
+                <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-4">
+                  <Link to="/candidate/resumes/ai-builder" className={primaryButton}>
+                    {c.createWithAi}
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
+                  <Link to="/candidate/resumes/upload" className={`${textLink} text-ink`}>
+                    {c.upload}
+                  </Link>
+                  <Link to="/candidate/resumes/create" className={`${textLink} text-ink`}>
+                    {c.createManual}
+                  </Link>
                 </div>
+              </>
+            )}
+          </div>
+        ) : viewMode === 'list' ? (
+          <div className="border-t border-slate-400">
+            {/* Column headings (desktop) */}
+            <div className="hidden grid-cols-[minmax(0,1fr)_6rem_9rem_11rem] gap-6 border-b border-border py-4 text-[13px] text-slate-600 md:grid">
+              <span>{c.colName}</span>
+              <span className="text-right">{c.colAts}</span>
+              <span>{c.colUpdated}</span>
+              <span className="sr-only">{c.view}</span>
+            </div>
 
-                {/* Middle: ATS Score Pill */}
-                <div className="flex items-center gap-3 shrink-0 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-100 self-start lg:self-center">
-                  <div
-                    className={`grid h-11 w-11 place-items-center rounded-xl border text-base font-semibold ${getAtsColorClass(
-                      cv.atsScore
-                    )}`}
-                  >
-                    {cv.atsScore || '—'}
+            <ul>
+              {filteredResumes.map((cv) => (
+                <li
+                  key={cv.id}
+                  className="grid gap-4 border-b border-border py-6 md:grid-cols-[minmax(0,1fr)_6rem_9rem_11rem] md:items-center md:gap-6"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      to={`/candidate/resumes/${cv.id}`}
+                      className="break-words text-[clamp(1.0625rem,1.4vw,1.25rem)] text-ink transition-colors hover:text-brand"
+                    >
+                      {cv.name}
+                    </Link>
+                    {subline(cv)}
+                    {secondaryLinks(cv)}
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-800">{t('resumes.atsScore')}</p>
-                    <p className="text-[11px] text-slate-500">
-                      {cv.atsScore >= 85
-                        ? 'Đạt chuẩn cao'
-                        : cv.atsScore >= 70
-                        ? 'Mức khá'
-                        : 'Cần tối ưu thêm'}
+
+                  <div className="flex items-baseline gap-4 md:contents">
+                    <p className="text-[clamp(1.75rem,2.6vw,2rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums md:text-right">
+                      <span className="sr-only">{c.colAts}: </span>
+                      {cv.atsScore || '—'}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      <span className="md:sr-only">{c.colUpdated} </span>
+                      {cv.updatedAt}
                     </p>
                   </div>
+
+                  {primaryLinks(cv)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <ul className="grid gap-x-[clamp(1.5rem,3vw,2.5rem)] gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredResumes.map((cv) => (
+              <li key={cv.id} className="flex flex-col border-t border-slate-400 pt-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <Link
+                      to={`/candidate/resumes/${cv.id}`}
+                      className="break-words text-[17px] text-ink transition-colors hover:text-brand"
+                    >
+                      {cv.name}
+                    </Link>
+                    {subline(cv)}
+                  </div>
+                  <p className="shrink-0 text-[2rem] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
+                    <span className="sr-only">{c.colAts}: </span>
+                    {cv.atsScore || '—'}
+                  </p>
                 </div>
 
-                {/* Right: Actions */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 self-end lg:self-center">
-                  <Link
-                    to={`/candidate/resumes/${cv.id}/analysis`}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-200 px-3 py-2 text-xs font-medium text-brand-700 transition"
-                  >
-                    <Lightbulb size={13} className="text-brand-600" />
-                    <span>Đánh giá ATS</span>
-                  </Link>
+                <dl className="mt-5 text-sm">
+                  <div className="flex justify-between gap-4 border-t border-border py-2.5">
+                    <dt className="text-slate-600">{c.colUpdated}</dt>
+                    <dd className="text-ink">{cv.updatedAt}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 border-y border-border py-2.5">
+                    <dt className="text-slate-600">{c.status}</dt>
+                    <dd className="text-ink">{getStatusLabel(cv.status)}</dd>
+                  </div>
+                </dl>
 
-                  <Link
-                    to={`/candidate/cv-job-fit?cvId=${cv.id}`}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-200 px-3 py-2 text-xs font-medium text-brand-700 transition"
-                  >
-                    <Target size={13} className="text-brand-600" />
-                    <span>So khớp việc làm</span>
+                <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+                  <Link to={`/candidate/resumes/${cv.id}`} className={`${textLink} text-ink`}>
+                    {c.view}
                   </Link>
-
-                  <Link
-                    to={`/candidate/resumes/${cv.id}`}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                    title={t('resumes.viewDetails')}
-                  >
-                    <FileCheck2 size={13} />
-                    <span className="hidden xl:inline">{t('resumes.viewDetails')}</span>
+                  <Link to={`/candidate/resumes/${cv.id}/edit`} className={`${textLink} text-ink`}>
+                    {c.edit}
                   </Link>
-
-                  <Link
-                    to={`/candidate/resumes/${cv.id}/edit`}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                    title={t('resumes.editCv')}
-                  >
-                    <Edit3 size={13} />
-                    <span className="hidden xl:inline">{t('resumes.editCv')}</span>
-                  </Link>
-
-                  {!cv.isDefault ? (
+                  {!cv.isDefault && (
                     <button
                       type="button"
                       onClick={() => setDefaultMutation.mutate(cv.id)}
-                      className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-surface text-slate-400 hover:text-amber-500 hover:border-amber-200 hover:bg-amber-50 transition cursor-pointer"
-                      title={t('resumes.setDefault')}
+                      disabled={setDefaultMutation.isPending}
+                      className={`${textLink} text-brand hover:text-ink disabled:opacity-50`}
                     >
-                      <Star size={14} />
+                      {c.setPrimary}
                     </button>
-                  ) : (
-                    <span
-                      className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 border border-amber-200 text-amber-500"
-                      title="CV chính"
-                    >
-                      <Star size={14} className="fill-amber-400" />
-                    </span>
                   )}
-
-                  <button
-                    type="button"
-                    onClick={() => setDeleteModalCv(cv)}
-                    className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-surface text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition cursor-pointer"
-                    title={t('resumes.deleteCv')}
-                  >
-                    <Trash2 size={14} />
-                  </button>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredResumes.map((cv) => (
-            <Card
-              key={cv.id}
-              className={`relative flex flex-col justify-between transition-all  border ${
-                cv.isDefault ? 'border-brand-300 ring-1 ring-brand-200/60' : 'border-slate-200/80'
-              }`}
-            >
-              <div>
-                {/* Header Row */}
-                <div className="mb-4 flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-700 shadow-2xs">
-                      <FileText size={22} />
-                    </span>
-                    {cv.isDefault && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                        <Star size={11} className="fill-amber-400 text-amber-400" />
-                        {t('resumes.defaultBadge')}
-                      </span>
-                    )}
-                  </div>
+                {secondaryLinks(cv)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-                  <Badge tone={getStatusBadgeTone(cv.status)}>
-                    {getStatusLabel(cv.status)}
-                  </Badge>
-                </div>
-
-                {/* Title & Position */}
-                <h3 className="text-base font-medium text-slate-900 line-clamp-1 hover:text-brand-600 transition">
-                  <Link to={`/candidate/resumes/${cv.id}`}>{cv.name}</Link>
-                </h3>
-                <p className="mt-1 text-xs font-medium text-slate-500">{cv.position}</p>
-
-                {/* ATS Score & Metrics Box */}
-                <div className="mt-4 rounded-xl bg-slate-50/80 p-3.5 border border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`grid h-12 w-12 place-items-center rounded-xl border text-lg font-semibold ${getAtsColorClass(
-                        cv.atsScore
-                      )}`}
-                    >
-                      {cv.atsScore || '—'}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-800">{t('resumes.atsScore')}</p>
-                      <p className="text-xs text-slate-500">
-                        {cv.atsScore >= 85
-                          ? 'Đạt chuẩn cao'
-                          : cv.atsScore >= 70
-                          ? 'Mức khá'
-                          : 'Cần tối ưu thêm'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-right text-xs text-slate-400">
-                    <span className="block font-medium text-slate-600">{cv.language}</span>
-                    <span className="mt-0.5 block">{cv.updatedAt}</span>
-                  </div>
-                </div>
-
-                {/* Skills Preview */}
-                {cv.skills && cv.skills.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {cv.skills.slice(0, 3).map((s) => (
-                      <span
-                        key={s}
-                        className="rounded-md bg-surface border border-slate-200 px-2 py-0.5 text-xs text-slate-600"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                    {cv.skills.length > 3 && (
-                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 font-medium">
-                        +{cv.skills.length - 3}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    to={`/candidate/resumes/${cv.id}/analysis`}
-                    className="inline-flex items-center justify-center gap-1 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-200 py-2 text-xs font-medium text-brand-700 transition"
-                  >
-                    <Lightbulb size={13} className="text-brand-600" />
-                    Đánh giá ATS
-                  </Link>
-                  <Link
-                    to={`/candidate/cv-job-fit?cvId=${cv.id}`}
-                    className="inline-flex items-center justify-center gap-1 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-200 py-2 text-xs font-medium text-brand-700 transition"
-                  >
-                    <Target size={13} className="text-brand-600" />
-                    So khớp việc làm
-                  </Link>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    to={`/candidate/resumes/${cv.id}`}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-surface py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    <FileCheck2 size={14} />
-                    {t('resumes.viewDetails')}
-                  </Link>
-                  <Link
-                    to={`/candidate/resumes/${cv.id}/edit`}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-surface py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    <Edit3 size={14} />
-                    {t('resumes.editCv')}
-                  </Link>
-                </div>
-
-                <div className="flex items-center justify-between text-xs pt-1">
-                  {!cv.isDefault ? (
-                    <button
-                      type="button"
-                      onClick={() => setDefaultMutation.mutate(cv.id)}
-                      className="text-slate-500 hover:text-brand-600 font-medium flex items-center gap-1 cursor-pointer"
-                    >
-                      <Star size={13} />
-                      {t('resumes.setDefault')}
-                    </button>
-                  ) : (
-                    <span className="text-emerald-600 font-medium flex items-center gap-1">
-                      <Check size={13} /> CV chính
-                    </span>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => setDeleteModalCv(cv)}
-                    className="text-slate-400 hover:text-red-600 transition flex items-center gap-1 cursor-pointer p-1"
-                    title={t('resumes.deleteCv')}
-                  >
-                    <Trash2 size={14} />
-                    <span>{t('resumes.deleteCv')}</span>
-                  </button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+      {/* Improve prompt */}
+      {analysisTarget && (
+        <section className="mt-[clamp(3rem,6vw,4.5rem)] flex flex-col gap-3 border-t border-ink pt-6 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">
+          <p className="text-[15px] text-ink">{c.improvePrompt}</p>
+          <Link
+            to={`/candidate/resumes/${analysisTarget.id}/analysis`}
+            className={`${textLink} shrink-0 text-[15px] text-brand hover:text-ink`}
+          >
+            {c.improveLink}
+          </Link>
+        </section>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete confirmation */}
       {deleteModalCv && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center gap-3 text-red-600 mb-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-red-50">
-                <AlertTriangle size={22} />
-              </span>
-              <h3 className="text-lg font-medium text-slate-900">
-                {t('resumes.deleteConfirmTitle')}
-              </h3>
-            </div>
-            <p className="text-sm text-slate-600 leading-relaxed mb-2">
-              Bạn có chắc chắn muốn xoá bản CV{' '}
-              <strong className="text-slate-900 font-semibold">"{deleteModalCv.name}"</strong> không?
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-cv-title"
+        >
+          <div className="w-full max-w-md border border-border bg-canvas p-[clamp(1.5rem,4vw,2rem)]">
+            <h3
+              id="delete-cv-title"
+              className="border-b border-ink pb-3 text-[1.375rem] font-normal tracking-[-0.01em] text-ink"
+            >
+              {t('resumes.deleteConfirmTitle')}
+            </h3>
+            <p className="mt-4 text-[15px] leading-7 text-ink">
+              {c.deleteQuestion} <span className="font-medium">"{deleteModalCv.name}"</span>?
             </p>
-            <p className="text-xs text-slate-500 mb-6">{t('resumes.deleteConfirmDesc')}</p>
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                variant="secondary"
+            <p className="mt-2 text-sm leading-6 text-slate-600">{t('resumes.deleteConfirmDesc')}</p>
+            <div className="mt-7 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">
+              <button
+                type="button"
                 onClick={() => setDeleteModalCv(null)}
                 disabled={deleteMutation.isPending}
+                className={`${textLink} text-ink disabled:opacity-50`}
               >
                 {t('resumes.cancel')}
-              </Button>
+              </button>
               <button
                 type="button"
                 onClick={() => deleteMutation.mutate(deleteModalCv.id)}
                 disabled={deleteMutation.isPending}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-danger px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-800 disabled:opacity-50 cursor-pointer"
               >
-                <Trash2 size={16} />
-                {deleteMutation.isPending ? 'Đang xoá…' : t('resumes.deleteCv')}
+                {deleteMutation.isPending ? c.deleting : t('resumes.deleteCv')}
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

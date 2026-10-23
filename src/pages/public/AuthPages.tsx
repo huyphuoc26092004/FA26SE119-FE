@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, ArrowRight, RefreshCw, AlertCircle, Check } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useTranslation } from '../../i18n';
+import { CcvLogo } from '../../components/brand/CcvLogo';
 
 // ==========================================
 // SHARED AUTH PRESENTATIONAL COMPONENTS
@@ -24,9 +25,8 @@ function AuthPageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-canvas text-ink lg:grid lg:grid-cols-2">
       <aside className="hidden bg-night text-[#f2f3ef] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:flex-col lg:justify-between lg:px-[clamp(3rem,6vw,7.5rem)] lg:py-[clamp(2.5rem,4.5vh,4rem)]">
-        <Link to="/" aria-label="Jobie home" className="inline-flex items-baseline gap-1 text-white">
-          <span className="text-[clamp(1.625rem,1.8vw,2rem)] font-medium tracking-[-0.02em]">Jobie</span>
-          <span className="text-sm text-mint">ai</span>
+        <Link to="/" aria-label="CCV" className="inline-flex self-start">
+          <CcvLogo tone="dark" height={44} />
         </Link>
 
         <div className="max-w-[40rem]">
@@ -72,9 +72,8 @@ function AuthPageShell({ children }: { children: React.ReactNode }) {
 
       <section className="flex min-h-[100dvh] flex-col">
         <header className="flex items-center justify-between gap-4 px-5 py-5 sm:px-10 sm:py-7 min-[2300px]:[zoom:1.3] lg:justify-end lg:px-[clamp(2rem,4vw,4.5rem)]">
-          <Link to="/" aria-label="Jobie home" className="inline-flex items-baseline gap-1 lg:hidden">
-            <span className="text-2xl font-medium tracking-[-0.02em]">Jobie</span>
-            <span className="text-xs text-brand">ai</span>
+          <Link to="/" aria-label="CCV" className="inline-flex lg:hidden">
+            <CcvLogo height={32} />
           </Link>
           <nav
             aria-label={isVietnamese ? 'Điều hướng phụ' : 'Secondary navigation'}
@@ -191,7 +190,7 @@ function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled ?? loading}
-      className="flex min-h-[3.25rem] w-full items-center justify-between gap-3 rounded-full bg-night px-6 text-base font-medium text-white transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-70 md:min-h-14 md:text-[1.0625rem]"
+      className="btn btn-p btn-m min-h-[3.25rem] w-full justify-between! disabled:opacity-70! md:min-h-14 md:text-[1.0625rem]!"
     >
       {loading ? (
         <span className="flex items-center gap-2.5">
@@ -211,7 +210,7 @@ function OutlineButton({ label, onClick }: { label: string; onClick: () => void 
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[3.25rem] w-full items-center justify-center rounded-full border border-ink/70 px-6 text-base text-ink transition-colors hover:border-ink hover:bg-white/60 md:min-h-14 md:text-[1.0625rem]"
+      className="btn btn-o btn-m min-h-[3.25rem] w-full md:min-h-14 md:text-[1.0625rem]!"
     >
       {label}
     </button>

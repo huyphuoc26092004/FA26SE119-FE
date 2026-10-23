@@ -1,15 +1,5 @@
-import { useState } from 'react';
-import {
-  MessageSquare,
-  Send,
-  Lightbulb,
-  Lock,
-  User,
-  ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
-import { Button, Card, Input } from '../ui';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, ArrowUp, Lock, MessageSquare, X } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { guestAssistantReplies, type AiAssistantResponse } from './guestTrialData';
 
@@ -20,17 +10,24 @@ interface Message {
   timestamp: string;
 }
 
-interface GuestAiChatTabProps {
+interface GuestAiChatWidgetProps {
   onOpenSaveModal?: () => void;
 }
 
-export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
+// Floating chat: a launcher pinned to the bottom-right corner that opens a compact panel
+// (a full-screen sheet on small screens). Chat state lives here, so it survives closing the panel.
+export function GuestAiChatWidget({ onOpenSaveModal }: GuestAiChatWidgetProps) {
   const { isVietnamese } = useTranslation();
 
   const MAX_GUEST_QUOTA = 3;
   const [quotaRemaining, setQuotaRemaining] = useState<number>(3);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const streamRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -123,265 +120,244 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
     setTyping(false);
   };
 
+  const closePanel = () => {
+    setOpen(false);
+    launcherRef.current?.focus();
+  };
+
+  // Keep the newest message in view; long replies are shown from their first line.
+  useEffect(() => {
+    if (!open) return;
+    const el = streamRef.current;
+    if (!el) return;
+    const last = el.lastElementChild as HTMLElement | null;
+    el.scrollTop = typing || !last ? el.scrollHeight : last.offsetTop - 20;
+  }, [messages, typing, open]);
+
+  // Focus the input when the panel opens; Escape closes it.
+  useEffect(() => {
+    if (!open) return;
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePanel();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  const quotaBars = (
+    <span className="flex gap-1" aria-hidden="true">
+      {[1, 2, 3].map((step) => (
+        <span
+          key={step}
+          className={`h-1 w-4 rounded-full ${step <= quotaRemaining ? 'bg-brand' : 'bg-slate-300'}`}
+        />
+      ))}
+    </span>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Intro & Quota Header */}
-      <div className="flex flex-col gap-4 rounded-2xl bg-brand-50/80 border border-brand-100 p-5 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100/70 px-3 py-1 text-xs font-semibold text-brand-800">
-              <Lightbulb size={13} className="text-brand-600" />
-              {isVietnamese ? 'Trò Chuyện Giới Hạn Với Trợ Lý AI' : 'Limited AI Assistant Chat Trial'}
-            </span>
-          </div>
-          <h3 className="mt-2 text-lg font-medium text-slate-900 md:text-xl">
-            {isVietnamese
-              ? 'Tư vấn nghề nghiệp thông minh không cần đăng nhập'
-              : 'Smart career consultation without signing in'}
-          </h3>
-          <p className="mt-1 text-xs text-slate-600 md:text-sm">
-            {isVietnamese
-              ? 'Mỗi khách dùng thử được trải nghiệm tối đa 3 câu hỏi phản hồi nhanh từ AI để giải quyết thắc mắc tìm việc.'
-              : 'Each guest gets up to 3 quick AI consultation queries to answer immediate career questions.'}
-          </p>
-        </div>
-
-        {/* Quota Counter Badge */}
-        <div className="flex items-center gap-3 rounded-2xl bg-surface p-3.5 shadow-xs border border-slate-200">
-          <div className="text-right">
-            <p className="text-xs text-slate-500 font-medium">
-              {isVietnamese ? 'Lượt hỏi miễn phí còn lại' : 'Free queries left'}
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              <span
-                className={
-                  quotaRemaining > 1
-                    ? 'text-brand-600'
-                    : quotaRemaining === 1
-                    ? 'text-amber-600'
-                    : 'text-red-500'
-                }
-              >
-                {quotaRemaining}
-              </span>{' '}
-              / {MAX_GUEST_QUOTA}
-            </p>
-          </div>
-          <div className="flex gap-1">
-            {[1, 2, 3].map((step) => {
-              const active = step <= quotaRemaining;
-              return (
-                <div
-                  key={step}
-                  className={`h-7 w-2 rounded-full transition-all ${
-                    active ? 'bg-brand-600' : 'bg-slate-200'
-                  }`}
-                />
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Chat Box */}
-      <Card className="p-0 overflow-hidden shadow-xs border-slate-200/90">
-        {/* Chat Header Bar */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <div className="grid h-8 w-8 place-items-center rounded-xl bg-brand-600 text-white shadow-xs">
-              <MessageSquare size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">
-                {isVietnamese ? 'CareerPilot AI Coach' : 'CareerPilot AI Coach'}
+    <>
+      {open && (
+        <div
+          role="dialog"
+          aria-label={isVietnamese ? 'Trò chuyện với trợ lý nghề nghiệp' : 'Chat with the career assistant'}
+          className="fixed inset-0 z-40 flex flex-col bg-surface sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[min(40rem,calc(100dvh-8rem))] sm:w-[clamp(22rem,26vw,27rem)] sm:overflow-hidden sm:rounded-3xl sm:border sm:border-border sm:shadow-[0_24px_60px_-28px_rgba(23,32,28,0.35)]"
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4 border-b border-border px-5 pb-4 pt-5">
+            <div className="min-w-0">
+              <p className="text-base font-medium text-ink">
+                {isVietnamese ? 'Trợ lý nghề nghiệp' : 'Career assistant'}
               </p>
-              <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
-                {isVietnamese ? 'Đang trực tuyến · Phiên thử nghiệm' : 'Online · Guest Session'}
-              </p>
-            </div>
-          </div>
-
-          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200/60">
-            {isVietnamese ? 'Chế độ Khách (Giới hạn)' : 'Guest Mode (Limited)'}
-          </span>
-        </div>
-
-        {/* Message Stream */}
-        <div className="flex h-[clamp(380px,52vh,640px)] flex-col gap-4 overflow-y-auto p-5 bg-canvas">
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex gap-3 max-w-[85%] ${
-                msg.role === 'USER' ? 'ml-auto flex-row-reverse' : ''
-              }`}
-            >
-              <div
-                className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl text-xs font-medium ${
-                  msg.role === 'USER'
-                    ? 'bg-brand-600 text-white'
-                    : 'bg-white text-brand-600 border border-brand-100 shadow-xs'
-                }`}
-              >
-                {msg.role === 'USER' ? <User size={15} /> : <MessageSquare size={16} />}
+              <div className="mt-1.5 flex items-center gap-2.5 text-xs text-slate-600">
+                {quotaBars}
+                <span>
+                  {isVietnamese
+                    ? `Phiên dùng thử · còn ${quotaRemaining}/${MAX_GUEST_QUOTA} lượt`
+                    : `Guest session · ${quotaRemaining}/${MAX_GUEST_QUOTA} left`}
+                </span>
               </div>
+            </div>
+            <button
+              type="button"
+              onClick={closePanel}
+              className="-mr-2 -mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink"
+              aria-label={isVietnamese ? 'Đóng khung chat' : 'Close chat'}
+            >
+              <X size={18} />
+            </button>
+          </div>
 
-              <div className="space-y-1.5">
-                <div
-                  className={`rounded-2xl p-4 text-xs leading-relaxed sm:text-sm ${
-                    msg.role === 'USER'
-                      ? 'bg-brand-600 text-white shadow-xs rounded-tr-none'
-                      : 'bg-white text-slate-800 border border-slate-200/80 shadow-xs rounded-tl-none'
-                  }`}
-                >
-                  <p className="whitespace-pre-line">{msg.text}</p>
-
-                  {/* Optional AI tips pill list */}
+          {/* Message stream */}
+          <div ref={streamRef} className="relative flex-1 space-y-6 overflow-y-auto px-5 py-5">
+            {messages.map((msg, i) =>
+              msg.role === 'USER' ? (
+                <div key={i} className="flex flex-col items-end">
+                  <p className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-sm leading-relaxed text-white">
+                    {msg.text}
+                  </p>
+                  <span className="mt-1.5 text-xs text-slate-500">{msg.timestamp}</span>
+                </div>
+              ) : (
+                <div key={i} className="pr-4">
+                  <p className="text-xs text-slate-500">
+                    <span className="text-brand">{isVietnamese ? 'Trợ lý' : 'Assistant'}</span>
+                    <span className="mx-1.5">·</span>
+                    {msg.timestamp}
+                  </p>
+                  <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-slate-800">
+                    {msg.text}
+                  </p>
                   {msg.tips && msg.tips.length > 0 && (
-                    <div className="mt-3 border-t border-slate-100 pt-3">
-                      <p className="text-xs font-medium text-slate-500 flex items-center gap-1 mb-1.5">
-                        <Lightbulb size={12} className="text-amber-500" />
-                        {isVietnamese ? 'Gợi ý cốt lõi từ AI:' : 'AI Key Recommendations:'}
-                      </p>
-                      <ul className="space-y-1 text-xs text-slate-600">
+                    <div className="mt-3 border-t border-border pt-3">
+                      <p className="text-xs text-slate-500">{isVietnamese ? 'Ý chính' : 'Key points'}</p>
+                      <ol className="mt-1.5 space-y-1">
                         {msg.tips.map((tip, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5">
-                            <CheckCircle2 size={13} className="text-brand-600 shrink-0 mt-0.5" />
+                          <li key={idx} className="flex gap-2.5 text-sm text-slate-700">
+                            <span className="w-5 shrink-0 text-xs leading-6 tabular-nums text-brand">
+                              {String(idx + 1).padStart(2, '0')}
+                            </span>
                             <span>{tip}</span>
                           </li>
                         ))}
-                      </ul>
+                      </ol>
                     </div>
                   )}
                 </div>
+              ),
+            )}
 
-                <p
-                  className={`text-xs text-slate-400 ${
-                    msg.role === 'USER' ? 'text-right' : 'text-left'
-                  }`}
-                >
-                  {msg.timestamp}
-                </p>
-              </div>
-            </div>
-          ))}
-
-          {typing && (
-            <div className="flex items-center gap-3 max-w-[80%]">
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-surface text-brand-600 border border-brand-100 shadow-xs">
-                <MessageSquare size={16} />
-              </div>
-              <div className="rounded-2xl bg-surface border border-slate-200/80 px-4 py-3 text-xs text-slate-500 shadow-xs flex items-center gap-2">
+            {typing && (
+              <div className="flex items-center gap-2 text-xs text-slate-500" aria-live="polite">
                 <span className="flex gap-1">
-                  <span className="h-2 w-2 rounded-full bg-brand-600" />
-                  <span className="h-2 w-2 rounded-full bg-brand-600 [animation-delay:0.2s]" />
-                  <span className="h-2 w-2 rounded-full bg-brand-600 [animation-delay:0.4s]" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand [animation-delay:0.2s]" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand [animation-delay:0.4s]" />
                 </span>
-                <span>
-                  {isVietnamese ? 'Trợ lý đang suy nghĩ...' : 'Assistant is thinking...'}
-                </span>
+                {isVietnamese ? 'Trợ lý đang trả lời' : 'Assistant is replying'}
+              </div>
+            )}
+          </div>
+
+          {/* Quota exhausted */}
+          {quotaRemaining <= 0 && (
+            <div className="border-t border-border px-5 py-4">
+              <p className="text-sm font-medium text-ink">
+                {isVietnamese ? 'Bạn đã dùng hết 3 câu hỏi thử' : 'You have used all 3 free questions'}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                {isVietnamese
+                  ? 'Tạo tài khoản miễn phí hoặc đăng nhập bằng tài khoản Demo để trò chuyện không giới hạn.'
+                  : 'Create a free account or sign in with a demo account to keep chatting.'}
+              </p>
+              <button
+                type="button"
+                onClick={onOpenSaveModal}
+                className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-brand-800"
+              >
+                {isVietnamese ? 'Mở khoá đầy đủ' : 'Unlock full access'}
+                <ArrowRight size={15} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
+          {/* Suggested prompts */}
+          {quotaRemaining > 0 && (
+            <div className="border-t border-border pt-3">
+              <p className="px-5 text-xs text-slate-500">
+                {isVietnamese ? 'Thử hỏi' : 'Try asking'}
+              </p>
+              <div className="mt-2 flex gap-2 overflow-x-auto px-5 pb-3 [scrollbar-width:none]">
+                {suggestedPrompts.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => handleSend(p.text, p.key)}
+                    disabled={typing}
+                    className="w-56 shrink-0 rounded-2xl border border-border px-3.5 py-2 text-left text-xs leading-snug text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:opacity-50"
+                  >
+                    {p.text}
+                  </button>
+                ))}
               </div>
             </div>
           )}
-        </div>
 
-        {/* Quota Exhausted Banner */}
-        {quotaRemaining <= 0 && (
-          <div className="bg-brand-600 p-4 text-white">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-white/20 p-2 text-white">
-                  <Lightbulb size={20} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium">
-                    {isVietnamese
-                      ? 'Bạn đã trải nghiệm hết 3 câu hỏi dùng thử miễn phí!'
-                      : 'You have used all 3 free trial queries!'}
-                  </h4>
-                  <p className="mt-0.5 text-xs text-brand-100">
-                    {isVietnamese
-                      ? 'Đăng ký tài khoản miễn phí hoặc đăng nhập bằng tài khoản Demo để mở khoá trò chuyện không giới hạn.'
-                      : 'Create a free account or sign in with Demo accounts to unlock unlimited consultations.'}
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                className="bg-surface text-brand-700 hover:bg-brand-50 text-xs font-medium whitespace-nowrap shadow-sm"
-                onClick={onOpenSaveModal}
-              >
-                {isVietnamese ? 'Mở Khoá Đầy Đủ Ngay' : 'Unlock Full Access'}
-                <ArrowRight size={14} />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Suggested Prompts */}
-        {quotaRemaining > 0 && (
-          <div className="border-t border-slate-100 bg-surface p-3">
-            <p className="text-xs font-semibold text-slate-400 mb-2">
-              {isVietnamese ? 'Gợi ý câu hỏi phổ biến:' : 'Suggested career prompts:'}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {suggestedPrompts.map((p) => (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => handleSend(p.text, p.key)}
-                  disabled={typing}
-                  className="rounded-full border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs text-slate-700 hover:border-brand-300 hover:bg-brand-50/60 hover:text-brand-700 cursor-pointer transition flex items-center gap-1.5"
-                >
-                  <Lightbulb size={11} className="text-brand-600" />
-                  {p.text}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Input Bar */}
-        <div className="border-t border-slate-200 bg-surface p-3">
+          {/* Input */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               void handleSend();
             }}
-            className="flex gap-2"
+            className="border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
           >
-            <label className="flex-1 relative">
-              <span className="sr-only">Your message</span>
-              <Input
+            <label className="relative flex items-center">
+              <span className="sr-only">{isVietnamese ? 'Tin nhắn của bạn' : 'Your message'}</span>
+              <input
+                ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={
                   quotaRemaining > 0
                     ? isVietnamese
-                      ? 'Nhập câu hỏi nghề nghiệp của bạn (còn ' + quotaRemaining + ' lượt dùng thử)...'
-                      : 'Type your career question (' + quotaRemaining + ' trial queries left)...'
+                      ? 'Nhập câu hỏi nghề nghiệp...'
+                      : 'Ask a career question...'
                     : isVietnamese
-                    ? 'Đã hết lượt dùng thử. Đăng ký để tiếp tục trò chuyện!'
-                    : 'Trial quota reached. Sign up to continue chatting!'
+                    ? 'Đã hết lượt dùng thử'
+                    : 'Trial limit reached'
                 }
                 disabled={quotaRemaining <= 0 || typing}
-                className="pr-10 text-xs sm:text-sm"
+                className="min-h-11 w-full rounded-full border border-slate-300 bg-surface pl-4 pr-12 text-sm text-ink outline-none transition-colors placeholder:text-slate-500 focus-visible:border-brand disabled:cursor-not-allowed disabled:bg-slate-100"
               />
-              {quotaRemaining <= 0 && (
-                <Lock size={16} className="absolute right-3 top-3 text-slate-400" />
+              {quotaRemaining <= 0 ? (
+                <Lock size={16} className="absolute right-4 text-slate-400" aria-hidden="true" />
+              ) : (
+                <button
+                  type="submit"
+                  disabled={typing || !input.trim()}
+                  className="absolute right-1.5 grid h-8 w-8 place-items-center rounded-full bg-ink text-white transition-colors hover:bg-brand-800 disabled:opacity-30"
+                  aria-label={isVietnamese ? 'Gửi' : 'Send'}
+                >
+                  <ArrowUp size={16} />
+                </button>
               )}
             </label>
-            <Button
-              type="submit"
-              disabled={typing || !input.trim() || quotaRemaining <= 0}
-              className="px-4"
-              aria-label="Send"
-            >
-              <Send size={16} />
-            </Button>
           </form>
         </div>
-      </Card>
-    </div>
+      )}
+
+      {/* Launcher: hidden on small screens while the full-screen sheet is open */}
+      <button
+        ref={launcherRef}
+        type="button"
+        onClick={() => (open ? closePanel() : setOpen(true))}
+        aria-expanded={open}
+        aria-label={
+          open
+            ? isVietnamese
+              ? 'Đóng khung chat'
+              : 'Close chat'
+            : isVietnamese
+            ? 'Mở trò chuyện với trợ lý'
+            : 'Open assistant chat'
+        }
+        className={`fixed bottom-6 right-6 z-40 h-14 items-center gap-3 rounded-full bg-ink text-white shadow-[0_12px_32px_-12px_rgba(23,32,28,0.5)] transition-colors hover:bg-brand-800 ${
+          open ? 'hidden w-14 justify-center sm:flex' : 'flex pl-5 pr-6'
+        }`}
+      >
+        {open ? (
+          <X size={20} />
+        ) : (
+          <>
+            <MessageSquare size={18} aria-hidden="true" />
+            <span className="text-sm font-medium">{isVietnamese ? 'Hỏi trợ lý' : 'Ask the assistant'}</span>
+            <span className="text-xs tabular-nums text-white/60">
+              {quotaRemaining}/{MAX_GUEST_QUOTA}
+            </span>
+          </>
+        )}
+      </button>
+    </>
   );
 }

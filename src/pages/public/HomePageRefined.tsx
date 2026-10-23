@@ -204,7 +204,7 @@ export default function HomePageRefined({
             <h1 className="mt-6 text-balance text-[clamp(2.75rem,4.8vw,6rem)] font-normal leading-[1.02] tracking-[-0.035em] text-ink">
               Đúng người, đúng việc.
               <br />
-              <span className="text-brand">Phần tìm kiếm để Jobie lo.</span>
+              <span className="text-brand">Phần tìm kiếm để CCV lo.</span>
             </h1>
             <p
               className={`mt-[clamp(1.5rem,2.5vw,2.5rem)] max-w-2xl text-pretty text-slate-600 ${leadClass}`}
