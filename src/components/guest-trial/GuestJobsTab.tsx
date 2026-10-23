@@ -15,7 +15,7 @@ import { Badge, Button } from '../ui';
 import { useTranslation } from '../../i18n';
 
 export function GuestJobsTab() {
-  const { t, isVietnamese } = useTranslation();
+  const { isVietnamese } = useTranslation();
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('All');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);

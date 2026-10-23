@@ -1,34 +1,22 @@
-import { useState, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, Link} from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertTriangle,
   ArrowLeft,
-  ArrowRight,
-  Award,
   MessageSquare,
-  BrainCircuit,
   Briefcase,
   Check,
   CheckCircle2,
   Code2,
-  Compass,
-  Cpu,
-  Download,
   ExternalLink,
   FileCheck2,
   FileText,
-  GraduationCap,
   Layers,
   Lightbulb,
-  MapPin,
-  Share2,
-  Star,
   Target,
-  PenLine,
   X,
-  Zap,
 } from 'lucide-react';
 import {
   getJobById,
@@ -37,14 +25,13 @@ import {
   applyJobExternal,
   getAppliedJobIds,
 } from '../../mocks/services/mockService';
-import { Badge, Button, Card, EmptyState, ErrorState, Loading, PageTitle } from '../../components/ui';
+import { Button, Card, ErrorState, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 
 export default function JobMatchPage() {
   const { jobId = '' } = useParams<{ jobId: string }>();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [selectedResumeId, setSelectedResumeId] = useState<string>('');

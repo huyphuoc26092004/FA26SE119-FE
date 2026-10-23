@@ -300,7 +300,7 @@ export default function ResumesPage() {
                 key={item.id}
                 type="button"
                 aria-pressed={statusFilter === item.id}
-                onClick={() => setStatusFilter(item.id as any)}
+                onClick={() => setStatusFilter(item.id as Parameters<typeof setStatusFilter>[0])}
                 className={toggle(statusFilter === item.id)}
               >
                 {item.label}

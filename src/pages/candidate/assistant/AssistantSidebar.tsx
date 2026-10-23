@@ -10,7 +10,6 @@ import {
   Check,
   X,
   Lightbulb,
-  ChevronRight,
   Pin,
 } from 'lucide-react';
 import type { AiChatSession } from '../../../types/domain';

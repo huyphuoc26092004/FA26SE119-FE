@@ -577,7 +577,6 @@ export function VerifyOtpPage() {
   const { t, isVietnamese } = useTranslation();
 
   const emailParam = searchParams.get('email') || useAuthStore.getState().pendingVerificationEmail || 'alex@example.com';
-  const demoCodeParam = searchParams.get('code') || '123456';
 
   const [email, setEmail] = useState(emailParam);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
@@ -640,13 +639,6 @@ export function VerifyOtpPage() {
     while (newDigits.length < 6) newDigits.push('');
     setOtpDigits(newDigits);
     inputRefs.current[Math.min(clean.length, 5)]?.focus();
-  };
-
-  // 1-Click Auto-Fill Demo OTP
-  const handleFillDemoCode = () => {
-    const demo = '123456'.split('');
-    setOtpDigits(demo);
-    setError('');
   };
 
   // Submit verification

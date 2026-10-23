@@ -12,7 +12,7 @@ const OTPS_STORAGE_KEY = 'careerpilot-mock-otps';
 
 // Initialize and retrieve dynamic users list
 function getStoredUsers(): User[] {
-  let list: User[] = [...mockUsers];
+  const list: User[] = [...mockUsers];
   try {
     const raw = localStorage.getItem(USERS_STORAGE_KEY);
     if (raw) {
@@ -433,7 +433,7 @@ export async function getJobSemanticMatch(
     experienceScore: 88,
     salaryScore: 92,
     domainScore: 85,
-    fitLevel: (job.match >= 90 ? 'Exceptional Fit' : job.match >= 80 ? 'Strong Fit' : 'Moderate Fit') as any,
+    fitLevel: (job.match >= 90 ? 'Exceptional Fit' : job.match >= 80 ? 'Strong Fit' : 'Moderate Fit') as import('../../types/domain').SemanticMatchingDetail['fitLevel'],
     matchedSkills: job.skills.slice(0, 3),
     missingSkills: job.skills.slice(3, 5),
     reasons: ['Kỹ năng phù hợp với yêu cầu', 'Mức lương tương đồng'],
@@ -471,7 +471,7 @@ export async function getJobSemanticMatch(
       ? 'Strong Fit'
       : overallScore >= 70
       ? 'Moderate Fit'
-      : 'Growth Opportunity') as any,
+      : 'Growth Opportunity') as import('../../types/domain').SemanticMatchingDetail['fitLevel'],
   };
 }
 

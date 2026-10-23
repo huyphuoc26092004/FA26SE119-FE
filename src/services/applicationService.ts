@@ -467,7 +467,7 @@ export async function refineApplicationContent(
   await delay(600);
 
   let updatedContent = params.currentContent;
-  let updatedSubject = params.currentSubject;
+  const updatedSubject = params.currentSubject;
 
   if (params.action === 'make_shorter') {
     // Trim down paragraphs

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link} from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Bookmark, Check, ChevronDown, Search, X } from 'lucide-react';
 import { getResumes, getJobs, getCvJobFitAnalysis, getJobSemanticMatch } from '../../mocks/services/mockService';
@@ -322,7 +322,6 @@ function JobPicker({
     setActive(idx >= 0 ? idx : 0);
     setTimeout(() => inputRef.current?.focus(), 0);
     return () => document.removeEventListener('mousedown', onDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const choose = (id: string) => {
@@ -459,7 +458,6 @@ export default function CvJobFitPage() {
   const { t, isVietnamese } = useTranslation();
   const c = isVietnamese ? copy.vi : copy.en;
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const queryCvId = searchParams.get('cvId') || searchParams.get('resumeId');

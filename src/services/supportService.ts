@@ -1,9 +1,7 @@
 import type {
   CreateTicketInput,
   SupportTicket,
-  TicketCategory,
   TicketMessage,
-  TicketPriority,
   TicketStatus,
 } from '../types/domain';
 

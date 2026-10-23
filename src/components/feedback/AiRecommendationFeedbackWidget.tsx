@@ -6,7 +6,6 @@ import {
   Lightbulb,
   CheckCircle2,
   Send,
-  MessageSquare,
   Tag,
   Edit2,
 } from 'lucide-react';

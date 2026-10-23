@@ -12,7 +12,6 @@ import {
   ExternalLink,
   FileText,
   Filter,
-  Flame,
   GraduationCap,
   Globe2,
   Loader2,
@@ -20,7 +19,6 @@ import {
   Lightbulb,
   Star,
   Target,
-  TrendingUp,
   Video,
   Zap,
 } from 'lucide-react';
@@ -30,7 +28,7 @@ import {
   getLearningResources,
 } from '../../mocks/services/mockService';
 import type { LearningRoadmap, LearningResource, RoadmapPhase } from '../../types/assessment';
-import { Badge, Button, Card, Loading, PageTitle } from '../../components/ui';
+import { Button, Card, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { Link } from 'react-router-dom';
 
@@ -331,7 +329,6 @@ export default function LearningRoadmapPage() {
     onSuccess: (data) => setRoadmap(data),
   });
 
-  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
   // Progress stats
   const completedPhases = roadmap?.phases.filter((p) => p.completed).length ?? 0;

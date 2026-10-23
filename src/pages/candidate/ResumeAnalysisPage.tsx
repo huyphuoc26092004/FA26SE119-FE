@@ -194,7 +194,6 @@ export default function ResumeAnalysisPage() {
     data: analysis,
     isPending,
     isError,
-    refetch,
   } = useQuery({
     queryKey: ['resumeAnalysis', effectiveResumeId],
     queryFn: () => getResumeAnalysis(effectiveResumeId),
@@ -447,7 +446,7 @@ export default function ResumeAnalysisPage() {
                     key={p.id}
                     type="button"
                     aria-pressed={priorityFilter === p.id}
-                    onClick={() => setPriorityFilter(p.id as any)}
+                    onClick={() => setPriorityFilter(p.id as Parameters<typeof setPriorityFilter>[0])}
                     className={toggle(priorityFilter === p.id)}
                   >
                     {p.label}
@@ -467,7 +466,7 @@ export default function ResumeAnalysisPage() {
                     key={cat.id}
                     type="button"
                     aria-pressed={categoryFilter === cat.id}
-                    onClick={() => setCategoryFilter(cat.id as any)}
+                    onClick={() => setCategoryFilter(cat.id as Parameters<typeof setCategoryFilter>[0])}
                     className={toggle(categoryFilter === cat.id)}
                   >
                     {cat.label}
@@ -578,7 +577,7 @@ export default function ResumeAnalysisPage() {
                     key={tone.id}
                     type="button"
                     aria-pressed={rewriterTone === tone.id}
-                    onClick={() => setRewriterTone(tone.id as any)}
+                    onClick={() => setRewriterTone(tone.id as Parameters<typeof setRewriterTone>[0])}
                     className={toggle(rewriterTone === tone.id)}
                   >
                     {tone.label}

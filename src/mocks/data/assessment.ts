@@ -1,8 +1,5 @@
 import type {
   AssessmentQuestion,
-  AssessmentResult,
-  SkillGapAnalysis,
-  LearningRoadmap,
   LearningResource,
 } from '../../types/assessment';
 

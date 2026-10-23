@@ -2,13 +2,6 @@ import React from 'react';
 import {
   X,
   Printer,
-  Download,
-  CheckCircle2,
-  Building2,
-  User,
-  Calendar,
-  CreditCard,
-  ShieldCheck,
 } from 'lucide-react';
 import type { PaymentTransaction } from '../../../types/domain';
 import { useTranslation } from '../../../i18n';

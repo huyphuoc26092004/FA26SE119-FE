@@ -231,7 +231,7 @@ export default function UploadResumePage() {
   const [flowState, setFlowState] = useState<'upload' | 'parsing' | 'review'>('upload');
   const [parsingStep, setParsingStep] = useState<number>(1);
   const [selectedFileName, setSelectedFileName] = useState<string>('');
-  const [selectedFileSize, setSelectedFileSize] = useState<number>(0);
+  const [, setSelectedFileSize] = useState<number>(0);
   const [dragOver, setDragOver] = useState(false);
   const [showRawText, setShowRawText] = useState(false);
 
@@ -318,7 +318,7 @@ export default function UploadResumePage() {
   };
 
   // Experience management in review mode
-  const handleUpdateExperience = (index: number, field: keyof WorkExperience, value: any) => {
+  const handleUpdateExperience = (index: number, field: keyof WorkExperience, value: WorkExperience[keyof WorkExperience]) => {
     const list = [...(extractedData.experience || [])];
     if (list[index]) {
       list[index] = { ...list[index], [field]: value };
