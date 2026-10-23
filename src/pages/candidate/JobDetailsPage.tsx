@@ -1,47 +1,57 @@
 import { useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  ArrowLeft,
-  ArrowRight,
-  Bookmark,
-  MessageSquare,
-  BrainCircuit,
-  Briefcase,
-  Building2,
-  Calendar,
-  Check,
-  CheckCircle2,
-  Clock,
-  Compass,
-  DollarSign,
-  ExternalLink,
-  Eye,
-  FileCheck2,
-  Gift,
-  GraduationCap,
-  Layers,
-  MailCheck,
-  MapPin,
-  Share2,
-  Lightbulb,
-  Star,
-  Target,
-  Users,
-  X,
-  Zap,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bookmark, Check, Share2, X } from 'lucide-react';
 import {
   getJobById,
   getSavedJobIds,
-  toggleSaveJob,
-  applyJobExternal,
   getAppliedJobIds,
+  getJobSemanticMatch,
 } from '../../mocks/services/mockService';
-import { Badge, Button, Card, ErrorState, Loading, PageTitle } from '../../components/ui';
+import {
+  markJobApplied,
+  openApplySource,
+  refreshJobActivity,
+  toggleSavedJob,
+} from '../../services/jobActivityService';
+import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
+
+const textLink =
+  'inline-flex items-center gap-1.5 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
+
+const primaryButton =
+  'inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-[15px] text-white transition-colors duration-150 hover:bg-brand disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+
+/** Numbered section heading with a dark rule underneath. */
+function SectionHead({ index, title, action }: { index: string; title: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-ink pb-3">
+      <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
+        <span className="text-xs tabular-nums text-slate-500">{index}</span>
+        {title}
+      </h2>
+      {action}
+    </div>
+  );
+}
+
+/** Numbered divider rows for responsibilities, requirements and benefits. */
+function NumberedList({ items }: { items: string[] }) {
+  return (
+    <ol>
+      {items.map((item, idx) => (
+        <li key={idx} className="flex gap-4 border-b border-border py-3.5 text-[15px] leading-7 text-ink">
+          <span className="w-6 shrink-0 pt-1 text-xs tabular-nums text-slate-500">
+            {String(idx + 1).padStart(2, '0')}
+          </span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 export default function JobDetailsPage() {
   const { jobId = '' } = useParams<{ jobId: string }>();
@@ -54,10 +64,17 @@ export default function JobDetailsPage() {
   const [redirectModalOpen, setRedirectModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const { data: job, isPending, isError } = useQuery({
     queryKey: ['job', jobId],
     queryFn: () => getJobById(jobId),
+  });
+
+  const { data: semantic } = useQuery({
+    queryKey: ['jobSemanticMatch', jobId],
+    queryFn: () => getJobSemanticMatch(jobId),
+    enabled: !!jobId,
   });
 
   const { data: savedIds = [] } = useQuery({
@@ -74,23 +91,23 @@ export default function JobDetailsPage() {
   const isApplied = appliedIds.includes(jobId);
 
   const toggleSaveMutation = useMutation({
-    mutationFn: () => toggleSaveJob(jobId),
+    mutationFn: () => toggleSavedJob(jobId),
     onSuccess: (res) => {
       queryClient.setQueryData(['savedJobs'], res.ids);
+      refreshJobActivity(queryClient);
       setToastMessage(res.saved ? t('jobs.savedSuccess') : t('jobs.unsavedSuccess'));
       setTimeout(() => setToastMessage(null), 3000);
     },
   });
 
   const applyMutation = useMutation({
-    mutationFn: () => applyJobExternal(jobId),
+    mutationFn: () => markJobApplied(jobId),
     onSuccess: (res) => {
       queryClient.setQueryData(['appliedJobs'], res.ids);
-      const url = job?.externalSource?.sourceUrl || 'https://itviec.com';
+      refreshJobActivity(queryClient);
       setRedirectModalOpen(false);
       setToastMessage(t('jobs.appliedSuccess'));
       setTimeout(() => setToastMessage(null), 4000);
-      window.open(url, '_blank', 'noopener,noreferrer');
     },
   });
 
@@ -100,7 +117,7 @@ export default function JobDetailsPage() {
   const externalSource = job.externalSource || {
     sourceName: 'ITviec',
     sourceUrl: 'https://itviec.com',
-    sourceBadgeColor: 'bg-red-50 text-red-700 border-red-200',
+    sourceBadgeColor: '',
     applicationDeadline: '30/11/2026',
     directApplyAvailable: true,
   };
@@ -111,405 +128,345 @@ export default function JobDetailsPage() {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
+  const fitHref = isCandidate ? `/candidate/cv-job-fit?jobId=${job.id}` : '/login';
+  const matchedSkills = new Set((semantic?.matchedSkills ?? []).map((s) => s.toLowerCase()));
+
+  const facts: { label: string; value?: string }[] = [
+    { label: 'Địa điểm', value: job.location },
+    { label: 'Mức lương', value: job.salary },
+    { label: 'Hình thức', value: job.type },
+    { label: 'Cấp bậc', value: job.experienceLevel },
+    { label: 'Bộ phận', value: job.department },
+    { label: 'Đăng tuyển', value: job.posted },
+    { label: 'Hạn nộp', value: externalSource.applicationDeadline },
+  ].filter((f) => !!f.value);
+
+  const dims = semantic
+    ? [
+        { label: 'Kỹ năng', value: semantic.skillsScore },
+        { label: 'Kinh nghiệm', value: semantic.experienceScore },
+        { label: 'Mức lương', value: semantic.salaryScore },
+        { label: 'Lĩnh vực', value: semantic.domainScore },
+      ]
+    : [];
+
+  const sections = [
+    { key: 'resp', title: 'Bạn sẽ làm gì', items: job.responsibilities },
+    { key: 'req', title: 'Yêu cầu ứng viên', items: job.requirements },
+    { key: 'ben', title: 'Quyền lợi', items: job.benefits },
+  ].filter((s) => s.items && s.items.length > 0) as { key: string; title: string; items: string[] }[];
+
   return (
-    <div className={!isCandidate ? "min-h-[calc(100vh-theme(spacing.18))] bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8" : ""}>
-      <div className={!isCandidate ? "mx-auto max-w-7xl" : ""}>
-        {/* Toast Alert */}
+    <div
+      className={
+        isCandidate
+          ? 'w-full max-w-[min(100%,80rem)] pb-[clamp(2rem,5vw,4rem)]'
+          : 'mx-auto w-full max-w-[1680px] px-4 py-[clamp(2rem,4vw,3.5rem)] sm:px-6 lg:px-[clamp(2rem,4vw,5rem)]'
+      }
+    >
+      {/* Toast */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3.5 shadow-sm border border-slate-700 animate-fade-in max-w-lg">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 size={20} className="text-emerald-400 shrink-0" />
-            <p className="text-xs font-medium leading-relaxed">{toastMessage}</p>
-          </div>
+        <div
+          role="status"
+          className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-lg items-start justify-between gap-4 bg-ink px-5 py-3.5 text-sm text-white sm:inset-x-auto sm:right-6 sm:bottom-6"
+        >
+          <p className="leading-6">{toastMessage}</p>
           <button
+            type="button"
             onClick={() => setToastMessage(null)}
-            className="text-slate-400 hover:text-white p-1 shrink-0"
+            aria-label="Đóng"
+            className="shrink-0 p-1 text-slate-300 transition-colors hover:text-white cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Top Breadcrumb */}
-      <div className="mb-4 flex items-center justify-between">
-        <Link
-          to={backUrl}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
-        >
-          <ArrowLeft size={15} />
+      {/* Back + quick actions */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-[13px]">
+        <Link to={backUrl} className="inline-flex items-center gap-1.5 text-slate-600 transition-colors hover:text-ink">
+          <ArrowLeft size={14} aria-hidden="true" />
           {t('jobs.backToJobs')}
         </Link>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-          >
-            <Share2 size={13} />
-            {copiedLink ? 'Đã sao chép link!' : 'Chia sẻ'}
+        <div className="flex items-center gap-6">
+          <button type="button" onClick={handleShare} className={`${textLink} text-[13px] text-ink`}>
+            <Share2 size={13} aria-hidden="true" />
+            {copiedLink ? 'Đã sao chép link' : 'Chia sẻ'}
           </button>
-
           <button
             type="button"
             onClick={() => toggleSaveMutation.mutate()}
-            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-              isSaved
-                ? 'bg-amber-50 border-amber-300 text-amber-700'
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
+            disabled={toggleSaveMutation.isPending}
+            aria-pressed={isSaved}
+            className={`${textLink} text-[13px] ${isSaved ? 'text-brand' : 'text-ink'} disabled:opacity-50`}
           >
-            <Bookmark size={13} className={isSaved ? 'fill-amber-500' : ''} />
-            {isSaved ? 'Đã lưu việc làm' : 'Lưu tin này'}
+            <Bookmark size={13} aria-hidden="true" className={isSaved ? 'fill-brand' : ''} />
+            {isSaved ? 'Đã lưu' : 'Lưu việc này'}
           </button>
         </div>
       </div>
 
-      {/* Hero Header Card */}
-      <Card className="mb-6 border border-slate-200/90 bg-surface p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div className="flex items-start gap-4">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-slate-50 border border-slate-200 text-3xl shadow-2xs">
-              {job.companyLogo || ''}
-            </div>
+      {/* Headline */}
+      <header className="mt-[clamp(1.75rem,3.5vw,2.75rem)]">
+        <p className="flex flex-wrap items-baseline gap-x-2 text-[13px] text-slate-600">
+          <span className="text-ink">{job.company}</span>
+          <span>· Nguồn {externalSource.sourceName}</span>
+          {isApplied && (
+            <span className="inline-flex items-center gap-1 text-brand">
+              · <Check size={13} aria-hidden="true" /> Đã ứng tuyển
+            </span>
+          )}
+        </p>
+        <h1 className="mt-3 max-w-[60rem] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {job.title}.
+          <span className="block text-brand">Phù hợp {job.match}%.</span>
+        </h1>
+        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[44rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
+          {job.description}
+        </p>
+      </header>
 
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                <span
-                  className={`rounded-md border px-2.5 py-0.5 text-xs font-medium ${externalSource.sourceBadgeColor}`}
-                >
-                  Nguồn tuyển dụng: {externalSource.sourceName}
-                </span>
-                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                  {job.type}
-                </span>
-                {job.experienceLevel && (
-                  <span className="rounded-md bg-brand-50 border border-brand-200 px-2 py-0.5 text-xs font-semibold text-brand-700">
-                    Cấp bậc: {job.experienceLevel}
-                  </span>
-                )}
-                {isApplied && (
-                  <span className="rounded-full bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
-                    ✓ Đã ứng tuyển
-                  </span>
-                )}
-              </div>
+      {/* Actions */}
+      <div className="mt-[clamp(1.75rem,3.5vw,2.5rem)] flex flex-wrap items-center gap-x-7 gap-y-4">
+        {isApplied ? (
+          <span className="inline-flex min-h-12 items-center gap-2.5 rounded-full border border-brand px-6 text-[15px] text-brand">
+            <Check size={16} aria-hidden="true" />
+            Đã ứng tuyển
+          </span>
+        ) : (
+          <button type="button" onClick={() => setRedirectModalOpen(true)} className={primaryButton}>
+            Ứng tuyển trên {externalSource.sourceName}
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        )}
+        {isApplied && (
+          <button type="button" onClick={() => openApplySource(job)} className={`${textLink} text-ink`}>
+            Mở lại trang {externalSource.sourceName}
+          </button>
+        )}
+        <Link to={fitHref} className={`${textLink} text-ink`}>
+          Xem độ phù hợp CV
+        </Link>
+        {isCandidate && (
+          <>
+            <Link to={`/candidate/assistant?jobId=${job.id}`} className={`${textLink} text-ink`}>
+              Hỏi trợ lý về việc này
+            </Link>
+            <Link to={`/candidate/applications?jobId=${job.id}`} className={`${textLink} text-ink`}>
+              Soạn thư ứng tuyển
+            </Link>
+          </>
+        )}
+      </div>
 
-              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
-                {job.title}
-              </h1>
-
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600">
-                <span className="font-medium text-slate-800 flex items-center gap-1">
-                  <Building2 size={14} className="text-slate-400" />
-                  {job.company}
-                </span>
-                <span>·</span>
-                <span className="flex items-center gap-1">
-                  <MapPin size={14} className="text-slate-400" />
-                  {job.location}
-                </span>
-                <span>·</span>
-                <span className="font-semibold text-emerald-600 text-sm">{job.salary}</span>
-                <span>·</span>
-                <span className="text-slate-400 flex items-center gap-1">
-                  <Clock size={13} /> Đăng {job.posted}
-                </span>
-              </div>
-            </div>
+      {/* Key facts */}
+      <dl className="mt-[clamp(2rem,4vw,3rem)] grid grid-cols-2 border-t border-slate-400 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7">
+        {facts.map((f) => (
+          <div key={f.label} className="min-w-0 border-b border-border py-4 pr-4">
+            <dt className="text-[13px] text-slate-500">{f.label}</dt>
+            <dd className="mt-1 text-[15px] leading-6 text-ink">{f.value}</dd>
           </div>
+        ))}
+      </dl>
 
-          <div className="flex flex-col sm:items-end gap-2 shrink-0 w-full sm:w-auto">
-            <div className="flex flex-wrap items-center gap-2">
-              {isCandidate && (
-                <>
-                  <Link
-                    to={`/candidate/assistant?jobId=${job.id}`}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3.5 py-2.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition shadow-2xs"
-                  >
-                    <MessageSquare size={15} className="text-brand-600" />
-                    <span>Hỏi AI về việc này</span>
-                  </Link>
+      {/* Body: description + match aside */}
+      <div className="mt-[clamp(3rem,6vw,4.5rem)] grid gap-x-[clamp(2.5rem,5vw,5rem)] gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+        <div className="min-w-0 space-y-[clamp(3rem,6vw,4.5rem)]">
+          {sections.map((s, i) => (
+            <section key={s.key}>
+              <SectionHead index={String(i + 1).padStart(2, '0')} title={s.title} />
+              <NumberedList items={s.items} />
+            </section>
+          ))}
 
-                  <Link
-                    to={`/candidate/applications?jobId=${job.id}`}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3.5 py-2.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition shadow-2xs"
-                  >
-                    <MailCheck size={15} className="text-brand-600" />
-                    <span>Soạn Cover Letter AI</span>
-                  </Link>
-                </>
-              )}
-              <Button
-                variant="primary"
-                onClick={() => setRedirectModalOpen(true)}
-                className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-medium border-0 shadow-sm text-xs py-2.5 px-5"
-              >
-                <ExternalLink size={15} />
-                {isApplied ? 'Mở lại nguồn nộp đơn ↗' : `Ứng tuyển trên ${externalSource.sourceName} ↗`}
-              </Button>
-            </div>
-            {externalSource.applicationDeadline && (
-              <span className="text-[11px] text-slate-400 text-right">
-                Hạn chót: {externalSource.applicationDeadline}
-              </span>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* Main Grid: Description & AI Semantic Match Sidebars */}
-      <div className="grid gap-6 lg:grid-cols-[1.8fr_1.2fr]">
-        {/* Left Column: Job Description, Requirements, Benefits */}
-        <div className="space-y-6">
-          {/* About the Role */}
-          <Card className="p-6 border border-slate-200/90 shadow-2xs bg-surface">
-            <h2 className="text-base font-medium text-slate-900 mb-3 flex items-center gap-2">
-              <Briefcase size={18} className="text-brand-600" />
-              {t('jobs.aboutRole')}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-              {job.description}
-            </p>
-
-            {/* Responsibilities */}
-            {job.responsibilities && job.responsibilities.length > 0 && (
-              <div className="mt-6 pt-5 border-t border-slate-100">
-                <h3 className="text-sm font-medium text-slate-900 mb-3">Trách nhiệm công việc:</h3>
-                <ul className="space-y-2 text-xs text-slate-700 pl-4 list-disc marker:text-brand-600">
-                  {job.responsibilities.map((res, i) => (
-                    <li key={i} className="leading-relaxed">{res}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Requirements */}
-            {job.requirements && job.requirements.length > 0 && (
-              <div className="mt-6 pt-5 border-t border-slate-100">
-                <h3 className="text-sm font-medium text-slate-900 mb-3">Yêu cầu ứng viên:</h3>
-                <ul className="space-y-2 text-xs text-slate-700 pl-4 list-disc marker:text-brand-600">
-                  {job.requirements.map((req, i) => (
-                    <li key={i} className="leading-relaxed">{req}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Benefits */}
-            {job.benefits && job.benefits.length > 0 && (
-              <div className="mt-6 pt-5 border-t border-slate-100">
-                <h3 className="text-sm font-medium text-slate-900 mb-3 flex items-center gap-1.5 text-emerald-700">
-                  <Gift size={16} />
-                  Quyền lợi & Đãi ngộ:
-                </h3>
-                <ul className="space-y-2 text-xs text-slate-700 pl-4 list-disc marker:text-emerald-500">
-                  {job.benefits.map((ben, i) => (
-                    <li key={i} className="leading-relaxed">{ben}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Card>
-
-          {/* Required Skills Tags */}
-          <Card className="p-6 border border-slate-200/90 shadow-2xs bg-surface">
-            <h3 className="text-sm font-medium text-slate-900 mb-3 flex items-center gap-2">
-              <Zap size={16} className="text-amber-500" />
-              {t('jobs.requiredSkills')} & Công nghệ
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {job.skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-lg bg-brand-50 border border-brand-200 px-3 py-1.5 text-xs font-semibold text-brand-800"
-                >
-                  {skill}
+          <section>
+            <SectionHead
+              index={String(sections.length + 1).padStart(2, '0')}
+              title={t('jobs.requiredSkills')}
+              action={
+                semantic && (
+                  <span className="text-[13px] text-slate-600">
+                    <span className="text-brand">Xanh</span> = đã có trong hồ sơ
+                  </span>
+                )
+              }
+            />
+            <p className="pt-4 text-[15px] leading-8">
+              {job.skills.map((skill, idx) => (
+                <span key={skill}>
+                  <span className={matchedSkills.has(skill.toLowerCase()) ? 'text-brand' : 'text-ink'}>{skill}</span>
+                  {idx < job.skills.length - 1 && <span className="text-slate-400"> · </span>}
                 </span>
               ))}
-            </div>
-          </Card>
+            </p>
+          </section>
         </div>
 
-        {/* Right Column: AI Matching Scorecard & External Redirect Box */}
-        <div className="space-y-6">
-          {/* AI Semantic Match Scorecard */}
-          <Card className="border border-brand-200 bg-surface p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-100 text-brand-700">
-                  <BrainCircuit size={18} />
-                </span>
-                <div>
-                  <h3 className="text-sm font-medium text-slate-900">{t('jobs.yourJobMatch')}</h3>
-                  <p className="text-[11px] text-slate-400">FA26SE119 Semantic Engine</p>
-                </div>
-              </div>
-              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                {job.match >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng tốt'}
-              </span>
-            </div>
+        {/* Match aside */}
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+          <div className="border-t border-ink pt-5">
+            <p className="text-[13px] text-slate-600">
+              {t('jobs.yourJobMatch')} · {job.match >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng tốt'}
+            </p>
+            <p className="mt-2 flex items-baseline gap-1 leading-none text-brand">
+              <span className="text-[clamp(3.5rem,6vw,5rem)] font-normal tracking-[-0.04em] tabular-nums">{job.match}</span>
+              <span className="text-[clamp(1.5rem,2.2vw,2rem)]">%</span>
+            </p>
 
-            {/* Gauge */}
-            <div className="my-5 rounded-2xl bg-surface p-5 border border-slate-200/80 text-center shadow-2xs">
-              <p className="text-5xl font-semibold text-brand-600 tracking-tight">{job.match}%</p>
-              <p className="mt-1 text-xs font-medium text-slate-800">
-                Độ khớp nối ngữ nghĩa tổng thể
-              </p>
-              <p className="mt-1 text-[11px] text-slate-500">
-                Dựa trên kinh nghiệm, kỹ năng và mức lương kỳ vọng
-              </p>
-            </div>
+            {dims.length > 0 && (
+              <ul className="mt-6 space-y-4">
+                {dims.map((d) => (
+                  <li key={d.label}>
+                    <div className="flex items-baseline justify-between gap-4 text-sm">
+                      <span className="text-ink">{d.label}</span>
+                      <span className="tabular-nums text-slate-600">{d.value}%</span>
+                    </div>
+                    <div className="mt-2 h-[2px] w-full bg-slate-200">
+                      <div
+                        className={`h-full ${d.value < 70 ? 'bg-danger' : 'bg-brand'}`}
+                        style={{ width: `${d.value}%` }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-            {/* Quick Reasons */}
-            <div className="space-y-2 mb-5 text-xs text-slate-700">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                <span>Kỹ năng cốt lõi React & TypeScript hoàn toàn tương thích</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                <span>Mức lương kỳ vọng nằm trọn vẹn trong ngân sách nhà tuyển dụng</span>
-              </div>
-            </div>
+            {semantic?.reasons?.length ? (
+              <ul className="mt-6 border-t border-border">
+                {semantic.reasons.slice(0, 3).map((r, idx) => (
+                  <li key={idx} className="flex gap-3 border-b border-border py-3 text-sm leading-6 text-ink">
+                    <Check size={14} aria-hidden="true" className="mt-1 shrink-0 text-brand" />
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
 
-            {/* Link to Full Match Breakdown */}
-            <div className="space-y-2">
-              <Link to={isCandidate ? `/candidate/jobs/${job.id}/match` : '/login'}>
-                <Button
-                  variant="primary"
-                  className="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs shadow-xs"
-                >
-                  <Lightbulb size={14} className="text-amber-300" />
-                  Xem giải thích chi tiết khớp nối AI →
-                </Button>
-              </Link>
+            <Link to={fitHref} className={`${primaryButton} mt-6 w-full`}>
+              Xem độ phù hợp CV
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
 
+          {/* Source */}
+          <div className="mt-10 border-t border-ink pt-5">
+            <p className="text-[13px] text-slate-600">Nộp hồ sơ</p>
+            <p className="mt-2 text-sm leading-6 text-ink">
+              {job.company} nhận hồ sơ qua <span className="text-brand">{externalSource.sourceName}</span>
+              {externalSource.applicationDeadline && <> đến hết {externalSource.applicationDeadline}</>}.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+              {!isApplied && (
+                <button type="button" onClick={() => setRedirectModalOpen(true)} className={`${textLink} text-ink`}>
+                  Ứng tuyển tại {externalSource.sourceName}
+                </button>
+              )}
               {isCandidate && (
-                <Link to={`/candidate/cv-job-fit?jobId=${job.id}`} className="block">
-                  <Button
-                    variant="secondary"
-                    className="w-full text-xs font-medium border-brand-200 bg-brand-50/60 text-brand-700 hover:bg-brand-100"
-                  >
-                    <Target size={14} />
-                    Phân tích độ phù hợp CV (CV–Job Fit) →
-                  </Button>
+                <Link to="/candidate/resumes" className={`${textLink} text-ink`}>
+                  Xem lại CV của bạn
                 </Link>
               )}
             </div>
-          </Card>
+          </div>
 
-          {/* AI Recommendation Feedback */}
+          {/* Feedback, behind two links like the CV fit page */}
           {isCandidate && (
-            <AiRecommendationFeedbackWidget
-              targetType="job_recommendation"
-              targetId={job.id}
-              targetTitle={`${job.title} - ${job.company}`}
-            />
-          )}
-
-          {/* External Source Application Card */}
-          <Card className="border border-slate-200 p-6 shadow-sm bg-surface">
-            <h3 className="text-sm font-medium text-slate-900 mb-2">
-              Thông tin nguồn tuyển dụng gốc
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed mb-4">
-              Nhà tuyển dụng <strong className="text-slate-800">{job.company}</strong> nhận hồ sơ chính thức qua cổng{' '}
-              <strong className="text-brand-600">{externalSource.sourceName}</strong>.
-            </p>
-
-            <div className="space-y-3">
-              <Button
-                variant="secondary"
-                onClick={() => setRedirectModalOpen(true)}
-                className="w-full text-xs font-medium"
-              >
-                <ExternalLink size={14} />
-                Ứng tuyển tại {externalSource.sourceName} ↗
-              </Button>
-
-              <Link to="/candidate/resumes" className="block">
-                <Button variant="secondary" className="w-full text-xs">
-                  <FileCheck2 size={14} className="text-brand-600" />
-                  Xem lại danh sách CV của bạn
-                </Button>
-              </Link>
+            <div className="mt-10 border-t border-border pt-4">
+              {!feedbackOpen ? (
+                <p className="flex flex-wrap items-baseline gap-x-4 gap-y-2 text-[13px] text-slate-600">
+                  <span>Gợi ý này có phù hợp?</span>
+                  <button type="button" onClick={() => setFeedbackOpen(true)} className={`${textLink} text-[13px] text-ink`}>
+                    Phù hợp
+                  </button>
+                  <button type="button" onClick={() => setFeedbackOpen(true)} className={`${textLink} text-[13px] text-ink`}>
+                    Chưa chuẩn
+                  </button>
+                </p>
+              ) : (
+                <AiRecommendationFeedbackWidget
+                  targetType="job_recommendation"
+                  targetId={job.id}
+                  targetTitle={`${job.title} - ${job.company}`}
+                />
+              )}
             </div>
-          </Card>
-        </div>
+          )}
+        </aside>
       </div>
 
       {/* External Application Redirect Confirmation Modal */}
       {redirectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 animate-fade-in">
-          <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <div className="flex items-center gap-2.5 text-brand-700">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-100 text-brand-700">
-                  <ExternalLink size={18} />
-                </span>
-                <h3 className="text-base font-medium text-slate-900">
-                  {t('jobs.redirectModalTitle')}
-                </h3>
-              </div>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 sm:items-center sm:p-4"
+          onClick={() => setRedirectModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="job-redirect-title"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg bg-canvas px-6 pb-6 pt-5 sm:px-7"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-ink pb-3">
+              <h3 id="job-redirect-title" className="text-[clamp(1.125rem,1.6vw,1.375rem)] font-normal text-ink">
+                {t('jobs.redirectModalTitle')}
+              </h3>
               <button
+                type="button"
                 onClick={() => setRedirectModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                aria-label="Đóng"
+                className="shrink-0 p-1 text-slate-500 transition-colors hover:text-ink cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="rounded-xl bg-slate-50 p-4 border border-slate-200/80">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-500 uppercase">Vị trí ứng tuyển:</span>
-                  <span className="rounded-md bg-brand-50 border border-brand-200 px-2 py-0.5 text-xs font-medium text-brand-700">
-                    {job.match}% AI Match
-                  </span>
+            <p className="mt-4 text-[13px] text-slate-600">Vị trí ứng tuyển</p>
+            <p className="mt-1 text-[17px] text-ink">{job.title}</p>
+            <dl className="mt-4 border-t border-border text-sm">
+              {[
+                { label: 'Công ty', value: job.company },
+                { label: 'Địa điểm', value: job.location },
+                { label: 'Mức lương', value: job.salary },
+                { label: 'Nguồn', value: externalSource.sourceName },
+                { label: 'Độ phù hợp', value: `${job.match}%` },
+              ].map((row) => (
+                <div key={row.label} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5">
+                  <dt className="text-slate-600">{row.label}</dt>
+                  <dd className="text-right text-ink">{row.value}</dd>
                 </div>
-                <h4 className="text-sm font-medium text-slate-900">{job.title}</h4>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  {job.company} · {job.location} · {job.salary}
-                </p>
-                <div className="mt-2.5 flex items-center gap-2 text-xs text-slate-500">
-                  <span>Cổng tuyển dụng nguồn:</span>
-                  <strong className="text-slate-800">{externalSource.sourceName}</strong>
-                </div>
-              </div>
+              ))}
+            </dl>
 
-              <div className="rounded-xl bg-emerald-50/70 p-3.5 border border-emerald-200 text-emerald-900 text-xs leading-relaxed">
-                <p className="font-semibold flex items-center gap-1.5 mb-1">
-                  <CheckCircle2 size={14} className="text-emerald-600" />
-                  Mẹo ứng tuyển từ AI:
-                </p>
-                Hồ sơ của bạn đạt <strong className="text-emerald-700 font-medium">{job.match}%</strong> độ tương thích. Hãy chắc chắn đính kèm bản CV vừa tối ưu chuẩn ATS để gây ấn tượng mạnh nhất với nhà tuyển dụng!
-              </div>
+            <p className="mt-5 border-l-2 border-brand pl-4 text-sm leading-6 text-ink">
+              Hồ sơ của bạn phù hợp {job.match}% với vị trí này. Hãy chuẩn bị sẵn bản CV đã tối ưu để nộp trên
+              trang của nhà tuyển dụng.
+            </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => setRedirectModalOpen(false)}
-                  className="w-full sm:w-auto text-xs"
-                >
-                  {t('common.cancel')}
-                </Button>
-
-                <Button
-                  variant="primary"
-                  onClick={() => applyMutation.mutate()}
-                  disabled={applyMutation.isPending}
-                  className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-medium border-0 text-xs shadow-sm"
-                >
-                  <ExternalLink size={14} />
-                  {applyMutation.isPending ? 'Đang chuyển hướng…' : t('jobs.confirmRedirect')}
-                </Button>
-              </div>
+            <div className="mt-6 flex flex-col-reverse items-stretch gap-4 sm:flex-row sm:items-center sm:justify-end sm:gap-6">
+              <button
+                type="button"
+                onClick={() => setRedirectModalOpen(false)}
+                className={`${textLink} self-center text-ink`}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  openApplySource(job);
+                  applyMutation.mutate();
+                }}
+                disabled={applyMutation.isPending}
+                className={primaryButton}
+              >
+                {applyMutation.isPending ? 'Đang chuyển hướng…' : t('jobs.confirmRedirect')}
+              </button>
             </div>
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
