@@ -704,7 +704,7 @@ export default function EditResumePage() {
     }));
   };
 
-  const handleUpdateExperience = (index: number, field: keyof WorkExperience, val: any) => {
+  const handleUpdateExperience = (index: number, field: keyof WorkExperience, val: WorkExperience[keyof WorkExperience]) => {
     const list = [...(formData.experience || [])];
     if (list[index]) {
       list[index] = { ...list[index], [field]: val };
@@ -735,7 +735,7 @@ export default function EditResumePage() {
     }));
   };
 
-  const handleUpdateEducation = (index: number, field: keyof EducationItem, val: any) => {
+  const handleUpdateEducation = (index: number, field: keyof EducationItem, val: EducationItem[keyof EducationItem]) => {
     const list = [...(formData.education || [])];
     if (list[index]) {
       list[index] = { ...list[index], [field]: val };
@@ -765,7 +765,7 @@ export default function EditResumePage() {
     }));
   };
 
-  const handleUpdateProject = (index: number, field: keyof ProjectItem, val: any) => {
+  const handleUpdateProject = (index: number, field: keyof ProjectItem, val: ProjectItem[keyof ProjectItem]) => {
     const list = [...(formData.projects || [])];
     if (list[index]) {
       list[index] = { ...list[index], [field]: val };
@@ -794,7 +794,7 @@ export default function EditResumePage() {
     }));
   };
 
-  const handleUpdateCertification = (index: number, field: keyof CertificationItem, val: any) => {
+  const handleUpdateCertification = (index: number, field: keyof CertificationItem, val: CertificationItem[keyof CertificationItem]) => {
     const list = [...(formData.certifications || [])];
     if (list[index]) {
       list[index] = { ...list[index], [field]: val };
@@ -821,7 +821,7 @@ export default function EditResumePage() {
     }));
   };
 
-  const handleUpdateLanguage = (index: number, field: keyof LanguageItem, val: any) => {
+  const handleUpdateLanguage = (index: number, field: keyof LanguageItem, val: LanguageItem[keyof LanguageItem]) => {
     const list = [...(formData.languages || [])];
     if (list[index]) {
       list[index] = { ...list[index], [field]: val };
@@ -850,7 +850,7 @@ export default function EditResumePage() {
     }));
   };
 
-  const handleUpdateAward = (index: number, field: keyof AwardItem, val: any) => {
+  const handleUpdateAward = (index: number, field: keyof AwardItem, val: AwardItem[keyof AwardItem]) => {
     const list = [...(formData.awards || [])];
     if (list[index]) {
       list[index] = { ...list[index], [field]: val };
@@ -880,7 +880,7 @@ export default function EditResumePage() {
     }));
   };
 
-  const handleUpdateReference = (index: number, field: keyof ReferenceItem, val: any) => {
+  const handleUpdateReference = (index: number, field: keyof ReferenceItem, val: ReferenceItem[keyof ReferenceItem]) => {
     const list = [...(formData.references || [])];
     if (list[index]) {
       list[index] = { ...list[index], [field]: val };

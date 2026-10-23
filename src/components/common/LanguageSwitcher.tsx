@@ -75,7 +75,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   className,
   variant = 'dropdown',
 }) => {
-  const { language, setLanguage, toggleLanguage, isVietnamese, t } = useTranslation();
+  const { language, setLanguage, toggleLanguage, isVietnamese } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

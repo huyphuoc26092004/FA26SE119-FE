@@ -1,9 +1,7 @@
 import React from 'react';
 import {
   X,
-  HelpCircle,
   Zap,
-  ShieldCheck,
   Info,
   FileText,
   Target,

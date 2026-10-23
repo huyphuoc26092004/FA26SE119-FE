@@ -59,7 +59,6 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
   // Re-read the token balance on every navigation so top-ups show up right away.
   const subscription = useMemo(
     () => (isCandidate ? getUserSubscription() : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isCandidate, location.key]
   );
 

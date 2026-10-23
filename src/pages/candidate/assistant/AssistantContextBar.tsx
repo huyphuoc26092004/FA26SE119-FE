@@ -6,7 +6,6 @@ import {
   Menu,
   RotateCcw,
   Download,
-  Lightbulb,
   ChevronDown,
 } from 'lucide-react';
 import type { CandidateProfile, Job, Resume } from '../../../types/domain';
@@ -39,10 +38,8 @@ export function AssistantContextBar({
   onExportChat,
   onToggleSidebarMobile,
 }: AssistantContextBarProps) {
-  const { isVietnamese, t } = useTranslation();
+  const { t } = useTranslation();
 
-  const selectedCv = resumes.find((r) => r.id === selectedCvId);
-  const selectedJob = jobs.find((j) => j.id === selectedJobId);
 
   return (
     <div className="border-b border-slate-200/80 bg-surface px-4 py-3 sm:px-6">

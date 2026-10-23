@@ -11,8 +11,6 @@ import {
   ShieldCheck,
   AlertCircle,
   Tag,
-  ArrowRight,
-  Lightbulb,
   Lock,
 } from 'lucide-react';
 import type {
@@ -43,7 +41,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { isVietnamese, t } = useTranslation();
+  const { t } = useTranslation();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('vietqr');
   const [voucherInput, setVoucherInput] = useState('');
@@ -56,7 +54,6 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
 
   // Credit card inputs
   const [cardNumber, setCardNumber] = useState('');
-  const [cardHolder, setCardHolder] = useState('ALEX MORGAN');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvv, setCardCvv] = useState('');
 

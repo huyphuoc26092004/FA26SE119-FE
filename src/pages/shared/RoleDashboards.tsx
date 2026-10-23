@@ -2,11 +2,8 @@ import {
   Activity,
   ClipboardList,
   Users,
-  Wallet,
-  ShieldCheck,
-  Server,
 } from 'lucide-react';
-import { Card, PageTitle, StatCard, Badge } from '../../components/ui';
+import { Card, PageTitle, StatCard } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 
 export function ConsultantDashboard() {
