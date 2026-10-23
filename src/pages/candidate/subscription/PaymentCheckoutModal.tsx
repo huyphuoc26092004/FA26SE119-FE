@@ -12,7 +12,7 @@ import {
   AlertCircle,
   Tag,
   ArrowRight,
-  Sparkles,
+  Lightbulb,
   Lock,
 } from 'lucide-react';
 import type {
@@ -149,8 +149,8 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-3xl my-8 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-3xl my-8 bg-surface dark:bg-neutral-900 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40">
           <div className="flex items-center gap-2.5">
@@ -158,7 +158,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+              <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
                 {t.subscriptionPage.checkoutModalTitle}
               </h2>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -179,10 +179,10 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
           {isSuccess ? (
             /* Success State */
             <div className="py-8 text-center flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10 mb-4 animate-bounce">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center shadow-sm mb-4">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+              <h3 className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
                 {t.subscriptionPage.paymentSuccessTitle}
               </h3>
               <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300 max-w-md">
@@ -202,7 +202,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-500">{t.subscriptionPage.totalAmount}:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400 text-sm">
                     {finalPrice.toLocaleString('vi-VN')} ₫
                   </span>
                 </div>
@@ -219,7 +219,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                   onSuccess();
                   onClose();
                 }}
-                className="mt-8 px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition shadow-lg shadow-emerald-500/20"
+                className="mt-8 px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition shadow-sm"
               >
                 {t.subscriptionPage.doneBtn}
               </button>
@@ -230,7 +230,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
               {/* Left Column: Order Summary & Voucher */}
               <div className="md:col-span-5 space-y-5">
                 <div className="p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-800">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-4">
+                  <h4 className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-4">
                     {t.subscriptionPage.orderSummary}
                   </h4>
 
@@ -262,11 +262,11 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                     )}
 
                     <div className="pt-3 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-baseline">
-                      <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
                         {t.subscriptionPage.totalAmount}
                       </span>
                       <div className="text-right">
-                        <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                        <span className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
                           {finalPrice.toLocaleString('vi-VN')} ₫
                         </span>
                         <p className="text-[11px] text-neutral-400">Đã bao gồm thuế GTGT (VAT)</p>
@@ -287,7 +287,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                       value={voucherInput}
                       onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
                       placeholder="CAREERPILOT20, FA26SE119..."
-                      className="flex-1 px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="flex-1 px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-surface dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                     <button
                       onClick={handleApplyVoucher}
@@ -318,7 +318,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
               <div className="md:col-span-7 space-y-5">
                 {/* Method Tabs */}
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-3 block">
+                  <label className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-3 block">
                     {t.subscriptionPage.choosePaymentMethod}
                   </label>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -333,7 +333,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                     >
                       <QrCode className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                        <div className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
                           {t.subscriptionPage.vietqrMethod}
                         </div>
                         <div className="text-[11px] text-neutral-500">Quét mã VietQR tiện lợi</div>
@@ -345,13 +345,13 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                       onClick={() => setPaymentMethod('momo')}
                       className={`p-3 rounded-xl border text-left flex items-start gap-3 transition ${
                         paymentMethod === 'momo'
-                          ? 'border-pink-500 bg-pink-50/50 dark:bg-pink-950/20 ring-2 ring-pink-500/20'
+                          ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-950/20 ring-2 ring-brand-500/20'
                           : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
                       }`}
                     >
-                      <Smartphone className="w-5 h-5 text-pink-600 shrink-0 mt-0.5" />
+                      <Smartphone className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                        <div className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
                           {t.subscriptionPage.momoMethod}
                         </div>
                         <div className="text-[11px] text-neutral-500">Ví điện tử MoMo Pay</div>
@@ -363,13 +363,13 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                       onClick={() => setPaymentMethod('vnpay')}
                       className={`p-3 rounded-xl border text-left flex items-start gap-3 transition ${
                         paymentMethod === 'vnpay'
-                          ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 ring-2 ring-blue-500/20'
+                          ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-950/20 ring-2 ring-brand-500/20'
                           : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
                       }`}
                     >
-                      <QrCode className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                      <QrCode className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                        <div className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
                           {t.subscriptionPage.vnpayMethod}
                         </div>
                         <div className="text-[11px] text-neutral-500">VNPAY-QR & Thẻ ATM</div>
@@ -381,13 +381,13 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                       onClick={() => setPaymentMethod('credit_card')}
                       className={`p-3 rounded-xl border text-left flex items-start gap-3 transition ${
                         paymentMethod === 'credit_card'
-                          ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 ring-2 ring-indigo-500/20'
+                          ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-950/20 ring-2 ring-brand-500/20'
                           : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
                       }`}
                     >
-                      <CreditCard className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+                      <CreditCard className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                        <div className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
                           {t.subscriptionPage.cardMethod}
                         </div>
                         <div className="text-[11px] text-neutral-500">Visa / Mastercard / JCB</div>
@@ -405,7 +405,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
 
                     <div className="flex flex-col sm:flex-row items-center gap-5">
                       {/* VietQR Image */}
-                      <div className="p-3 bg-white rounded-2xl shadow-sm border border-neutral-200 shrink-0 flex flex-col items-center">
+                      <div className="p-3 bg-surface rounded-2xl shadow-sm border border-neutral-200 shrink-0 flex flex-col items-center">
                         {order?.qrDetails ? (
                           <img
                             src={order.qrDetails.qrImageUrl}
@@ -422,7 +422,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
 
                       {/* Bank Account Info */}
                       <div className="flex-1 w-full space-y-2 text-xs">
-                        <div className="flex justify-between items-center p-2 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700">
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-surface dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700">
                           <div>
                             <span className="text-[10px] text-neutral-400 block">{t.subscriptionPage.bankName}</span>
                             <span className="font-semibold text-neutral-800 dark:text-neutral-200">
@@ -431,10 +431,10 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                           </div>
                         </div>
 
-                        <div className="flex justify-between items-center p-2 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700">
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-surface dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700">
                           <div>
                             <span className="text-[10px] text-neutral-400 block">{t.subscriptionPage.accountNumber}</span>
-                            <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100">0912345678</span>
+                            <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">0912345678</span>
                           </div>
                           <button
                             onClick={() => handleCopy('0912345678', 'stk')}
@@ -445,10 +445,10 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                           </button>
                         </div>
 
-                        <div className="flex justify-between items-center p-2 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700">
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-surface dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700">
                           <div>
                             <span className="text-[10px] text-neutral-400 block">{t.subscriptionPage.transferMemo}</span>
-                            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400">
                               {order?.qrDetails?.transferContent || `CP PAY ${order?.orderCode}`}
                             </span>
                           </div>
@@ -468,35 +468,35 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                 )}
 
                 {paymentMethod === 'momo' && (
-                  <div className="p-4 rounded-2xl bg-pink-50/40 dark:bg-pink-950/20 border border-pink-200 dark:border-pink-900/50 text-center space-y-3">
-                    <div className="w-12 h-12 mx-auto rounded-full bg-pink-100 text-pink-600 flex items-center justify-center">
+                  <div className="p-4 rounded-2xl bg-brand-50/40 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/50 text-center space-y-3">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-brand-100 text-brand-600 flex items-center justify-center">
                       <Smartphone className="w-6 h-6" />
                     </div>
-                    <h5 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                    <h5 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       Mở ứng dụng MoMo để quét mã
                     </h5>
                     <p className="text-xs text-neutral-500 max-w-sm mx-auto">
                       Đơn hàng <span className="font-mono font-semibold">{order?.orderCode}</span> số tiền{' '}
-                      <span className="font-bold text-pink-600">{finalPrice.toLocaleString('vi-VN')} ₫</span>.
+                      <span className="font-medium text-brand-600">{finalPrice.toLocaleString('vi-VN')} ₫</span>.
                     </p>
-                    <div className="p-3 bg-white inline-block rounded-xl border border-neutral-200 shadow-sm">
+                    <div className="p-3 bg-surface inline-block rounded-xl border border-neutral-200 shadow-sm">
                       <QrCode className="w-36 h-36 text-neutral-800" />
                     </div>
                   </div>
                 )}
 
                 {paymentMethod === 'vnpay' && (
-                  <div className="p-4 rounded-2xl bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 text-center space-y-3">
-                    <div className="w-12 h-12 mx-auto rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <div className="p-4 rounded-2xl bg-brand-50/40 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/50 text-center space-y-3">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-brand-100 text-brand-600 flex items-center justify-center">
                       <QrCode className="w-6 h-6" />
                     </div>
-                    <h5 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                    <h5 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       Cổng VNPAY-QR Đa Ngân Hàng
                     </h5>
                     <p className="text-xs text-neutral-500 max-w-sm mx-auto">
                       Hỗ trợ hơn 40 ứng dụng Mobile Banking: Vietcombank, BIDV, VietinBank, Agribank, VPBank...
                     </p>
-                    <div className="p-3 bg-white inline-block rounded-xl border border-neutral-200 shadow-sm">
+                    <div className="p-3 bg-surface inline-block rounded-xl border border-neutral-200 shadow-sm">
                       <QrCode className="w-36 h-36 text-neutral-800" />
                     </div>
                   </div>
@@ -513,7 +513,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                         value={cardNumber}
                         onChange={(e) => setCardNumber(e.target.value)}
                         placeholder="4111 2222 3333 4444"
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-surface dark:bg-neutral-800 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -526,7 +526,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                           value={cardExpiry}
                           onChange={(e) => setCardExpiry(e.target.value)}
                           placeholder="12/28"
-                          className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-surface dark:bg-neutral-800 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         />
                       </div>
                       <div>
@@ -539,7 +539,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                           value={cardCvv}
                           onChange={(e) => setCardCvv(e.target.value)}
                           placeholder="•••"
-                          className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-surface dark:bg-neutral-800 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -555,7 +555,7 @@ export const PaymentCheckoutModal: React.FC<PaymentCheckoutModalProps> = ({
                   <button
                     onClick={handleConfirmPaid}
                     disabled={isVerifying || isCreatingOrder}
-                    className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold text-sm transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition shadow-sm flex items-center justify-center gap-2"
                   >
                     {isVerifying ? (
                       <>

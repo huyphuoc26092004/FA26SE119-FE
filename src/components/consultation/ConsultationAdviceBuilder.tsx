@@ -4,7 +4,7 @@ import {
   Compass,
   DollarSign,
   Video,
-  Sparkles,
+  Lightbulb,
   Save,
   Copy,
   Printer,
@@ -16,7 +16,6 @@ import {
   Sliders,
   ChevronRight,
   TrendingUp,
-  Lightbulb,
   ShieldAlert,
   HelpCircle,
   Check,
@@ -174,7 +173,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
     <div className="space-y-6">
       {/* Toast Alert */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-xl animate-fade-in">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-sm animate-fade-in">
           <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
           <span>{toastMsg}</span>
         </div>
@@ -184,7 +183,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-lg font-medium text-slate-900">
               {t('consultation.adviceBuilderTitle')}
             </h2>
             <Badge tone="blue">4 Pillars</Badge>
@@ -200,9 +199,9 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
             <Button
               variant="secondary"
               onClick={handleGenerateAiDraft}
-              className="gap-1.5 text-xs py-2 px-3 border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100"
+              className="gap-1.5 text-xs py-2 px-3 border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
             >
-              <Sparkles size={14} className="text-purple-600" />
+              <Lightbulb size={14} className="text-brand-600" />
               <span>{t('consultation.aiDraftButton')}</span>
             </Button>
           )}
@@ -246,19 +245,19 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           onClick={() => setActivePillar('cv')}
           className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition cursor-pointer ${
             activePillar === 'cv'
-              ? 'border-blue-600 bg-blue-50/60 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+              ? 'border-brand-600 bg-brand-50/60 shadow-xs'
+              : 'border-slate-200 bg-surface hover:border-slate-300'
           }`}
         >
           <div
             className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-              activePillar === 'cv' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'
+              activePillar === 'cv' ? 'bg-brand-600 text-white' : 'bg-brand-100 text-brand-700'
             }`}
           >
             <FileText size={16} />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-900">
+            <div className="text-xs font-medium text-slate-900">
               {t('consultation.pillarCvImprovement')}
             </div>
             <div className="text-[10px] text-slate-500">
@@ -272,19 +271,19 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           onClick={() => setActivePillar('career')}
           className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition cursor-pointer ${
             activePillar === 'career'
-              ? 'border-indigo-600 bg-indigo-50/60 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+              ? 'border-brand-600 bg-brand-50/60 shadow-xs'
+              : 'border-slate-200 bg-surface hover:border-slate-300'
           }`}
         >
           <div
             className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-              activePillar === 'career' ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700'
+              activePillar === 'career' ? 'bg-brand-600 text-white' : 'bg-brand-100 text-brand-700'
             }`}
           >
             <Compass size={16} />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-900">
+            <div className="text-xs font-medium text-slate-900">
               {t('consultation.pillarCareerDirection')}
             </div>
             <div className="text-[10px] text-slate-500">
@@ -299,7 +298,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition cursor-pointer ${
             activePillar === 'salary'
               ? 'border-emerald-600 bg-emerald-50/60 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+              : 'border-slate-200 bg-surface hover:border-slate-300'
           }`}
         >
           <div
@@ -310,7 +309,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
             <DollarSign size={16} />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-900">
+            <div className="text-xs font-medium text-slate-900">
               {t('consultation.pillarSalaryNegotiation')}
             </div>
             <div className="text-[10px] text-slate-500">
@@ -324,19 +323,19 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           onClick={() => setActivePillar('interview')}
           className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition cursor-pointer ${
             activePillar === 'interview'
-              ? 'border-purple-600 bg-purple-50/60 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+              ? 'border-brand-600 bg-brand-50/60 shadow-xs'
+              : 'border-slate-200 bg-surface hover:border-slate-300'
           }`}
         >
           <div
             className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-              activePillar === 'interview' ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700'
+              activePillar === 'interview' ? 'bg-brand-600 text-white' : 'bg-brand-100 text-brand-700'
             }`}
           >
             <Video size={16} />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-900">
+            <div className="text-xs font-medium text-slate-900">
               {t('consultation.pillarInterviewSkills')}
             </div>
             <div className="text-[10px] text-slate-500">
@@ -353,8 +352,8 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
         <div className="space-y-6 animate-fade-in">
           {/* Executive Summary Assessment */}
           <Card className="border-slate-200">
-            <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
-              <FileText size={16} className="text-blue-600" />
+            <h3 className="text-sm font-medium text-slate-900 mb-2 flex items-center gap-2">
+              <FileText size={16} className="text-brand-600" />
               <span>Đánh Giá Tổng Thể CV & Định Vị Hồ Sơ</span>
             </h3>
             <textarea
@@ -367,16 +366,16 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                   cvAdvice: { ...advice.cvAdvice, summary: e.target.value },
                 })
               }
-              className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 outline-none focus:border-blue-500 leading-relaxed disabled:bg-slate-50"
+              className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 outline-none focus:border-brand-500 leading-relaxed disabled:bg-slate-50"
             />
           </Card>
 
           {/* STAR Formula Rewrites (Interactive Table / Cards) */}
-          <Card className="border-blue-100 bg-gradient-to-br from-white to-blue-50/30">
+          <Card className="border-brand-100 bg-surface">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <TrendingUp size={16} className="text-blue-600" />
+                <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                  <TrendingUp size={16} className="text-brand-600" />
                   <span>{t('consultation.starFormulaTitle')}</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
@@ -387,7 +386,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                 <Button
                   variant="secondary"
                   onClick={() => setShowNewStarModal(true)}
-                  className="gap-1.5 text-xs py-1.5 px-3 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                  className="gap-1.5 text-xs py-1.5 px-3 border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
                 >
                   <Plus size={13} />
                   <span>{t('consultation.addStarItem')}</span>
@@ -399,10 +398,10 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
               {advice.cvAdvice.starImprovements.map((star, idx) => (
                 <div
                   key={star.id}
-                  className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs space-y-2.5"
+                  className="rounded-xl border border-slate-200 bg-surface p-3.5 shadow-2xs space-y-2.5"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400">
+                    <span className="text-[11px] font-medium text-slate-400">
                       Ví dụ so sánh #{idx + 1}
                     </span>
                     {!readOnly && (
@@ -419,7 +418,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     {/* Before */}
                     <div className="rounded-lg bg-red-50/70 border border-red-100 p-2.5">
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-red-700 mb-1">
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-red-700 mb-1">
                         <AlertCircle size={13} />
                         <span>{t('consultation.beforeText')}</span>
                       </div>
@@ -428,7 +427,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
                     {/* After STAR */}
                     <div className="rounded-lg bg-emerald-50/70 border border-emerald-100 p-2.5">
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 mb-1">
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 mb-1">
                         <CheckCircle2 size={13} className="text-emerald-600" />
                         <span>{t('consultation.afterStarText')}</span>
                       </div>
@@ -437,7 +436,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                   </div>
 
                   {star.note && (
-                    <div className="text-[11px] text-blue-700 bg-blue-50/80 rounded-md px-2.5 py-1 flex items-center gap-1.5">
+                    <div className="text-[11px] text-brand-700 bg-brand-50/80 rounded-md px-2.5 py-1 flex items-center gap-1.5">
                       <Lightbulb size={12} className="shrink-0" />
                       <span>{star.note}</span>
                     </div>
@@ -451,15 +450,15 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Keywords */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-                <Sparkles size={14} className="text-purple-600" />
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
+                <Lightbulb size={14} className="text-brand-600" />
                 <span>{t('consultation.keywordsToInjectTitle')}</span>
               </h3>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {advice.cvAdvice.missingKeywordsToInject.map((kw, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-800 border border-purple-200"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-800 border border-brand-200"
                   >
                     <span>{kw}</span>
                     {!readOnly && (
@@ -475,7 +474,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                             },
                           })
                         }
-                        className="text-purple-500 hover:text-red-600 cursor-pointer"
+                        className="text-brand-500 hover:text-red-600 cursor-pointer"
                       >
                         <X size={12} />
                       </button>
@@ -509,7 +508,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                       }
                     }}
                     placeholder={t('consultation.addKeywordPlaceholder')}
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-blue-500"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
                   />
                   <Button
                     variant="secondary"
@@ -538,7 +537,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
             {/* Formatting Tips */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
                 <Sliders size={14} className="text-slate-700" />
                 <span>{t('consultation.formattingTipsTitle')}</span>
               </h3>
@@ -555,8 +554,8 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
           {/* CV Action Items */}
           <Card className="border-slate-200">
-            <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-              <CheckCircle2 size={14} className="text-blue-600" />
+            <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-brand-600" />
               <span>{t('consultation.cvActionItemsTitle')}</span>
             </h3>
             <div className="space-y-1.5 mb-3">
@@ -566,7 +565,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                   className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-800 border border-slate-100"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-100 text-[10px] font-medium text-brand-700">
                       {idx + 1}
                     </span>
                     <span>{item}</span>
@@ -613,7 +612,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                     }
                   }}
                   placeholder="Thêm đầu việc cải thiện CV..."
-                  className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-blue-500"
+                  className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
                 />
                 <Button
                   variant="secondary"
@@ -645,15 +644,15 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
       {activePillar === 'career' && (
         <div className="space-y-6 animate-fade-in">
           {/* Seniority Positioning */}
-          <Card className="border-indigo-100 bg-gradient-to-br from-white to-indigo-50/20">
-            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Compass size={16} className="text-indigo-600" />
+          <Card className="border-brand-100 bg-surface">
+            <h3 className="text-sm font-medium text-slate-900 mb-3 flex items-center gap-2">
+              <Compass size={16} className="text-brand-600" />
               <span>{t('consultation.careerPositioningTitle')}</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                <label className="text-[11px] font-medium text-slate-500 block mb-1">
                   Cấp bậc hiện tại
                 </label>
                 <input
@@ -666,11 +665,11 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                       careerAdvice: { ...advice.careerAdvice, currentLevel: e.target.value },
                     })
                   }
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-indigo-500 disabled:bg-slate-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-brand-500 disabled:bg-slate-50"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                <label className="text-[11px] font-medium text-slate-500 block mb-1">
                   Cấp bậc mục tiêu khuyến nghị
                 </label>
                 <input
@@ -683,13 +682,13 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                       careerAdvice: { ...advice.careerAdvice, targetLevel: e.target.value },
                     })
                   }
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-indigo-500 disabled:bg-slate-50 font-semibold text-indigo-700"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-brand-500 disabled:bg-slate-50 font-semibold text-brand-700"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-500 block mb-1">
+              <label className="text-[11px] font-medium text-slate-500 block mb-1">
                 Chiến lược định vị hồ sơ chuyên sâu
               </label>
               <textarea
@@ -702,7 +701,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                     careerAdvice: { ...advice.careerAdvice, recommendedPositioning: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 outline-none focus:border-indigo-500 leading-relaxed disabled:bg-slate-50"
+                className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 outline-none focus:border-brand-500 leading-relaxed disabled:bg-slate-50"
               />
             </div>
           </Card>
@@ -711,15 +710,15 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Short-term */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-                <ChevronRight size={14} className="text-indigo-600" />
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
+                <ChevronRight size={14} className="text-brand-600" />
                 <span>{t('consultation.shortTermMilestonesTitle')}</span>
               </h3>
               <div className="space-y-1.5 mb-3">
                 {advice.careerAdvice.shortTermRoadmap.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between rounded-lg bg-indigo-50/50 px-2.5 py-1.5 text-xs text-indigo-900 border border-indigo-100"
+                    className="flex items-center justify-between rounded-lg bg-brand-50/50 px-2.5 py-1.5 text-xs text-brand-900 border border-brand-100"
                   >
                     <span>{item}</span>
                     {!readOnly && (
@@ -735,7 +734,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                             },
                           })
                         }
-                        className="text-indigo-400 hover:text-red-600 cursor-pointer p-0.5"
+                        className="text-brand-400 hover:text-red-600 cursor-pointer p-0.5"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -751,7 +750,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                     value={newShortTerm}
                     onChange={(e) => setNewShortTerm(e.target.value)}
                     placeholder="Thêm cột mốc ngắn hạn..."
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-indigo-500"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
                   />
                   <Button
                     variant="secondary"
@@ -780,15 +779,15 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
             {/* Long-term */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-                <ChevronRight size={14} className="text-purple-600" />
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
+                <ChevronRight size={14} className="text-brand-600" />
                 <span>{t('consultation.longTermMilestonesTitle')}</span>
               </h3>
               <div className="space-y-1.5 mb-3">
                 {advice.careerAdvice.longTermRoadmap.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between rounded-lg bg-purple-50/50 px-2.5 py-1.5 text-xs text-purple-900 border border-purple-100"
+                    className="flex items-center justify-between rounded-lg bg-brand-50/50 px-2.5 py-1.5 text-xs text-brand-900 border border-brand-100"
                   >
                     <span>{item}</span>
                     {!readOnly && (
@@ -804,7 +803,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                             },
                           })
                         }
-                        className="text-purple-400 hover:text-red-600 cursor-pointer p-0.5"
+                        className="text-brand-400 hover:text-red-600 cursor-pointer p-0.5"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -820,7 +819,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                     value={newLongTerm}
                     onChange={(e) => setNewLongTerm(e.target.value)}
                     placeholder="Thêm cột mốc dài hạn..."
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-purple-500"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
                   />
                   <Button
                     variant="secondary"
@@ -850,7 +849,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
           {/* Strategic Recommendations / Personal Branding */}
           <Card className="border-slate-200">
-            <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+            <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
               <Lightbulb size={14} className="text-amber-500" />
               <span>{t('consultation.strategicRecommendationsTitle')}</span>
             </h3>
@@ -928,10 +927,10 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
       {activePillar === 'salary' && (
         <div className="space-y-6 animate-fade-in">
           {/* Salary Spectrum Calculator */}
-          <Card className="border-emerald-100 bg-gradient-to-br from-white to-emerald-50/30">
+          <Card className="border-emerald-100 bg-surface">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
                   <DollarSign size={16} className="text-emerald-600" />
                   <span>{t('consultation.salaryRangeTitle')}</span>
                 </h3>
@@ -945,8 +944,8 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
             {/* Salary inputs grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               {/* Min */}
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">
+              <div className="rounded-xl border border-slate-200 bg-surface p-3">
+                <label className="text-[11px] font-medium text-slate-400 block mb-1">
                   {t('consultation.minSalaryLabel')}
                 </label>
                 <div className="flex items-center gap-1">
@@ -960,9 +959,9 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                         salaryAdvice: { ...advice.salaryAdvice, minSalary: Number(e.target.value) },
                       })
                     }
-                    className="w-full text-base font-bold text-slate-800 outline-none disabled:bg-white"
+                    className="w-full text-base font-medium text-slate-800 outline-none disabled:bg-surface"
                   />
-                  <span className="text-xs font-bold text-slate-400">
+                  <span className="text-xs font-medium text-slate-400">
                     {advice.salaryAdvice.currency}
                   </span>
                 </div>
@@ -970,7 +969,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
               {/* Target */}
               <div className="rounded-xl border-2 border-emerald-500 bg-emerald-50/50 p-3 shadow-xs">
-                <label className="text-[11px] font-bold text-emerald-800 block mb-1">
+                <label className="text-[11px] font-medium text-emerald-800 block mb-1">
                   {t('consultation.targetSalaryLabel')} ★
                 </label>
                 <div className="flex items-center gap-1">
@@ -987,17 +986,17 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                         },
                       })
                     }
-                    className="w-full text-base font-extrabold text-emerald-900 outline-none bg-transparent"
+                    className="w-full text-base font-semibold text-emerald-900 outline-none bg-transparent"
                   />
-                  <span className="text-xs font-bold text-emerald-700">
+                  <span className="text-xs font-medium text-emerald-700">
                     {advice.salaryAdvice.currency}
                   </span>
                 </div>
               </div>
 
               {/* Max */}
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">
+              <div className="rounded-xl border border-slate-200 bg-surface p-3">
+                <label className="text-[11px] font-medium text-slate-400 block mb-1">
                   {t('consultation.maxSalaryLabel')}
                 </label>
                 <div className="flex items-center gap-1">
@@ -1011,9 +1010,9 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                         salaryAdvice: { ...advice.salaryAdvice, maxSalary: Number(e.target.value) },
                       })
                     }
-                    className="w-full text-base font-bold text-slate-800 outline-none disabled:bg-white"
+                    className="w-full text-base font-medium text-slate-800 outline-none disabled:bg-surface"
                   />
-                  <span className="text-xs font-bold text-slate-400">
+                  <span className="text-xs font-medium text-slate-400">
                     {advice.salaryAdvice.currency}
                   </span>
                 </div>
@@ -1024,14 +1023,14 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
             <div className="space-y-1.5 pt-2">
               <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
                 <span>Floor: {advice.salaryAdvice.minSalary.toLocaleString()}</span>
-                <span className="text-emerald-700 font-bold">
+                <span className="text-emerald-700 font-medium">
                   Recommended Target: {advice.salaryAdvice.targetSalary.toLocaleString()}
                 </span>
                 <span>Ceiling: {advice.salaryAdvice.maxSalary.toLocaleString()}</span>
               </div>
               <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden relative">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-500"
+                  className="h-full rounded-full bg-brand-500"
                   style={{ width: '100%' }}
                 />
               </div>
@@ -1042,7 +1041,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Negotiation Tactics */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
                 <TrendingUp size={14} className="text-emerald-600" />
                 <span>{t('consultation.negotiationTacticsTitle')}</span>
               </h3>
@@ -1111,7 +1110,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
             {/* Total Compensation Perks */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
                 <Sliders size={14} className="text-slate-700" />
                 <span>{t('consultation.packagePerksTitle')}</span>
               </h3>
@@ -1183,7 +1182,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           {advice.salaryAdvice.sampleScript && (
             <Card className="border-slate-200 bg-slate-50/70">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <h3 className="text-xs font-medium text-slate-900 flex items-center gap-1.5">
                   <Lightbulb size={14} className="text-amber-500" />
                   <span>{t('consultation.sampleNegotiationScriptTitle')}</span>
                 </h3>
@@ -1213,7 +1212,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                     salaryAdvice: { ...advice.salaryAdvice, sampleScript: e.target.value },
                   })
                 }
-                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 italic outline-none focus:border-emerald-500 leading-relaxed disabled:bg-white"
+                className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs text-slate-800 italic outline-none focus:border-emerald-500 leading-relaxed disabled:bg-surface"
               />
             </Card>
           )}
@@ -1226,11 +1225,11 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
       {activePillar === 'interview' && (
         <div className="space-y-6 animate-fade-in">
           {/* Readiness Rating Card */}
-          <Card className="border-purple-100 bg-gradient-to-br from-white to-purple-50/30">
+          <Card className="border-brand-100 bg-surface">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Video size={16} className="text-purple-600" />
+                <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                  <Video size={16} className="text-brand-600" />
                   <span>{t('consultation.interviewReadinessScore')}</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
@@ -1255,9 +1254,9 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                       },
                     })
                   }
-                  className="w-32 accent-purple-600"
+                  className="w-32 accent-brand-600"
                 />
-                <span className="flex h-10 w-14 items-center justify-center rounded-xl bg-purple-600 text-sm font-extrabold text-white shadow-xs">
+                <span className="flex h-10 w-14 items-center justify-center rounded-xl bg-brand-600 text-sm font-semibold text-white shadow-xs">
                   {advice.interviewAdvice.overallReadiness} / 10
                 </span>
               </div>
@@ -1268,15 +1267,15 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Behavioral Tips */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-                <HelpCircle size={14} className="text-blue-600" />
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
+                <HelpCircle size={14} className="text-brand-600" />
                 <span>{t('consultation.behavioralInterviewTips')}</span>
               </h3>
               <div className="space-y-1.5 mb-3">
                 {advice.interviewAdvice.behavioralTips.map((tip, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between rounded-lg bg-blue-50/60 px-2.5 py-1.5 text-xs text-blue-950 border border-blue-100"
+                    className="flex items-center justify-between rounded-lg bg-brand-50/60 px-2.5 py-1.5 text-xs text-brand-950 border border-brand-100"
                   >
                     <span>{tip}</span>
                     {!readOnly && (
@@ -1292,7 +1291,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                             },
                           })
                         }
-                        className="text-blue-400 hover:text-red-600 cursor-pointer p-0.5"
+                        className="text-brand-400 hover:text-red-600 cursor-pointer p-0.5"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -1308,7 +1307,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                     value={newBehavioral}
                     onChange={(e) => setNewBehavioral(e.target.value)}
                     placeholder="Thêm mẹo phỏng vấn hành vi..."
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-blue-500"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
                   />
                   <Button
                     variant="secondary"
@@ -1337,15 +1336,15 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
             {/* Technical Tips */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-                <CheckCircle2 size={14} className="text-purple-600" />
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-brand-600" />
                 <span>{t('consultation.technicalInterviewTips')}</span>
               </h3>
               <div className="space-y-1.5 mb-3">
                 {advice.interviewAdvice.technicalTips.map((tip, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between rounded-lg bg-purple-50/60 px-2.5 py-1.5 text-xs text-purple-950 border border-purple-100"
+                    className="flex items-center justify-between rounded-lg bg-brand-50/60 px-2.5 py-1.5 text-xs text-brand-950 border border-brand-100"
                   >
                     <span>{tip}</span>
                     {!readOnly && (
@@ -1361,7 +1360,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                             },
                           })
                         }
-                        className="text-purple-400 hover:text-red-600 cursor-pointer p-0.5"
+                        className="text-brand-400 hover:text-red-600 cursor-pointer p-0.5"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -1377,7 +1376,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                     value={newTechnical}
                     onChange={(e) => setNewTechnical(e.target.value)}
                     placeholder="Thêm lưu ý phỏng vấn kỹ thuật..."
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-purple-500"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
                   />
                   <Button
                     variant="secondary"
@@ -1409,15 +1408,15 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Reverse Questions */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-                <HelpCircle size={14} className="text-indigo-600" />
+              <h3 className="text-xs font-medium text-slate-900 mb-2 flex items-center gap-1.5">
+                <HelpCircle size={14} className="text-brand-600" />
                 <span>{t('consultation.reverseQuestionsTitle')}</span>
               </h3>
               <div className="space-y-1.5 mb-3">
                 {advice.interviewAdvice.reverseQuestions.map((q, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between rounded-lg bg-indigo-50/50 px-2.5 py-1.5 text-xs text-indigo-950 border border-indigo-100"
+                    className="flex items-center justify-between rounded-lg bg-brand-50/50 px-2.5 py-1.5 text-xs text-brand-950 border border-brand-100"
                   >
                     <span>{q}</span>
                     {!readOnly && (
@@ -1433,7 +1432,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                             },
                           })
                         }
-                        className="text-indigo-400 hover:text-red-600 cursor-pointer p-0.5"
+                        className="text-brand-400 hover:text-red-600 cursor-pointer p-0.5"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -1449,7 +1448,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                     value={newReverseQ}
                     onChange={(e) => setNewReverseQ(e.target.value)}
                     placeholder="Thêm câu hỏi hỏi lại NTD..."
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-indigo-500"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
                   />
                   <Button
                     variant="secondary"
@@ -1478,7 +1477,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
             {/* Pitfalls to Avoid */}
             <Card className="border-slate-200">
-              <h3 className="text-xs font-bold text-red-900 mb-2 flex items-center gap-1.5">
+              <h3 className="text-xs font-medium text-red-900 mb-2 flex items-center gap-1.5">
                 <ShieldAlert size={14} className="text-red-600" />
                 <span>{t('consultation.pitfallsToAvoidTitle')}</span>
               </h3>
@@ -1552,11 +1551,11 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
       {/* MODAL: ADD NEW STAR EXAMPLE                                              */}
       {/* ========================================================================= */}
       {showNewStarModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-surface p-5 shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <TrendingUp size={16} className="text-blue-600" />
+              <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                <TrendingUp size={16} className="text-brand-600" />
                 <span>Thêm Ví Dụ Chuẩn Hóa Theo STAR</span>
               </h3>
               <button
@@ -1569,7 +1568,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">
+                <label className="font-medium text-slate-700 block mb-1">
                   Mô tả ban đầu trong CV (Chưa định lượng) *
                 </label>
                 <textarea
@@ -1577,12 +1576,12 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                   value={starBefore}
                   onChange={(e) => setStarBefore(e.target.value)}
                   placeholder="Ví dụ: Phát triển các component React cho hệ thống thanh toán..."
-                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 p-2.5 outline-none focus:border-brand-500"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-emerald-800 block mb-1">
+                <label className="font-medium text-emerald-800 block mb-1">
                   Đề xuất viết lại theo STAR (Có số liệu & % tác động) *
                 </label>
                 <textarea
@@ -1595,7 +1594,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
               </div>
 
               <div>
-                <label className="font-bold text-slate-500 block mb-1">
+                <label className="font-medium text-slate-500 block mb-1">
                   Ghi chú / Lý do chiến lược (Không bắt buộc)
                 </label>
                 <input
@@ -1603,7 +1602,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                   value={starNote}
                   onChange={(e) => setStarNote(e.target.value)}
                   placeholder="Ví dụ: Nhấn mạnh vào kết quả kinh doanh thay vì chỉ làm việc kỹ thuật."
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-brand-500"
                 />
               </div>
             </div>
@@ -1628,12 +1627,12 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
       {/* MODAL: PRINT / PREVIEW OFFICIAL CONSULTATION REPORT                      */}
       {/* ========================================================================= */}
       {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
+          <div className="w-full max-w-3xl rounded-2xl bg-surface p-6 shadow-sm my-8">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 print:hidden">
               <div className="flex items-center gap-2">
-                <Printer size={18} className="text-blue-600" />
-                <h3 className="text-base font-bold text-slate-900">
+                <Printer size={18} className="text-brand-600" />
+                <h3 className="text-base font-medium text-slate-900">
                   {t('consultation.reportPreviewTitle')}
                 </h3>
               </div>
@@ -1660,7 +1659,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
               {/* Header */}
               <div className="flex items-start justify-between border-b border-slate-200 pb-4">
                 <div>
-                  <div className="text-lg font-black tracking-tight text-blue-700">
+                  <div className="text-lg font-semibold tracking-tight text-brand-700">
                     CAREERPILOT INTELLIGENCE
                   </div>
                   <div className="text-xs text-slate-500 font-medium">
@@ -1668,7 +1667,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                   </div>
                 </div>
                 <div className="text-right text-xs">
-                  <div className="font-bold text-slate-900">
+                  <div className="font-medium text-slate-900">
                     Cố vấn: {advice.consultantName || 'Taylor Lee'}
                   </div>
                   <div className="text-slate-500">
@@ -1680,18 +1679,18 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
               {/* Candidate Info Box */}
               <div className="rounded-xl bg-slate-50 p-4 border border-slate-200 grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="text-slate-400 font-bold block">Ứng viên:</span>
-                  <span className="font-bold text-slate-900 text-sm">{candidateName}</span>
+                  <span className="text-slate-400 font-medium block">Ứng viên:</span>
+                  <span className="font-medium text-slate-900 text-sm">{candidateName}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-bold block">Vị trí mục tiêu:</span>
-                  <span className="font-bold text-blue-700 text-sm">{candidateRole}</span>
+                  <span className="text-slate-400 font-medium block">Vị trí mục tiêu:</span>
+                  <span className="font-medium text-brand-700 text-sm">{candidateRole}</span>
                 </div>
               </div>
 
               {/* Section 1: CV Improvement */}
               <div>
-                <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <h4 className="text-xs font-medium text-brand-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <FileText size={14} />
                   <span>1. Cải thiện CV & Chuẩn hóa ATS</span>
                 </h4>
@@ -1700,12 +1699,12 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                 </p>
                 <div className="space-y-2 text-xs">
                   {advice.cvAdvice.starImprovements.map((star, idx) => (
-                    <div key={idx} className="rounded-lg border border-slate-200 p-2.5 bg-white">
+                    <div key={idx} className="rounded-lg border border-slate-200 p-2.5 bg-surface">
                       <div className="text-red-700 line-through text-[11px] mb-1">
-                        ❌ Trước: {star.before}
+                        Trước: {star.before}
                       </div>
-                      <div className="text-emerald-800 font-bold text-xs">
-                        ✅ Sau (STAR): {star.afterStar}
+                      <div className="text-emerald-800 font-medium text-xs">
+                        Sau (STAR): {star.afterStar}
                       </div>
                     </div>
                   ))}
@@ -1714,7 +1713,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
               {/* Section 2: Career Direction */}
               <div>
-                <h4 className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <h4 className="text-xs font-medium text-brand-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Compass size={14} />
                   <span>2. Định hướng nghề nghiệp & Lộ trình</span>
                 </h4>
@@ -1725,16 +1724,16 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
                   {advice.careerAdvice.recommendedPositioning}
                 </p>
                 <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-lg bg-indigo-50/50 p-3 border border-indigo-100">
-                    <span className="font-bold text-indigo-900 block mb-1">Ngắn hạn (1-3 tháng):</span>
+                  <div className="rounded-lg bg-brand-50/50 p-3 border border-brand-100">
+                    <span className="font-medium text-brand-900 block mb-1">Ngắn hạn (1-3 tháng):</span>
                     <ul className="list-disc pl-4 space-y-1 text-slate-700">
                       {advice.careerAdvice.shortTermRoadmap.map((item, i) => (
                         <li key={i}>{item}</li>
                       ))}
                     </ul>
                   </div>
-                  <div className="rounded-lg bg-purple-50/50 p-3 border border-purple-100">
-                    <span className="font-bold text-purple-900 block mb-1">Dài hạn (6-12 tháng):</span>
+                  <div className="rounded-lg bg-brand-50/50 p-3 border border-brand-100">
+                    <span className="font-medium text-brand-900 block mb-1">Dài hạn (6-12 tháng):</span>
                     <ul className="list-disc pl-4 space-y-1 text-slate-700">
                       {advice.careerAdvice.longTermRoadmap.map((item, i) => (
                         <li key={i}>{item}</li>
@@ -1746,7 +1745,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
               {/* Section 3: Salary */}
               <div>
-                <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <h4 className="text-xs font-medium text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <DollarSign size={14} />
                   <span>3. Mức lương & Chiến lược đàm phán</span>
                 </h4>
@@ -1769,7 +1768,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
               {/* Section 4: Interview */}
               <div>
-                <h4 className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <h4 className="text-xs font-medium text-brand-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Video size={14} />
                   <span>4. Kỹ năng phỏng vấn (Điểm sẵn sàng: {advice.interviewAdvice.overallReadiness}/10)</span>
                 </h4>

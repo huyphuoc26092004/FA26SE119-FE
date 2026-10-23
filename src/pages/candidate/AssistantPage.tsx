@@ -2,13 +2,12 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Bot,
+  MessageSquare,
   Send,
-  Sparkles,
+  Lightbulb,
   FileText,
   Briefcase,
   HelpCircle,
-  Lightbulb,
   Award,
   DollarSign,
   Layers,
@@ -193,7 +192,7 @@ export default function AssistantPage() {
     ];
 
     activeSession.messages.forEach((msg) => {
-      const sender = msg.role === 'user' ? '👤 ỨNG VIÊN' : '🤖 TRỢ LÝ AI';
+      const sender = msg.role === 'user' ? 'ỨNG VIÊN' : 'TRỢ LÝ AI';
       lines.push(`### [${msg.timestamp}] ${sender}`);
       lines.push(msg.content);
       lines.push('');
@@ -286,7 +285,7 @@ export default function AssistantPage() {
     {
       title: t('assistant.cvOptimization'),
       icon: FileText,
-      color: 'text-blue-600 bg-blue-50 border-blue-200',
+      color: 'text-brand-600 bg-brand-50 border-brand-200',
       prompt:
         'Trợ lý hãy kiểm tra CV đính kèm của tôi, đánh giá chi tiết điểm số ATS và chỉ ra các từ khóa quan trọng còn thiếu.',
     },
@@ -307,7 +306,7 @@ export default function AssistantPage() {
     {
       title: t('assistant.salaryNegotiation'),
       icon: DollarSign,
-      color: 'text-purple-600 bg-purple-50 border-purple-200',
+      color: 'text-brand-600 bg-brand-50 border-brand-200',
       prompt:
         'Khảo sát dải lương thị trường năm 2026 cho vị trí này và tư vấn cho tôi kịch bản đàm phán lương tự tin.',
     },
@@ -356,14 +355,14 @@ export default function AssistantPage() {
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             {t('assistant.onlineBadge')}
           </span>
-          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200/80">
+          <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 border border-brand-200/80">
             {t('assistant.mockMode')}
           </span>
         </div>
       </div>
 
       {/* Main Container with Sidebar + Chat View */}
-      <div className="flex flex-1 overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm">
+      <div className="flex flex-1 overflow-hidden rounded-3xl border border-slate-200/90 bg-surface shadow-sm">
         {/* Chat History & Sessions Sidebar */}
         <AssistantSidebar
           sessions={sessions}
@@ -398,11 +397,11 @@ export default function AssistantPage() {
             {/* If empty/new chat, display rich welcoming cards */}
             {activeSession && activeSession.messages.length <= 1 && (
               <div className="mx-auto max-w-2xl py-4 animate-in fade-in duration-300">
-                <div className="rounded-3xl border border-blue-200/70 bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/60 p-6 text-center shadow-xs">
-                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
-                    <Sparkles size={28} />
+                <div className="rounded-3xl border border-brand-200/70 bg-brand-50/80 p-6 text-center shadow-xs">
+                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm">
+                    <Lightbulb size={28} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 sm:text-xl">
+                  <h3 className="text-lg font-medium text-slate-900 sm:text-xl">
                     {t('assistant.welcomeTitle')}
                   </h3>
                   <p className="mx-auto mt-2 max-w-md text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -411,13 +410,13 @@ export default function AssistantPage() {
 
                   {/* Active Context Snapshot Pills */}
                   <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 font-semibold text-slate-700 border border-slate-200 shadow-2xs">
-                      <ShieldCheck size={14} className="text-blue-600" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 font-semibold text-slate-700 border border-slate-200 shadow-2xs">
+                      <ShieldCheck size={14} className="text-brand-600" />
                       {profile?.name || 'Alex Morgan'} ({profile?.targetPosition || 'Frontend'})
                     </span>
                     {selectedCv ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100/70 px-3 py-1 font-semibold text-blue-800 border border-blue-200">
-                        <FileText size={14} className="text-blue-600" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100/70 px-3 py-1 font-semibold text-brand-800 border border-brand-200">
+                        <FileText size={14} className="text-brand-600" />
                         CV: {selectedCv.name} ({selectedCv.atsScore}% ATS)
                       </span>
                     ) : (
@@ -443,7 +442,7 @@ export default function AssistantPage() {
                         key={idx}
                         type="button"
                         onClick={() => void handleSend(item.prompt)}
-                        className="flex items-start gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-2xs hover:border-blue-400 hover:shadow-xs active:scale-[0.99] transition cursor-pointer group"
+                        className="flex items-start gap-3 rounded-2xl border border-slate-200/90 bg-surface p-4 text-left shadow-2xs hover:border-brand-400 hover:shadow-xs transition cursor-pointer group"
                       >
                         <div
                           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${item.color}`}
@@ -451,9 +450,9 @@ export default function AssistantPage() {
                           <Icon size={18} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition flex items-center justify-between">
+                          <h4 className="text-xs font-medium text-slate-900 group-hover:text-brand-600 transition flex items-center justify-between">
                             {item.title}
-                            <ArrowRight size={13} className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition" />
+                            <ArrowRight size={13} className="text-slate-300 group-hover:text-brand-600 transition" />
                           </h4>
                           <p className="mt-1 line-clamp-2 text-[11px] text-slate-500 leading-relaxed">
                             {item.prompt}
@@ -479,15 +478,15 @@ export default function AssistantPage() {
             {/* Realistic AI Typing Indicator */}
             {typing && (
               <div className="flex items-start gap-3 max-w-xl mr-auto animate-in fade-in duration-200">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
-                  <Bot size={18} />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white">
+                  <MessageSquare size={18} />
                 </div>
-                <div className="rounded-2xl rounded-tl-xs border border-slate-200/80 bg-white px-4 py-3 shadow-xs">
+                <div className="rounded-2xl rounded-tl-xs border border-slate-200/80 bg-surface px-4 py-3 shadow-xs">
                   <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
                     <span className="flex gap-1">
-                      <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce" />
-                      <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.2s]" />
-                      <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.4s]" />
+                      <span className="h-2 w-2 rounded-full bg-brand-600" />
+                      <span className="h-2 w-2 rounded-full bg-brand-600 [animation-delay:0.2s]" />
+                      <span className="h-2 w-2 rounded-full bg-brand-600 [animation-delay:0.4s]" />
                     </span>
                     <span>{t('assistant.typing')}</span>
                   </div>
@@ -499,11 +498,11 @@ export default function AssistantPage() {
           </div>
 
           {/* Bottom Control & Input Dock */}
-          <div className="border-t border-slate-200/80 bg-white p-3 sm:p-4 space-y-2.5">
+          <div className="border-t border-slate-200/80 bg-surface p-3 sm:p-4 space-y-2.5">
             {/* Suggested prompts horizontal pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-              <span className="text-[11px] font-bold text-slate-400 uppercase shrink-0 flex items-center gap-1">
-                <Sparkles size={12} className="text-blue-600" />
+              <span className="text-[11px] font-medium text-slate-400 uppercase shrink-0 flex items-center gap-1">
+                <Lightbulb size={12} className="text-brand-600" />
                 {t('assistant.quickPrompts')}:
               </span>
               {dynamicSuggestedPrompts.map((promptText, idx) => (
@@ -511,7 +510,7 @@ export default function AssistantPage() {
                   key={idx}
                   type="button"
                   onClick={() => void handleSend(promptText)}
-                  className="shrink-0 rounded-full border border-slate-200/90 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-700 active:scale-95 transition cursor-pointer"
+                  className="shrink-0 rounded-full border border-slate-200/90 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 hover:border-brand-300 hover:bg-brand-50/60 hover:text-brand-700 transition cursor-pointer"
                 >
                   {promptText}
                 </button>
@@ -524,7 +523,7 @@ export default function AssistantPage() {
                 e.preventDefault();
                 void handleSend();
               }}
-              className="flex items-end gap-2 rounded-2xl border border-slate-300/80 bg-white p-2 shadow-xs focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition"
+              className="flex items-end gap-2 rounded-2xl border border-slate-300/80 bg-surface p-2 shadow-xs focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 transition"
             >
               <textarea
                 ref={textareaRef}

@@ -11,7 +11,7 @@ import {
   Clock,
   MapPin,
   ArrowRight,
-  Sparkles,
+  Lightbulb,
   ChevronRight,
   X,
   MessagesSquare,
@@ -113,7 +113,7 @@ export default function ConsultantCandidatesPage() {
     <div className="space-y-6">
       {/* Breadcrumb Navigation */}
       <nav className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/consultant" className="hover:text-blue-600 transition">
+        <Link to="/consultant" className="hover:text-brand-600 transition">
           {t('nav.dashboard')}
         </Link>
         <span>/</span>
@@ -158,13 +158,13 @@ export default function ConsultantCandidatesPage() {
           label={isVietnamese ? 'Điểm ATS CV trung bình' : 'Average ATS Score'}
           value={`${stats.avgAts}/100`}
           detail={isVietnamese ? 'Đạt chuẩn sàn lọc nhà tuyển dụng' : 'Meets top employer threshold'}
-          icon={<FileText size={20} className="text-blue-600" />}
+          icon={<FileText size={20} className="text-brand-600" />}
         />
         <StatCard
           label={isVietnamese ? 'Phiên tư vấn liên quan' : 'Active Consultations'}
           value={String(stats.activeConsultations)}
           detail={isVietnamese ? 'Có yêu cầu/lịch hẹn tư vấn' : 'Have appointment schedules'}
-          icon={<Award size={20} className="text-purple-600" />}
+          icon={<Award size={20} className="text-brand-600" />}
         />
       </div>
 
@@ -182,7 +182,7 @@ export default function ConsultantCandidatesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('consultation.candidatesSearchPlaceholder')}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-9 text-xs sm:text-sm outline-none transition focus:border-blue-500 focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-9 text-xs sm:text-sm outline-none transition focus:border-brand-500 focus:bg-surface"
             />
             {searchQuery && (
               <button
@@ -199,7 +199,7 @@ export default function ConsultantCandidatesPage() {
             <select
               value={selectedReadiness}
               onChange={(e) => setSelectedReadiness(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-blue-500 cursor-pointer"
+              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
             >
               <option value="ALL">{t('consultation.allReadiness')}</option>
               <option value="Ready">{t('consultation.ready')}</option>
@@ -214,7 +214,7 @@ export default function ConsultantCandidatesPage() {
             <select
               value={selectedRoleTrack}
               onChange={(e) => setSelectedRoleTrack(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-blue-500 cursor-pointer"
+              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
             >
               <option value="ALL">{isVietnamese ? 'Tất cả vị trí' : 'All Roles'}</option>
               <option value="Frontend">Frontend / Web</option>
@@ -232,7 +232,7 @@ export default function ConsultantCandidatesPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'fit' | 'ats' | 'exp')}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-blue-500 cursor-pointer"
+              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
             >
               <option value="fit">{isVietnamese ? 'Độ phù hợp cao nhất' : 'Highest Fit'}</option>
               <option value="ats">{isVietnamese ? 'Điểm ATS cao nhất' : 'Highest ATS'}</option>
@@ -248,7 +248,7 @@ export default function ConsultantCandidatesPage() {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
             <Filter size={24} />
           </div>
-          <h3 className="text-base font-bold text-slate-900">
+          <h3 className="text-base font-medium text-slate-900">
             {isVietnamese ? 'Không tìm thấy ứng viên phù hợp' : 'No matching candidates found'}
           </h3>
           <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
@@ -274,7 +274,7 @@ export default function ConsultantCandidatesPage() {
           {filteredCandidates.map((c) => (
             <Card
               key={c.id}
-              className="flex flex-col justify-between border-slate-200/90 hover:border-blue-300 hover:shadow-md transition-all p-5"
+              className="flex flex-col justify-between border-slate-200/90 hover:border-brand-300 transition-all p-5"
             >
               <div className="space-y-4">
                 {/* Header: Avatar, Name, Role, Readiness */}
@@ -289,7 +289,7 @@ export default function ConsultantCandidatesPage() {
                       <div className="flex items-center gap-1.5">
                         <Link
                           to={`/consultant/candidates/${c.id}`}
-                          className="font-bold text-base text-slate-900 hover:text-blue-600 transition truncate"
+                          className="font-medium text-base text-slate-900 hover:text-brand-600 transition truncate"
                         >
                           {c.name}
                         </Link>
@@ -298,7 +298,7 @@ export default function ConsultantCandidatesPage() {
                         {c.currentTitle}
                       </p>
                       <div className="flex items-center gap-1.5 text-xs pt-0.5">
-                        <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md truncate max-w-[200px]">
+                        <span className="font-medium text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md truncate max-w-[200px]">
                           → {c.targetRole}
                         </span>
                       </div>
@@ -324,26 +324,26 @@ export default function ConsultantCandidatesPage() {
                 {/* Key Analysis Gauges: ATS Score, Fit Match, Assessments */}
                 <div className="grid grid-cols-3 gap-2 text-center rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-bold uppercase">
+                    <span className="text-[10px] text-slate-400 block font-medium uppercase">
                       Điểm ATS CV
                     </span>
-                    <span className="font-extrabold text-sm text-emerald-600">
+                    <span className="font-semibold text-sm text-emerald-600">
                       {c.attachedResumeScore}/100
                     </span>
                   </div>
                   <div className="border-x border-slate-200/80">
-                    <span className="text-[10px] text-slate-400 block font-bold uppercase">
+                    <span className="text-[10px] text-slate-400 block font-medium uppercase">
                       Độ Phù Hợp
                     </span>
-                    <span className="font-extrabold text-sm text-blue-600">
+                    <span className="font-semibold text-sm text-brand-600">
                       {c.fitScore}%
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-bold uppercase">
+                    <span className="text-[10px] text-slate-400 block font-medium uppercase">
                       Đánh Giá AI
                     </span>
-                    <span className="font-extrabold text-sm text-purple-600">
+                    <span className="font-semibold text-sm text-brand-600">
                       {c.assessmentSummary[0]
                         ? `${c.assessmentSummary[0].score}% (${c.assessmentSummary[0].grade})`
                         : '88% (A)'}
@@ -357,13 +357,13 @@ export default function ConsultantCandidatesPage() {
                     {c.topSkills.slice(0, 4).map((sk) => (
                       <span
                         key={sk}
-                        className="rounded-md bg-white border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+                        className="rounded-md bg-surface border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-700"
                       >
                         {sk}
                       </span>
                     ))}
                     {c.topSkills.length > 4 && (
-                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">
+                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                         +{c.topSkills.length - 4}
                       </span>
                     )}
@@ -372,14 +372,14 @@ export default function ConsultantCandidatesPage() {
 
                 {/* Latest Consultation Status Tag if available */}
                 {c.latestConsultation && (
-                  <div className="flex items-center justify-between text-xs rounded-lg bg-blue-50/50 px-2.5 py-1.5 border border-blue-100/60 text-blue-900">
+                  <div className="flex items-center justify-between text-xs rounded-lg bg-brand-50/50 px-2.5 py-1.5 border border-brand-100/60 text-brand-900">
                     <span className="flex items-center gap-1.5 truncate">
-                      <Sparkles size={12} className="text-blue-600 shrink-0" />
+                      <Lightbulb size={12} className="text-brand-600 shrink-0" />
                       <span className="truncate">
                         {c.latestConsultation.topicLabel}
                       </span>
                     </span>
-                    <span className="text-[10px] font-bold uppercase shrink-0 text-blue-700">
+                    <span className="text-[10px] font-medium uppercase shrink-0 text-brand-700">
                       #{c.latestConsultation.id}
                     </span>
                   </div>
@@ -391,7 +391,7 @@ export default function ConsultantCandidatesPage() {
                 {c.latestConsultation ? (
                   <Link
                     to={`/consultant/consultations/${c.latestConsultation.id}`}
-                    className="text-xs font-semibold text-slate-600 hover:text-blue-600 transition flex items-center gap-1"
+                    className="text-xs font-semibold text-slate-600 hover:text-brand-600 transition flex items-center gap-1"
                   >
                     <span>{t('consultation.viewConsultationRequest')}</span>
                     <ChevronRight size={13} />

@@ -4,7 +4,7 @@ import {
   ArrowUpRight,
   Award,
   BookOpen,
-  Bot,
+  MessageSquare,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -17,7 +17,7 @@ import {
   Globe2,
   Loader2,
   Route,
-  Sparkles,
+  Lightbulb,
   Star,
   Target,
   TrendingUp,
@@ -38,8 +38,8 @@ import { Link } from 'react-router-dom';
 
 function phaseColorClasses(color: string) {
   switch (color) {
-    case 'blue': return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', accent: 'bg-blue-600', badge: 'bg-blue-100 text-blue-700' };
-    case 'violet': return { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-800', accent: 'bg-violet-600', badge: 'bg-violet-100 text-violet-700' };
+    case 'blue': return { bg: 'bg-brand-50', border: 'border-brand-200', text: 'text-brand-800', accent: 'bg-brand-600', badge: 'bg-brand-100 text-brand-700' };
+    case 'violet': return { bg: 'bg-brand-50', border: 'border-brand-200', text: 'text-brand-800', accent: 'bg-brand-600', badge: 'bg-brand-100 text-brand-700' };
     case 'emerald': return { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800', accent: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-700' };
     case 'amber': return { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', accent: 'bg-amber-600', badge: 'bg-amber-100 text-amber-700' };
     default: return { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-800', accent: 'bg-slate-600', badge: 'bg-slate-100 text-slate-700' };
@@ -48,12 +48,12 @@ function phaseColorClasses(color: string) {
 
 function resourceTypeIcon(type: LearningResource['type']) {
   switch (type) {
-    case 'course': return <GraduationCap size={14} className="text-blue-600" />;
+    case 'course': return <GraduationCap size={14} className="text-brand-600" />;
     case 'docs': return <FileText size={14} className="text-emerald-600" />;
     case 'book': return <BookOpen size={14} className="text-amber-600" />;
     case 'article': return <Globe2 size={14} className="text-slate-500" />;
     case 'video': return <Video size={14} className="text-red-500" />;
-    case 'certification': return <Award size={14} className="text-violet-600" />;
+    case 'certification': return <Award size={14} className="text-brand-600" />;
     default: return <Zap size={14} className="text-orange-500" />;
   }
 }
@@ -81,16 +81,16 @@ function ResourceCard({ resource }: { resource: LearningResource }) {
       target="_blank"
       rel="noopener noreferrer"
       id={`resource-${resource.id}`}
-      className="group flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5"
+      className="group flex flex-col gap-2 rounded-xl border border-slate-200 bg-surface p-4 shadow-sm transition hover:border-brand-300"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {resourceTypeIcon(resource.type)}
-          <span className="truncate text-sm font-semibold text-slate-800 group-hover:text-blue-700 transition">
+          <span className="truncate text-sm font-semibold text-slate-800 group-hover:text-brand-700 transition">
             {resource.title}
           </span>
         </div>
-        <ExternalLink size={14} className="text-slate-400 flex-shrink-0 group-hover:text-blue-500 transition" />
+        <ExternalLink size={14} className="text-slate-400 flex-shrink-0 group-hover:text-brand-500 transition" />
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -144,12 +144,12 @@ function PhaseCard({ phase, phaseIndex }: { phase: RoadmapPhase; phaseIndex: num
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
-            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${colors.accent} text-white text-sm font-black`}>
+            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${colors.accent} text-white text-sm font-semibold`}>
               {phaseIndex + 1}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <p className={`text-base font-bold ${colors.text}`}>{phase.title}</p>
+                <p className={`text-base font-medium ${colors.text}`}>{phase.title}</p>
                 <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${colors.badge}`}>
                   {phase.weekRange}
                 </span>
@@ -188,7 +188,7 @@ function PhaseCard({ phase, phaseIndex }: { phase: RoadmapPhase; phaseIndex: num
         <div className="border-t border-white/60 bg-white/60 p-5 space-y-5">
           {/* Skills */}
           <div>
-            <p className="mb-2 text-xs font-bold text-slate-600 uppercase tracking-wider">{t('learningRoadmap.skills')}</p>
+            <p className="mb-2 text-xs font-medium text-slate-600 uppercase tracking-wider">{t('learningRoadmap.skills')}</p>
             <div className="flex flex-wrap gap-2">
               {phase.skills.map((skill) => (
                 <span key={skill} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${colors.badge}`}>
@@ -199,11 +199,11 @@ function PhaseCard({ phase, phaseIndex }: { phase: RoadmapPhase; phaseIndex: num
           </div>
 
           {/* Milestone */}
-          <div className="rounded-xl bg-white p-4 border border-slate-100">
+          <div className="rounded-xl bg-surface p-4 border border-slate-100">
             <div className="flex items-start gap-2">
               <Target size={16} className="text-slate-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-slate-600 mb-1">{t('learningRoadmap.milestone')}</p>
+                <p className="text-xs font-medium text-slate-600 mb-1">{t('learningRoadmap.milestone')}</p>
                 <p className="text-sm text-slate-700">{phase.milestone}</p>
               </div>
             </div>
@@ -212,7 +212,7 @@ function PhaseCard({ phase, phaseIndex }: { phase: RoadmapPhase; phaseIndex: num
           {/* Resources */}
           {phase.resources && phase.resources.length > 0 && (
             <div>
-              <p className="mb-3 text-xs font-bold text-slate-600 uppercase tracking-wider">
+              <p className="mb-3 text-xs font-medium text-slate-600 uppercase tracking-wider">
                 {t('learningRoadmap.resources')} ({phase.resources.length})
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -262,7 +262,7 @@ function ResourceLibrary() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+      <h2 className="text-base font-medium text-slate-800 flex items-center gap-2">
         <BookOpen size={18} className="text-slate-400" />
         {t('learningRoadmap.allResources')} ({filtered.length})
       </h2>
@@ -276,7 +276,7 @@ function ResourceLibrary() {
             placeholder={t('learningRoadmap.filterBySkill')}
             value={skillFilter}
             onChange={(e) => setSkillFilter(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2.5 text-sm outline-none focus:border-blue-500"
+            className="w-full rounded-xl border border-slate-200 bg-surface pl-9 pr-4 py-2.5 text-sm outline-none focus:border-brand-500"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -285,7 +285,7 @@ function ResourceLibrary() {
               key={type.value}
               onClick={() => setTypeFilter(type.value)}
               className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                typeFilter === type.value ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                typeFilter === type.value ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {type.label}
@@ -394,7 +394,7 @@ export default function LearningRoadmapPage() {
         <div className="space-y-6">
           {/* Track Selector */}
           <Card>
-            <p className="mb-3 text-sm font-bold text-slate-700">{t('learningRoadmap.selectRoadmap')}</p>
+            <p className="mb-3 text-sm font-medium text-slate-700">{t('learningRoadmap.selectRoadmap')}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               {templates.map((template) => (
                 <button
@@ -404,18 +404,18 @@ export default function LearningRoadmapPage() {
                     setSelectedTemplateId(template.id);
                     setRoadmap(null);
                   }}
-                  className={`rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${
+                  className={`rounded-xl border p-4 text-left transition  hover:shadow-sm ${
                     selectedTemplateId === template.id
-                      ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                      : 'border-slate-200 bg-white hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200'
+                      : 'border-slate-200 bg-surface hover:border-brand-300'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-bold text-slate-800">{template.title}</p>
+                      <p className="text-sm font-medium text-slate-800">{template.title}</p>
                       <p className="mt-1 text-xs text-slate-500">{template.targetRole}</p>
                     </div>
-                    <span className="rounded-full bg-blue-50 border border-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                    <span className="rounded-full bg-brand-50 border border-brand-100 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
                       {template.totalWeeks} {t('learningRoadmap.weeks')}
                     </span>
                   </div>
@@ -445,7 +445,7 @@ export default function LearningRoadmapPage() {
                   </>
                 ) : (
                   <>
-                    <Sparkles size={15} />
+                    <Lightbulb size={15} />
                     {t('learningRoadmap.generateRoadmap')}
                   </>
                 )}
@@ -478,7 +478,7 @@ export default function LearningRoadmapPage() {
           {generateMutation.isPending && (
             <Card>
               <div className="flex flex-col items-center gap-3 py-10 text-slate-500">
-                <Loader2 size={32} className="animate-spin text-blue-500" />
+                <Loader2 size={32} className="animate-spin text-brand-500" />
                 <p className="text-sm font-medium">{t('learningRoadmap.generating')}</p>
               </div>
             </Card>
@@ -488,7 +488,7 @@ export default function LearningRoadmapPage() {
           {roadmap && !generateMutation.isPending && (
             <div className="space-y-5">
               {/* Roadmap Header */}
-              <Card className="border-0 bg-gradient-to-br from-blue-600 to-violet-600 text-white">
+              <Card className="border-0 bg-brand-600 text-white">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="rounded-2xl bg-white/20 p-3">
@@ -496,13 +496,13 @@ export default function LearningRoadmapPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold opacity-80">{t('learningRoadmap.aiRecommended')}</p>
-                      <p className="text-xl font-black">{roadmap.title}</p>
+                      <p className="text-xl font-semibold">{roadmap.title}</p>
                       <p className="text-sm opacity-80">{roadmap.targetRole}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-xs opacity-70">{t('learningRoadmap.totalWeeks')}</p>
-                    <p className="text-3xl font-black">{roadmap.totalWeeks}w</p>
+                    <p className="text-3xl font-semibold">{roadmap.totalWeeks}w</p>
                     <p className="text-xs opacity-70">
                       {t('learningRoadmap.generatedAt')} {new Date(roadmap.generatedAt).toLocaleDateString()}
                     </p>
@@ -534,23 +534,23 @@ export default function LearningRoadmapPage() {
               </div>
 
               {/* CTA to Skill Gap */}
-              <Card className="border-violet-200 bg-violet-50">
+              <Card className="border-brand-200 bg-brand-50">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className="rounded-xl bg-violet-600 p-2">
-                      <Bot size={18} className="text-white" />
+                    <div className="rounded-xl bg-brand-600 p-2">
+                      <MessageSquare size={18} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-violet-800">
+                      <p className="text-sm font-medium text-brand-800">
                         Personalize with your skill gap data
                       </p>
-                      <p className="mt-1 text-xs text-violet-600">
+                      <p className="mt-1 text-xs text-brand-600">
                         Run a skill gap analysis to get an even more targeted roadmap.
                       </p>
                     </div>
                   </div>
                   <Link to="/candidate/skill-gap">
-                    <Button variant="secondary" className="flex-shrink-0 border-violet-300 text-violet-700 hover:bg-violet-100">
+                    <Button variant="secondary" className="flex-shrink-0 border-brand-300 text-brand-700 hover:bg-brand-100">
                       {t('nav.skillAssessment')} →
                       <ArrowUpRight size={14} />
                     </Button>

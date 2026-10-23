@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
-  Sparkles,
-  Wand2,
+  Lightbulb,
+  PenLine,
   Download,
   Save,
   CheckCircle2,
@@ -99,13 +99,13 @@ export function GuestAiBuilderTab({
   return (
     <div className="space-y-6">
       {/* Intro Header */}
-      <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-white to-purple-50/60 border border-blue-100 p-5 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl bg-brand-50/80 border border-brand-100 p-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100/70 px-3 py-1 text-xs font-semibold text-blue-800">
-            <Sparkles size={13} className="text-blue-600" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100/70 px-3 py-1 text-xs font-semibold text-brand-800">
+            <Lightbulb size={13} className="text-brand-600" />
             {isVietnamese ? 'AI Resume Builder · Phiên Bản Dùng Thử' : 'AI Resume Builder · Guest Trial'}
           </span>
-          <h3 className="mt-2 text-lg font-bold text-slate-900 md:text-xl">
+          <h3 className="mt-2 text-lg font-medium text-slate-900 md:text-xl">
             {isVietnamese
               ? 'Tự tay trải nghiệm tạo CV & Tối ưu hoá ATS tức thì bằng AI'
               : 'Experience instant CV creation & AI ATS enhancement'}
@@ -124,7 +124,7 @@ export function GuestAiBuilderTab({
             onClick={() => setTemplate('modern')}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
               template === 'modern'
-                ? 'bg-white text-blue-600 shadow-xs'
+                ? 'bg-white text-brand-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -135,7 +135,7 @@ export function GuestAiBuilderTab({
             onClick={() => setTemplate('tech')}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
               template === 'tech'
-                ? 'bg-white text-blue-600 shadow-xs'
+                ? 'bg-white text-brand-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -146,7 +146,7 @@ export function GuestAiBuilderTab({
             onClick={() => setTemplate('classic')}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
               template === 'classic'
-                ? 'bg-white text-blue-600 shadow-xs'
+                ? 'bg-white text-brand-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -161,8 +161,8 @@ export function GuestAiBuilderTab({
         <div className="space-y-4">
           <Card className="space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
-                <User size={15} className="text-blue-600" />
+              <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-600">
+                <User size={15} className="text-brand-600" />
                 {isVietnamese ? 'Thông Tin Cơ Bản' : 'Basic Details'}
               </span>
               <span className="text-xs text-slate-400">
@@ -231,14 +231,14 @@ export function GuestAiBuilderTab({
                   {isVietnamese ? 'Tóm tắt sự nghiệp (Summary)' : 'Career Summary'}
                 </label>
                 {aiEnhanced && (
-                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
                     <CheckCircle2 size={12} />
                     {isVietnamese ? 'Đã tối ưu bằng AI' : 'AI Enhanced'}
                   </span>
                 )}
               </div>
               <textarea
-                className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-700 leading-relaxed outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-700 leading-relaxed outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 rows={3}
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
@@ -250,7 +250,7 @@ export function GuestAiBuilderTab({
                 {isVietnamese ? 'Kinh nghiệm & Thành tích' : 'Experience & Achievements'}
               </label>
               <textarea
-                className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-700 leading-relaxed outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono text-[11px]"
+                className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-700 leading-relaxed outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 font-mono text-xs"
                 rows={5}
                 value={experience}
                 onChange={(e) => setExperience(e.target.value)}
@@ -261,7 +261,7 @@ export function GuestAiBuilderTab({
             <div className="pt-2">
               <Button
                 type="button"
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 text-sm shadow-sm"
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 text-sm shadow-sm"
                 onClick={handleAiEnhance}
                 disabled={isEnhancing}
               >
@@ -274,14 +274,14 @@ export function GuestAiBuilderTab({
                   </>
                 ) : (
                   <>
-                    <Wand2 size={16} />
+                    <PenLine size={16} />
                     {isVietnamese
-                      ? '✨ AI Tối ưu hoá nội dung & Tính điểm ATS'
-                      : '✨ AI Polish & Calculate ATS Score'}
+                      ? 'AI Tối ưu hoá nội dung & Tính điểm ATS'
+                      : 'AI Polish & Calculate ATS Score'}
                   </>
                 )}
               </Button>
-              <p className="mt-2 text-center text-[11px] text-slate-400">
+              <p className="mt-2 text-center text-xs text-slate-400">
                 {isVietnamese
                   ? 'Tự động bổ sung động từ hành động, lượng hoá chỉ số và làm giàu từ khoá ATS'
                   : 'Automatically injects action verbs, quantified metrics, and ATS keywords'}
@@ -290,10 +290,10 @@ export function GuestAiBuilderTab({
           </Card>
 
           {/* ATS Score Indicator */}
-          <Card className="flex items-center justify-between border-blue-200 bg-blue-50/40 p-4">
+          <Card className="flex items-center justify-between border-brand-200 bg-brand-50/40 p-4">
             <div className="flex items-center gap-3">
               <div
-                className={`grid h-12 w-12 place-items-center rounded-2xl font-black text-lg ${
+                className={`grid h-12 w-12 place-items-center rounded-2xl font-semibold text-lg ${
                   atsScore >= 85
                     ? 'bg-emerald-600 text-white'
                     : 'bg-amber-500 text-white'
@@ -302,7 +302,7 @@ export function GuestAiBuilderTab({
                 {atsScore}
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">
+                <p className="text-xs font-medium text-slate-900">
                   {isVietnamese ? 'Điểm ATS Dự Đoán:' : 'Predicted ATS Score:'}{' '}
                   <span className={atsScore >= 85 ? 'text-emerald-700' : 'text-amber-700'}>
                     {atsScore >= 85
@@ -314,7 +314,7 @@ export function GuestAiBuilderTab({
                       : 'Average (Needs Polish)'}
                   </span>
                 </p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   {aiEnhanced
                     ? isVietnamese
                       ? '✓ Đã bổ sung 12 từ khoá và chỉ số % đo lường thành công'
@@ -325,18 +325,18 @@ export function GuestAiBuilderTab({
                 </p>
               </div>
             </div>
-            <ShieldCheck size={24} className="text-blue-600" />
+            <ShieldCheck size={24} className="text-brand-600" />
           </Card>
         </div>
 
         {/* Right Column: Live CV Preview */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-              <Layout size={14} className="text-blue-600" />
+            <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-slate-500">
+              <Layout size={14} className="text-brand-600" />
               {isVietnamese ? 'Xem Trước Trực Quan (Live Preview)' : 'Live Document Preview'}
             </span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
               {template.toUpperCase()} TEMPLATE
             </span>
           </div>
@@ -344,21 +344,21 @@ export function GuestAiBuilderTab({
           {/* Formatted Resume Preview Sheet */}
           <div
             id="printable-guest-resume"
-            className={`rounded-2xl border bg-white p-6 sm:p-8 shadow-sm min-h-[550px] transition-all ${
+            className={`rounded-2xl border bg-surface p-6 sm:p-8 shadow-sm min-h-[clamp(550px,64vh,860px)] transition-all ${
               template === 'modern'
-                ? 'border-blue-200'
+                ? 'border-brand-200'
                 : template === 'tech'
-                ? 'border-slate-800 font-mono text-[13px]'
+                ? 'border-slate-800 font-mono text-sm'
                 : 'border-amber-900/20 font-serif'
             }`}
           >
             {/* Header Style based on template */}
             {template === 'modern' && (
-              <div className="border-b-2 border-blue-600 pb-5">
-                <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+              <div className="border-b-2 border-brand-600 pb-5">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                   {fullName || 'Họ và tên'}
                 </h2>
-                <p className="text-base font-bold text-blue-600 mt-1">{role || 'Vị trí công việc'}</p>
+                <p className="text-base font-medium text-brand-600 mt-1">{role || 'Vị trí công việc'}</p>
                 <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                   <span>{email}</span>
                   <span>•</span>
@@ -371,11 +371,11 @@ export function GuestAiBuilderTab({
               <div className="border-b border-dashed border-slate-300 pb-5">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
-                  <h2 className="text-xl font-bold tracking-tight text-slate-900">
+                  <h2 className="text-xl font-medium tracking-tight text-slate-900">
                     &gt; {fullName || 'Full Name'}
                   </h2>
                 </div>
-                <p className="text-sm font-semibold text-indigo-700 mt-1">
+                <p className="text-sm font-semibold text-brand-700 mt-1">
                   [Role]: {role || 'Developer'}
                 </p>
                 <div className="mt-2 text-xs text-slate-500">
@@ -386,7 +386,7 @@ export function GuestAiBuilderTab({
 
             {template === 'classic' && (
               <div className="border-b-2 border-slate-800 pb-5 text-center">
-                <h2 className="text-2xl font-bold tracking-wider uppercase text-slate-900">
+                <h2 className="text-2xl font-medium tracking-wider uppercase text-slate-900">
                   {fullName || 'HỌ VÀ TÊN'}
                 </h2>
                 <p className="text-sm italic text-slate-600 mt-1">{role || 'Target Role'}</p>
@@ -401,9 +401,9 @@ export function GuestAiBuilderTab({
             {/* Summary Section */}
             <div className="mt-5">
               <h4
-                className={`text-xs font-bold uppercase tracking-wider mb-2 ${
+                className={`text-xs font-medium uppercase tracking-wider mb-2 ${
                   template === 'modern'
-                    ? 'text-blue-700'
+                    ? 'text-brand-700'
                     : template === 'tech'
                     ? 'text-slate-800'
                     : 'text-slate-900 border-b border-slate-200 pb-1'
@@ -417,9 +417,9 @@ export function GuestAiBuilderTab({
             {/* Skills Section */}
             <div className="mt-5">
               <h4
-                className={`text-xs font-bold uppercase tracking-wider mb-2 ${
+                className={`text-xs font-medium uppercase tracking-wider mb-2 ${
                   template === 'modern'
-                    ? 'text-blue-700'
+                    ? 'text-brand-700'
                     : template === 'tech'
                     ? 'text-slate-800'
                     : 'text-slate-900 border-b border-slate-200 pb-1'
@@ -433,9 +433,9 @@ export function GuestAiBuilderTab({
                     key={i}
                     className={`rounded-md px-2 py-0.5 text-xs font-medium ${
                       template === 'modern'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                        ? 'bg-brand-50 text-brand-700 border border-brand-100'
                         : template === 'tech'
-                        ? 'bg-slate-100 text-slate-800 border border-slate-300 font-mono text-[11px]'
+                        ? 'bg-slate-100 text-slate-800 border border-slate-300 font-mono text-xs'
                         : 'bg-slate-50 text-slate-800 border border-slate-200'
                     }`}
                   >
@@ -448,9 +448,9 @@ export function GuestAiBuilderTab({
             {/* Experience Section */}
             <div className="mt-5">
               <h4
-                className={`text-xs font-bold uppercase tracking-wider mb-2 ${
+                className={`text-xs font-medium uppercase tracking-wider mb-2 ${
                   template === 'modern'
-                    ? 'text-blue-700'
+                    ? 'text-brand-700'
                     : template === 'tech'
                     ? 'text-slate-800'
                     : 'text-slate-900 border-b border-slate-200 pb-1'
@@ -478,7 +478,7 @@ export function GuestAiBuilderTab({
 
             <Button
               type="button"
-              className="text-xs py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              className="text-xs py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
               onClick={onOpenSaveModal}
             >
               <Save size={15} />

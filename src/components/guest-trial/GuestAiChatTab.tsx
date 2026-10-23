@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import {
-  Bot,
+  MessageSquare,
   Send,
-  Sparkles,
+  Lightbulb,
   Lock,
   User,
   ArrowRight,
-  Lightbulb,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
@@ -127,15 +126,15 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
   return (
     <div className="space-y-6">
       {/* Intro & Quota Header */}
-      <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-white to-sky-50 border border-blue-100 p-5 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl bg-brand-50/80 border border-brand-100 p-5 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100/70 px-3 py-1 text-xs font-semibold text-blue-800">
-              <Sparkles size={13} className="text-blue-600" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100/70 px-3 py-1 text-xs font-semibold text-brand-800">
+              <Lightbulb size={13} className="text-brand-600" />
               {isVietnamese ? 'Trò Chuyện Giới Hạn Với Trợ Lý AI' : 'Limited AI Assistant Chat Trial'}
             </span>
           </div>
-          <h3 className="mt-2 text-lg font-bold text-slate-900 md:text-xl">
+          <h3 className="mt-2 text-lg font-medium text-slate-900 md:text-xl">
             {isVietnamese
               ? 'Tư vấn nghề nghiệp thông minh không cần đăng nhập'
               : 'Smart career consultation without signing in'}
@@ -148,16 +147,16 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
         </div>
 
         {/* Quota Counter Badge */}
-        <div className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-xs border border-slate-200">
+        <div className="flex items-center gap-3 rounded-2xl bg-surface p-3.5 shadow-xs border border-slate-200">
           <div className="text-right">
             <p className="text-xs text-slate-500 font-medium">
               {isVietnamese ? 'Lượt hỏi miễn phí còn lại' : 'Free queries left'}
             </p>
-            <p className="text-base font-extrabold text-slate-900">
+            <p className="text-base font-semibold text-slate-900">
               <span
                 className={
                   quotaRemaining > 1
-                    ? 'text-blue-600'
+                    ? 'text-brand-600'
                     : quotaRemaining === 1
                     ? 'text-amber-600'
                     : 'text-red-500'
@@ -175,7 +174,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
                 <div
                   key={step}
                   className={`h-7 w-2 rounded-full transition-all ${
-                    active ? 'bg-blue-600' : 'bg-slate-200'
+                    active ? 'bg-brand-600' : 'bg-slate-200'
                   }`}
                 />
               );
@@ -189,14 +188,14 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
         {/* Chat Header Bar */}
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-5 py-3.5">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-8 w-8 place-items-center rounded-xl bg-blue-600 text-white shadow-xs">
-              <Bot size={18} />
+            <div className="grid h-8 w-8 place-items-center rounded-xl bg-brand-600 text-white shadow-xs">
+              <MessageSquare size={18} />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">
+              <p className="text-sm font-medium text-slate-900">
                 {isVietnamese ? 'CareerPilot AI Coach' : 'CareerPilot AI Coach'}
               </p>
-              <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+              <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
                 {isVietnamese ? 'Đang trực tuyến · Phiên thử nghiệm' : 'Online · Guest Session'}
               </p>
@@ -209,7 +208,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
         </div>
 
         {/* Message Stream */}
-        <div className="flex h-[380px] flex-col gap-4 overflow-y-auto p-5 bg-[#fafbfe]">
+        <div className="flex h-[clamp(380px,52vh,640px)] flex-col gap-4 overflow-y-auto p-5 bg-canvas">
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -218,20 +217,20 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
               }`}
             >
               <div
-                className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl text-xs font-bold ${
+                className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl text-xs font-medium ${
                   msg.role === 'USER'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-blue-600 border border-blue-100 shadow-xs'
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-white text-brand-600 border border-brand-100 shadow-xs'
                 }`}
               >
-                {msg.role === 'USER' ? <User size={15} /> : <Bot size={16} />}
+                {msg.role === 'USER' ? <User size={15} /> : <MessageSquare size={16} />}
               </div>
 
               <div className="space-y-1.5">
                 <div
                   className={`rounded-2xl p-4 text-xs leading-relaxed sm:text-sm ${
                     msg.role === 'USER'
-                      ? 'bg-blue-600 text-white shadow-xs rounded-tr-none'
+                      ? 'bg-brand-600 text-white shadow-xs rounded-tr-none'
                       : 'bg-white text-slate-800 border border-slate-200/80 shadow-xs rounded-tl-none'
                   }`}
                 >
@@ -240,14 +239,14 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
                   {/* Optional AI tips pill list */}
                   {msg.tips && msg.tips.length > 0 && (
                     <div className="mt-3 border-t border-slate-100 pt-3">
-                      <p className="text-[11px] font-bold text-slate-500 flex items-center gap-1 mb-1.5">
+                      <p className="text-xs font-medium text-slate-500 flex items-center gap-1 mb-1.5">
                         <Lightbulb size={12} className="text-amber-500" />
                         {isVietnamese ? 'Gợi ý cốt lõi từ AI:' : 'AI Key Recommendations:'}
                       </p>
                       <ul className="space-y-1 text-xs text-slate-600">
                         {msg.tips.map((tip, idx) => (
                           <li key={idx} className="flex items-start gap-1.5">
-                            <CheckCircle2 size={13} className="text-blue-600 shrink-0 mt-0.5" />
+                            <CheckCircle2 size={13} className="text-brand-600 shrink-0 mt-0.5" />
                             <span>{tip}</span>
                           </li>
                         ))}
@@ -257,7 +256,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
                 </div>
 
                 <p
-                  className={`text-[10px] text-slate-400 ${
+                  className={`text-xs text-slate-400 ${
                     msg.role === 'USER' ? 'text-right' : 'text-left'
                   }`}
                 >
@@ -269,14 +268,14 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
 
           {typing && (
             <div className="flex items-center gap-3 max-w-[80%]">
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-blue-600 border border-blue-100 shadow-xs">
-                <Bot size={16} />
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-surface text-brand-600 border border-brand-100 shadow-xs">
+                <MessageSquare size={16} />
               </div>
-              <div className="rounded-2xl bg-white border border-slate-200/80 px-4 py-3 text-xs text-slate-500 shadow-xs flex items-center gap-2">
+              <div className="rounded-2xl bg-surface border border-slate-200/80 px-4 py-3 text-xs text-slate-500 shadow-xs flex items-center gap-2">
                 <span className="flex gap-1">
-                  <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce" />
-                  <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.2s]" />
-                  <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.4s]" />
+                  <span className="h-2 w-2 rounded-full bg-brand-600" />
+                  <span className="h-2 w-2 rounded-full bg-brand-600 [animation-delay:0.2s]" />
+                  <span className="h-2 w-2 rounded-full bg-brand-600 [animation-delay:0.4s]" />
                 </span>
                 <span>
                   {isVietnamese ? 'Trợ lý đang suy nghĩ...' : 'Assistant is thinking...'}
@@ -288,19 +287,19 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
 
         {/* Quota Exhausted Banner */}
         {quotaRemaining <= 0 && (
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white">
+          <div className="bg-brand-600 p-4 text-white">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-white/20 p-2 text-white">
-                  <Sparkles size={20} />
+                  <Lightbulb size={20} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold">
+                  <h4 className="text-sm font-medium">
                     {isVietnamese
-                      ? '🎉 Bạn đã trải nghiệm hết 3 câu hỏi dùng thử miễn phí!'
-                      : '🎉 You have used all 3 free trial queries!'}
+                      ? 'Bạn đã trải nghiệm hết 3 câu hỏi dùng thử miễn phí!'
+                      : 'You have used all 3 free trial queries!'}
                   </h4>
-                  <p className="mt-0.5 text-xs text-blue-100">
+                  <p className="mt-0.5 text-xs text-brand-100">
                     {isVietnamese
                       ? 'Đăng ký tài khoản miễn phí hoặc đăng nhập bằng tài khoản Demo để mở khoá trò chuyện không giới hạn.'
                       : 'Create a free account or sign in with Demo accounts to unlock unlimited consultations.'}
@@ -309,7 +308,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
               </div>
               <Button
                 type="button"
-                className="bg-white text-blue-700 hover:bg-blue-50 text-xs font-bold whitespace-nowrap shadow-sm"
+                className="bg-surface text-brand-700 hover:bg-brand-50 text-xs font-medium whitespace-nowrap shadow-sm"
                 onClick={onOpenSaveModal}
               >
                 {isVietnamese ? 'Mở Khoá Đầy Đủ Ngay' : 'Unlock Full Access'}
@@ -321,9 +320,9 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
 
         {/* Suggested Prompts */}
         {quotaRemaining > 0 && (
-          <div className="border-t border-slate-100 bg-white p-3">
-            <p className="text-[11px] font-semibold text-slate-400 mb-2">
-              {isVietnamese ? '💡 Gợi ý câu hỏi phổ biến:' : '💡 Suggested career prompts:'}
+          <div className="border-t border-slate-100 bg-surface p-3">
+            <p className="text-xs font-semibold text-slate-400 mb-2">
+              {isVietnamese ? 'Gợi ý câu hỏi phổ biến:' : 'Suggested career prompts:'}
             </p>
             <div className="flex flex-wrap gap-2">
               {suggestedPrompts.map((p) => (
@@ -332,9 +331,9 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
                   type="button"
                   onClick={() => handleSend(p.text, p.key)}
                   disabled={typing}
-                  className="rounded-full border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs text-slate-700 hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-700 cursor-pointer transition flex items-center gap-1.5"
+                  className="rounded-full border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs text-slate-700 hover:border-brand-300 hover:bg-brand-50/60 hover:text-brand-700 cursor-pointer transition flex items-center gap-1.5"
                 >
-                  <Sparkles size={11} className="text-blue-600" />
+                  <Lightbulb size={11} className="text-brand-600" />
                   {p.text}
                 </button>
               ))}
@@ -343,7 +342,7 @@ export function GuestAiChatTab({ onOpenSaveModal }: GuestAiChatTabProps) {
         )}
 
         {/* Input Bar */}
-        <div className="border-t border-slate-200 bg-white p-3">
+        <div className="border-t border-slate-200 bg-surface p-3">
           <form
             onSubmit={(e) => {
               e.preventDefault();

@@ -53,8 +53,8 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
       {/* Header with Print & Export */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <FileSpreadsheet size={18} className="text-blue-600" />
+          <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
+            <FileSpreadsheet size={18} className="text-brand-600" />
             Báo cáo Kê khai Thuế GTGT & Doanh thu Tài chính ({report.period})
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -65,7 +65,7 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
+            className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
           >
             <Download size={14} />
             <span>Xuất bảng kê Excel</span>
@@ -73,7 +73,7 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
 
           <button
             onClick={handlePrint}
-            className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs shadow-blue-500/20"
+            className="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs"
           >
             <Printer size={14} />
             <span>In sổ cái kế toán</span>
@@ -82,64 +82,64 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
       </div>
 
       {/* Tax Overview Banner */}
-      <div className="p-6 rounded-3xl bg-linear-to-r from-blue-900 to-indigo-900 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-blue-500/20 to-transparent pointer-events-none" />
+      <div className="p-6 rounded-3xl bg-brand-900 text-white shadow-sm relative overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial bg-brand-500/20 pointer-events-none" />
 
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
-            <p className="text-xs font-semibold text-blue-200 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-brand-200 uppercase tracking-wider">
               Tổng doanh thu gộp lũy kế
             </p>
-            <p className="text-2xl lg:text-3xl font-black text-white mt-1">
+            <p className="text-2xl lg:text-3xl font-semibold text-white mt-1">
               {report.totalGrossRevenueVND.toLocaleString('vi-VN')} đ
             </p>
-            <p className="text-[11px] text-blue-200/80 mt-1">Đã bao gồm thuế GTGT</p>
+            <p className="text-[11px] text-brand-200/80 mt-1">Đã bao gồm thuế GTGT</p>
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-blue-200 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-brand-200 uppercase tracking-wider">
               Doanh thu thuần chưa thuế
             </p>
-            <p className="text-2xl lg:text-3xl font-black text-emerald-400 mt-1">
+            <p className="text-2xl lg:text-3xl font-semibold text-emerald-400 mt-1">
               {report.netRevenueBeforeTaxVND.toLocaleString('vi-VN')} đ
             </p>
-            <p className="text-[11px] text-blue-200/80 mt-1">Cơ sở tính thuế TNDN</p>
+            <p className="text-[11px] text-brand-200/80 mt-1">Cơ sở tính thuế TNDN</p>
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-blue-200 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-brand-200 uppercase tracking-wider">
               Nghĩa vụ Thuế GTGT 8%
             </p>
-            <p className="text-2xl lg:text-3xl font-black text-amber-300 mt-1">
+            <p className="text-2xl lg:text-3xl font-semibold text-amber-300 mt-1">
               {report.totalVatCollectedVND.toLocaleString('vi-VN')} đ
             </p>
-            <p className="text-[11px] text-blue-200/80 mt-1">Thuế suất ưu đãi phần mềm CNTT</p>
+            <p className="text-[11px] text-brand-200/80 mt-1">Thuế suất ưu đãi phần mềm CNTT</p>
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-blue-200 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-brand-200 uppercase tracking-wider">
               Tổng Hóa đơn hợp lệ
             </p>
-            <p className="text-2xl lg:text-3xl font-black text-white mt-1">
+            <p className="text-2xl lg:text-3xl font-semibold text-white mt-1">
               {report.invoicesCount} HĐĐT
             </p>
-            <p className="text-[11px] text-blue-200/80 mt-1">Đã ký số điện tử hợp pháp</p>
+            <p className="text-[11px] text-brand-200/80 mt-1">Đã ký số điện tử hợp pháp</p>
           </div>
         </div>
       </div>
 
       {/* Monthly Breakdown Table */}
       <div className="space-y-3">
-        <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-          <Calendar size={14} className="text-blue-600" />
+        <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+          <Calendar size={14} className="text-brand-600" />
           Bảng kê Doanh thu & Thuế GTGT đầu ra theo từng tháng trong năm 2026
         </h4>
 
-        <div className="rounded-3xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="rounded-3xl bg-surface border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-medium tracking-wider">
                   <th className="py-3.5 px-4">Kỳ kê khai (Tháng)</th>
                   <th className="py-3.5 px-4 text-right">Doanh thu chưa thuế (Net)</th>
                   <th className="py-3.5 px-4 text-right">Thuế suất</th>
@@ -154,15 +154,15 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
                   const net = Math.round(row.grossVND / 1.08);
                   return (
                     <tr key={row.month} className="hover:bg-slate-50/60 transition">
-                      <td className="py-3.5 px-4 font-bold text-slate-900">{row.month}</td>
+                      <td className="py-3.5 px-4 font-medium text-slate-900">{row.month}</td>
                       <td className="py-3.5 px-4 text-right font-medium text-slate-700">
                         {net.toLocaleString('vi-VN')} đ
                       </td>
-                      <td className="py-3.5 px-4 text-right font-semibold text-blue-700">8%</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">
+                      <td className="py-3.5 px-4 text-right font-semibold text-brand-700">8%</td>
+                      <td className="py-3.5 px-4 text-right font-medium text-slate-900">
                         {row.vatVND.toLocaleString('vi-VN')} đ
                       </td>
-                      <td className="py-3.5 px-4 text-right font-black text-slate-900">
+                      <td className="py-3.5 px-4 text-right font-semibold text-slate-900">
                         {row.grossVND.toLocaleString('vi-VN')} đ
                       </td>
                       <td className="py-3.5 px-4 text-center font-semibold text-slate-700">
@@ -175,7 +175,7 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
                             Đã quyết toán
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-brand-50 text-brand-700">
                             Kỳ hiện hành
                           </span>
                         )}
@@ -192,9 +192,9 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
       {/* Revenue Distribution Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* By Gateway */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-            <PieChart size={14} className="text-blue-600" />
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs space-y-4">
+          <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <PieChart size={14} className="text-brand-600" />
             Phân bổ doanh thu theo Cổng thanh toán
           </h4>
 
@@ -202,7 +202,7 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-semibold text-slate-700">VietQR Napas 24/7 (Vietcombank)</span>
-                <span className="font-bold text-slate-900">58% (125.400.000 đ)</span>
+                <span className="font-medium text-slate-900">58% (125.400.000 đ)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                 <div className="h-full bg-emerald-500 rounded-full" style={{ width: '58%' }} />
@@ -212,39 +212,39 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-semibold text-slate-700">Ví điện tử MoMo</span>
-                <span className="font-bold text-slate-900">24% (51.900.000 đ)</span>
+                <span className="font-medium text-slate-900">24% (51.900.000 đ)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-pink-500 rounded-full" style={{ width: '24%' }} />
+                <div className="h-full bg-brand-500 rounded-full" style={{ width: '24%' }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-semibold text-slate-700">VNPAY-QR Banking</span>
-                <span className="font-bold text-slate-900">12% (25.950.000 đ)</span>
+                <span className="font-medium text-slate-900">12% (25.950.000 đ)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full" style={{ width: '12%' }} />
+                <div className="h-full bg-brand-500 rounded-full" style={{ width: '12%' }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-semibold text-slate-700">Thẻ Quốc tế (Stripe)</span>
-                <span className="font-bold text-slate-900">6% (12.980.000 đ)</span>
+                <span className="font-medium text-slate-900">6% (12.980.000 đ)</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-purple-500 rounded-full" style={{ width: '6%' }} />
+                <div className="h-full bg-brand-500 rounded-full" style={{ width: '6%' }} />
               </div>
             </div>
           </div>
         </div>
 
         {/* By Product Type */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-            <TrendingUp size={14} className="text-blue-600" />
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs space-y-4">
+          <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <TrendingUp size={14} className="text-brand-600" />
             Cơ cấu doanh thu theo Dòng sản phẩm
           </h4>
 
@@ -252,30 +252,30 @@ export const TaxReportTab: React.FC<TaxReportTabProps> = ({ report }) => {
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-semibold text-slate-700">Gói cước Chuyên nghiệp (Pro Plan)</span>
-                <span className="font-bold text-slate-900">62%</span>
+                <span className="font-medium text-slate-900">62%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full" style={{ width: '62%' }} />
+                <div className="h-full bg-brand-600 rounded-full" style={{ width: '62%' }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-semibold text-slate-700">Gói cước Doanh nghiệp (Ultimate)</span>
-                <span className="font-bold text-slate-900">22%</span>
+                <span className="font-medium text-slate-900">22%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-indigo-600 rounded-full" style={{ width: '22%' }} />
+                <div className="h-full bg-brand-600 rounded-full" style={{ width: '22%' }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-semibold text-slate-700">Nạp Token AI (Top-up packs)</span>
-                <span className="font-bold text-slate-900">16%</span>
+                <span className="font-medium text-slate-900">16%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-purple-600 rounded-full" style={{ width: '16%' }} />
+                <div className="h-full bg-brand-600 rounded-full" style={{ width: '16%' }} />
               </div>
             </div>
           </div>

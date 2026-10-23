@@ -201,7 +201,7 @@ export async function getAdminDashboardData(
           avgLatencyMs: 420,
           estimatedCostUSD: Number((11.55 * factor).toFixed(2)),
           sharePercentage: 54,
-          color: 'bg-blue-500',
+          color: 'bg-brand-500',
         },
         {
           modelName: 'Gemini 1.5 Pro',
@@ -212,7 +212,7 @@ export async function getAdminDashboardData(
           avgLatencyMs: 1120,
           estimatedCostUSD: Number((27.4 * factor).toFixed(2)),
           sharePercentage: 32,
-          color: 'bg-purple-500',
+          color: 'bg-brand-500',
         },
         {
           modelName: 'Text-Embedding-004',
@@ -244,7 +244,7 @@ export async function getAdminDashboardData(
           requestCount: Math.round(6200 * factor),
           tokenCount: Math.round(14500000 * factor),
           percentage: 34,
-          color: 'bg-blue-600',
+          color: 'bg-brand-600',
         },
         {
           featureKey: 'assistant_chat',
@@ -252,7 +252,7 @@ export async function getAdminDashboardData(
           requestCount: Math.round(5200 * factor),
           tokenCount: Math.round(12000000 * factor),
           percentage: 28,
-          color: 'bg-purple-600',
+          color: 'bg-brand-600',
         },
         {
           featureKey: 'cv_job_fit',
@@ -276,7 +276,7 @@ export async function getAdminDashboardData(
           requestCount: Math.round(1100 * factor),
           tokenCount: Math.round(2550000 * factor),
           percentage: 6,
-          color: 'bg-indigo-600',
+          color: 'bg-brand-600',
         },
         {
           featureKey: 'salary_and_roadmap',
@@ -322,7 +322,7 @@ export async function getAdminDashboardData(
           monthlyPriceVND: 199000,
           totalRevenueVND: 68058000,
           percentage: 12.0,
-          color: 'bg-blue-600',
+          color: 'bg-brand-600',
         },
         {
           planId: 'executive',
@@ -331,7 +331,7 @@ export async function getAdminDashboardData(
           monthlyPriceVND: 499000,
           totalRevenueVND: 71856000,
           percentage: 5.1,
-          color: 'bg-purple-600',
+          color: 'bg-brand-600',
         },
       ],
       paymentMethodDistribution: [
@@ -349,7 +349,7 @@ export async function getAdminDashboardData(
           count: 117,
           amountVND: 34236000,
           percentage: 24.0,
-          color: 'bg-pink-500',
+          color: 'bg-brand-500',
         },
         {
           method: 'vnpay',
@@ -357,7 +357,7 @@ export async function getAdminDashboardData(
           count: 58,
           amountVND: 17118000,
           percentage: 12.0,
-          color: 'bg-blue-500',
+          color: 'bg-brand-500',
         },
         {
           method: 'credit_card',

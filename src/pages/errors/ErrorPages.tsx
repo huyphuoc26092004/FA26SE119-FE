@@ -11,10 +11,10 @@ export function UnauthorizedPage() {
         <LanguageSwitcher />
       </div>
       <div className="text-center">
-        <p className="text-6xl font-bold text-blue-600">403</p>
-        <h1 className="mt-4 text-2xl font-bold text-slate-900">{t('errors.accessDenied')}</h1>
+        <p className="text-6xl font-medium text-brand-600">403</p>
+        <h1 className="mt-4 text-2xl font-medium text-slate-900">{t('errors.accessDenied')}</h1>
         <p className="mt-2 text-slate-500">{t('errors.accessDeniedDesc')}</p>
-        <Link to="/" className="mt-6 inline-block font-semibold text-blue-600 hover:text-blue-700">
+        <Link to="/" className="mt-6 inline-block font-semibold text-brand-600 hover:text-brand-700">
           {t('errors.backToHome')}
         </Link>
       </div>
@@ -31,10 +31,10 @@ export function NotFoundPage() {
         <LanguageSwitcher />
       </div>
       <div className="text-center">
-        <p className="text-6xl font-bold text-blue-600">404</p>
-        <h1 className="mt-4 text-2xl font-bold text-slate-900">{t('errors.pageNotFound')}</h1>
+        <p className="text-6xl font-medium text-brand-600">404</p>
+        <h1 className="mt-4 text-2xl font-medium text-slate-900">{t('errors.pageNotFound')}</h1>
         <p className="mt-2 text-slate-500">{t('errors.pageNotFoundDesc')}</p>
-        <Link to="/" className="mt-6 inline-block font-semibold text-blue-600 hover:text-blue-700">
+        <Link to="/" className="mt-6 inline-block font-semibold text-brand-600 hover:text-brand-700">
           {t('errors.backToHome')}
         </Link>
       </div>

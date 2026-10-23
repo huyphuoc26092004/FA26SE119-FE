@@ -105,7 +105,7 @@ export const mockJobs: Job[] = [
     externalSource: {
       sourceName: 'LinkedIn',
       sourceUrl: 'https://linkedin.com/jobs/view/frontend-platform-architect-finpulse',
-      sourceBadgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
+      sourceBadgeColor: 'bg-brand-50 text-brand-700 border-brand-200',
       applicationDeadline: '15/12/2026',
       directApplyAvailable: true,
     },
@@ -226,7 +226,7 @@ export const mockJobs: Job[] = [
     externalSource: {
       sourceName: 'VietnamWorks',
       sourceUrl: 'https://vietnamworks.com/ai-product-engineer-cognitivelabs',
-      sourceBadgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      sourceBadgeColor: 'bg-brand-50 text-brand-700 border-brand-200',
       applicationDeadline: '10/12/2026',
       directApplyAvailable: true,
     },
@@ -335,7 +335,7 @@ export const mockJobs: Job[] = [
     externalSource: {
       sourceName: 'CareerViet',
       sourceUrl: 'https://careerviet.vn/vi/tim-viec-lam/cloud-frontend-engineer-cloudscale',
-      sourceBadgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
+      sourceBadgeColor: 'bg-brand-50 text-brand-700 border-brand-200',
       applicationDeadline: '05/12/2026',
       directApplyAvailable: true,
     },

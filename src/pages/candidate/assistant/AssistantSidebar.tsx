@@ -9,7 +9,7 @@ import {
   Edit2,
   Check,
   X,
-  Sparkles,
+  Lightbulb,
   ChevronRight,
   Pin,
 } from 'lucide-react';
@@ -74,7 +74,7 @@ export function AssistantSidebar({
   };
 
   const sidebarContent = (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-surface">
       {/* Top Header & New Chat button */}
       <div className="p-4 border-b border-slate-100 space-y-3">
         <button
@@ -82,7 +82,7 @@ export function AssistantSidebar({
             onNewSession();
             onCloseMobile();
           }}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.99] transition cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-medium text-white hover:bg-brand-700 transition cursor-pointer"
         >
           <Plus size={18} />
           <span>{t('assistant.newChat')}</span>
@@ -96,7 +96,7 @@ export function AssistantSidebar({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('assistant.searchSessions')}
-            className="w-full rounded-xl border border-slate-200/90 bg-slate-50 py-2 pl-9 pr-3 text-xs outline-none focus:border-blue-500 focus:bg-white transition"
+            className="w-full rounded-xl border border-slate-200/90 bg-slate-50 py-2 pl-9 pr-3 text-xs outline-none focus:border-brand-500 focus:bg-surface transition"
           />
           {search && (
             <button
@@ -111,7 +111,7 @@ export function AssistantSidebar({
 
       {/* History List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-        <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <div className="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400">
           {t('assistant.chatHistory')} ({filteredSessions.length})
         </div>
 
@@ -133,13 +133,13 @@ export function AssistantSidebar({
                 }}
                 className={`group relative flex items-start gap-2.5 rounded-2xl p-3 text-left transition cursor-pointer border ${
                   isActive
-                    ? 'border-blue-300 bg-gradient-to-r from-blue-50/80 to-indigo-50/40 shadow-xs'
+                    ? 'border-brand-300  bg-brand-50/80  shadow-xs'
                     : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
                 <div
                   className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs ${
-                    isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                    isActive ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'
                   }`}
                 >
                   <MessageSquare size={14} />
@@ -157,7 +157,7 @@ export function AssistantSidebar({
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
                         autoFocus
-                        className="w-full rounded-md border border-blue-400 bg-white px-2 py-0.5 text-xs outline-none"
+                        className="w-full rounded-md border border-brand-400 bg-surface px-2 py-0.5 text-xs outline-none"
                       />
                       <button
                         type="submit"
@@ -180,14 +180,14 @@ export function AssistantSidebar({
                       <div className="flex items-center justify-between gap-1">
                         <h4
                           className={`truncate text-xs font-semibold ${
-                            isActive ? 'text-blue-900' : 'text-slate-800'
+                            isActive ? 'text-brand-900' : 'text-slate-800'
                           }`}
                           title={session.title}
                         >
                           {session.title}
                         </h4>
                         {session.pinned && (
-                          <Pin size={11} className="text-blue-500 shrink-0" />
+                          <Pin size={11} className="text-brand-500 shrink-0" />
                         )}
                       </div>
 
@@ -196,7 +196,7 @@ export function AssistantSidebar({
                         <span className="text-slate-400">{session.updatedAt}</span>
 
                         {session.activeCvId && (
-                          <span className="inline-flex items-center gap-0.5 rounded bg-blue-100/70 px-1.5 py-0.2 text-blue-700 font-medium">
+                          <span className="inline-flex items-center gap-0.5 rounded bg-brand-100/70 px-1.5 py-0.2 text-brand-700 font-medium">
                             <FileText size={10} /> CV
                           </span>
                         )}
@@ -238,7 +238,7 @@ export function AssistantSidebar({
       {/* Sidebar Footer info */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/60 text-center">
         <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
-          <Sparkles size={12} className="text-blue-600" />
+          <Lightbulb size={12} className="text-brand-600" />
           <span>{isVietnamese ? 'Tự động lưu lịch sử vào trình duyệt' : 'Saved locally in browser'}</span>
         </p>
       </div>
@@ -248,18 +248,18 @@ export function AssistantSidebar({
   return (
     <>
       {/* Desktop permanent sidebar */}
-      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:border-r lg:border-slate-200/80 lg:bg-white rounded-l-2xl overflow-hidden shrink-0">
+      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:border-r lg:border-slate-200/80 lg:bg-surface rounded-l-2xl overflow-hidden shrink-0">
         {sidebarContent}
       </div>
 
       {/* Mobile drawer backdrop & drawer */}
       {isOpenMobile && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden"
           onClick={onCloseMobile}
         >
           <div
-            className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl animate-in slide-in-from-left duration-200 z-50"
+            className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-surface shadow-sm animate-in slide-in-from-left duration-200 z-50"
             onClick={(e) => e.stopPropagation()}
           >
             {sidebarContent}

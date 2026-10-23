@@ -63,11 +63,11 @@ export function SavedApplicationsList({
     switch (type) {
       case 'application_email':
       case 'follow_up_email':
-        return <Mail size={15} className="text-blue-600" />;
+        return <Mail size={15} className="text-brand-600" />;
       case 'linkedin_inmail':
-        return <Linkedin size={15} className="text-sky-600" />;
+        return <Linkedin size={15} className="text-brand-600" />;
       default:
-        return <FileText size={15} className="text-indigo-600" />;
+        return <FileText size={15} className="text-brand-600" />;
     }
   };
 
@@ -87,7 +87,7 @@ export function SavedApplicationsList({
   return (
     <div className="space-y-5">
       {/* Search and Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-surface p-4 shadow-xs">
         {/* Type Filter Buttons */}
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           {[
@@ -101,7 +101,7 @@ export function SavedApplicationsList({
               onClick={() => setFilterType(item.id)}
               className={`rounded-xl px-3 py-1.5 font-semibold transition cursor-pointer ${
                 filterType === item.id
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? 'bg-brand-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -118,18 +118,18 @@ export function SavedApplicationsList({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm kiếm theo công ty, vị trí..."
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs outline-none focus:border-blue-500 focus:bg-white transition"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs outline-none focus:border-brand-500 focus:bg-surface transition"
           />
         </div>
       </div>
 
       {/* Grid of Saved Drafts */}
       {filteredDrafts.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white py-16 px-4 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-surface py-16 px-4 text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
             <Mail size={26} />
           </div>
-          <h3 className="text-base font-bold text-slate-800">
+          <h3 className="text-base font-medium text-slate-800">
             {t('applicationAssistance.noSavedDrafts')}
           </h3>
           <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
@@ -146,7 +146,7 @@ export function SavedApplicationsList({
             <div
               key={draft.id}
               onClick={() => onSelectDraft(draft)}
-              className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-5 shadow-xs hover:border-blue-300 hover:shadow-md transition cursor-pointer"
+              className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-surface p-5 shadow-xs hover:border-brand-300 transition cursor-pointer"
             >
               <div>
                 {/* Header Badge & Quality Index */}
@@ -156,13 +156,13 @@ export function SavedApplicationsList({
                     {getTypeLabel(draft.contentType)}
                   </span>
 
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                     <Award size={11} /> {draft.reviewScore?.overallScore || 92}%
                   </span>
                 </div>
 
                 {/* Title & Metadata */}
-                <h4 className="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition line-clamp-1">
+                <h4 className="font-medium text-slate-900 text-sm group-hover:text-brand-600 transition line-clamp-1">
                   {draft.title}
                 </h4>
 
@@ -175,7 +175,7 @@ export function SavedApplicationsList({
 
                 {/* Subject if email */}
                 {draft.subject && (
-                  <p className="mt-2 text-xs font-medium text-blue-800 bg-blue-50/70 p-2 rounded-xl line-clamp-1 border border-blue-100/60">
+                  <p className="mt-2 text-xs font-medium text-brand-800 bg-brand-50/70 p-2 rounded-xl line-clamp-1 border border-brand-100/60">
                     {draft.subject}
                   </p>
                 )}
@@ -210,7 +210,7 @@ export function SavedApplicationsList({
                       e.stopPropagation();
                       onSelectDraft(draft);
                     }}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-600 transition"
                     title="Mở vào trình chỉnh sửa"
                   >
                     <Edit3 size={14} />

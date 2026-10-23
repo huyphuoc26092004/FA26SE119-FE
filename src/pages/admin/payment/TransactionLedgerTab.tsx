@@ -147,23 +147,23 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
         );
       case 'momo':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-pink-50 text-pink-700 border border-pink-200">
-            <Wallet size={12} className="text-pink-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
+            <Wallet size={12} className="text-brand-600" />
             Ví MoMo
           </span>
         );
       case 'vnpay':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-            <CreditCard size={12} className="text-blue-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
+            <CreditCard size={12} className="text-brand-600" />
             VNPAY-QR
           </span>
         );
       case 'credit_card':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-            <CreditCard size={12} className="text-purple-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
+            <CreditCard size={12} className="text-brand-600" />
             Thẻ Quốc tế
           </span>
         );
@@ -182,7 +182,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
       case 'pending':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
             Chờ xác nhận
           </span>
         );
@@ -207,11 +207,11 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'TOKEN_TOPUP':
-        return <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">Token AI</span>;
+        return <span className="text-[10px] font-medium text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200">Token AI</span>;
       case 'ENTERPRISE_CONTRACT':
-        return <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">B2B Corp</span>;
+        return <span className="text-[10px] font-medium text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200">B2B Corp</span>;
       default:
-        return <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">Gói cước</span>;
+        return <span className="text-[10px] font-medium text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200">Gói cước</span>;
     }
   };
 
@@ -225,7 +225,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
               <Clock size={20} className="animate-spin" />
             </div>
             <div>
-              <p className="font-bold text-sm">
+              <p className="font-medium text-sm">
                 Có {pendingCount} giao dịch chuyển khoản VietQR đang chờ xác thực đối soát!
               </p>
               <p className="text-xs text-amber-700 mt-0.5">
@@ -235,7 +235,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
           </div>
           <button
             onClick={() => setStatusFilter('pending')}
-            className="px-4 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-200 hover:bg-amber-300 transition shrink-0"
+            className="px-4 py-2 rounded-xl text-xs font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 transition shrink-0"
           >
             Lọc đơn chờ duyệt ({pendingCount})
           </button>
@@ -244,12 +244,12 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Tổng doanh thu gộp (VND)
             </p>
-            <p className="text-2xl font-black text-slate-900 mt-1">
+            <p className="text-2xl font-semibold text-slate-900 mt-1">
               {totalVolumeVND.toLocaleString('vi-VN')} đ
             </p>
             <p className="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
@@ -257,17 +257,17 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
               <span>Giao dịch thành công</span>
             </p>
           </div>
-          <div className="p-3.5 rounded-2xl bg-blue-50 text-blue-600">
+          <div className="p-3.5 rounded-2xl bg-brand-50 text-brand-600">
             <DollarSign size={24} />
           </div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Giao dịch thành công
             </p>
-            <p className="text-2xl font-black text-slate-900 mt-1">{successCount}</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{successCount}</p>
             <p className="text-[11px] text-slate-500 mt-1">
               Tỷ lệ hoàn tất: <strong className="text-slate-800">{successRate}%</strong>
             </p>
@@ -277,12 +277,12 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
           </div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Chờ xác nhận / Đối soát
             </p>
-            <p className="text-2xl font-black text-amber-600 mt-1">{pendingCount}</p>
+            <p className="text-2xl font-semibold text-amber-600 mt-1">{pendingCount}</p>
             <p className="text-[11px] text-amber-700 font-medium mt-1">Cần Admin hoặc webhook duyệt</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-amber-50 text-amber-600">
@@ -290,12 +290,12 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
           </div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Tiền hoàn trả / Giảm trừ
             </p>
-            <p className="text-2xl font-black text-rose-600 mt-1">
+            <p className="text-2xl font-semibold text-rose-600 mt-1">
               {refundedAmountVND.toLocaleString('vi-VN')} đ
             </p>
             <p className="text-[11px] text-slate-500 mt-1">
@@ -309,7 +309,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
       </div>
 
       {/* Filters and Search Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-3">
+      <div className="p-4 rounded-3xl bg-surface border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           {/* Search */}
           <div className="relative flex-1">
@@ -319,7 +319,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo Mã đơn (CP-PAY-...), Họ tên, Email, Gói cước, MST, Số hóa đơn..."
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+              className="w-full pl-10 pr-4 py-2 text-xs rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
             />
           </div>
 
@@ -327,7 +327,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportCSV}
-              className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
+              className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
             >
               <Download size={14} />
               <span>Xuất sổ cái CSV</span>
@@ -345,7 +345,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-surface text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="success">Thành công (Success)</option>
@@ -357,7 +357,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
           <select
             value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-surface text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
           >
             <option value="ALL">Tất cả cổng thanh toán</option>
             <option value="vietqr">VietQR Pro (Napas 24/7)</option>
@@ -369,7 +369,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-surface text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
           >
             <option value="ALL">Tất cả loại giao dịch</option>
             <option value="SUBSCRIPTION_NEW">Gói cước định kỳ</option>
@@ -385,7 +385,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
                 setTypeFilter('ALL');
                 setSearchQuery('');
               }}
-              className="text-blue-600 hover:text-blue-700 text-xs font-semibold ml-auto"
+              className="text-brand-600 hover:text-brand-700 text-xs font-semibold ml-auto"
             >
               Xóa bộ lọc
             </button>
@@ -394,11 +394,11 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
       </div>
 
       {/* Ledger Table */}
-      <div className="rounded-3xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="rounded-3xl bg-surface border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-medium tracking-wider">
                 <th className="py-3.5 px-4">Mã đơn / Loại</th>
                 <th className="py-3.5 px-4">Khách hàng & Doanh nghiệp</th>
                 <th className="py-3.5 px-4">Gói dịch vụ</th>
@@ -424,14 +424,14 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
                     {/* Order Code & Type */}
                     <td className="py-3.5 px-4 font-medium">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-slate-900 group-hover:text-blue-600 transition">
+                        <span className="font-mono font-medium text-slate-900 group-hover:text-brand-600 transition">
                           {tx.orderCode}
                         </span>
                       </div>
                       <div className="mt-1 flex items-center gap-1">
                         {getTypeBadge(tx.transactionType)}
                         {tx.voucherCode && (
-                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                          <span className="text-[9px] font-medium text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
                             {tx.voucherCode}
                           </span>
                         )}
@@ -443,7 +443,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
                       <div className="font-semibold text-slate-900">{tx.candidateName}</div>
                       <div className="text-[11px] text-slate-500">{tx.candidateEmail}</div>
                       {tx.customerCompany && (
-                        <div className="text-[10px] text-blue-700 font-medium truncate max-w-[160px]">
+                        <div className="text-[10px] text-brand-700 font-medium truncate max-w-[160px]">
                           {tx.customerCompany}
                         </div>
                       )}
@@ -459,7 +459,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
 
                     {/* Amount */}
                     <td className="py-3.5 px-4 text-right">
-                      <div className="font-black text-slate-900 text-sm">
+                      <div className="font-semibold text-slate-900 text-sm">
                         {tx.finalAmountVND.toLocaleString('vi-VN')} đ
                       </div>
                       {tx.discountAmountVND > 0 && (
@@ -480,7 +480,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
                       {tx.vatInvoiceNumber ? (
                         <button
                           onClick={() => onOpenInvoiceModal(tx)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition border border-blue-200"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition border border-brand-200"
                         >
                           <Receipt size={12} />
                           <span>HĐ {tx.vatInvoiceNumber}</span>
@@ -506,7 +506,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
                           <button
                             onClick={() => handleApprove(tx.id)}
                             disabled={approvingId === tx.id}
-                            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1 shadow-xs shadow-emerald-500/20 disabled:opacity-50"
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition flex items-center gap-1 shadow-xs disabled:opacity-50"
                             title="Xác nhận đã nhận tiền và duyệt đơn ngay"
                           >
                             <Check size={13} />

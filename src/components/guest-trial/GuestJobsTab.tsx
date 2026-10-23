@@ -2,19 +2,16 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BriefcaseBusiness,
-  MapPin,
+  ChevronDown,
   Search,
-  SlidersHorizontal,
   ExternalLink,
-  Eye,
   CheckCircle2,
   X,
-  Sparkles,
   ArrowRight,
 } from 'lucide-react';
 import { mockJobs } from '../../mocks/data/jobs';
 import type { Job } from '../../types/domain';
-import { Badge, Button, Card, Input } from '../ui';
+import { Badge, Button } from '../ui';
 import { useTranslation } from '../../i18n';
 
 export function GuestJobsTab() {
@@ -43,141 +40,106 @@ export function GuestJobsTab() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-white to-slate-50 border border-blue-100 p-5 md:flex-row md:items-center md:justify-between">
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100/70 px-3 py-1 text-xs font-semibold text-blue-800">
-            <Sparkles size={13} className="text-blue-600" />
-            {isVietnamese ? 'Duyệt Việc Làm Công Khai' : 'Public Job Discovery'}
-          </span>
-          <h3 className="mt-2 text-lg font-bold text-slate-900 md:text-xl">
-            {isVietnamese
-              ? 'Khám phá các vị trí tuyển dụng thực tế & độ khớp AI'
-              : 'Explore real job opportunities & AI match scores'}
-          </h3>
-          <p className="mt-1 text-xs text-slate-600 md:text-sm">
-            {isVietnamese
-              ? 'Khách vãng lai có thể tự do tìm kiếm, xem chi tiết mô tả công việc và mức độ tương thích hoàn toàn miễn phí.'
-              : 'Guests can freely search, inspect job descriptions, and view simulated AI compatibility scores.'}
-          </p>
-        </div>
-        <Link to="/jobs">
-          <Button variant="secondary" className="whitespace-nowrap shadow-xs">
-            {isVietnamese ? 'Xem toàn bộ trang Việc làm' : 'View Full Job Board'}
-            <ArrowRight size={15} />
-          </Button>
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <h3 className="text-2xl font-normal text-ink">
+          {isVietnamese ? 'Việc làm công khai và độ khớp AI' : 'Public jobs and AI match scores'}
+        </h3>
+        <Link
+          to="/jobs"
+          className="text-base text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
+        >
+          {isVietnamese ? 'Xem toàn bộ trang việc làm' : 'View full job board'}
         </Link>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs md:flex-row">
-        <label className="relative flex-1">
+      <div className="flex flex-col gap-6 md:flex-row">
+        <label className="relative flex flex-1 items-center gap-3 border-b border-ink/80">
           <span className="sr-only">Search</span>
-          <Search size={18} className="absolute left-3 top-3 text-slate-400" />
-          <Input
-            className="pl-10 text-sm"
+          <Search size={16} className="shrink-0 text-ink" aria-hidden="true" />
+          <input
+            className="min-h-12 w-full bg-transparent text-base text-ink outline-none placeholder:text-slate-500"
             placeholder={
               isVietnamese
-                ? 'Tìm theo vị trí, công ty hoặc kỹ năng (React, TypeScript, Remote...)'
-                : 'Search by role, company, or skills (React, TypeScript, Remote...)'
+                ? 'Vị trí, công ty hoặc kỹ năng: React, TypeScript, Remote'
+                : 'Role, company or skill: React, TypeScript, Remote'
             }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3">
-          <MapPin size={18} className="text-slate-400" />
+        <label className="relative flex items-center border-b border-ink/80 md:w-56">
           <span className="sr-only">Location filter</span>
           <select
-            className="min-h-10 flex-1 bg-white text-sm outline-none cursor-pointer"
+            className="min-h-12 w-full cursor-pointer appearance-none bg-transparent pr-6 text-base text-ink outline-none"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           >
-            <option value="All">{isVietnamese ? 'Tất cả địa điểm' : 'All Locations'}</option>
+            <option value="All">{isVietnamese ? 'Tất cả địa điểm' : 'All locations'}</option>
             <option value="Ho Chi Minh City">Ho Chi Minh City</option>
             <option value="Remote">Remote</option>
             <option value="Da Nang">Da Nang</option>
           </select>
+          <ChevronDown size={14} className="pointer-events-none absolute right-0 text-slate-500" aria-hidden="true" />
         </label>
       </div>
 
-      {/* Results Header */}
-      <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
-        <span>
-          {isVietnamese
-            ? `Tìm thấy ${filteredJobs.length} việc làm công khai phù hợp`
-            : `Found ${filteredJobs.length} matching public jobs`}
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-blue-600 font-semibold">
-          <SlidersHorizontal size={13} />
-          {isVietnamese ? 'Mô phỏng tính toán khớp AI' : 'Simulated AI Matching'}
-        </span>
-      </div>
+      <div>
+        <div className="flex items-center justify-between border-b border-ink/60 pb-3 text-sm text-slate-700">
+          <span>
+            {isVietnamese
+              ? `${filteredJobs.length} việc làm phù hợp`
+              : `${filteredJobs.length} matching jobs`}
+          </span>
+          <span>{isVietnamese ? 'Mô phỏng cách AI tính độ khớp' : 'Simulated match scoring'}</span>
+        </div>
 
-      {/* Jobs Grid */}
-      <div className="grid gap-4">
         {filteredJobs.map((job) => (
-          <Card
+          <article
             key={job.id}
-            className="transition-all duration-200 hover:border-blue-300 hover:shadow-md"
+            className="grid gap-5 border-b border-border px-2 py-7 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_150px_120px] lg:gap-8"
           >
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-              <div className="flex items-start gap-4">
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/20 text-blue-700 font-bold border border-blue-100">
-                  <BriefcaseBusiness size={22} />
-                </div>
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-base font-bold text-slate-900 md:text-lg">{job.title}</h4>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 font-medium">
-                      {job.type}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-                    <span className="font-semibold text-slate-700">{job.company}</span> · {job.location} ·{' '}
-                    <span className="text-emerald-700 font-medium">{job.salary}</span>
-                  </p>
-                  <p className="mt-2 text-xs text-slate-600 line-clamp-2 md:text-sm">{job.description}</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {job.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 border border-slate-200/60"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+            <div className="min-w-0">
+              <h4 className="text-xl font-medium text-ink">{job.title}</h4>
+              <p className="mt-1.5 text-base text-slate-700">
+                {job.company} · {job.location} · {job.type}
+              </p>
+              <p className="mt-3 line-clamp-3 text-base leading-6 text-slate-600">
+                {job.description}
+              </p>
+            </div>
+            <p className="text-base leading-7 text-slate-700 lg:pt-6">{job.skills.join(' · ')}</p>
+            <div className="lg:pt-8">
+              <p className="text-base text-ink">{job.salary}</p>
+            </div>
+            <div className="lg:pt-6">
+              <p className="text-2xl font-normal text-brand">{job.match}%</p>
+              <div className="mt-1 h-[3px] bg-slate-200">
+                <div className="h-[3px] bg-brand" style={{ width: `${job.match}%` }} />
               </div>
-
-              <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:flex-col sm:items-end sm:border-t-0 sm:pt-0">
-                <Badge tone={job.match >= 85 ? 'green' : 'amber'}>
-                  {job.match}% {isVietnamese ? 'Tương thích' : 'Match'}
-                </Badge>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    className="py-1.5 px-3 text-xs"
-                    onClick={() => setSelectedJob(job)}
-                  >
-                    <Eye size={14} />
-                    {isVietnamese ? 'Xem nhanh' : 'Quick View'}
-                  </Button>
-                  <Link to={`/jobs/${job.id}`}>
-                    <Button variant="ghost" className="py-1.5 px-2.5 text-xs text-blue-600 hover:text-blue-700">
-                      <ExternalLink size={14} />
-                    </Button>
-                  </Link>
-                </div>
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 whitespace-nowrap text-base text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
+                  onClick={() => setSelectedJob(job)}
+                >
+                  {isVietnamese ? 'Xem nhanh' : 'Quick view'}
+                  <ArrowRight size={14} aria-hidden="true" />
+                </button>
+                <Link
+                  to={`/jobs/${job.id}`}
+                  className="text-slate-500 transition-colors hover:text-brand"
+                  aria-label={isVietnamese ? 'Mở trang chi tiết' : 'Open details'}
+                >
+                  <ExternalLink size={14} />
+                </Link>
               </div>
             </div>
-          </Card>
+          </article>
         ))}
 
         {filteredJobs.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">
+          <div className="border-b border-border py-10 text-center text-base text-slate-600">
             {isVietnamese
               ? 'Không tìm thấy việc làm công khai phù hợp với từ khóa này.'
               : 'No public jobs found matching your criteria.'}
@@ -190,11 +152,11 @@ export function GuestJobsTab() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
           onClick={() => setSelectedJob(null)}
         >
           <div
-            className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+            className="relative w-full max-w-2xl rounded-2xl bg-surface p-6 shadow-sm max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -206,14 +168,14 @@ export function GuestJobsTab() {
             </button>
 
             <div className="flex items-start gap-3">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-600 border border-brand-100">
                 <BriefcaseBusiness size={24} />
               </div>
               <div>
-                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
                   {selectedJob.type}
                 </span>
-                <h3 className="text-xl font-bold text-slate-900 mt-1">{selectedJob.title}</h3>
+                <h3 className="text-xl font-medium text-slate-900 mt-1">{selectedJob.title}</h3>
                 <p className="text-sm text-slate-500">
                   {selectedJob.company} · {selectedJob.location} · {selectedJob.posted}
                 </p>
@@ -225,13 +187,13 @@ export function GuestJobsTab() {
                 <p className="text-xs text-slate-400 font-medium">
                   {isVietnamese ? 'Mức lương dự kiến' : 'Estimated Salary'}
                 </p>
-                <p className="font-bold text-slate-900 mt-0.5">{selectedJob.salary}</p>
+                <p className="font-medium text-slate-900 mt-0.5">{selectedJob.salary}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-medium">
                   {isVietnamese ? 'Độ tương thích hồ sơ' : 'Profile Match Score'}
                 </p>
-                <p className="font-bold text-emerald-600 mt-0.5">
+                <p className="font-medium text-emerald-600 mt-0.5">
                   {selectedJob.match}% {isVietnamese ? 'Rất phù hợp' : 'High Potential'}
                 </p>
               </div>
@@ -239,14 +201,14 @@ export function GuestJobsTab() {
 
             <div className="mt-5 space-y-4">
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">
+                <h4 className="font-medium text-slate-900 text-sm">
                   {isVietnamese ? 'Mô tả công việc' : 'Job Description'}
                 </h4>
                 <p className="mt-1 text-sm leading-6 text-slate-600">{selectedJob.description}</p>
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">
+                <h4 className="font-medium text-slate-900 text-sm">
                   {isVietnamese ? 'Kỹ năng yêu cầu' : 'Required Skills'}
                 </h4>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -261,8 +223,8 @@ export function GuestJobsTab() {
               <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-800">
                 <p className="font-semibold">
                   {isVietnamese
-                    ? '💡 Chế độ Khách (Guest Trial):'
-                    : '💡 Guest Trial Mode:'}
+                    ? 'Chế độ Khách (Guest Trial):'
+                    : 'Guest Trial Mode:'}
                 </p>
                 <p className="mt-1">
                   {isVietnamese

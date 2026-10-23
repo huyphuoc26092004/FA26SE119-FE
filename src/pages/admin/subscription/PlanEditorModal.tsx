@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { X, Check, AlertCircle, Plus, Trash2, Sparkles, CreditCard, Layers, ShieldCheck, Zap } from 'lucide-react';
+import {
+  X,
+  Check,
+  AlertCircle,
+  Plus,
+  Trash2,
+  Lightbulb,
+  CreditCard,
+  Layers,
+  ShieldCheck,
+  Zap,
+} from 'lucide-react';
 import type { AdminSubscriptionPlan, PlanStatus } from '../../../types/subscriptionManagement';
 
 interface PlanEditorModalProps {
@@ -141,16 +152,16 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-3xl my-8 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-3xl my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-sm">
+            <div className="p-2.5 rounded-2xl bg-brand-600 text-white shadow-sm">
               <CreditCard size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-lg font-medium text-slate-900">
                 {isEdit ? `Chỉnh sửa gói cước: ${initialPlan?.name}` : 'Tạo gói cước mới'}
               </h2>
               <p className="text-xs text-slate-500">
@@ -177,7 +188,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
 
           {/* 1. Basic Info */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
               <Layers size={14} />
               Thông tin chung gói dịch vụ
             </h3>
@@ -192,7 +203,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ví dụ: Chuyên nghiệp Pro"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -204,8 +215,8 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   type="text"
                   value={badge}
                   onChange={(e) => setBadge(e.target.value)}
-                  placeholder="Ví dụ: Phổ biến nhất ⭐, Đặc quyền VIP 👑"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden"
+                  placeholder="Ví dụ: Phổ biến nhất , Đặc quyền VIP"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -218,7 +229,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Tóm tắt đối tượng phù hợp và giá trị cốt lõi của gói..."
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -229,7 +240,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as PlanStatus)}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
                 >
                   <option value="ACTIVE">Đang hoạt động (ACTIVE - Người dùng có thể mua)</option>
                   <option value="DRAFT">Bản nháp (DRAFT - Đang thử nghiệm nội bộ)</option>
@@ -243,7 +254,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     type="checkbox"
                     checked={highlight}
                     onChange={(e) => setHighlight(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                    className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-4 h-4"
                   />
                   <span>Gói nổi bật (Highlight Card)</span>
                 </label>
@@ -253,7 +264,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     type="checkbox"
                     checked={prioritySupport}
                     onChange={(e) => setPrioritySupport(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                    className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-4 h-4"
                   />
                   <span>Hỗ trợ VIP 24/7 ưu tiên</span>
                 </label>
@@ -263,7 +274,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
 
           {/* 2. Pricing & Tokens */}
           <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
               <Zap size={14} />
               Giá bán & Định mức Token tháng
             </h3>
@@ -278,7 +289,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   step="1000"
                   value={monthlyPriceVND}
                   onChange={(e) => setMonthlyPriceVND(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden font-medium"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden font-medium"
                 />
                 <span className="text-[11px] text-slate-400 mt-1 block">
                   {monthlyPriceVND.toLocaleString('vi-VN')} đ / tháng
@@ -295,7 +306,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   step="10000"
                   value={yearlyPriceVND}
                   onChange={(e) => setYearlyPriceVND(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden font-medium"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden font-medium"
                 />
                 <span className="text-[11px] text-slate-400 mt-1 block">
                   {yearlyPriceVND.toLocaleString('vi-VN')} đ / năm
@@ -312,7 +323,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   step="5000"
                   value={tokenMonthlyQuota}
                   onChange={(e) => setTokenMonthlyQuota(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden font-bold text-blue-700"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden font-medium text-brand-700"
                 />
                 <span className="text-[11px] text-slate-400 mt-1 block">
                   {tokenMonthlyQuota.toLocaleString()} AI Tokens
@@ -323,7 +334,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
 
           {/* 3. Feature Limits */}
           <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
               <ShieldCheck size={14} />
               Giới hạn lượt dùng tính năng cốt lõi (Nhập số hoặc "unlimited")
             </h3>
@@ -337,7 +348,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={cvParsingLimit}
                   onChange={(e) => setCvParsingLimit(e.target.value)}
                   placeholder="3 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -350,7 +361,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={cvJobFitLimit}
                   onChange={(e) => setCvJobFitLimit(e.target.value)}
                   placeholder="5 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -363,7 +374,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={aiAssistantQueriesLimit}
                   onChange={(e) => setAiAssistantQueriesLimit(e.target.value)}
                   placeholder="15 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -376,7 +387,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={coverLetterGenLimit}
                   onChange={(e) => setCoverLetterGenLimit(e.target.value)}
                   placeholder="5 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -389,7 +400,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={mockInterviewLimit}
                   onChange={(e) => setMockInterviewLimit(e.target.value)}
                   placeholder="1 hoặc unlimited"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -403,7 +414,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   max="100"
                   value={consultantDiscountPercent}
                   onChange={(e) => setConsultantDiscountPercent(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
             </div>
@@ -411,7 +422,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
 
           {/* 4. API & AI Models Allocation */}
           <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
               <Zap size={14} />
               Chính sách API Rate Limits & Quyền truy cập mô hình
             </h3>
@@ -425,7 +436,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   min="1"
                   value={apiRateLimitRPM}
                   onChange={(e) => setApiRateLimitRPM(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
@@ -439,7 +450,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   step="5000"
                   value={apiRateLimitTPM}
                   onChange={(e) => setApiRateLimitTPM(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
             </div>
@@ -457,7 +468,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                       onClick={() => handleToggleModel(m.id)}
                       className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition select-none text-xs ${
                         isChecked
-                          ? 'border-blue-300 bg-blue-50/60 font-semibold text-blue-900'
+                          ? 'border-brand-300 bg-brand-50/60 font-semibold text-brand-900'
                           : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
@@ -465,7 +476,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => {}}
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                       />
                       <span>{m.name}</span>
                     </label>
@@ -477,8 +488,8 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
 
           {/* 5. Features Checklist */}
           <div className="pt-2 border-t border-slate-100">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-              <Sparkles size={14} />
+            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+              <Lightbulb size={14} />
               Danh sách quyền lợi hiển thị trên thẻ (Features Checklist)
             </h3>
             <div className="space-y-2 mb-3 max-h-40 overflow-y-auto pr-1">
@@ -514,7 +525,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   }
                 }}
                 placeholder="Nhập quyền lợi mới (Ví dụ: Không giới hạn lưu trữ CV chuẩn ATS)..."
-                className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
               />
               <button
                 type="button"
@@ -534,7 +545,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50 transition"
+            className="px-4 py-2.5 rounded-xl border border-slate-200 bg-surface text-slate-600 text-xs font-semibold hover:bg-slate-50 transition"
           >
             Hủy bỏ
           </button>
@@ -542,7 +553,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-2 shadow-xs disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-2 shadow-xs disabled:opacity-50"
           >
             {isSubmitting ? (
               <span>Đang lưu...</span>

@@ -1,4 +1,11 @@
-import { Activity, ClipboardList, Users, Wallet, ShieldCheck, Server } from 'lucide-react';
+import {
+  Activity,
+  ClipboardList,
+  Users,
+  Wallet,
+  ShieldCheck,
+  Server,
+} from 'lucide-react';
 import { Card, PageTitle, StatCard, Badge } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 
@@ -32,7 +39,7 @@ export function ConsultantDashboard() {
         />
       </div>
       <Card className="mt-6">
-        <h2 className="text-lg font-bold text-slate-900">{t('roleDashboards.recentConsultations')}</h2>
+        <h2 className="text-lg font-medium text-slate-900">{t('roleDashboards.recentConsultations')}</h2>
         <p className="mt-2 text-sm text-slate-500">{t('roleDashboards.consultationPhase6')}</p>
       </Card>
     </>

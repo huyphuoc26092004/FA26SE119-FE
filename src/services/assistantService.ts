@@ -50,7 +50,7 @@ function getInitialMockSessions(): AiChatSession[] {
           role: 'assistant',
           content: `Chào Alex! Tôi đã phân tích toàn diện bản CV **"Alex Morgan - Senior Frontend CV"** của bạn với hệ thống ATS và thuật toán so khớp ngữ nghĩa.
 
-### 📊 Đánh giá tổng quan ATS:
+### Đánh giá tổng quan ATS:
 - **Điểm ATS hiện tại:** **92/100** (Mức Tốt - Sẵn sàng nộp đơn)
 - **Định dạng & Bố cục:** **95/100** (Phông chữ chuẩn, phân cấp mục rõ ràng)
 - **Từ khóa công nghệ (Keywords):** **90/100**
@@ -58,7 +58,7 @@ function getInitialMockSessions(): AiChatSession[] {
 
 ---
 
-### 🔍 3 Điểm cần cải thiện để đạt 96%+ ATS:
+### 3 Điểm cần cải thiện để đạt 96%+ ATS:
 1. **Bổ sung các từ khóa công nghệ hạ tầng & Scale lớn:**
    - CV hiện có rất mạnh về *React, TypeScript, Next.js, Core Web Vitals*.
    - Tuy nhiên, các hệ thống ATS của tập đoàn lớn thường quét thêm các từ khóa: **CI/CD Pipelines (GitHub Actions/GitLab CI), Webpack/Vite module federation, Micro-frontends, Docker containerization, Kubernetes basics**.
@@ -116,20 +116,20 @@ function getInitialMockSessions(): AiChatSession[] {
           role: 'assistant',
           content: `Chào bạn! Tôi đã đối soát chéo CV của bạn với bản mô tả công việc **Senior Frontend Engineer** tại **VNG Corporation**.
 
-### 🎯 Độ tương thích tổng quan: **89% (Rất phù hợp - Strong Fit)**
+### Độ tương thích tổng quan: **89% (Rất phù hợp - Strong Fit)**
 
-#### ✅ Những điểm mạnh vượt trội (Matched Strengths):
+#### Những điểm mạnh vượt trội (Matched Strengths):
 - **React & TypeScript:** Bạn có hơn 4 năm kinh nghiệm thực chiến, đúng yêu cầu cốt lõi của VNG.
 - **Tối ưu hóa hiệu năng (Web Vitals):** Dự án thực tế đã chứng minh khả năng tối ưu LCP xuống 1.1s, rất phù hợp với nền tảng giải trí và game portal có hàng triệu truy cập của VNG.
 - **Kinh nghiệm Lead nhóm:** Bạn đã dẫn dắt đội ngũ 6 kỹ sư, đáp ứng tiêu chí Senior tự chủ cao.
 
-#### ⚠️ Khoảng trống kỹ năng cần chuẩn bị (Skill Gaps):
+#### Khoảng trống kỹ năng cần chuẩn bị (Skill Gaps):
 - **Real-time WebSockets / Streaming:** VNG chú trọng tương tác thời gian thực (chat, notifications, realtime updates). Hãy ôn kỹ cơ chế WebSocket reconnection và state reconciliation.
 - **Micro-frontends ở quy mô lớn:** Khả năng độc lập deploy giữa các module ứng dụng.
 
 ---
 
-### 💡 4 Câu hỏi phỏng vấn kỹ thuật VNG thường hỏi và định hướng trả lời:
+### 4 Câu hỏi phỏng vấn kỹ thuật VNG thường hỏi và định hướng trả lời:
 1. **Kiến trúc State Management:** Khi nào nên dùng Zustand thay vì Redux Toolkit? Làm thế nào để tránh re-render thừa trong các component phức tạp?
 2. **Web Performance Deep Dive:** Bạn sẽ đo đạc và cải thiện INP (Interaction to Next Paint) và CLS (Cumulative Layout Shift) như thế nào trên trình duyệt mobile?
 3. **Hệ thống Design System:** Cách bạn tổ chức monorepo hoặc package dùng chung cho nhiều sản phẩm trong tập đoàn?
@@ -172,7 +172,7 @@ function getInitialMockSessions(): AiChatSession[] {
           role: 'assistant',
           content: `Đây là một mục tiêu nghề nghiệp rất rõ ràng và khả thi! Chuyển từ **Senior Developer** lên **Technical Lead** là bước chuyển dịch từ việc *"giải quyết bài toán kỹ thuật cá nhân"* sang *"nâng cao năng lực và hiệu suất của cả đội ngũ"*.
 
-### 🗺️ Lộ trình 3 trụ cột vươn tới Tech Lead (2026 - 2028):
+### Lộ trình 3 trụ cột vươn tới Tech Lead (2026 - 2028):
 
 #### 1. Mở rộng tư duy Kiến trúc hệ thống (System Architecture)
 - Không chỉ dừng lại ở UI/Frontend, bạn cần hiểu sâu về:
@@ -261,11 +261,11 @@ export function createChatSession(params?: {
         content: `Xin chào! Tôi là **Trợ lý AI Sự Nghiệp CareerPilot**. 
 
 Tôi có thể hỗ trợ bạn:
-- 📄 **Tối ưu hóa CV chuẩn ATS:** Soát lỗi từ khóa, đề xuất số liệu định lượng và cấu trúc chuẩn.
-- 🎯 **Phân tích độ phù hợp việc làm (CV–Job Fit):** Đánh giá khoảng trống kỹ năng và cơ hội trúng tuyển.
-- 🎙️ **Luyện phỏng vấn thực chiến:** Dự đoán câu hỏi kỹ thuật & tình huống của các công ty hàng đầu.
-- ✉️ **Viết Cover Letter & Email:** Tạo nội dung thư ứng tuyển cá nhân hóa theo từng vị trí.
-- 💰 **Định giá mức lương & Đàm phán:** Khảo sát dải lương thị trường và chiến lược deal lương tự tin.
+- **Tối ưu hóa CV chuẩn ATS:** Soát lỗi từ khóa, đề xuất số liệu định lượng và cấu trúc chuẩn.
+- **Phân tích độ phù hợp việc làm (CV–Job Fit):** Đánh giá khoảng trống kỹ năng và cơ hội trúng tuyển.
+- **Luyện phỏng vấn thực chiến:** Dự đoán câu hỏi kỹ thuật & tình huống của các công ty hàng đầu.
+- **Viết Cover Letter & Email:** Tạo nội dung thư ứng tuyển cá nhân hóa theo từng vị trí.
+- **Định giá mức lương & Đàm phán:** Khảo sát dải lương thị trường và chiến lược deal lương tự tin.
 
 *Mẹo: Bạn có thể chọn CV hoặc Công việc ở thanh ngữ cảnh phía trên để tôi phân tích chính xác nhất cho trường hợp của bạn!*`,
         timestamp: nowTime,
@@ -503,14 +503,14 @@ function generateContextualAiContent({
         content: isVi
           ? `Dựa trên bản CV **"${cv.name}"** (${cv.position}) của bạn, tôi đã thực hiện quét ATS và rà soát ngữ nghĩa chi tiết:
 
-### 📊 Tình trạng ATS hiện tại:
+### Tình trạng ATS hiện tại:
 - **Điểm ATS Đạt Được:** **${atsScore}/100**
 - **Từ khóa đã tối ưu tốt:** ${skillsList}
 - **Điểm mạnh chính:** Bố cục rõ ràng, vị trí công việc và thời gian công tác được định dạng khoa học, dễ quét bằng parser tự động.
 
 ---
 
-### 🚀 3 Khuyến nghị hành động để tối ưu hóa điểm số:
+### 3 Khuyến nghị hành động để tối ưu hóa điểm số:
 1. **Bổ sung các từ khóa ATS còn thiếu:**
    Hệ thống ghi nhận bạn chưa làm nổi bật các thuật ngữ: **${missingKeywords}**. Bạn nên đưa các từ khóa này vào mô tả dự án hoặc phần kỹ năng chuyên môn.
 2. **Áp dụng công thức Google XYZ cho các gạch đầu dòng kinh nghiệm:**
@@ -520,14 +520,14 @@ function generateContextualAiContent({
    Hãy nhấn mạnh số năm kinh nghiệm (${profile?.experienceLevel || 'Senior'}), thế mạnh công nghệ chủ lực và giá trị kinh doanh bạn mang lại cho doanh nghiệp.`
           : `Based on your resume **"${cv.name}"** (${cv.position}), here is the in-depth ATS evaluation:
 
-### 📊 ATS Status Overview:
+### ATS Status Overview:
 - **ATS Score:** **${atsScore}/100**
 - **Well-matched Keywords:** ${skillsList}
 - **Key Strength:** Clean formatting and well-structured chronological timeline that passes automated parsing without parsing errors.
 
 ---
 
-### 🚀 Recommended Improvements:
+### Recommended Improvements:
 1. **Incorporate Missing ATS Keywords:**
    Make sure to incorporate critical industry keywords: **${missingKeywords}**.
 2. **Apply Google XYZ Formula:**
@@ -557,14 +557,14 @@ function generateContextualAiContent({
         content: isVi
           ? `Để đánh giá chính xác điểm ATS và đề xuất sửa đổi cụ thể nhất, bạn vui lòng **chọn một bản CV từ menu "Gắn CV" ở thanh phía trên**.
 
-### 💡 Các nguyên tắc vàng để CV đạt trên 95% điểm ATS:
+### Các nguyên tắc vàng để CV đạt trên 95% điểm ATS:
 1. **Cấu trúc chuẩn:** Sử dụng các tiêu đề mục kinh điển: *Professional Summary, Work Experience, Technical Skills, Education, Projects*.
 2. **Định dạng file:** Lưu file PDF dạng văn bản có thể bôi đen chữ (Selectable text), tránh xuất PDF từ ảnh scan.
 3. **Từ khóa chuyên ngành:** Đối soát kỹ với mô tả công việc (JD) để lặp lại từ khóa với tần suất tự nhiên 2-3 lần.
 4. **Định lượng thành tích:** Mọi trách nhiệm nên đi kèm với con số thực tế (% tăng trưởng doanh thu, thời gian giảm tải, số người dùng phục vụ).`
           : `To evaluate your ATS score accurately, please **select one of your CVs from the context selector above**.
 
-### 💡 Core principles for 95%+ ATS Resumes:
+### Core principles for 95%+ ATS Resumes:
 1. **Standard Headings:** Use conventional headers like *Summary, Experience, Skills, Education*.
 2. **Text-based PDF:** Ensure text is selectable, avoiding image-only exports.
 3. **Targeted Keywords:** Match skills from the job description naturally.
@@ -599,16 +599,16 @@ function generateContextualAiContent({
         content: isVi
           ? `Tôi đã phân tích vị trí **"${job.title}"** tại **${job.company}** (Mức lương: **${job.salary}** · Địa điểm: **${job.location}**):
 
-### 🎯 Đánh giá mức độ phù hợp: **${matchScore}% (${matchScore >= 85 ? 'Rất cao - Strong Fit' : 'Phù hợp - Moderate Fit'})**
+### Đánh giá mức độ phù hợp: **${matchScore}% (${matchScore >= 85 ? 'Rất cao - Strong Fit' : 'Phù hợp - Moderate Fit'})**
 
-#### 🔑 Yêu cầu cốt lõi của vị trí:
+#### Yêu cầu cốt lõi của vị trí:
 - **Kỹ năng bắt buộc:** ${reqSkills}
 - **Cấp bậc kinh nghiệm:** ${job.experienceLevel || 'Senior'}
 - **Hình thức làm việc:** ${job.type}
 
 ---
 
-### 📝 Lời khuyên chiến lược khi ứng tuyển vị trí này:
+### Lời khuyên chiến lược khi ứng tuyển vị trí này:
 1. **Điều chỉnh CV tập trung vào thế mạnh của ${job.company}:**
    Nhấn mạnh các dự án bạn đã từng làm liên quan đến ${job.skills.slice(0, 3).join(', ')}.
 2. **Chuẩn bị trả lời bài toán kỹ thuật thực tế:**
@@ -617,16 +617,16 @@ function generateContextualAiContent({
    Hãy đề cập trực tiếp đến sản phẩm của ${job.company} và giải thích tại sao kinh nghiệm của bạn sẽ đóng góp ngay lập tức cho team.`
           : `Here is the comprehensive analysis for **"${job.title}"** at **${job.company}** (Salary: **${job.salary}** · ${job.location}):
 
-### 🎯 Match Evaluation: **${matchScore}% (${matchScore >= 85 ? 'Strong Fit' : 'Moderate Fit'})**
+### Match Evaluation: **${matchScore}% (${matchScore >= 85 ? 'Strong Fit' : 'Moderate Fit'})**
 
-#### 🔑 Core Job Requirements:
+#### Core Job Requirements:
 - **Required Stack:** ${reqSkills}
 - **Seniority:** ${job.experienceLevel || 'Senior'}
 - **Work Mode:** ${job.type}
 
 ---
 
-### 📝 Strategic Application Advice:
+### Strategic Application Advice:
 1. **Highlight direct tech stack:** Emphasize hands-on experience in ${job.skills.slice(0, 3).join(', ')}.
 2. **Be prepared for architectural questions:** Practice explaining system trade-offs.
 3. **Tailor your cover letter:** Mention specific achievements aligned with ${job.company}'s product vision.`,
@@ -652,13 +652,13 @@ function generateContextualAiContent({
         content: isVi
           ? `Bạn có thể **chọn một công việc cụ thể từ menu "Gắn việc làm" ở thanh phía trên** để tôi đối soát tỷ lệ phù hợp trực tiếp giữa hồ sơ của bạn và bản mô tả công việc (JD).
 
-### 💡 Tiêu chí nhà tuyển dụng đánh giá khi lọc ứng viên:
+### Tiêu chí nhà tuyển dụng đánh giá khi lọc ứng viên:
 1. **Độ trùng khớp kỹ năng cốt lõi (Hard Skills):** Thường chiếm 50% trọng số của thuật toán lọc.
 2. **Độ tương đồng quy mô sản phẩm (Scale & Domain):** Từng làm việc với hệ sinh thái có lượng người dùng và độ phức tạp tương đương.
 3. **Thời gian gắn bó & Tiến độ thăng tiến (Career Trajectory):** Sự ổn định và đà phát triển sự nghiệp.`
           : `To evaluate exact job fit, please **select a job from the context menu above**.
 
-### 💡 How recruiters evaluate candidates:
+### How recruiters evaluate candidates:
 1. **Core Hard Skills Match:** Typically accounts for 50% of automated screening.
 2. **Domain & Scale Familiarity:** Working with platforms of similar architectural complexity.
 3. **Career Trajectory & Stability:** Continuous career progression and leadership initiative.`,
@@ -689,7 +689,7 @@ function generateContextualAiContent({
       content: isVi
         ? `Dưới đây là cẩm nang chuẩn bị phỏng vấn toàn diện cho vị trí **${targetRole}** tại **${companyName}**:
 
-### 🎯 Phương pháp trả lời chuẩn STAR:
+### Phương pháp trả lời chuẩn STAR:
 - **S (Situation - Tình huống):** Bối cảnh dự án hoặc khó khăn gặp phải.
 - **T (Task - Nhiệm vụ):** Mục tiêu hoặc trách nhiệm chính của bạn là gì.
 - **A (Action - Hành động):** Bạn đã áp dụng giải pháp công nghệ hay kỹ năng gì cụ thể.
@@ -697,7 +697,7 @@ function generateContextualAiContent({
 
 ---
 
-### 🎙️ 4 Câu hỏi phỏng vấn trọng tâm & Hướng dẫn trả lời:
+### 4 Câu hỏi phỏng vấn trọng tâm & Hướng dẫn trả lời:
 
 #### 1. "Hãy kể về một lần bạn xử lý bất đồng kỹ thuật trong team?"
 - **Trọng tâm đánh giá:** Kỹ năng giao tiếp, khả năng lắng nghe và đặt lợi ích dự án lên hàng đầu.
@@ -711,7 +711,7 @@ function generateContextualAiContent({
 - Nhắc lại số lượng request/giây (RPS), lượng active users và các quyết định trade-off (giữa latency, cost và maintainability).`
         : `Here is the interview preparation guide tailored for **${targetRole}** at **${companyName}**:
 
-### 🎯 The STAR Framework:
+### The STAR Framework:
 - **Situation:** Set the scene and problem context.
 - **Task:** Define your specific responsibility.
 - **Action:** Explain your technical solution and leadership.
@@ -719,7 +719,7 @@ function generateContextualAiContent({
 
 ---
 
-### 🎙️ High-frequency Interview Questions:
+### High-frequency Interview Questions:
 1. **Handling Technical Disagreements:** Focus on data-driven evaluation rather than ego.
 2. **Greatest Weakness:** Show genuine self-awareness and current self-improvement habits.
 3. **Complex System Design:** Discuss trade-offs in scalability, latency, and cost.`,
@@ -816,7 +816,7 @@ I deeply admire ${targetCompany}'s commitment to product excellence. I would wel
       content: isVi
         ? `Dưới đây là phân tích thị trường lương và chiến lược đàm phán cho vị trí **${role}**:
 
-### 💵 Dải lương tham chiếu thị trường Việt Nam (Năm 2026):
+### Dải lương tham chiếu thị trường Việt Nam (Năm 2026):
 - **Cấp bậc Junior (1 - 2 năm):** $800 - $1,300 (~20 - 32 triệu VND)
 - **Cấp bậc Middle (2 - 4 năm):** $1,300 - $2,200 (~32 - 55 triệu VND)
 - **Cấp bậc Senior (4 - 7 năm):** $2,200 - $3,500 (~55 - 88 triệu VND)
@@ -824,13 +824,13 @@ I deeply admire ${targetCompany}'s commitment to product excellence. I would wel
 
 ---
 
-### 🎯 Chiến lược đàm phán lương đạt kết quả cao:
+### Chiến lược đàm phán lương đạt kết quả cao:
 1. **Không đưa ra con số tuyệt đối trước:** Nếu được hỏi sớm, hãy trả lời bằng một dải dao động: *"Dựa trên năng lực chuyên môn và trách nhiệm công việc, mức kỳ vọng của tôi nằm trong khoảng $2,500 - $3,000 net tùy thuộc vào các quyền lợi kèm theo."*
 2. **Định vị giá trị thay vì chi phí sinh hoạt:** Nhấn mạnh doanh nghiệp sẽ nhận được gì từ kinh nghiệm của bạn (tiết kiệm thời gian onboarding, tối ưu hiệu năng hạ tầng).
 3. **Xem xét tổng gói thu nhập (Total Compensation):** Đừng chỉ nhìn vào lương cứng; hãy hỏi thêm về thưởng hiệu suất (Performance Bonus), cổ phần/ESOP, chế độ bảo hiểm sức khỏe và ngân sách đào tạo cá nhân.`
         : `Here is the salary benchmark and negotiation strategy for **${role}**:
 
-### 💵 Market Salary Benchmarks (Vietnam Tech 2026):
+### Market Salary Benchmarks (Vietnam Tech 2026):
 - **Junior (1-2 yrs):** $800 - $1,300 / month
 - **Middle (2-4 yrs):** $1,300 - $2,200 / month
 - **Senior (4-7 yrs):** $2,200 - $3,500 / month
@@ -838,7 +838,7 @@ I deeply admire ${targetCompany}'s commitment to product excellence. I would wel
 
 ---
 
-### 🎯 Key Negotiation Tactics:
+### Key Negotiation Tactics:
 1. **Quote ranges instead of single figures.**
 2. **Focus on Total Compensation (Bonus, ESOP, Health benefits).**
 3. **Anchor your value proposition to business outcomes and leadership.**`,
@@ -864,7 +864,7 @@ Về thắc mắc **"${query}"** của bạn:
 
 Trong thị trường công nghệ hiện nay, việc chủ động định hình lộ trình phát triển và hoàn thiện hồ sơ ứng viên là yếu tố quyết định giúp bạn tiếp cận những cơ hội việc làm tốt nhất. 
 
-### 💡 Các gợi ý hữu ích cho bạn:
+### Các gợi ý hữu ích cho bạn:
 1. **Kiểm tra độ tương thích với thị trường:** Bạn có thể gắn một CV hoặc việc làm cụ thể ở thanh công cụ phía trên để tôi phân tích khoảng trống kỹ năng.
 2. **Cập nhật hồ sơ thường xuyên:** Bổ sung các chứng chỉ công nghệ mới và các dự án thực tế nổi bật.
 3. **Mở rộng kết nối nghề nghiệp:** Tham gia các cộng đồng chuyên môn và cập nhật LinkedIn định kỳ.`

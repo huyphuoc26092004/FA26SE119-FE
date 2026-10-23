@@ -21,7 +21,7 @@ import {
   Phone,
   Plus,
   Save,
-  Sparkles,
+  Lightbulb,
   Target,
   Trash2,
   User,
@@ -315,9 +315,9 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
         <div className="space-y-6">
           {/* Hero Profile Header Card */}
           <Card className="overflow-hidden p-0 border border-slate-200/80 shadow-sm">
-            <div className="h-32 bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 relative">
-              <div className="absolute right-4 bottom-4 flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-xs font-medium">
-                <Sparkles size={14} className="text-amber-300" />
+            <div className="h-32 bg-brand-700 relative">
+              <div className="absolute right-4 bottom-4 flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-white text-xs font-medium">
+                <Lightbulb size={14} className="text-amber-300" />
                 <span>AI Matching Ready</span>
               </div>
             </div>
@@ -326,8 +326,8 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="relative -mt-12 shrink-0">
-                    <div className="grid h-24 w-24 place-items-center rounded-2xl bg-white p-1.5 shadow-md border-2 border-white">
-                      <div className="grid h-full w-full place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-3xl font-extrabold text-white shadow-inner">
+                    <div className="grid h-24 w-24 place-items-center rounded-2xl bg-surface p-1.5 border-2 border-white">
+                      <div className="grid h-full w-full place-items-center rounded-xl bg-brand-600 text-3xl font-semibold text-white shadow-inner">
                         {profile.name
                           .split(' ')
                           .map((n) => n[0])
@@ -340,7 +340,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
 
                   <div className="pt-2 sm:pt-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-2xl font-bold text-slate-900">{profile.name}</h2>
+                      <h2 className="text-2xl font-medium text-slate-900">{profile.name}</h2>
                       <Badge tone="blue">{profile.experienceLevel}</Badge>
                     </div>
                     <p className="mt-1 text-sm font-medium text-slate-600">{profile.headline}</p>
@@ -364,7 +364,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                 {profile.email && (
                   <a
                     href={`mailto:${profile.email}`}
-                    className="flex items-center gap-1.5 hover:text-blue-600 transition"
+                    className="flex items-center gap-1.5 hover:text-brand-600 transition"
                   >
                     <Mail size={15} className="text-slate-400" />
                     <span>{profile.email}</span>
@@ -373,7 +373,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                 {profile.phone && (
                   <a
                     href={`tel:${profile.phone}`}
-                    className="flex items-center gap-1.5 hover:text-blue-600 transition"
+                    className="flex items-center gap-1.5 hover:text-brand-600 transition"
                   >
                     <Phone size={15} className="text-slate-400" />
                     <span>{profile.phone}</span>
@@ -384,7 +384,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     href={profile.website}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-medium transition"
+                    className="flex items-center gap-1.5 text-brand-600 hover:text-brand-700 font-medium transition"
                   >
                     <Globe size={15} />
                     <span>Portfolio</span>
@@ -396,7 +396,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     href={profile.linkedin}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-blue-700 hover:underline font-medium transition"
+                    className="flex items-center gap-1.5 text-brand-700 hover:underline font-medium transition"
                   >
                     <Linkedin size={15} />
                     <span>LinkedIn</span>
@@ -424,7 +424,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     <span className="font-semibold text-xs uppercase tracking-wider text-slate-500">
                       {t('dashboard.profileCompletion')}
                     </span>
-                    <span className="font-bold text-slate-900 text-sm">
+                    <span className="font-medium text-slate-900 text-sm">
                       {profile.completion}%
                     </span>
                   </div>
@@ -436,24 +436,24 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                 </div>
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500"
+                    className="h-full rounded-full bg-brand-600 transition-all duration-500"
                     style={{ width: `${profile.completion}%` }}
                   />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-slate-700 border border-slate-200">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-slate-700 border border-slate-200">
                     <CheckCircle2 size={13} className="text-emerald-500" />
                     {t('profile.checklistPersonalInfo')}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-slate-700 border border-slate-200">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-slate-700 border border-slate-200">
                     <CheckCircle2 size={13} className="text-emerald-500" />
                     {t('profile.checklistPreferences')}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-slate-700 border border-slate-200">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-slate-700 border border-slate-200">
                     <CheckCircle2 size={13} className="text-emerald-500" />
                     {t('profile.checklistSkills')} ({profile.skills?.length || 0})
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-slate-700 border border-slate-200">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-slate-700 border border-slate-200">
                     <CheckCircle2 size={13} className="text-emerald-500" />
                     {t('profile.checklistSocial')}
                   </span>
@@ -480,7 +480,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition whitespace-nowrap cursor-pointer ${
                     isActive
-                      ? 'border-blue-600 text-blue-600 bg-blue-50/40 rounded-t-lg'
+                      ? 'border-brand-600 text-brand-600 bg-brand-50/40 rounded-t-lg'
                       : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800'
                   }`}
                 >
@@ -496,9 +496,9 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
             <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
               <div className="space-y-6">
                 {/* Career Goal & Objective Statement */}
-                <Card className="bg-gradient-to-br from-white to-blue-50/30">
+                <Card className="bg-surface">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 text-blue-700 font-bold">
+                    <div className="flex items-center gap-2 text-brand-700 font-medium">
                       <Target size={18} />
                       <h3 className="text-base">{t('profile.careerGoal')}</h3>
                     </div>
@@ -507,7 +507,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                       {t('profile.editProfile')}
                     </Button>
                   </div>
-                  <p className="text-sm leading-relaxed text-slate-700 italic border-l-4 border-blue-600 pl-4 py-1">
+                  <p className="text-sm leading-relaxed text-slate-700 italic border-l-4 border-brand-600 pl-4 py-1">
                     "{profile.careerGoal || t('profile.careerGoalText')}"
                   </p>
                 </Card>
@@ -515,7 +515,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                 {/* Professional Snapshot Grid */}
                 <Card>
                   <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                    <h3 className="font-bold text-slate-900">{t('profile.careerPreferences')}</h3>
+                    <h3 className="font-medium text-slate-900">{t('profile.careerPreferences')}</h3>
                     <Button variant="ghost" onClick={startEditing} className="text-xs h-7 px-2">
                       <Edit3 size={12} />
                       {t('profile.editProfile')}
@@ -585,7 +585,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                 {/* Highlighted Skills Cloud */}
                 <Card>
                   <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                    <h3 className="font-bold text-slate-900">{t('profile.skillsAndExpertise')}</h3>
+                    <h3 className="font-medium text-slate-900">{t('profile.skillsAndExpertise')}</h3>
                     <Button variant="ghost" onClick={startEditing} className="text-xs h-7 px-2">
                       <Edit3 size={12} />
                       {t('profile.editProfile')}
@@ -597,7 +597,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                       ? profile.detailedSkills.map((item) => (
                           <span
                             key={item.name}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-surface px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs"
                           >
                             <span>{item.name}</span>
                             <Badge tone={getLevelBadgeTone(item.level)}>
@@ -634,17 +634,17 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
 
               {/* Side Column: CV ATS Snapshot & Quick Links */}
               <div className="space-y-6">
-                <Card className="border-blue-100 bg-gradient-to-br from-white to-blue-50/50">
+                <Card className="border-brand-100 bg-surface">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900">{t('profile.atsPerformance')}</h3>
+                    <h3 className="font-medium text-slate-900">{t('profile.atsPerformance')}</h3>
                     <Badge tone="green">{t('dashboard.atsScoreReady')}</Badge>
                   </div>
                   <div className="mt-5 flex items-center gap-4">
-                    <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-white text-2xl font-black text-slate-800 shadow-sm">
+                    <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-emerald-400 bg-surface text-2xl font-semibold text-slate-800 shadow-sm">
                       {resumes?.[0]?.atsScore ?? 88}
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900">
+                      <p className="font-medium text-slate-900">
                         {resumes?.[0]?.name ?? 'Frontend Developer CV (Default)'}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
@@ -655,7 +655,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   <div className="mt-5 pt-4 border-t border-slate-200/60 flex items-center justify-between">
                     <Link
                       to="/candidate/resumes"
-                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
                     >
                       {t('profile.viewAllResumes')} <ExternalLink size={12} />
                     </Link>
@@ -670,17 +670,17 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
 
                 {/* Developer / Portfolio Profiles */}
                 <Card>
-                  <h3 className="font-bold text-slate-900 mb-3">{t('profile.socialLinks')}</h3>
+                  <h3 className="font-medium text-slate-900 mb-3">{t('profile.socialLinks')}</h3>
                   <div className="space-y-3">
                     {profile.linkedin && (
                       <a
                         href={profile.linkedin}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition group"
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition group"
                       >
                         <div className="flex items-center gap-2.5">
-                          <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-100 text-blue-700">
+                          <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-100 text-brand-700">
                             <Linkedin size={16} />
                           </div>
                           <div>
@@ -690,7 +690,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                             </p>
                           </div>
                         </div>
-                        <ExternalLink size={14} className="text-slate-400 group-hover:text-blue-600" />
+                        <ExternalLink size={14} className="text-slate-400 group-hover:text-brand-600" />
                       </a>
                     )}
                     {profile.github && (
@@ -719,7 +719,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                         href={profile.website}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition group"
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition group"
                       >
                         <div className="flex items-center gap-2.5">
                           <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
@@ -746,7 +746,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
             <div className="space-y-6">
               <Card>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
-                  <h3 className="font-bold text-slate-900 text-lg">{t('profile.personalInfo')}</h3>
+                  <h3 className="font-medium text-slate-900 text-lg">{t('profile.personalInfo')}</h3>
                   <Button variant="secondary" onClick={startEditing}>
                     <Edit3 size={14} />
                     {t('profile.editProfile')}
@@ -802,10 +802,10 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
 
               {/* Developer & Social Profiles */}
               <Card>
-                <h3 className="font-bold text-slate-900 text-lg mb-4">{t('profile.socialLinks')}</h3>
+                <h3 className="font-medium text-slate-900 text-lg mb-4">{t('profile.socialLinks')}</h3>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="p-4 rounded-xl border border-slate-200/70 bg-slate-50/40">
-                    <div className="flex items-center gap-2 text-blue-700 font-semibold mb-2">
+                    <div className="flex items-center gap-2 text-brand-700 font-semibold mb-2">
                       <Linkedin size={18} />
                       <span>LinkedIn</span>
                     </div>
@@ -814,7 +814,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                         href={profile.linkedin}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-blue-600 hover:underline break-all"
+                        className="text-xs text-brand-600 hover:underline break-all"
                       >
                         {profile.linkedin}
                       </a>
@@ -833,7 +833,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                         href={profile.github}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-blue-600 hover:underline break-all"
+                        className="text-xs text-brand-600 hover:underline break-all"
                       >
                         {profile.github}
                       </a>
@@ -852,7 +852,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                         href={profile.website}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-blue-600 hover:underline break-all"
+                        className="text-xs text-brand-600 hover:underline break-all"
                       >
                         {profile.website}
                       </a>
@@ -871,7 +871,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
               <Card>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-lg">
+                    <h3 className="font-medium text-slate-900 text-lg">
                       {t('profile.careerPreferences')}
                     </h3>
                     <p className="mt-1 text-xs text-slate-500">
@@ -885,21 +885,21 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                 </div>
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-2xs">
+                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       {t('profile.targetRole')}
                     </p>
-                    <p className="mt-2 text-base font-bold text-slate-900">{profile.targetPosition}</p>
-                    <span className="mt-2 inline-block rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                    <p className="mt-2 text-base font-medium text-slate-900">{profile.targetPosition}</p>
+                    <span className="mt-2 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
                       {profile.experienceLevel}
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-2xs">
+                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       {t('profile.expectedSalary')}
                     </p>
-                    <p className="mt-2 text-base font-bold text-emerald-600">
+                    <p className="mt-2 text-base font-medium text-emerald-600">
                       {profile.expectedSalary ||
                         `${profile.salaryMin?.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`}
                     </p>
@@ -912,17 +912,17 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-2xs">
+                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       {t('profile.employmentTypeLabel')}
                     </p>
-                    <p className="mt-2 text-base font-bold text-slate-900">
+                    <p className="mt-2 text-base font-medium text-slate-900">
                       {profile.employmentType || t('profile.employmentTypeValue')}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">Linh hoạt theo thỏa thuận dự án</p>
                   </div>
 
-                  <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-2xs">
+                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       {t('profile.preferredLocationsLabel')}
                     </p>
@@ -939,7 +939,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-2xs">
+                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       {t('profile.industryLabel')}
                     </p>
@@ -948,12 +948,12 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-2xs">
+                  <div className="p-4 rounded-xl border border-slate-100 bg-surface shadow-2xs">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       {t('profile.availabilityLabel')}
                     </p>
                     <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-slate-800">
-                      <Clock size={16} className="text-blue-600" />
+                      <Clock size={16} className="text-brand-600" />
                       <span>{profile.availability || 'Sẵn sàng trong vòng 2 tuần'}</span>
                     </div>
                   </div>
@@ -961,7 +961,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
 
                 {/* Career Objective Text */}
                 <div className="mt-6 pt-5 border-t border-slate-100">
-                  <h4 className="font-bold text-slate-900 mb-2">{t('profile.careerObjective')}</h4>
+                  <h4 className="font-medium text-slate-900 mb-2">{t('profile.careerObjective')}</h4>
                   <p className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">
                     {profile.careerGoal || t('profile.careerGoalText')}
                   </p>
@@ -976,7 +976,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
               <Card>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-lg">
+                    <h3 className="font-medium text-slate-900 text-lg">
                       {t('profile.technicalSkills')}
                     </h3>
                     <p className="mt-1 text-xs text-slate-500">
@@ -994,10 +994,10 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     ? profile.detailedSkills.map((item) => (
                         <div
                           key={item.name}
-                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-white shadow-2xs hover:border-blue-300 transition"
+                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-surface shadow-2xs hover:border-brand-300 transition"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-blue-500" />
+                            <span className="h-2 w-2 rounded-full bg-brand-500" />
                             <span className="font-semibold text-sm text-slate-900">{item.name}</span>
                           </div>
                           <Badge tone={getLevelBadgeTone(item.level)}>
@@ -1008,7 +1008,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     : profile.skills.map((skill) => (
                         <div
                           key={skill}
-                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-white"
+                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-surface"
                         >
                           <span className="font-semibold text-sm text-slate-900">{skill}</span>
                           <Badge tone="blue">{t('profile.levelAdvanced')}</Badge>
@@ -1020,7 +1020,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
               {/* Soft Skills */}
               <Card>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                  <h3 className="font-bold text-slate-900 text-lg">{t('profile.softSkillsLabel')}</h3>
+                  <h3 className="font-medium text-slate-900 text-lg">{t('profile.softSkillsLabel')}</h3>
                   <Button variant="ghost" onClick={startEditing} className="text-xs">
                     <Edit3 size={13} />
                     {t('profile.editProfile')}
@@ -1032,9 +1032,9 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     profile.softSkills.map((soft) => (
                       <span
                         key={soft}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-100 px-3.5 py-1.5 text-xs font-semibold text-blue-800"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-100 px-3.5 py-1.5 text-xs font-semibold text-brand-800"
                       >
-                        <Sparkles size={13} className="text-blue-500" />
+                        <Lightbulb size={13} className="text-brand-500" />
                         {soft}
                       </span>
                     ))
@@ -1052,7 +1052,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
               <Card>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-lg">{t('profile.tabResumes')}</h3>
+                    <h3 className="font-medium text-slate-900 text-lg">{t('profile.tabResumes')}</h3>
                     <p className="mt-1 text-xs text-slate-500">
                       Danh sách hồ sơ ứng tuyển liên kết với tài khoản của bạn.
                     </p>
@@ -1072,11 +1072,11 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                       className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
                       <div className="flex items-center gap-3.5">
-                        <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-blue-600 font-bold">
+                        <div className="grid h-12 w-12 place-items-center rounded-xl bg-brand-50 text-brand-600 font-medium">
                           <FileText size={22} />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900">{resume.name}</p>
+                          <p className="font-medium text-slate-900">{resume.name}</p>
                           <p className="mt-0.5 text-xs text-slate-500">
                             {resume.position} · {resume.language} · Cập nhật {resume.updatedAt}
                           </p>
@@ -1086,7 +1086,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-slate-400">ATS:</span>
-                          <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+                          <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 border border-emerald-200">
                             {resume.atsScore}/100
                           </span>
                         </div>
@@ -1114,7 +1114,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
           {/* Card 1: Thông tin cá nhân & Liên hệ */}
           <Card>
             <div className="border-b border-slate-100 pb-3 mb-5">
-              <h3 className="text-lg font-bold text-slate-900">{t('profile.personalInfo')}</h3>
+              <h3 className="text-lg font-medium text-slate-900">{t('profile.personalInfo')}</h3>
               <p className="mt-1 text-xs text-slate-500">
                 Thông tin hiển thị cho nhà tuyển dụng và được sử dụng trong các bản CV tạo tự động.
               </p>
@@ -1190,14 +1190,14 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   value={formData.bio ?? profile.bio ?? ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                   placeholder={t('profile.bioPlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 />
               </div>
             </div>
 
             {/* Social Links */}
             <div className="mt-6 pt-5 border-t border-slate-100">
-              <h4 className="text-sm font-bold text-slate-800 mb-3">{t('profile.socialLinks')}</h4>
+              <h4 className="text-sm font-medium text-slate-800 mb-3">{t('profile.socialLinks')}</h4>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-500">LinkedIn</label>
@@ -1244,7 +1244,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
           {/* Card 2: Mục tiêu nghề nghiệp & Nguyện vọng việc làm (Career Preferences) */}
           <Card>
             <div className="border-b border-slate-100 pb-3 mb-5">
-              <h3 className="text-lg font-bold text-slate-900">{t('profile.careerPreferences')}</h3>
+              <h3 className="text-lg font-medium text-slate-900">{t('profile.careerPreferences')}</h3>
               <p className="mt-1 text-xs text-slate-500">
                 Thiết lập vị trí mong muốn, mức lương kỳ vọng và hình thức làm việc để AI đề xuất công việc chính xác nhất.
               </p>
@@ -1274,7 +1274,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, experienceLevel: e.target.value }))
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
                 >
                   <option value="Entry-level (0-1 năm)">Fresher / Entry-level (0 - 1 năm)</option>
                   <option value="Junior (1-2 năm)">Junior Level (1 - 2 năm)</option>
@@ -1294,7 +1294,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, employmentType: e.target.value }))
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
                 >
                   <option value="Full-time / Toàn thời gian">Full-time (Toàn thời gian)</option>
                   <option value="Full-time / Hybrid / Remote">Full-time / Hybrid / Remote (Linh hoạt)</option>
@@ -1317,7 +1317,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, availability: e.target.value }))
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
                 >
                   <option value="Sẵn sàng nhận việc ngay lập tức (Immediately)">
                     Sẵn sàng ngay lập tức (Immediately)
@@ -1394,7 +1394,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                           salaryCurrency: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
                     >
                       <option value="VNĐ">VNĐ (Việt Nam Đồng)</option>
                       <option value="USD">USD (Đô la Mỹ)</option>
@@ -1422,7 +1422,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                         onClick={() => handleToggleLocation(loc)}
                         className={`rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${
                           isSelected
-                            ? 'bg-blue-600 text-white shadow-xs'
+                            ? 'bg-brand-600 text-white shadow-xs'
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
@@ -1473,7 +1473,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   value={formData.careerGoal ?? profile.careerGoal ?? ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, careerGoal: e.target.value }))}
                   placeholder={t('profile.careerObjectivePlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -1482,7 +1482,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
           {/* Card 3: Kỹ năng chuyên môn & Kỹ năng mềm (Skills Management) */}
           <Card>
             <div className="border-b border-slate-100 pb-3 mb-5">
-              <h3 className="text-lg font-bold text-slate-900">{t('profile.technicalSkills')}</h3>
+              <h3 className="text-lg font-medium text-slate-900">{t('profile.technicalSkills')}</h3>
               <p className="mt-1 text-xs text-slate-500">
                 Thêm hoặc xóa các kỹ năng và mức độ thành thạo tương ứng để AI đối sánh chính xác với yêu cầu tuyển dụng.
               </p>
@@ -1501,14 +1501,14 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     }
                   }}
                   placeholder={t('profile.addSkillPlaceholder')}
-                  className="bg-white"
+                  className="bg-surface"
                 />
               </div>
               <div className="w-40">
                 <select
                   value={newSkillLevel}
                   onChange={(e) => setNewSkillLevel(e.target.value as any)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-500"
                 >
                   <option value="Expert">{t('profile.levelExpert')}</option>
                   <option value="Advanced">{t('profile.levelAdvanced')}</option>
@@ -1540,7 +1540,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                       className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
                         alreadyHas
                           ? 'bg-slate-100 text-slate-400 cursor-default'
-                          : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          : 'bg-brand-50 text-brand-700 hover:bg-brand-100'
                       }`}
                     >
                       + {item}
@@ -1559,7 +1559,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                 return (
                   <span
                     key={skillName}
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs"
                   >
                     <span>{skillName}</span>
                     <Badge tone={getLevelBadgeTone(detailed?.level)}>
@@ -1580,7 +1580,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
 
             {/* Soft Skills Section */}
             <div className="mt-8 pt-6 border-t border-slate-100">
-              <h4 className="text-sm font-bold text-slate-800 mb-2">
+              <h4 className="text-sm font-medium text-slate-800 mb-2">
                 {t('profile.softSkillsLabel')}
               </h4>
 
@@ -1651,7 +1651,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
           </Card>
 
           {/* Bottom Action Floating Bar */}
-          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-md border border-slate-200">
+          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-sm border border-slate-200">
             <span className="text-xs text-slate-500">
               {t('profile.profileCompletionNotice')}
             </span>

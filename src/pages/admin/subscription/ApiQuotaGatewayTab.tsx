@@ -60,11 +60,11 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
   return (
     <div className="space-y-8">
       {/* 1. AI Models Catalog */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 md:p-7 shadow-2xs space-y-6">
+      <div className="rounded-3xl border border-slate-200/80 bg-surface p-6 md:p-7 shadow-2xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Cpu size={20} className="text-indigo-600" />
+            <h2 className="text-lg font-medium text-slate-900 flex items-center gap-2">
+              <Cpu size={20} className="text-brand-600" />
               <span>Hạ tầng mô hình AI & Cửa sổ ngữ cảnh (AI Model Infrastructure)</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -86,9 +86,9 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-slate-900">{m.displayName}</h3>
+                      <h3 className="text-sm font-medium text-slate-900">{m.displayName}</h3>
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isHealthy
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${isHealthy
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
                           : isStandby
                             ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
@@ -113,7 +113,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                         status: isHealthy ? 'STANDBY' : 'HEALTHY',
                       })
                     }
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition"
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-surface text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition"
                   >
                     {isHealthy ? 'Chuyển Dự phòng' : 'Bật Trực tuyến'}
                   </button>
@@ -122,19 +122,19 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                 <p className="text-xs text-slate-600 line-clamp-2">{m.description}</p>
 
                 {/* Metrics row */}
-                <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-white border border-slate-200/60 text-xs">
+                <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-surface border border-slate-200/60 text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Ngữ cảnh</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Ngữ cảnh</span>
                     <strong className="text-slate-900 font-mono">
                       {(m.contextWindow / 1000).toLocaleString()}k
                     </strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Độ trễ TB</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Độ trễ TB</span>
                     <strong className="text-emerald-700 font-mono">{m.avgLatencyMs} ms</strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Giá In/Out</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-medium block">Giá In/Out</span>
                     <strong className="text-slate-900 font-mono">
                       ${m.costPer1mInputUSD}/${m.costPer1mOutputUSD}
                     </strong>
@@ -175,10 +175,10 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
       </div>
 
       {/* 2. Tier Rate Limit Matrix */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 md:p-7 shadow-2xs space-y-5">
+      <div className="rounded-3xl border border-slate-200/80 bg-surface p-6 md:p-7 shadow-2xs space-y-5">
         <div>
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Radio size={18} className="text-blue-600" />
+          <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
+            <Radio size={18} className="text-brand-600" />
             <span>Ma trận giới hạn Rate Limit theo cấp bậc gói (Tier Matrix)</span>
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -188,7 +188,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
+            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Cấp bậc gói (Subscription Tier)</th>
                 <th className="py-3 px-4">RPM (Requests / Min)</th>
@@ -200,48 +200,48 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-100">
               <tr className="hover:bg-slate-50/50">
-                <td className="py-3 px-4 font-bold text-slate-800">Khởi đầu (Starter Free)</td>
+                <td className="py-3 px-4 font-medium text-slate-800">Khởi đầu (Starter Free)</td>
                 <td className="py-3 px-4 font-mono">5 RPM</td>
                 <td className="py-3 px-4 font-mono">15,000 TPM</td>
                 <td className="py-3 px-4 text-slate-600">50 lượt / ngày</td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium">
                     Tiêu chuẩn
                   </span>
                 </td>
                 <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">Gemini 1.5 Flash</td>
               </tr>
-              <tr className="hover:bg-slate-50/50 bg-blue-50/20">
-                <td className="py-3 px-4 font-bold text-blue-900">Chuyên nghiệp (Pro ⭐)</td>
-                <td className="py-3 px-4 font-mono font-bold text-blue-700">30 RPM</td>
-                <td className="py-3 px-4 font-mono font-bold text-blue-700">150,000 TPM</td>
+              <tr className="hover:bg-slate-50/50 bg-brand-50/20">
+                <td className="py-3 px-4 font-medium text-brand-900">Chuyên nghiệp (Pro)</td>
+                <td className="py-3 px-4 font-mono font-medium text-brand-700">30 RPM</td>
+                <td className="py-3 px-4 font-mono font-medium text-brand-700">150,000 TPM</td>
                 <td className="py-3 px-4 font-semibold text-emerald-700">Không giới hạn</td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-brand-100 text-brand-800 text-[10px] font-medium">
                     Ưu tiên cao
                   </span>
                 </td>
                 <td className="py-3 px-4 text-slate-700 font-mono text-[11px]">Flash + Gemini 1.5 Pro</td>
               </tr>
               <tr className="hover:bg-slate-50/50">
-                <td className="py-3 px-4 font-bold text-purple-900">Cao cấp (Executive VIP 👑)</td>
-                <td className="py-3 px-4 font-mono font-bold text-purple-700">60 RPM</td>
-                <td className="py-3 px-4 font-mono font-bold text-purple-700">500,000 TPM</td>
+                <td className="py-3 px-4 font-medium text-brand-900">Cao cấp (Executive VIP)</td>
+                <td className="py-3 px-4 font-mono font-medium text-brand-700">60 RPM</td>
+                <td className="py-3 px-4 font-mono font-medium text-brand-700">500,000 TPM</td>
                 <td className="py-3 px-4 font-semibold text-emerald-700">Không giới hạn</td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-brand-100 text-brand-800 text-[10px] font-medium">
                     VIP Dedicated Lane
                   </span>
                 </td>
                 <td className="py-3 px-4 text-slate-700 font-mono text-[11px]">Pro + Flash + Embeddings</td>
               </tr>
               <tr className="hover:bg-slate-50/50">
-                <td className="py-3 px-4 font-bold text-indigo-900">Doanh nghiệp (Enterprise 🏢)</td>
-                <td className="py-3 px-4 font-mono font-bold text-indigo-700">120 RPM</td>
-                <td className="py-3 px-4 font-mono font-bold text-indigo-700">1,000,000 TPM</td>
+                <td className="py-3 px-4 font-medium text-brand-900">Doanh nghiệp (Enterprise)</td>
+                <td className="py-3 px-4 font-mono font-medium text-brand-700">120 RPM</td>
+                <td className="py-3 px-4 font-mono font-medium text-brand-700">1,000,000 TPM</td>
                 <td className="py-3 px-4 font-semibold text-emerald-700">Băng thông riêng</td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-brand-100 text-brand-800 text-[10px] font-medium">
                     Ultra Priority
                   </span>
                 </td>
@@ -253,10 +253,10 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
       </div>
 
       {/* 3. Live API Endpoints Monitoring & Interactive Simulator */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 md:p-7 shadow-2xs space-y-6">
+      <div className="rounded-3xl border border-slate-200/80 bg-surface p-6 md:p-7 shadow-2xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
               <Activity size={18} className="text-emerald-600" />
               <span>Giám sát lưu lượng API Endpoints & Trình kiểm thử (Live Gateway)</span>
             </h3>
@@ -270,7 +270,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
         {testResult && (
           <div className="p-4 rounded-2xl bg-slate-900 text-white font-mono text-xs space-y-2 animate-fade-in">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-emerald-400 font-bold">
+              <span className="flex items-center gap-2 text-emerald-400 font-medium">
                 <CheckCircle2 size={15} />
                 HTTP {testResult.status} OK · Ping phản hồi trong {testResult.latencyMs}ms
               </span>
@@ -285,7 +285,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
+            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Endpoint</th>
                 <th className="py-3 px-4">Tên dịch vụ</th>
@@ -300,17 +300,17 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
             <tbody className="divide-y divide-slate-100">
               {endpoints.map((ep) => (
                 <tr key={ep.endpoint} className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-4 font-mono text-slate-900 font-bold">
-                    <span className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-800 mr-1.5">
+                  <td className="py-3 px-4 font-mono text-slate-900 font-medium">
+                    <span className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-brand-100 text-brand-800 mr-1.5">
                       {ep.method}
                     </span>
                     {ep.endpoint}
                   </td>
                   <td className="py-3 px-4 text-slate-700 font-medium">{ep.name}</td>
-                  <td className="py-3 px-4 font-bold text-slate-900">
+                  <td className="py-3 px-4 font-medium text-slate-900">
                     {ep.requestsCount24h.toLocaleString()}
                   </td>
-                  <td className="py-3 px-4 font-mono text-blue-700 font-bold">
+                  <td className="py-3 px-4 font-mono text-brand-700 font-medium">
                     {(ep.tokensConsumed24h / 1000000).toFixed(2)}M
                   </td>
                   <td className="py-3 px-4 font-mono font-semibold text-emerald-700">
@@ -325,7 +325,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-[11px]">
+                    <span className="inline-flex items-center gap-1 text-emerald-700 font-medium text-[11px]">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       <span>HEALTHY</span>
                     </span>
@@ -334,13 +334,13 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                     <button
                       onClick={() => handleRunPing(ep.endpoint)}
                       disabled={testingEndpoint === ep.endpoint}
-                      className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-semibold transition inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                      className="px-3 py-1 rounded-lg border border-slate-200 bg-surface hover:bg-slate-100 text-slate-700 text-[11px] font-semibold transition inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
                     >
                       {testingEndpoint === ep.endpoint ? (
                         <span>Ping...</span>
                       ) : (
                         <>
-                          <Play size={11} className="text-blue-600" />
+                          <Play size={11} className="text-brand-600" />
                           <span>Test Ping</span>
                         </>
                       )}
@@ -354,11 +354,11 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
       </div>
 
       {/* 4. Developer API Keys */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 md:p-7 shadow-2xs space-y-6">
+      <div className="rounded-3xl border border-slate-200/80 bg-surface p-6 md:p-7 shadow-2xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Key size={18} className="text-indigo-600" />
+            <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
+              <Key size={18} className="text-brand-600" />
               <span>Khóa API ứng dụng & Tích hợp Đối tác (Developer API Keys)</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -368,7 +368,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
 
           <button
             onClick={onOpenApiKeyModal}
-            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto"
+            className="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto"
           >
             <Plus size={14} />
             <span>Tạo API Key mới</span>
@@ -377,7 +377,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
+            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Tên khóa / Ứng dụng</th>
                 <th className="py-3 px-4">Mã bảo mật (Masked Key)</th>
@@ -396,7 +396,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                 return (
                   <tr key={k.id} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900">{k.name}</div>
+                      <div className="font-medium text-slate-900">{k.name}</div>
                       <span className="text-[11px] text-slate-400">Tạo ngày: {k.createdAt}</span>
                     </td>
 
@@ -407,7 +407,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                     <td className="py-3.5 px-4 text-slate-600">{k.ownerEmail}</td>
 
                     <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
                         {k.tier}
                       </span>
                     </td>
@@ -422,7 +422,7 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
 
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isActive
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium ${isActive
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-red-50 text-red-700 border border-red-200'
                           }`}

@@ -5,7 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Award,
-  Bot,
+  MessageSquare,
   BrainCircuit,
   Briefcase,
   Check,
@@ -29,12 +29,12 @@ import {
   Save,
   Server,
   Smartphone,
-  Sparkles,
+  Lightbulb,
   Star,
   Target,
   Trash2,
   User,
-  Wand2,
+  PenLine,
   Wrench,
   X,
   Zap,
@@ -215,17 +215,17 @@ export default function AiResumeBuilderPage() {
       {wizardState === 'configure' && (
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
           {/* Hero Banner */}
-          <div className="rounded-2xl bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600 p-6 text-white shadow-md relative overflow-hidden">
-            <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 h-48 w-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+          <div className="rounded-2xl bg-brand-700 p-6 text-white relative overflow-hidden">
+            <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 h-48 w-48 rounded-full bg-white/10 hidden pointer-events-none" />
             <div className="flex items-center gap-3 mb-2">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 backdrop-blur-md text-amber-300">
-                <Sparkles size={20} />
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-amber-300">
+                <Lightbulb size={20} />
               </div>
-              <h2 className="text-xl font-bold tracking-tight">
+              <h2 className="text-xl font-medium tracking-tight">
                 AI Resume Builder — Trợ lý tạo CV Thông minh
               </h2>
             </div>
-            <p className="text-xs sm:text-sm text-blue-100 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-brand-100 max-w-2xl leading-relaxed">
               Chỉ cần chọn định hướng nghề nghiệp và cấp bậc, AI Agent sẽ tự động nghiên cứu tiêu chuẩn tuyển dụng, biên soạn các thành tích định lượng (STAR format) và tối ưu hóa từ khóa chuẩn ATS cho bản CV của bạn.
             </p>
           </div>
@@ -233,8 +233,8 @@ export default function AiResumeBuilderPage() {
           {/* 1. Select Career Track */}
           <Card>
             <div className="border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Compass size={17} className="text-blue-600" />
+              <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
+                <Compass size={17} className="text-brand-600" />
                 {t('resumes.selectCareerTrack')} *
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">{t('resumes.careerTrackDesc')}</p>
@@ -250,23 +250,23 @@ export default function AiResumeBuilderPage() {
                     onClick={() => setSelectedTrack(track.id)}
                     className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
                       isSelected
-                        ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-xs'
-                        : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50/50'
+                        ? 'border-brand-600 bg-brand-50/40 ring-2 ring-brand-500/20 shadow-xs'
+                        : 'border-slate-200 bg-surface hover:border-brand-300 hover:bg-slate-50/50'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5">
                         <span
                           className={`grid h-9 w-9 place-items-center rounded-lg ${
-                            isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                            isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'
                           }`}
                         >
                           <Icon size={18} />
                         </span>
-                        <h4 className="font-bold text-slate-900 text-xs sm:text-sm">{track.title}</h4>
+                        <h4 className="font-medium text-slate-900 text-xs sm:text-sm">{track.title}</h4>
                       </div>
                       {isSelected && (
-                        <span className="grid h-5 w-5 place-items-center rounded-full bg-blue-600 text-white">
+                        <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-600 text-white">
                           <Check size={12} />
                         </span>
                       )}
@@ -278,7 +278,7 @@ export default function AiResumeBuilderPage() {
                       {track.techKeywords.map((kw) => (
                         <span
                           key={kw}
-                          className="rounded-md bg-white border border-slate-200 px-1.5 py-0.5 text-2xs font-medium text-slate-600"
+                          className="rounded-md bg-surface border border-slate-200 px-1.5 py-0.5 text-2xs font-medium text-slate-600"
                         >
                           {kw}
                         </span>
@@ -295,8 +295,8 @@ export default function AiResumeBuilderPage() {
             {/* Seniority Level */}
             <Card>
               <div className="border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Briefcase size={16} className="text-indigo-600" />
+                <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                  <Briefcase size={16} className="text-brand-600" />
                   {t('resumes.seniorityLevel')}
                 </h3>
               </div>
@@ -310,17 +310,17 @@ export default function AiResumeBuilderPage() {
                       onClick={() => setSelectedLevel(lvl.id)}
                       className={`flex items-center justify-between p-3 rounded-xl border transition cursor-pointer ${
                         isSelected
-                          ? 'border-blue-600 bg-blue-50/50 font-semibold text-blue-900'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                          ? 'border-brand-600 bg-brand-50/50 font-semibold text-brand-900'
+                          : 'border-slate-200 bg-surface text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <div
                           className={`h-3.5 w-3.5 rounded-full border-2 grid place-items-center ${
-                            isSelected ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
+                            isSelected ? 'border-brand-600 bg-brand-600' : 'border-slate-300 bg-white'
                           }`}
                         >
-                          {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                          {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-surface" />}
                         </div>
                         <span className="text-xs">{lvl.label}</span>
                       </div>
@@ -334,7 +334,7 @@ export default function AiResumeBuilderPage() {
             {/* CV Language Selection */}
             <Card>
               <div className="border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
                   <Languages size={16} className="text-emerald-600" />
                   {t('resumes.cvLanguageLabel')}
                 </h3>
@@ -347,13 +347,13 @@ export default function AiResumeBuilderPage() {
                   className={`p-3.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
                     cvLanguage === 'Vietnamese'
                       ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                      : 'border-slate-200 bg-surface hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🇻🇳</span>
                     <div>
-                      <p className="font-bold text-xs text-slate-900">Tiếng Việt (Vietnamese)</p>
+                      <p className="font-medium text-xs text-slate-900">Tiếng Việt (Vietnamese)</p>
                       <p className="text-2xs text-slate-500">Phù hợp ứng tuyển các công ty tại Việt Nam</p>
                     </div>
                   </div>
@@ -364,18 +364,18 @@ export default function AiResumeBuilderPage() {
                   onClick={() => setCvLanguage('English')}
                   className={`p-3.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
                     cvLanguage === 'English'
-                      ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/20'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                      ? 'border-brand-600 bg-brand-50/50 ring-2 ring-brand-500/20'
+                      : 'border-slate-200 bg-surface hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🇬🇧</span>
                     <div>
-                      <p className="font-bold text-xs text-slate-900">English (Tiếng Anh)</p>
+                      <p className="font-medium text-xs text-slate-900">English (Tiếng Anh)</p>
                       <p className="text-2xs text-slate-500">Chuẩn quốc tế, tối ưu cho các tập đoàn đa quốc gia & remote</p>
                     </div>
                   </div>
-                  {cvLanguage === 'English' && <CheckCircle2 size={18} className="text-blue-600" />}
+                  {cvLanguage === 'English' && <CheckCircle2 size={18} className="text-brand-600" />}
                 </div>
               </div>
             </Card>
@@ -384,7 +384,7 @@ export default function AiResumeBuilderPage() {
           {/* 3. Focus Keywords / Custom Prompts */}
           <Card>
             <div className="border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="text-sm font-medium text-slate-900 flex items-center gap-2">
                 <Target size={16} className="text-amber-500" />
                 {t('resumes.focusKeywordsLabel')}
               </h3>
@@ -398,7 +398,7 @@ export default function AiResumeBuilderPage() {
               value={focusKeywords}
               onChange={(e) => setFocusKeywords(e.target.value)}
               placeholder={t('resumes.focusKeywordsPlaceholder')}
-              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </Card>
 
@@ -407,9 +407,9 @@ export default function AiResumeBuilderPage() {
             <button
               type="button"
               onClick={handleStartGeneration}
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:shadow-xl hover:from-blue-700 hover:to-purple-700 active:scale-98 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-brand-600 px-8 py-4 text-base font-medium text-white shadow-sm transition-all shadow-sm hover:bg-brand-700 cursor-pointer"
             >
-              <Sparkles size={20} className="text-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
+              <Lightbulb size={20} className="text-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
               {t('resumes.generateAiCvButton')}
             </button>
           </div>
@@ -418,21 +418,21 @@ export default function AiResumeBuilderPage() {
 
       {/* STAGE 2: GENERATING WITH AI ANIMATION */}
       {wizardState === 'generating' && (
-        <Card className="max-w-2xl mx-auto my-10 p-8 text-center animate-fade-in border-blue-100 shadow-xl">
-          <div className="relative mx-auto mb-6 grid h-24 w-24 place-items-center rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xl">
-            <Bot size={44} className="animate-bounce" />
+        <Card className="max-w-2xl mx-auto my-10 p-8 text-center animate-fade-in border-brand-100 shadow-sm">
+          <div className="relative mx-auto mb-6 grid h-24 w-24 place-items-center rounded-3xl bg-brand-600 text-white shadow-sm">
+            <MessageSquare size={44} className="" />
             <span className="absolute -top-1 -right-1 flex h-5 w-5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-5 w-5 bg-amber-400 border-2 border-white" />
             </span>
           </div>
 
-          <h3 className="text-xl font-black text-slate-900 mb-1">
+          <h3 className="text-xl font-semibold text-slate-900 mb-1">
             {t('resumes.generatingAiCv')}
           </h3>
           <p className="text-xs text-slate-500 mb-6">
             Đang biên soạn bản CV theo định hướng:{' '}
-            <strong className="text-blue-600">
+            <strong className="text-brand-600">
               {CAREER_TRACKS.find((t) => t.id === selectedTrack)?.title}
             </strong>
           </p>
@@ -453,7 +453,7 @@ export default function AiResumeBuilderPage() {
                   key={s.step}
                   className={`flex items-center gap-3 p-3 rounded-xl transition ${
                     isCurrent
-                      ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-950 font-semibold shadow-2xs'
+                      ? ' bg-brand-50  border border-brand-200 text-brand-950 font-semibold shadow-2xs'
                       : isDone
                       ? 'text-slate-700'
                       : 'text-slate-400 opacity-50'
@@ -462,7 +462,7 @@ export default function AiResumeBuilderPage() {
                   {isDone ? (
                     <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
                   ) : isCurrent ? (
-                    <Loader2 size={18} className="animate-spin text-blue-600 shrink-0" />
+                    <Loader2 size={18} className="animate-spin text-brand-600 shrink-0" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border border-slate-300 shrink-0" />
                   )}
@@ -478,14 +478,14 @@ export default function AiResumeBuilderPage() {
       {wizardState === 'review' && (
         <div className="space-y-6 animate-fade-in">
           {/* Top Control Bar with Language Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-surface p-4 border border-slate-200/80 shadow-2xs">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-purple-100 text-purple-700">
-                <Sparkles size={20} />
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-brand-700">
+                <Lightbulb size={20} />
               </span>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-900 text-sm">
+                  <h3 className="font-medium text-slate-900 text-sm">
                     {t('resumes.aiGeneratedSuccess')}
                   </h3>
                   <Badge tone="green">ATS: {generatedCv.atsScore}/100</Badge>
@@ -506,7 +506,7 @@ export default function AiResumeBuilderPage() {
                 type="button"
                 onClick={handleSwitchCvLanguage}
                 disabled={isTranslating}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 px-3.5 py-2 text-xs font-bold text-indigo-700 transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/70 hover:bg-brand-100 px-3.5 py-2 text-xs font-medium text-brand-700 transition cursor-pointer disabled:opacity-50"
               >
                 {isTranslating ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -539,11 +539,11 @@ export default function AiResumeBuilderPage() {
               {/* Basic Information */}
               <Card>
                 <div className="border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
-                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                    <User size={15} className="text-blue-600" />
+                  <h4 className="font-medium text-slate-900 text-sm flex items-center gap-1.5">
+                    <User size={15} className="text-brand-600" />
                     Thông tin cơ bản
                   </h4>
-                  <span className="rounded-full bg-purple-50 px-2 py-0.5 text-2xs font-semibold text-purple-700 border border-purple-200">
+                  <span className="rounded-full bg-brand-50 px-2 py-0.5 text-2xs font-semibold text-brand-700 border border-brand-200">
                     AI Generated
                   </span>
                 </div>
@@ -581,7 +581,7 @@ export default function AiResumeBuilderPage() {
                       rows={3}
                       value={generatedCv.summary || ''}
                       onChange={(e) => setGeneratedCv((prev) => ({ ...prev, summary: e.target.value }))}
-                      className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none focus:border-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs outline-none focus:border-brand-500"
                     />
                   </div>
                 </div>
@@ -590,7 +590,7 @@ export default function AiResumeBuilderPage() {
               {/* Skills Management */}
               <Card>
                 <div className="border-b border-slate-100 pb-3 mb-3 flex items-center justify-between">
-                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  <h4 className="font-medium text-slate-900 text-sm flex items-center gap-1.5">
                     <Wrench size={15} className="text-amber-500" />
                     Kỹ năng chuẩn ATS ({generatedCv.skills?.length || 0})
                   </h4>
@@ -618,7 +618,7 @@ export default function AiResumeBuilderPage() {
                   {generatedCv.skills?.map((skill) => (
                     <span
                       key={skill}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-surface px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs"
                     >
                       <span>{skill}</span>
                       <button
@@ -636,7 +636,7 @@ export default function AiResumeBuilderPage() {
               {/* Work Experience */}
               <Card>
                 <div className="border-b border-slate-100 pb-3 mb-4">
-                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  <h4 className="font-medium text-slate-900 text-sm flex items-center gap-1.5">
                     <Briefcase size={15} className="text-emerald-600" />
                     Kinh nghiệm làm việc & Thành tích định lượng (STAR Format)
                   </h4>
@@ -655,7 +655,7 @@ export default function AiResumeBuilderPage() {
                               list[idx] = { ...list[idx], role: e.target.value };
                               setGeneratedCv((prev) => ({ ...prev, experience: list }));
                             }}
-                            className="bg-white"
+                            className="bg-surface"
                           />
                         </div>
                         <div>
@@ -667,7 +667,7 @@ export default function AiResumeBuilderPage() {
                               list[idx] = { ...list[idx], company: e.target.value };
                               setGeneratedCv((prev) => ({ ...prev, experience: list }));
                             }}
-                            className="bg-white"
+                            className="bg-surface"
                           />
                         </div>
                       </div>
@@ -682,7 +682,7 @@ export default function AiResumeBuilderPage() {
                             list[idx] = { ...list[idx], description: e.target.value };
                             setGeneratedCv((prev) => ({ ...prev, experience: list }));
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500"
+                          className="w-full rounded-xl border border-slate-200 bg-surface p-2.5 text-xs outline-none focus:border-brand-500"
                         />
                       </div>
                     </div>
@@ -694,20 +694,20 @@ export default function AiResumeBuilderPage() {
             {/* Right: Live CV Paper Preview */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <FileCheck2 size={15} className="text-blue-600" />
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <FileCheck2 size={15} className="text-brand-600" />
                   {t('resumes.livePreview')}
                 </span>
                 <span className="text-2xs text-emerald-600 font-semibold">Tự động cập nhật tức thời</span>
               </div>
 
-              <div className="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm text-xs space-y-4 sticky top-24">
+              <div className="rounded-2xl border border-slate-300 bg-surface p-6 shadow-sm text-xs space-y-4 sticky top-24">
                 {/* Paper Header */}
                 <div className="border-b-2 border-slate-900 pb-4">
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                  <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
                     {generatedCv.fullName || 'Alex Morgan'}
                   </h2>
-                  <p className="font-bold text-blue-700 text-xs mt-0.5">
+                  <p className="font-medium text-brand-700 text-xs mt-0.5">
                     {generatedCv.position}
                   </p>
                   <p className="text-2xs text-slate-500 mt-1">
@@ -717,7 +717,7 @@ export default function AiResumeBuilderPage() {
 
                 {/* Paper Summary */}
                 <div>
-                  <h5 className="font-bold text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-1.5">
+                  <h5 className="font-medium text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-1.5">
                     {generatedCv.language === 'Vietnamese' ? 'TÓM TẮT NGHỀ NGHIỆP' : 'PROFESSIONAL SUMMARY'}
                   </h5>
                   <p className="text-2xs text-slate-700 leading-relaxed">
@@ -727,13 +727,13 @@ export default function AiResumeBuilderPage() {
 
                 {/* Paper Experience */}
                 <div>
-                  <h5 className="font-bold text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-2">
+                  <h5 className="font-medium text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-2">
                     {generatedCv.language === 'Vietnamese' ? 'KINH NGHIỆM LÀM VIỆC' : 'WORK EXPERIENCE'}
                   </h5>
                   <div className="space-y-3">
                     {generatedCv.experience?.map((exp) => (
                       <div key={exp.id}>
-                        <div className="flex justify-between font-bold text-2xs text-slate-900">
+                        <div className="flex justify-between font-medium text-2xs text-slate-900">
                           <span>{exp.role} · {exp.company}</span>
                           <span className="text-slate-400 font-normal">{exp.startDate} – {exp.endDate}</span>
                         </div>
@@ -752,7 +752,7 @@ export default function AiResumeBuilderPage() {
 
                 {/* Paper Skills */}
                 <div>
-                  <h5 className="font-bold text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-1.5">
+                  <h5 className="font-medium text-2xs uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-0.5 mb-1.5">
                     {generatedCv.language === 'Vietnamese' ? 'KỸ NĂNG CHUYÊN MÔN' : 'TECHNICAL SKILLS'}
                   </h5>
                   <div className="flex flex-wrap gap-1">
@@ -768,7 +768,7 @@ export default function AiResumeBuilderPage() {
           </div>
 
           {/* Sticky Bottom Actions Bar */}
-          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-md border border-slate-200">
+          <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-sm border border-slate-200">
             <span className="text-xs text-slate-500">
               Kiểm tra kỹ nội dung đã được AI tối ưu trước khi lưu vào hệ thống.
             </span>
@@ -781,7 +781,7 @@ export default function AiResumeBuilderPage() {
                 variant="primary"
                 onClick={handleSaveToProfile}
                 disabled={saveMutation.isPending}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
+                className="bg-brand-600 text-white shadow-sm"
               >
                 <Save size={16} />
                 {saveMutation.isPending ? t('resumes.saving') : t('resumes.saveAiCv')}

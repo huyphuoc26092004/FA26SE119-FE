@@ -5,7 +5,7 @@ import {
   ArrowRight,
   Award,
   BookOpen,
-  Bot,
+  MessageSquare,
   BrainCircuit,
   CheckCircle2,
   ChevronDown,
@@ -17,7 +17,6 @@ import {
   Lightbulb,
   Loader2,
   RefreshCw,
-  Sparkles,
   Target,
   Trophy,
   XCircle,
@@ -47,11 +46,11 @@ function formatTime(seconds: number): string {
 }
 
 function gradeColor(grade: string) {
-  if (grade === 'S') return 'from-yellow-400 to-amber-500';
-  if (grade === 'A') return 'from-emerald-400 to-teal-500';
-  if (grade === 'B') return 'from-blue-400 to-blue-600';
-  if (grade === 'C') return 'from-amber-400 to-orange-500';
-  return 'from-red-400 to-rose-500';
+  if (grade === 'S') return 'bg-yellow-400 ';
+  if (grade === 'A') return 'bg-emerald-400 ';
+  if (grade === 'B') return 'bg-brand-400 ';
+  if (grade === 'C') return 'bg-amber-400 ';
+  return 'bg-red-400 ';
 }
 
 function gradeLabel(grade: string) {
@@ -64,8 +63,8 @@ function gradeLabel(grade: string) {
 
 function difficultyColor(diff: string) {
   if (diff === 'beginner') return 'text-emerald-600 bg-emerald-50';
-  if (diff === 'intermediate') return 'text-blue-600 bg-blue-50';
-  return 'text-violet-600 bg-violet-50';
+  if (diff === 'intermediate') return 'text-brand-600 bg-brand-50';
+  return 'text-brand-600 bg-brand-50';
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -82,20 +81,20 @@ function TopicCard({
     <button
       id={`topic-${topic.id}`}
       onClick={onSelect}
-      className="group flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5"
+      className="group flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-surface p-5 text-left shadow-sm transition hover:border-brand-400"
     >
       <div className="flex w-full items-center justify-between">
         <span className="text-3xl">{topic.icon}</span>
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition">
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition">
           {topic.category}
         </span>
       </div>
       <div>
-        <p className="text-base font-bold text-slate-800">{topic.name}</p>
+        <p className="text-base font-medium text-slate-800">{topic.name}</p>
         <p className="mt-1 text-xs text-slate-500">{t('skillAssessment.startAssessment')}</p>
       </div>
-      <div className="flex items-center gap-1.5 text-xs font-medium text-blue-600 opacity-0 group-hover:opacity-100 transition">
-        <Sparkles size={12} />
+      <div className="flex items-center gap-1.5 text-xs font-medium text-brand-600 opacity-0 group-hover:opacity-100 transition">
+        <Lightbulb size={12} />
         {t('skillAssessment.aiGenerating').split('…')[0]}
       </div>
     </button>
@@ -128,19 +127,19 @@ function QuizQuestion({
   const getOptionStyle = (optionId: string) => {
     if (!isSubmitted) {
       return selectedOptionId === optionId
-        ? 'border-blue-500 bg-blue-50 text-blue-800 ring-2 ring-blue-200'
-        : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50';
+        ? 'border-brand-500 bg-brand-50 text-brand-800 ring-2 ring-brand-200'
+        : 'border-slate-200 bg-surface hover:border-brand-300 hover:bg-slate-50';
     }
     if (optionId === question.correctOptionId) return 'border-emerald-500 bg-emerald-50 text-emerald-800';
     if (optionId === selectedOptionId && optionId !== question.correctOptionId)
       return 'border-red-400 bg-red-50 text-red-700';
-    return 'border-slate-200 bg-white text-slate-500 opacity-60';
+    return 'border-slate-200 bg-surface text-slate-500 opacity-60';
   };
 
   const getOptionIcon = (optionId: string) => {
     if (!isSubmitted) {
       return selectedOptionId === optionId ? (
-        <CircleDot size={18} className="text-blue-600 flex-shrink-0" />
+        <CircleDot size={18} className="text-brand-600 flex-shrink-0" />
       ) : (
         <div className="h-[18px] w-[18px] rounded-full border-2 border-slate-300 flex-shrink-0" />
       );
@@ -155,7 +154,7 @@ function QuizQuestion({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="rounded-xl bg-blue-100 px-3 py-1.5 text-sm font-bold text-blue-700">
+          <span className="rounded-xl bg-brand-100 px-3 py-1.5 text-sm font-medium text-brand-700">
             {t('skillAssessment.questionOf')
               .replace('{current}', String(questionNumber))
               .replace('{total}', String(totalQuestions))}
@@ -247,14 +246,14 @@ function ResultView({
   return (
     <div className="space-y-6">
       {/* Score Card */}
-      <Card className={`bg-gradient-to-br ${gradeColor(result.grade)} border-0 text-white`}>
+      <Card className={` ${gradeColor(result.grade)} border-0 text-white`}>
         <div className="flex flex-col items-center py-4 text-center">
           <div className="mb-3 rounded-2xl bg-white/20 p-4">
             <Trophy size={36} className="text-white" />
           </div>
           <p className="text-lg font-semibold opacity-90">{t('skillAssessment.assessmentComplete')}</p>
-          <p className="text-5xl font-black tracking-tight mt-1">{result.score}%</p>
-          <p className="text-xl font-bold opacity-90 mt-1">{result.topicName}</p>
+          <p className="text-5xl font-semibold tracking-tight mt-1">{result.score}%</p>
+          <p className="text-xl font-medium opacity-90 mt-1">{result.topicName}</p>
           <div className="mt-3 flex items-center gap-2 rounded-full bg-white/25 px-4 py-2">
             <Award size={16} />
             <span className="text-sm font-semibold">
@@ -275,8 +274,8 @@ function ResultView({
         <StatItem
           label={t('skillAssessment.timeTaken')}
           value={`${result.timeTakenMinutes}m`}
-          icon={<Clock size={18} className="text-blue-600" />}
-          bgColor="bg-blue-50"
+          icon={<Clock size={18} className="text-brand-600" />}
+          bgColor="bg-brand-50"
         />
         <StatItem
           label={t('skillAssessment.strengths')}
@@ -295,7 +294,7 @@ function ResultView({
       {/* Strengths & Weaknesses */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
-          <p className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+          <p className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-800">
             <CheckCircle2 size={16} className="text-emerald-500" />
             {t('skillAssessment.strengths')}
           </p>
@@ -309,7 +308,7 @@ function ResultView({
           </ul>
         </Card>
         <Card>
-          <p className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+          <p className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-800">
             <Target size={16} className="text-rose-500" />
             {t('skillAssessment.weaknesses')}
           </p>
@@ -325,16 +324,16 @@ function ResultView({
       </div>
 
       {/* AI Recommendation */}
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="border-brand-200 bg-brand-50">
         <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-blue-600 p-2">
-            <Bot size={18} className="text-white" />
+          <div className="rounded-xl bg-brand-600 p-2">
+            <MessageSquare size={18} className="text-white" />
           </div>
           <div>
-            <p className="mb-1 text-sm font-bold text-blue-800">{t('skillAssessment.recommendation')}</p>
-            <p className="text-sm text-blue-700 leading-relaxed">{result.recommendation}</p>
+            <p className="mb-1 text-sm font-medium text-brand-800">{t('skillAssessment.recommendation')}</p>
+            <p className="text-sm text-brand-700 leading-relaxed">{result.recommendation}</p>
             {result.nextTopicSuggestion && (
-              <p className="mt-2 text-xs text-blue-600 font-medium">
+              <p className="mt-2 text-xs text-brand-600 font-medium">
                 {t('skillAssessment.nextSuggestion')}: <strong>{result.nextTopicSuggestion}</strong>
               </p>
             )}
@@ -344,7 +343,7 @@ function ResultView({
 
       {/* Question Review */}
       <div>
-        <h2 className="mb-4 text-base font-bold text-slate-800 flex items-center gap-2">
+        <h2 className="mb-4 text-base font-medium text-slate-800 flex items-center gap-2">
           <BookOpen size={18} className="text-slate-500" />
           {t('skillAssessment.questionReview')}
         </h2>
@@ -385,7 +384,7 @@ function ResultView({
                   </div>
                   <button
                     onClick={() => toggleExp(q.id)}
-                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-500 hover:bg-slate-50 transition flex-shrink-0"
+                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-surface px-2.5 py-1.5 text-xs text-slate-500 hover:bg-slate-50 transition flex-shrink-0"
                   >
                     <Lightbulb size={12} />
                     {expanded ? t('skillAssessment.hideExplanation') : t('skillAssessment.showExplanation')}
@@ -437,7 +436,7 @@ function StatItem({
   return (
     <Card className="p-4">
       <div className={`mb-2 inline-flex rounded-xl p-2 ${bgColor}`}>{icon}</div>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
+      <p className="text-2xl font-medium text-slate-900">{value}</p>
       <p className="mt-1 text-xs text-slate-500">{label}</p>
     </Card>
   );
@@ -459,7 +458,7 @@ function HistoryView({
         <button onClick={onBack} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 transition">
           <ArrowLeft size={18} />
         </button>
-        <h2 className="text-lg font-bold text-slate-800">{t('skillAssessment.historyTitle')}</h2>
+        <h2 className="text-lg font-medium text-slate-800">{t('skillAssessment.historyTitle')}</h2>
       </div>
       {history.length === 0 ? (
         <Card>
@@ -471,12 +470,12 @@ function HistoryView({
             <Card key={r.id} className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div
-                  className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${gradeColor(r.grade)} text-white text-lg font-black`}
+                  className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl  ${gradeColor(r.grade)} text-white text-lg font-semibold`}
                 >
                   {r.grade}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800">{r.topicName}</p>
+                  <p className="text-sm font-medium text-slate-800">{r.topicName}</p>
                   <p className="text-xs text-slate-500">
                     {r.correctAnswers}/{r.totalQuestions} correct · {r.timeTakenMinutes}m
                   </p>
@@ -486,7 +485,7 @@ function HistoryView({
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-2xl font-black text-slate-900">{r.score}%</p>
+                <p className="text-2xl font-semibold text-slate-900">{r.score}%</p>
                 <p className="text-xs text-slate-500">{gradeLabel(r.grade)}</p>
               </div>
             </Card>
@@ -637,15 +636,15 @@ export default function SkillAssessmentPage() {
           <Loading />
         ) : (
           <>
-            <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-violet-50 p-5">
+            <div className="mb-6 rounded-2xl border border-brand-100 bg-brand-50 p-5">
               <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-blue-600 p-2">
-                  <Sparkles size={20} className="text-white" />
+                <div className="rounded-xl bg-brand-600 p-2">
+                  <Lightbulb size={20} className="text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-blue-800">{t('skillAssessment.chooseTopicTitle')}</p>
-                  <p className="mt-1 text-xs text-blue-600">{t('skillAssessment.chooseTopicSubtitle')}</p>
-                  <p className="mt-1 text-xs text-blue-500">{t('skillAssessment.passMark')}</p>
+                  <p className="text-sm font-medium text-brand-800">{t('skillAssessment.chooseTopicTitle')}</p>
+                  <p className="mt-1 text-xs text-brand-600">{t('skillAssessment.chooseTopicSubtitle')}</p>
+                  <p className="mt-1 text-xs text-brand-500">{t('skillAssessment.passMark')}</p>
                 </div>
               </div>
             </div>
@@ -662,7 +661,7 @@ export default function SkillAssessmentPage() {
 
             {history.length > 0 && (
               <div className="mt-8">
-                <h2 className="mb-4 text-base font-bold text-slate-800 flex items-center gap-2">
+                <h2 className="mb-4 text-base font-medium text-slate-800 flex items-center gap-2">
                   <History size={16} className="text-slate-400" />
                   {t('skillAssessment.historyTitle')} — {t('common.viewDetails')}
                 </h2>
@@ -670,7 +669,7 @@ export default function SkillAssessmentPage() {
                   {history.slice(0, 3).map((r) => (
                     <Card key={r.id} className="flex items-center gap-4 p-4">
                       <div
-                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradeColor(r.grade)} text-white text-sm font-black`}
+                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl  ${gradeColor(r.grade)} text-white text-sm font-semibold`}
                       >
                         {r.grade}
                       </div>
@@ -683,7 +682,7 @@ export default function SkillAssessmentPage() {
                 </div>
                 <button
                   onClick={() => setView('history')}
-                  className="mt-3 text-xs font-semibold text-blue-600 hover:underline"
+                  className="mt-3 text-xs font-semibold text-brand-600 hover:underline"
                 >
                   {t('skillAssessment.viewHistory')} →
                 </button>
@@ -754,7 +753,7 @@ export default function SkillAssessmentPage() {
       {isQuestionsLoading ? (
         <Card>
           <div className="flex flex-col items-center py-12 gap-3 text-slate-500">
-            <Loader2 size={32} className="animate-spin text-blue-500" />
+            <Loader2 size={32} className="animate-spin text-brand-500" />
             <p className="text-sm font-medium">{t('skillAssessment.aiGenerating')}</p>
           </div>
         </Card>
@@ -773,7 +772,7 @@ export default function SkillAssessmentPage() {
               </div>
               <div className="h-2 w-full rounded-full bg-slate-200">
                 <div
-                  className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-violet-500 transition-all"
+                  className="h-2 rounded-full bg-brand-500 transition-all"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -787,9 +786,9 @@ export default function SkillAssessmentPage() {
                 <button
                   key={q.id}
                   onClick={() => setCurrentQuestionIndex(idx)}
-                  className={`h-8 w-8 rounded-lg text-xs font-bold transition ${
+                  className={`h-8 w-8 rounded-lg text-xs font-medium transition ${
                     idx === currentQuestionIndex
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-brand-600 text-white'
                       : answers[q.id]
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-slate-100 text-slate-500 hover:bg-slate-200'

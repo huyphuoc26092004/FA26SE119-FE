@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { X, Zap, Loader2, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  Zap,
+  Loader2,
+  Lightbulb,
+  ShieldCheck,
+  CheckCircle2,
+} from 'lucide-react';
 import { getTopupPacks, purchaseTokenTopup } from '../../../services/subscriptionService';
 import { useTranslation } from '../../../i18n';
 
@@ -38,8 +45,8 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-lg my-8 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-lg my-8 bg-surface dark:bg-neutral-900 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40">
           <div className="flex items-center gap-2">
@@ -47,7 +54,7 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
               <Zap className="w-5 h-5 fill-amber-500" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+              <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
                 {t.subscriptionPage.topupTokensBtn}
               </h3>
               <p className="text-xs text-neutral-500">
@@ -67,10 +74,10 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
         <div className="p-6">
           {isSuccess ? (
             <div className="text-center py-6 space-y-3">
-              <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+              <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h4 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+              <h4 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
                 {isVietnamese ? 'Nạp Token thành công!' : 'Token Top-up Complete!'}
               </h4>
               <p className="text-xs text-neutral-600 dark:text-neutral-400 max-w-sm mx-auto">
@@ -111,15 +118,15 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
                       }`}
                     >
                       {pack.popular && (
-                        <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white flex items-center gap-1 shadow-sm">
-                          <Sparkles className="w-3 h-3" />
+                        <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500 text-white flex items-center gap-1 shadow-sm">
+                          <Lightbulb className="w-3 h-3" />
                           <span>{t.subscriptionPage.popularBadge}</span>
                         </span>
                       )}
 
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-medium text-xs ${
                             isSelected
                               ? 'bg-emerald-600 text-white'
                               : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
@@ -128,7 +135,7 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
                           <Zap className="w-4 h-4 fill-current" />
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                          <div className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
                             {pack.name}
                           </div>
                           <div className="text-[11px] text-neutral-500">
@@ -138,7 +145,7 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
                       </div>
 
                       <div className="text-right">
-                        <span className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100">
+                        <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                           {pack.priceVND.toLocaleString('vi-VN')} ₫
                         </span>
                       </div>
@@ -151,7 +158,7 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
               <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs text-neutral-500">{t.subscriptionPage.totalAmount}:</span>
-                  <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
                     {selectedPack.priceVND.toLocaleString('vi-VN')} ₫
                   </span>
                 </div>
@@ -159,7 +166,7 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
                 <button
                   onClick={handleTopup}
                   disabled={isProcessing}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition shadow-sm flex items-center justify-center gap-2"
                 >
                   {isProcessing ? (
                     <>

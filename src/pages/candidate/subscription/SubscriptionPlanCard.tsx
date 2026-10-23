@@ -1,5 +1,12 @@
 import React from 'react';
-import { Check, Sparkles, Crown, Zap, ArrowRight, ShieldCheck } from 'lucide-react';
+import {
+  Check,
+  Lightbulb,
+  Crown,
+  Zap,
+  ArrowRight,
+  ShieldCheck,
+} from 'lucide-react';
 import type { BillingCycle, SubscriptionPlan, SubscriptionPlanId } from '../../../types/domain';
 import { useTranslation } from '../../../i18n';
 
@@ -44,10 +51,10 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
     <div
       className={`relative flex flex-col rounded-2xl border transition-all duration-300 ${
         plan.highlight
-          ? 'border-emerald-500/80 bg-gradient-to-b from-emerald-50/70 via-white to-white shadow-xl shadow-emerald-500/10 dark:from-emerald-950/20 dark:via-neutral-900 dark:to-neutral-900 ring-2 ring-emerald-500/20'
+          ? 'border-emerald-500/80  bg-emerald-50/70   shadow-sm  dark:bg-emerald-950/20   ring-2 ring-emerald-500/20'
           : plan.id === 'executive'
-          ? 'border-indigo-400/60 bg-gradient-to-b from-indigo-50/50 via-white to-white shadow-lg shadow-indigo-500/5 dark:from-indigo-950/20 dark:via-neutral-900 dark:to-neutral-900'
-          : 'border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 hover:shadow-md'
+          ? 'border-brand-400/60  bg-brand-50/50   shadow-sm  dark:bg-brand-950/20  '
+          : 'border-neutral-200 bg-surface shadow-sm dark:border-neutral-800 dark:bg-neutral-900 '
       }`}
     >
       {/* Popular or VIP Badge */}
@@ -56,11 +63,11 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
           <span
             className={`inline-flex items-center gap-1 px-3.5 py-1 text-xs font-semibold rounded-full shadow-sm text-white ${
               plan.highlight
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600'
-                : 'bg-gradient-to-r from-indigo-600 to-purple-600'
+                ? ' bg-emerald-600 '
+                : ' bg-brand-600 '
             }`}
           >
-            {plan.highlight ? <Sparkles className="w-3.5 h-3.5" /> : <Crown className="w-3.5 h-3.5" />}
+            {plan.highlight ? <Lightbulb className="w-3.5 h-3.5" /> : <Crown className="w-3.5 h-3.5" />}
             {plan.badge}
           </span>
         </div>
@@ -70,10 +77,10 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
         {/* Plan Header */}
         <div className="mb-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+            <h3 className="text-xl font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               {plan.id === 'free' && <Zap className="w-5 h-5 text-amber-500" />}
-              {plan.id === 'pro' && <Sparkles className="w-5 h-5 text-emerald-500" />}
-              {plan.id === 'executive' && <Crown className="w-5 h-5 text-indigo-500" />}
+              {plan.id === 'pro' && <Lightbulb className="w-5 h-5 text-emerald-500" />}
+              {plan.id === 'executive' && <Crown className="w-5 h-5 text-brand-500" />}
               {plan.name}
             </h3>
             {isCurrent && (
@@ -90,7 +97,7 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
         {/* Pricing Display */}
         <div className="my-5 pb-5 border-b border-neutral-100 dark:border-neutral-800">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+            <span className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
               {formattedPrice}
             </span>
             {perCycleLabel && (
@@ -133,9 +140,9 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
               onClick={() => onSelectPlan(plan)}
               className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
                 plan.highlight
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/25 hover:shadow'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white  hover:shadow'
                   : plan.id === 'executive'
-                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/25 hover:shadow'
+                  ? 'bg-brand-600 hover:bg-brand-700 text-white  hover:shadow'
                   : 'bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200'
               }`}
             >
@@ -147,7 +154,7 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
 
         {/* Features Checklist */}
         <div className="space-y-3 pt-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
             {isVietnamese ? 'Quyền lợi nổi bật bao gồm:' : 'Key benefits included:'}
           </p>
           <ul className="space-y-2.5">
@@ -158,7 +165,7 @@ export const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
                     plan.highlight
                       ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400'
                       : plan.id === 'executive'
-                      ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
+                      ? 'bg-brand-100 text-brand-600 dark:bg-brand-950 dark:text-brand-400'
                       : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'
                   }`}
                 >

@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Award,
-  Bot,
+  MessageSquare,
   BrainCircuit,
   Briefcase,
   Check,
@@ -36,10 +36,9 @@ import {
   Server,
   Share2,
   Sliders,
-  Sparkles,
   Star,
   Target,
-  Wand2,
+  PenLine,
   X,
   Zap,
 } from 'lucide-react';
@@ -193,7 +192,7 @@ export default function ResumeAnalysisPage() {
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs font-semibold text-blue-700">
+          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 border border-brand-200 px-2 py-0.5 text-xs font-semibold text-brand-700">
             <Lightbulb size={12} />
             {t('resumes.lowPriority')}
           </span>
@@ -205,7 +204,7 @@ export default function ResumeAnalysisPage() {
     <>
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3.5 shadow-2xl border border-slate-700 animate-fade-in max-w-lg">
+        <div className="fixed top-5 right-5 z-50 flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-5 py-3.5 shadow-sm border border-slate-700 animate-fade-in max-w-lg">
           <div className="flex items-center gap-3">
             <CheckCircle2 size={20} className="text-emerald-400 shrink-0" />
             <p className="text-xs font-medium leading-relaxed">{toastMessage}</p>
@@ -221,11 +220,11 @@ export default function ResumeAnalysisPage() {
 
       {/* Breadcrumb & Navigation */}
       <div className="mb-3 flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/candidate/resumes" className="hover:text-blue-600 transition">
+        <Link to="/candidate/resumes" className="hover:text-brand-600 transition">
           {t('nav.myResumes')}
         </Link>
         <span>/</span>
-        <Link to={`/candidate/resumes/${effectiveResumeId}`} className="hover:text-blue-600 transition truncate max-w-[200px]">
+        <Link to={`/candidate/resumes/${effectiveResumeId}`} className="hover:text-brand-600 transition truncate max-w-[200px]">
           {analysis.resumeName}
         </Link>
         <span>/</span>
@@ -244,7 +243,7 @@ export default function ResumeAnalysisPage() {
                 <select
                   value={effectiveResumeId}
                   onChange={(e) => navigate(`/candidate/resumes/${e.target.value}/analysis`)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 pr-8 cursor-pointer"
+                  className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 pr-8 cursor-pointer"
                 >
                   {resumes.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -263,7 +262,7 @@ export default function ResumeAnalysisPage() {
             >
               <RefreshCw
                 size={14}
-                className={reanalyzeMutation.isPending ? 'animate-spin text-blue-600' : 'text-slate-600'}
+                className={reanalyzeMutation.isPending ? 'animate-spin text-brand-600' : 'text-slate-600'}
               />
               {reanalyzeMutation.isPending ? t('resumes.reAnalyzing') : t('resumes.reAnalyzeButton')}
             </Button>
@@ -286,15 +285,15 @@ export default function ResumeAnalysisPage() {
       {/* Top Hero ATS Scoreboard */}
       <div className="mb-7 grid gap-5 lg:grid-cols-[1.2fr_1.8fr]">
         {/* Overall Score Circle & Grade */}
-        <Card className="relative overflow-hidden border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/40 p-6 shadow-sm">
+        <Card className="relative overflow-hidden border border-brand-100 bg-surface p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative grid h-32 w-32 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 p-1.5 shadow-lg shadow-blue-500/15">
-              <div className="grid h-full w-full place-items-center rounded-full bg-white text-center">
+            <div className="relative grid h-32 w-32 shrink-0 place-items-center rounded-full bg-brand-600 p-1.5 shadow-sm">
+              <div className="grid h-full w-full place-items-center rounded-full bg-surface text-center">
                 <div>
-                  <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                  <div className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight">
                     {analysis.overallScore}
                   </div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
                     / 100 ATS
                   </div>
                 </div>
@@ -303,17 +302,17 @@ export default function ResumeAnalysisPage() {
 
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1.5">
-                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                   Xếp loại: Hạng {analysis.grade}
                 </span>
-                <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                <span className="rounded-full bg-brand-50 border border-brand-200 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
                   {analysis.targetRole}
                 </span>
               </div>
-              <h2 className="text-lg font-bold text-slate-900">{analysis.resumeName}</h2>
+              <h2 className="text-lg font-medium text-slate-900">{analysis.resumeName}</h2>
               <p className="mt-1 text-xs text-slate-500 leading-relaxed">
                 Tỷ lệ ước tính vượt qua vòng lọc CV tự động của nhà tuyển dụng:{' '}
-                <strong className="text-emerald-600 font-bold text-sm">{analysis.passProbability}%</strong>
+                <strong className="text-emerald-600 font-medium text-sm">{analysis.passProbability}%</strong>
               </p>
               <div className="mt-3 flex items-center justify-center sm:justify-start gap-3 text-xs text-slate-400">
                 <span className="flex items-center gap-1">
@@ -329,7 +328,7 @@ export default function ResumeAnalysisPage() {
         {/* 4 Core Dimensions Progress */}
         <Card className="border border-slate-200/80 p-6 shadow-sm flex flex-col justify-between">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">4 Khía cạnh chất lượng cốt lõi</h3>
+            <h3 className="text-sm font-medium text-slate-900">4 Khía cạnh chất lượng cốt lõi</h3>
             <span className="text-xs text-slate-400">Tiêu chuẩn quốc tế</span>
           </div>
 
@@ -338,16 +337,16 @@ export default function ResumeAnalysisPage() {
             <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Bot size={14} className="text-blue-600" />
+                  <MessageSquare size={14} className="text-brand-600" />
                   Độ tương thích ATS
                 </span>
-                <span className="text-xs font-bold text-blue-700">
+                <span className="text-xs font-medium text-brand-700">
                   {analysis.atsCompatibilityScore}%
                 </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
                   style={{ width: `${analysis.atsCompatibilityScore}%` }}
                 />
               </div>
@@ -357,16 +356,16 @@ export default function ResumeAnalysisPage() {
             <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Layers size={14} className="text-indigo-600" />
+                  <Layers size={14} className="text-brand-600" />
                   Cấu trúc & Bố cục
                 </span>
-                <span className="text-xs font-bold text-indigo-700">
+                <span className="text-xs font-medium text-brand-700">
                   {analysis.structureScore}%
                 </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
-                  className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
                   style={{ width: `${analysis.structureScore}%` }}
                 />
               </div>
@@ -376,16 +375,16 @@ export default function ResumeAnalysisPage() {
             <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Zap size={14} className="text-purple-600" />
+                  <Zap size={14} className="text-brand-600" />
                   Chất lượng nội dung & STAR
                 </span>
-                <span className="text-xs font-bold text-purple-700">
+                <span className="text-xs font-medium text-brand-700">
                   {analysis.contentQualityScore}%
                 </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
-                  className="h-full rounded-full bg-purple-600 transition-all duration-500"
+                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
                   style={{ width: `${analysis.contentQualityScore}%` }}
                 />
               </div>
@@ -398,7 +397,7 @@ export default function ResumeAnalysisPage() {
                   <Target size={14} className="text-emerald-600" />
                   Độ phủ từ khóa ngành
                 </span>
-                <span className="text-xs font-bold text-emerald-700">
+                <span className="text-xs font-medium text-emerald-700">
                   {analysis.keywordScore}%
                 </span>
               </div>
@@ -417,18 +416,18 @@ export default function ResumeAnalysisPage() {
       <div className="mb-6 flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-2 scrollbar-none">
         <button
           onClick={() => setActiveTab('suggestions')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'suggestions'
-              ? 'bg-blue-600 text-white shadow-xs'
+              ? 'bg-brand-600 text-white shadow-xs'
               : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
-          <Sparkles size={15} />
+          <Lightbulb size={15} />
           {t('resumes.suggestionsTab')}
           {pendingSuggestionsCount > 0 && (
             <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                activeTab === 'suggestions' ? 'bg-white text-blue-700' : 'bg-red-500 text-white'
+              className={`rounded-full px-1.5 py-0.2 text-[10px] font-semibold ${
+                activeTab === 'suggestions' ? 'bg-white text-brand-700' : 'bg-red-500 text-white'
               }`}
             >
               {pendingSuggestionsCount}
@@ -438,9 +437,9 @@ export default function ResumeAnalysisPage() {
 
         <button
           onClick={() => setActiveTab('audit')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'audit'
-              ? 'bg-blue-600 text-white shadow-xs'
+              ? 'bg-brand-600 text-white shadow-xs'
               : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -450,9 +449,9 @@ export default function ResumeAnalysisPage() {
 
         <button
           onClick={() => setActiveTab('keywords')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'keywords'
-              ? 'bg-blue-600 text-white shadow-xs'
+              ? 'bg-brand-600 text-white shadow-xs'
               : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -462,9 +461,9 @@ export default function ResumeAnalysisPage() {
 
         <button
           onClick={() => setActiveTab('checklist')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'checklist'
-              ? 'bg-blue-600 text-white shadow-xs'
+              ? 'bg-brand-600 text-white shadow-xs'
               : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -479,9 +478,9 @@ export default function ResumeAnalysisPage() {
       {activeTab === 'suggestions' && (
         <div className="space-y-6">
           {/* Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl bg-white p-4 border border-slate-200 shadow-2xs">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl bg-surface p-4 border border-slate-200 shadow-2xs">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider shrink-0 mr-1">
                 Ưu tiên:
               </span>
               {[
@@ -505,7 +504,7 @@ export default function ResumeAnalysisPage() {
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider shrink-0 mr-1">
                 Danh mục:
               </span>
               {[
@@ -520,7 +519,7 @@ export default function ResumeAnalysisPage() {
                   onClick={() => setCategoryFilter(c.id as any)}
                   className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
                     categoryFilter === c.id
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
@@ -538,7 +537,7 @@ export default function ResumeAnalysisPage() {
                 className={`relative overflow-hidden border transition-all ${
                   sug.applied
                     ? 'border-emerald-200 bg-emerald-50/20'
-                    : 'border-slate-200 bg-white hover:shadow-md'
+                    : 'border-slate-200 bg-surface '
                 }`}
               >
                 {/* Header row */}
@@ -549,14 +548,14 @@ export default function ResumeAnalysisPage() {
                       {sug.section}
                     </span>
                     {sug.impactGain && (
-                      <span className="rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                      <span className="rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-medium text-emerald-700">
                         {sug.impactGain}
                       </span>
                     )}
                   </div>
 
                   {sug.applied ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
                       <Check size={14} className="stroke-[3]" />
                       {t('resumes.appliedSuggestion')}
                     </span>
@@ -565,16 +564,16 @@ export default function ResumeAnalysisPage() {
                       variant="primary"
                       onClick={() => applyMutation.mutate(sug.id)}
                       disabled={applyMutation.isPending}
-                      className="text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0 shadow-sm"
+                      className="text-xs bg-brand-600 hover:bg-brand-700 border-0 shadow-sm"
                     >
-                      <Sparkles size={13} className="text-amber-300" />
+                      <Lightbulb size={13} className="text-amber-300" />
                       {applyMutation.isPending ? 'Đang áp dụng…' : t('resumes.applySuggestion')}
                     </Button>
                   )}
                 </div>
 
                 {/* Title & Explanation */}
-                <h3 className="text-base font-bold text-slate-900 mb-1.5">{sug.title}</h3>
+                <h3 className="text-base font-medium text-slate-900 mb-1.5">{sug.title}</h3>
                 <p className="text-xs text-slate-600 leading-relaxed mb-4">{sug.description}</p>
 
                 {/* Before & After Diff Box */}
@@ -583,7 +582,7 @@ export default function ResumeAnalysisPage() {
                     {/* Before */}
                     {sug.originalText && (
                       <div className="rounded-lg bg-red-50/70 border border-red-200 p-3">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-red-700 mb-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-red-700 mb-1.5">
                           <X size={14} />
                           {t('resumes.beforeImprovement')}
                         </div>
@@ -596,9 +595,9 @@ export default function ResumeAnalysisPage() {
                     {/* After */}
                     {sug.suggestedText && (
                       <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-                        <div className="flex items-center justify-between gap-1.5 text-xs font-bold text-emerald-800 mb-1.5">
+                        <div className="flex items-center justify-between gap-1.5 text-xs font-medium text-emerald-800 mb-1.5">
                           <span className="flex items-center gap-1.5">
-                            <Sparkles size={14} className="text-emerald-600" />
+                            <Lightbulb size={14} className="text-emerald-600" />
                             {t('resumes.afterAiImprovement')}
                           </span>
                           <button
@@ -622,7 +621,7 @@ export default function ResumeAnalysisPage() {
                   <span>Hệ thống phân tích AI tự động phát hiện</span>
                   <button
                     onClick={() => handleCopySuggestion(sug.suggestedText || '')}
-                    className="text-slate-600 hover:text-blue-600 font-semibold flex items-center gap-1 cursor-pointer transition"
+                    className="text-slate-600 hover:text-brand-600 font-semibold flex items-center gap-1 cursor-pointer transition"
                   >
                     <Copy size={13} /> Sao chép đề xuất
                   </button>
@@ -632,13 +631,13 @@ export default function ResumeAnalysisPage() {
           </div>
 
           {/* Interactive AI Instant Rewriter Tool */}
-          <Card className="border border-purple-200 bg-gradient-to-br from-purple-50/50 via-white to-indigo-50/30 p-6 shadow-sm">
+          <Card className="border border-brand-200 bg-brand-50/50 p-6 shadow-sm">
             <div className="flex items-start gap-3 mb-4">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-purple-600 text-white shadow-md">
-                <Wand2 size={20} />
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white">
+                <PenLine size={20} />
               </span>
               <div>
-                <h3 className="text-base font-bold text-slate-900">{t('resumes.aiEnhancerTitle')}</h3>
+                <h3 className="text-base font-medium text-slate-900">{t('resumes.aiEnhancerTitle')}</h3>
                 <p className="text-xs text-slate-500">{t('resumes.aiEnhancerDesc')}</p>
               </div>
             </div>
@@ -650,7 +649,7 @@ export default function ResumeAnalysisPage() {
                 onChange={(e) => setRewriterInput(e.target.value)}
                 placeholder={t('resumes.aiEnhancerPlaceholder')}
                 rows={3}
-                className="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 placeholder-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                className="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
 
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -666,7 +665,7 @@ export default function ResumeAnalysisPage() {
                       onClick={() => setRewriterTone(t.id as any)}
                       className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
                         rewriterTone === t.id
-                          ? 'bg-purple-600 text-white'
+                          ? 'bg-brand-600 text-white'
                           : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
@@ -679,7 +678,7 @@ export default function ResumeAnalysisPage() {
                   variant="primary"
                   onClick={handleRewrite}
                   disabled={isRewriting || !rewriterInput.trim()}
-                  className="bg-purple-600 hover:bg-purple-700 text-white border-0 text-xs"
+                  className="bg-brand-600 hover:bg-brand-700 text-white border-0 text-xs"
                 >
                   {isRewriting ? (
                     <>
@@ -688,7 +687,7 @@ export default function ResumeAnalysisPage() {
                     </>
                   ) : (
                     <>
-                      <Sparkles size={14} className="text-amber-300" />
+                      <Lightbulb size={14} className="text-amber-300" />
                       {t('resumes.rewriteButton')}
                     </>
                   )}
@@ -697,10 +696,10 @@ export default function ResumeAnalysisPage() {
 
               {/* Rewriter Result Output */}
               {rewriterResult && (
-                <div className="mt-4 rounded-xl bg-white p-4 border border-purple-200 shadow-xs animate-fade-in">
+                <div className="mt-4 rounded-xl bg-surface p-4 border border-brand-200 shadow-xs animate-fade-in">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-purple-700 flex items-center gap-1.5">
-                      <Sparkles size={14} />
+                    <span className="text-xs font-medium text-brand-700 flex items-center gap-1.5">
+                      <Lightbulb size={14} />
                       Kết quả AI tối ưu hóa:
                     </span>
                     <button
@@ -709,7 +708,7 @@ export default function ResumeAnalysisPage() {
                         setRewriterCopied(true);
                         setTimeout(() => setRewriterCopied(false), 2500);
                       }}
-                      className="text-xs font-semibold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer transition"
+                      className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1 cursor-pointer transition"
                     >
                       {rewriterCopied ? (
                         <>
@@ -738,11 +737,11 @@ export default function ResumeAnalysisPage() {
       {activeTab === 'audit' && (
         <div className="space-y-6">
           {/* AI Executive Assessment Summary */}
-          <Card className="border border-blue-200 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 p-6 text-white shadow-md relative overflow-hidden">
+          <Card className="border border-brand-200 bg-brand-900 p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2 text-amber-300">
                 <BrainCircuit size={20} />
-                <h3 className="text-sm font-bold uppercase tracking-wider">
+                <h3 className="text-sm font-medium uppercase tracking-wider">
                   Đánh giá tổng quan từ AI Career Agent
                 </h3>
               </div>
@@ -755,12 +754,12 @@ export default function ResumeAnalysisPage() {
           {/* Section by Section Audit Grid */}
           <div className="grid gap-5 md:grid-cols-2">
             {analysis.sections.map((sec) => (
-              <Card key={sec.id} className="border border-slate-200/80 bg-white p-5 shadow-2xs">
+              <Card key={sec.id} className="border border-slate-200/80 bg-surface p-5 shadow-2xs">
                 {/* Header */}
                 <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`grid h-7 w-7 place-items-center rounded-lg text-xs font-bold ${
+                      className={`grid h-7 w-7 place-items-center rounded-lg text-xs font-medium ${
                         sec.status === 'passed'
                           ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-amber-100 text-amber-800'
@@ -768,7 +767,7 @@ export default function ResumeAnalysisPage() {
                     >
                       {sec.score}
                     </span>
-                    <h4 className="text-sm font-bold text-slate-900">{sec.name}</h4>
+                    <h4 className="text-sm font-medium text-slate-900">{sec.name}</h4>
                   </div>
                   <Badge tone={sec.status === 'passed' ? 'green' : 'amber'}>
                     {sec.status === 'passed' ? 'Đạt chuẩn' : 'Cần tối ưu'}
@@ -780,7 +779,7 @@ export default function ResumeAnalysisPage() {
                 {/* Strengths */}
                 {sec.strengths.length > 0 && (
                   <div className="mb-2.5">
-                    <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-wider mb-1 flex items-center gap-1">
                       <CheckCircle2 size={12} /> Điểm mạnh:
                     </p>
                     <ul className="space-y-1 text-xs text-slate-700 pl-4 list-disc marker:text-emerald-500">
@@ -794,7 +793,7 @@ export default function ResumeAnalysisPage() {
                 {/* Issues */}
                 {sec.issues.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <p className="text-[11px] font-medium text-amber-700 uppercase tracking-wider mb-1 flex items-center gap-1">
                       <AlertCircle size={12} /> Cần cải thiện:
                     </p>
                     <ul className="space-y-1 text-xs text-slate-700 pl-4 list-disc marker:text-amber-500">
@@ -816,10 +815,10 @@ export default function ResumeAnalysisPage() {
       {activeTab === 'keywords' && (
         <div className="space-y-6">
           {/* Target Role Selector Header */}
-          <Card className="border border-slate-200 bg-white p-5 shadow-2xs">
+          <Card className="border border-slate-200 bg-surface p-5 shadow-2xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-medium text-slate-900">
                   Đối sánh từ khóa cho vị trí ứng tuyển mục tiêu
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -832,7 +831,7 @@ export default function ResumeAnalysisPage() {
                 <select
                   value={targetRole}
                   onChange={(e) => setTargetRole(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs"
+                  className="rounded-xl border border-slate-200 bg-surface px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs"
                 >
                   <option value="Frontend Engineer">Frontend Engineer / Web Architect</option>
                   <option value="Backend Engineer">Backend Engineer / Microservices</option>
@@ -849,7 +848,7 @@ export default function ResumeAnalysisPage() {
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-emerald-800">
                   <CheckCircle2 size={18} />
-                  <h4 className="text-sm font-bold">
+                  <h4 className="text-sm font-medium">
                     Từ khóa đã có trong CV ({analysis.matchedKeywords.length})
                   </h4>
                 </div>
@@ -876,7 +875,7 @@ export default function ResumeAnalysisPage() {
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-amber-800">
                   <AlertTriangle size={18} />
-                  <h4 className="text-sm font-bold">
+                  <h4 className="text-sm font-medium">
                     Từ khóa quan trọng còn thiếu ({analysis.missingKeywords.length})
                   </h4>
                 </div>
@@ -889,7 +888,7 @@ export default function ResumeAnalysisPage() {
                 {analysis.missingKeywords.map((kw) => (
                   <span
                     key={kw}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-900 shadow-2xs"
+                    className="inline-flex items-center gap-1 rounded-lg bg-surface border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-900 shadow-2xs"
                   >
                     <Plus size={13} className="text-amber-600" />
                     {kw}
@@ -900,7 +899,7 @@ export default function ResumeAnalysisPage() {
               <div className="mt-5 pt-3 border-t border-amber-200/60">
                 <Link
                   to={`/candidate/resumes/${effectiveResumeId}/edit`}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1"
                 >
                   Chỉnh sửa CV để thêm các từ khóa này →
                 </Link>
@@ -914,9 +913,9 @@ export default function ResumeAnalysisPage() {
       {/* TAB 4: ATS TECHNICAL CHECKLIST (10 Tiêu chuẩn kỹ thuật)        */}
       {/* ============================================================== */}
       {activeTab === 'checklist' && (
-        <Card className="border border-slate-200/80 bg-white p-6 shadow-sm">
+        <Card className="border border-slate-200/80 bg-surface p-6 shadow-sm">
           <div className="mb-5">
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-medium text-slate-900">
               Checklist 10 Tiêu chuẩn Kỹ thuật Hệ thống Lọc ATS
             </h3>
             <p className="text-xs text-slate-500">
@@ -928,7 +927,7 @@ export default function ResumeAnalysisPage() {
             {analysis.technicalChecklist.map((item, index) => (
               <div key={item.id} className="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-600">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-medium text-slate-600">
                     {index + 1}
                   </span>
                   <div>
@@ -944,11 +943,11 @@ export default function ResumeAnalysisPage() {
 
                 <div className="shrink-0">
                   {item.passed ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                       <Check size={12} className="stroke-[3]" /> Đạt
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-bold text-amber-700">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-medium text-amber-700">
                       <AlertTriangle size={12} /> Cần sửa
                     </span>
                   )}

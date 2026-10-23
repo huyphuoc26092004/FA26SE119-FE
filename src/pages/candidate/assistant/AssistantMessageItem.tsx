@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import {
-  Bot,
+  MessageSquare,
   User,
   Copy,
   Check,
   ThumbsUp,
   ThumbsDown,
   Lightbulb,
-  Sparkles,
   ArrowRight,
   FileText,
   Briefcase,
@@ -57,14 +56,14 @@ export function AssistantMessageItem({
             </div>
           )}
 
-          <div className="rounded-2xl rounded-tr-xs bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm text-white shadow-sm leading-relaxed max-w-xl">
+          <div className="rounded-2xl rounded-tr-xs bg-brand-600 px-4 py-3 text-sm text-white shadow-sm leading-relaxed max-w-xl">
             <p className="whitespace-pre-line">{message.content}</p>
           </div>
 
           <span className="text-[10px] text-slate-400 pr-1">{message.timestamp}</span>
         </div>
 
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-xs">
           <User size={15} />
         </div>
       </div>
@@ -74,12 +73,12 @@ export function AssistantMessageItem({
   // Assistant Message
   return (
     <div className="flex items-start gap-3 max-w-3xl mr-auto">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 text-white shadow-md shadow-blue-500/20">
-        <Bot size={18} />
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white">
+        <MessageSquare size={18} />
       </div>
 
       <div className="flex-1 space-y-3">
-        <div className="rounded-3xl rounded-tl-xs border border-slate-200/90 bg-white p-5 shadow-xs">
+        <div className="rounded-3xl rounded-tl-xs border border-slate-200/90 bg-surface p-5 shadow-xs">
           {/* Main Markdown Body */}
           <MarkdownMessage content={message.content} />
 
@@ -89,9 +88,9 @@ export function AssistantMessageItem({
               {message.highlights.map((item, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-100"
+                  className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 border border-brand-100"
                 >
-                  <Sparkles size={11} className="text-blue-500" />
+                  <Lightbulb size={11} className="text-brand-500" />
                   {item}
                 </span>
               ))}
@@ -101,7 +100,7 @@ export function AssistantMessageItem({
           {/* Tips Callout */}
           {message.tips && message.tips.length > 0 && (
             <div className="mt-3 rounded-2xl border border-amber-200/70 bg-amber-50/60 p-3 text-xs text-amber-900">
-              <p className="flex items-center gap-1.5 font-bold mb-1.5 text-amber-900">
+              <p className="flex items-center gap-1.5 font-medium mb-1.5 text-amber-900">
                 <Lightbulb size={14} className="text-amber-600" />
                 {isVietnamese ? 'Lời khuyên từ Trợ lý AI:' : 'AI Key Pro-Tips:'}
               </p>
@@ -116,7 +115,7 @@ export function AssistantMessageItem({
           {/* Action Suggestions Chips */}
           {message.actionSuggestions && message.actionSuggestions.length > 0 && (
             <div className="mt-4 border-t border-slate-100 pt-3">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-2">
                 {t('assistant.suggestedQuestions')}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -125,10 +124,10 @@ export function AssistantMessageItem({
                     key={idx}
                     type="button"
                     onClick={() => onSendPrompt(item.prompt)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100/70 active:scale-95 transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50/50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100/70 transition cursor-pointer"
                   >
                     <span>{item.label}</span>
-                    <ArrowRight size={11} className="text-blue-500" />
+                    <ArrowRight size={11} className="text-brand-500" />
                   </button>
                 ))}
               </div>
@@ -161,7 +160,7 @@ export function AssistantMessageItem({
               onClick={() => onFeedback(message.id, 'like')}
               className={`flex items-center gap-1 rounded-lg px-2 py-1 transition cursor-pointer ${
                 message.feedback === 'like'
-                  ? 'bg-blue-50 text-blue-600 font-semibold'
+                  ? 'bg-brand-50 text-brand-600 font-semibold'
                   : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
               }`}
               title={t('assistant.helpful')}

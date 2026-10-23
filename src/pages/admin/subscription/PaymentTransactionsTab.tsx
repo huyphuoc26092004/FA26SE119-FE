@@ -99,26 +99,26 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
     switch (m) {
       case 'vietqr':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200">
             <QrCode size={11} />
             <span>VietQR 24/7</span>
           </span>
         );
       case 'momo':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200">
             <span>MoMo E-Wallet</span>
           </span>
         );
       case 'vnpay':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
             <span>VNPAY-QR</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
             <CreditCard size={11} />
             <span>Visa/Mastercard</span>
           </span>
@@ -130,7 +130,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
     <div className="space-y-6">
       {/* Metrics Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500">Doanh thu thu về</span>
             <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
@@ -138,15 +138,15 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
             </div>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-black text-emerald-700">
+            <span className="text-2xl font-semibold text-emerald-700">
               {totalVolumeVND.toLocaleString('vi-VN')}
             </span>
-            <span className="text-xs font-bold text-emerald-600">đ</span>
+            <span className="text-xs font-medium text-emerald-600">đ</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Các giao dịch thanh toán thành công</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500">Giao dịch chờ đối soát</span>
             <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
@@ -154,42 +154,42 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-amber-700">{pendingCount}</span>
+            <span className="text-2xl font-semibold text-amber-700">{pendingCount}</span>
             <span className="text-xs text-amber-600 font-semibold">Cần duyệt thủ công</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Chuyển khoản VietQR hoặc Bank Webhook trễ</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500">Tổng giao dịch ghi nhận</span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <div className="p-2 rounded-xl bg-brand-50 text-brand-600">
               <Wallet size={16} />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">{transactions.length}</span>
+            <span className="text-2xl font-semibold text-slate-900">{transactions.length}</span>
             <span className="text-xs text-slate-500 font-medium">đơn hàng</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Bao gồm đăng ký gói & nạp Token top-up</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500">Tỷ lệ thanh toán thành công</span>
-            <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
+            <div className="p-2 rounded-xl bg-brand-50 text-brand-600">
               <CheckCircle2 size={16} />
             </div>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-black text-purple-700">{successRate}%</span>
+            <span className="text-2xl font-semibold text-brand-700">{successRate}%</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Tỷ lệ hủy/lỗi cổng thanh toán cực thấp (&lt;2%)</p>
         </div>
       </div>
 
       {/* Filter and Export Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[200px]">
@@ -199,7 +199,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo mã đơn CP-PAY, email, tên ứng viên..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3.5 py-2 text-xs focus:bg-white focus:border-blue-500 focus:outline-hidden"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3.5 py-2 text-xs focus:bg-surface focus:border-brand-500 focus:outline-hidden"
             />
           </div>
 
@@ -207,7 +207,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs focus:bg-white focus:outline-hidden text-slate-700 font-medium"
+            className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs focus:bg-surface focus:outline-hidden text-slate-700 font-medium"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="success">Thành công (Success)</option>
@@ -220,7 +220,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
           <select
             value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs focus:bg-white focus:outline-hidden text-slate-700 font-medium"
+            className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs focus:bg-surface focus:outline-hidden text-slate-700 font-medium"
           >
             <option value="ALL">Tất cả phương thức</option>
             <option value="vietqr">VietQR Napas 24/7</option>
@@ -233,7 +233,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
         {/* Export Button */}
         <button
           onClick={handleExportCSV}
-          className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs self-end sm:self-auto"
+          className="px-4 py-2 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs self-end sm:self-auto"
         >
           <Download size={14} />
           <span>Xuất báo cáo CSV</span>
@@ -241,10 +241,10 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
       </div>
 
       {/* Transactions Table */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-2xs">
+      <div className="rounded-2xl border border-slate-200/80 bg-surface overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
+            <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-medium tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Mã đơn hàng</th>
                 <th className="py-3 px-4">Khách hàng / Ứng viên</th>
@@ -272,13 +272,13 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
                   return (
                     <tr key={tx.id} className="hover:bg-slate-50/60 transition">
                       {/* Order Code */}
-                      <td className="py-3.5 px-4 font-mono font-bold text-blue-700">
+                      <td className="py-3.5 px-4 font-mono font-medium text-brand-700">
                         {tx.orderCode}
                       </td>
 
                       {/* Candidate */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{tx.candidateName}</div>
+                        <div className="font-medium text-slate-900">{tx.candidateName}</div>
                         <span className="text-[11px] text-slate-400 font-mono">{tx.candidateEmail}</span>
                       </td>
 
@@ -292,7 +292,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
 
                       {/* Amount */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">
+                        <div className="font-medium text-slate-900">
                           {tx.finalAmountVND.toLocaleString('vi-VN')} đ
                         </div>
                         {tx.discountAmountVND > 0 && (
@@ -308,13 +308,13 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
                       {/* Status */}
                       <td className="py-3.5 px-4">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
                             isSuccess
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : isPending
                               ? 'bg-amber-50 text-amber-700 border border-amber-200'
                               : isRefunded
-                              ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                              ? 'bg-brand-50 text-brand-700 border border-brand-200'
                               : 'bg-red-50 text-red-700 border border-red-200'
                           }`}
                         >
@@ -325,7 +325,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
                                 : isPending
                                 ? 'bg-amber-500 animate-pulse'
                                 : isRefunded
-                                ? 'bg-purple-500'
+                                ? 'bg-brand-500'
                                 : 'bg-red-500'
                             }`}
                           />
@@ -353,7 +353,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
                           {isPending && (
                             <button
                               onClick={() => onApproveTransaction(tx.id)}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-medium transition flex items-center gap-1 shadow-2xs"
                               title="Duyệt đối soát giao dịch chuyển khoản VietQR"
                             >
                               <Check size={12} />
@@ -393,9 +393,9 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
 
       {/* Refund Confirmation Modal */}
       {refundTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 text-red-600">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in">
+          <div className="relative w-full max-w-md bg-surface rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <h3 className="text-base font-medium text-slate-900 flex items-center gap-2 text-red-600">
               <RotateCcw size={18} />
               <span>Xác nhận hoàn tiền giao dịch</span>
             </h3>
@@ -403,7 +403,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-1">
               <p>Mã đơn: <strong>{refundTarget.orderCode}</strong></p>
               <p>Khách hàng: <strong>{refundTarget.candidateName}</strong> ({refundTarget.candidateEmail})</p>
-              <p>Số tiền hoàn trả: <strong className="text-red-600 font-bold">{refundTarget.finalAmountVND.toLocaleString('vi-VN')} đ</strong></p>
+              <p>Số tiền hoàn trả: <strong className="text-red-600 font-medium">{refundTarget.finalAmountVND.toLocaleString('vi-VN')} đ</strong></p>
             </div>
 
             <div>
@@ -415,7 +415,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
                 required
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
               />
             </div>
 
@@ -431,7 +431,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
                 type="button"
                 onClick={handleConfirmRefund}
                 disabled={isRefunding}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-medium transition shadow-xs disabled:opacity-50"
               >
                 {isRefunding ? 'Đang xử lý...' : 'Xác nhận hoàn tiền'}
               </button>

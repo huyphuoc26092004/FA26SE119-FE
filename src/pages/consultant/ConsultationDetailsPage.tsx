@@ -22,7 +22,7 @@ import {
   Send,
   Save,
   Star,
-  Sparkles,
+  Lightbulb,
   MessageSquare,
   Lock,
   X,
@@ -180,17 +180,17 @@ export default function ConsultationDetailsPage() {
   const getTopicIcon = (topic: ConsultationTopic) => {
     switch (topic) {
       case 'CV_REVIEW':
-        return <FileText size={18} className="text-blue-600" />;
+        return <FileText size={18} className="text-brand-600" />;
       case 'CAREER_ORIENTATION':
         return <Compass size={18} className="text-amber-600" />;
       case 'MOCK_INTERVIEW':
         return <Video size={18} className="text-emerald-600" />;
       case 'SALARY_NEGOTIATION':
-        return <DollarSign size={18} className="text-purple-600" />;
+        return <DollarSign size={18} className="text-brand-600" />;
       case 'SKILL_ROADMAP':
-        return <Route size={18} className="text-pink-600" />;
+        return <Route size={18} className="text-brand-600" />;
       default:
-        return <FileText size={18} className="text-blue-600" />;
+        return <FileText size={18} className="text-brand-600" />;
     }
   };
 
@@ -218,7 +218,7 @@ export default function ConsultationDetailsPage() {
     <div className="space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-xl animate-fade-in border border-slate-700">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-sm animate-fade-in border border-slate-700">
           <CheckCircle2 size={18} className="text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -228,7 +228,7 @@ export default function ConsultationDetailsPage() {
       <div className="flex items-center justify-between">
         <Link
           to="/consultant/consultations"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 transition"
         >
           <ArrowLeft size={14} />
           <span>{t('consultation.backToList')}</span>
@@ -240,7 +240,7 @@ export default function ConsultationDetailsPage() {
       </div>
 
       {/* Top Banner & Status Workflow Actions */}
-      <Card className="border-slate-200/90 shadow-sm bg-gradient-to-r from-white via-white to-blue-50/20">
+      <Card className="border-slate-200/90 shadow-sm bg-surface">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <img
@@ -250,10 +250,10 @@ export default function ConsultationDetailsPage() {
             />
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900">{request.candidate.name}</h1>
+                <h1 className="text-xl font-medium text-slate-900">{request.candidate.name}</h1>
                 {getStatusBadge(request.status)}
                 {request.priority === 'URGENT' && (
-                  <span className="rounded-md bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700 border border-red-200">
+                  <span className="rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 border border-red-200">
                     {t('consultation.urgent')}
                   </span>
                 )}
@@ -261,7 +261,7 @@ export default function ConsultationDetailsPage() {
               <p className="text-xs text-slate-600">
                 <span className="font-semibold text-slate-800">{request.candidate.currentTitle}</span>
                 {' → '}
-                <span className="font-bold text-blue-700">{request.candidate.targetRole}</span>
+                <span className="font-medium text-brand-700">{request.candidate.targetRole}</span>
               </p>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span>{request.topicLabel}</span>
@@ -290,7 +290,7 @@ export default function ConsultationDetailsPage() {
                   })
                 }
                 disabled={statusMutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-xs font-medium text-white shadow-xs hover:bg-brand-700 transition cursor-pointer disabled:opacity-50"
               >
                 <Check size={14} />
                 <span>{t('consultation.acceptRequest')}</span>
@@ -306,7 +306,7 @@ export default function ConsultationDetailsPage() {
                   })
                 }
                 disabled={statusMutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-xs hover:bg-emerald-700 transition cursor-pointer disabled:opacity-50"
               >
                 <Video size={14} />
                 <span>{t('consultation.startConsultation')}</span>
@@ -318,7 +318,7 @@ export default function ConsultationDetailsPage() {
                 href={request.meeting.meetingUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition cursor-pointer"
               >
                 <Video size={14} />
                 <span>{t('consultation.joinRoomNow')}</span>
@@ -335,7 +335,7 @@ export default function ConsultationDetailsPage() {
                   })
                 }
                 disabled={statusMutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-medium text-white shadow-xs hover:bg-emerald-800 transition cursor-pointer disabled:opacity-50"
               >
                 <CheckCircle2 size={14} />
                 <span>{t('consultation.finishConsultation')}</span>
@@ -359,7 +359,7 @@ export default function ConsultationDetailsPage() {
                   }
                 }}
                 disabled={statusMutation.isPending}
-                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
               >
                 <X size={14} />
                 <span>{t('consultation.cancelRequest')}</span>
@@ -377,8 +377,8 @@ export default function ConsultationDetailsPage() {
           <Card>
             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <User size={18} className="text-blue-600" />
-                <h2 className="text-base font-bold text-slate-900">
+                <User size={18} className="text-brand-600" />
+                <h2 className="text-base font-medium text-slate-900">
                   {t('consultation.candidateProfile')}
                 </h2>
               </div>
@@ -407,7 +407,7 @@ export default function ConsultationDetailsPage() {
 
               {/* Skills Tags */}
               <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5">
                   {t('consultation.topSkills')}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -431,17 +431,17 @@ export default function ConsultationDetailsPage() {
 
               {/* Attached CV Preview Box */}
               {request.candidate.attachedResumeName && (
-                <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3.5 flex items-center justify-between gap-3">
+                <div className="rounded-xl border border-brand-100 bg-brand-50/50 p-3.5 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-600 text-white">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white">
                       <FileText size={20} />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-slate-800 text-xs truncate">
+                      <p className="font-medium text-slate-800 text-xs truncate">
                         {request.candidate.attachedResumeName}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-bold text-emerald-700 text-[11px] bg-emerald-100/70 px-1.5 py-0.2 rounded">
+                        <span className="font-medium text-emerald-700 text-[11px] bg-emerald-100/70 px-1.5 py-0.2 rounded">
                           ATS {request.candidate.attachedResumeScore}/100
                         </span>
                         <span className="text-[11px] text-slate-400">PDF Document</span>
@@ -463,20 +463,20 @@ export default function ConsultationDetailsPage() {
               <div className="border-t border-slate-100 pt-3">
                 <Link
                   to={`/consultant/candidates/${request.candidate.id}`}
-                  className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 p-3 hover:from-blue-100 hover:to-indigo-100 transition shadow-xs text-blue-900 group"
+                  className="flex items-center justify-between rounded-xl bg-brand-50 border border-brand-200/80 p-3 hover:bg-brand-100 transition shadow-xs text-brand-900 group"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-600 text-white">
-                      <Sparkles size={16} />
+                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-600 text-white">
+                      <Lightbulb size={16} />
                     </div>
                     <div>
-                      <p className="font-bold text-xs">{t('consultation.openFullAnalysis')}</p>
-                      <p className="text-[11px] text-blue-700/80">
+                      <p className="font-medium text-xs">{t('consultation.openFullAnalysis')}</p>
+                      <p className="text-[11px] text-brand-700/80">
                         {isVietnamese ? 'Xem chi tiết CV, Audit ATS, Đánh giá kỹ năng & Gap' : 'Deep ATS Audit, Verified Skills & Gap Analysis'}
                       </p>
                     </div>
                   </div>
-                  <ArrowRight size={15} className="text-blue-600 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight size={15} className="text-brand-600 transition-transform" />
                 </Link>
               </div>
             </div>
@@ -486,14 +486,14 @@ export default function ConsultationDetailsPage() {
           <Card>
             <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
               {getTopicIcon(request.topic)}
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-medium text-slate-900">
                 {t('consultation.requestInfo')}
               </h2>
             </div>
 
             <div className="space-y-4 text-xs">
               <div>
-                <p className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">
+                <p className="font-medium text-slate-500 uppercase tracking-wider text-[11px]">
                   {t('consultation.targetGoal')}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-800 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
@@ -502,26 +502,26 @@ export default function ConsultationDetailsPage() {
               </div>
 
               <div>
-                <p className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">
+                <p className="font-medium text-slate-500 uppercase tracking-wider text-[11px]">
                   {t('consultation.candidateNotes')}
                 </p>
-                <p className="mt-1 text-slate-700 leading-relaxed bg-white p-3 rounded-xl border border-slate-100">
+                <p className="mt-1 text-slate-700 leading-relaxed bg-surface p-3 rounded-xl border border-slate-100">
                   {request.candidateNotes}
                 </p>
               </div>
 
               {request.candidateQuestions.length > 0 && (
                 <div>
-                  <p className="font-bold text-slate-500 uppercase tracking-wider text-[11px] mb-1.5">
+                  <p className="font-medium text-slate-500 uppercase tracking-wider text-[11px] mb-1.5">
                     {t('consultation.candidateQuestions')}
                   </p>
                   <ul className="space-y-2">
                     {request.candidateQuestions.map((q, idx) => (
                       <li
                         key={idx}
-                        className="flex items-start gap-2 rounded-xl bg-blue-50/40 p-2.5 text-slate-800 border border-blue-100/60"
+                        className="flex items-start gap-2 rounded-xl bg-brand-50/40 p-2.5 text-slate-800 border border-brand-100/60"
                       >
-                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-blue-200 text-blue-800 font-bold text-[10px]">
+                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-200 text-brand-800 font-medium text-[10px]">
                           {idx + 1}
                         </span>
                         <span className="leading-snug">{q}</span>
@@ -533,7 +533,7 @@ export default function ConsultationDetailsPage() {
 
               {request.currentObstacles && (
                 <div>
-                  <p className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">
+                  <p className="font-medium text-slate-500 uppercase tracking-wider text-[11px]">
                     {t('consultation.currentObstacles')}
                   </p>
                   <p className="mt-1 text-red-800 bg-red-50/60 p-2.5 rounded-xl border border-red-100">
@@ -545,11 +545,11 @@ export default function ConsultationDetailsPage() {
           </Card>
 
           {/* Online Meeting Room Details */}
-          <Card className="border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/30">
+          <Card className="border-brand-100 bg-surface">
             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Video size={18} className="text-blue-600" />
-                <h2 className="text-base font-bold text-slate-900">
+                <Video size={18} className="text-brand-600" />
+                <h2 className="text-base font-medium text-slate-900">
                   {t('consultation.meetingInfo')}
                 </h2>
               </div>
@@ -562,7 +562,7 @@ export default function ConsultationDetailsPage() {
                   <span className="text-slate-400 block text-[11px]">
                     {t('consultation.scheduledTime')}
                   </span>
-                  <span className="font-bold text-slate-800 text-xs">
+                  <span className="font-medium text-slate-800 text-xs">
                     {new Date(request.meeting.scheduledAt).toLocaleString('vi-VN')}
                   </span>
                 </div>
@@ -570,19 +570,19 @@ export default function ConsultationDetailsPage() {
                   <span className="text-slate-400 block text-[11px]">
                     {t('consultation.durationMinutes')}
                   </span>
-                  <span className="font-bold text-slate-800 text-xs">
+                  <span className="font-medium text-slate-800 text-xs">
                     {request.meeting.durationMinutes} phút
                   </span>
                 </div>
               </div>
 
               {/* Meeting Link with Copy */}
-              <div className="rounded-xl border border-slate-200 bg-white p-3 flex items-center justify-between gap-2">
+              <div className="rounded-xl border border-slate-200 bg-surface p-3 flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block">
+                  <span className="text-[10px] text-slate-400 uppercase font-medium block">
                     Link phòng họp trực tuyến
                   </span>
-                  <span className="font-mono text-xs text-blue-600 truncate block">
+                  <span className="font-mono text-xs text-brand-600 truncate block">
                     {request.meeting.meetingUrl}
                   </span>
                 </div>
@@ -598,7 +598,7 @@ export default function ConsultationDetailsPage() {
                     href={request.meeting.meetingUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition cursor-pointer shadow-xs"
+                    className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 transition cursor-pointer shadow-xs"
                   >
                     <Video size={14} />
                     <span>{t('consultation.joinRoomNow')}</span>
@@ -611,8 +611,8 @@ export default function ConsultationDetailsPage() {
           {/* Timeline of Lifecycle */}
           <Card>
             <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Clock size={18} className="text-blue-600" />
-              <h2 className="text-base font-bold text-slate-900">
+              <Clock size={18} className="text-brand-600" />
+              <h2 className="text-base font-medium text-slate-900">
                 {t('consultation.timelineTitle')}
               </h2>
             </div>
@@ -620,12 +620,12 @@ export default function ConsultationDetailsPage() {
             <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 text-xs">
               {request.timeline.map((event) => (
                 <div key={event.id} className="relative">
-                  <span className="absolute -left-6 top-1 grid h-5 w-5 place-items-center rounded-full bg-blue-600 text-white ring-4 ring-white">
+                  <span className="absolute -left-6 top-1 grid h-5 w-5 place-items-center rounded-full bg-brand-600 text-white ring-4 ring-white">
                     <Check size={11} />
                   </span>
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900">{event.title}</span>
+                      <span className="font-medium text-slate-900">{event.title}</span>
                       <span className="text-[11px] text-slate-400 font-mono">
                         {new Date(event.timestamp).toLocaleTimeString('vi-VN', {
                           hour: '2-digit',
@@ -647,12 +647,12 @@ export default function ConsultationDetailsPage() {
         {/* RIGHT COLUMN: Interactive Consultant Workspace */}
         <div className="space-y-6">
           {/* Section 1: Consultant Private Notes & Evaluation */}
-          <Card className="border-amber-200/80 bg-gradient-to-br from-amber-50/20 via-white to-white">
+          <Card className="border-amber-200/80 bg-amber-50/20">
             <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Lock size={18} className="text-amber-600" />
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">
+                  <h2 className="text-base font-medium text-slate-900">
                     {t('consultation.privateNotesTitle')}
                   </h2>
                   <p className="text-[11px] text-slate-500">
@@ -666,14 +666,14 @@ export default function ConsultationDetailsPage() {
             <div className="space-y-3">
               {/* Rubric Evaluation Sliders */}
               <div>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-2">
                   {t('consultation.rubricEvaluationTitle')}
                 </p>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                     <div className="flex justify-between mb-1">
                       <span className="text-slate-600 font-medium">Chất lượng CV:</span>
-                      <span className="font-bold text-blue-700">{rubric.cvQuality}/10</span>
+                      <span className="font-medium text-brand-700">{rubric.cvQuality}/10</span>
                     </div>
                     <input
                       type="range"
@@ -681,14 +681,14 @@ export default function ConsultationDetailsPage() {
                       max="10"
                       value={rubric.cvQuality}
                       onChange={(e) => setRubric({ ...rubric, cvQuality: Number(e.target.value) })}
-                      className="w-full cursor-pointer accent-blue-600"
+                      className="w-full cursor-pointer accent-brand-600"
                     />
                   </div>
 
                   <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                     <div className="flex justify-between mb-1">
                       <span className="text-slate-600 font-medium">Chiều sâu kỹ thuật:</span>
-                      <span className="font-bold text-blue-700">{rubric.technicalDepth}/10</span>
+                      <span className="font-medium text-brand-700">{rubric.technicalDepth}/10</span>
                     </div>
                     <input
                       type="range"
@@ -696,14 +696,14 @@ export default function ConsultationDetailsPage() {
                       max="10"
                       value={rubric.technicalDepth}
                       onChange={(e) => setRubric({ ...rubric, technicalDepth: Number(e.target.value) })}
-                      className="w-full cursor-pointer accent-blue-600"
+                      className="w-full cursor-pointer accent-brand-600"
                     />
                   </div>
 
                   <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                     <div className="flex justify-between mb-1">
                       <span className="text-slate-600 font-medium">Kỹ năng giao tiếp:</span>
-                      <span className="font-bold text-blue-700">{rubric.communication}/10</span>
+                      <span className="font-medium text-brand-700">{rubric.communication}/10</span>
                     </div>
                     <input
                       type="range"
@@ -711,14 +711,14 @@ export default function ConsultationDetailsPage() {
                       max="10"
                       value={rubric.communication}
                       onChange={(e) => setRubric({ ...rubric, communication: Number(e.target.value) })}
-                      className="w-full cursor-pointer accent-blue-600"
+                      className="w-full cursor-pointer accent-brand-600"
                     />
                   </div>
 
                   <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                     <div className="flex justify-between mb-1">
                       <span className="text-slate-600 font-medium">Độ sẵn sàng thị trường:</span>
-                      <span className="font-bold text-blue-700">{rubric.marketReadiness}/10</span>
+                      <span className="font-medium text-brand-700">{rubric.marketReadiness}/10</span>
                     </div>
                     <input
                       type="range"
@@ -726,7 +726,7 @@ export default function ConsultationDetailsPage() {
                       max="10"
                       value={rubric.marketReadiness}
                       onChange={(e) => setRubric({ ...rubric, marketReadiness: Number(e.target.value) })}
-                      className="w-full cursor-pointer accent-blue-600"
+                      className="w-full cursor-pointer accent-brand-600"
                     />
                   </div>
                 </div>
@@ -739,7 +739,7 @@ export default function ConsultationDetailsPage() {
                   value={privateNotes}
                   onChange={(e) => setPrivateNotes(e.target.value)}
                   placeholder={t('consultation.privateNotesPlaceholder')}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 outline-none focus:border-amber-500 transition leading-relaxed"
+                  className="w-full rounded-xl border border-slate-200 bg-surface p-3 text-xs text-slate-800 outline-none focus:border-amber-500 transition leading-relaxed"
                 />
               </div>
 
@@ -758,7 +758,7 @@ export default function ConsultationDetailsPage() {
           </Card>
 
           {/* Section 2: Provide Consultation Advice across 4 Core Pillars */}
-          <Card className="border-blue-200 shadow-xs">
+          <Card className="border-brand-200 shadow-xs">
             {adviceData && (
               <ConsultationAdviceBuilder
                 initialAdvice={adviceData}
@@ -778,8 +778,8 @@ export default function ConsultationDetailsPage() {
           <Card>
             <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <MessageSquare size={18} className="text-blue-600" />
-                <h2 className="text-base font-bold text-slate-900">
+                <MessageSquare size={18} className="text-brand-600" />
+                <h2 className="text-base font-medium text-slate-900">
                   {t('consultation.discussionTitle')}
                 </h2>
               </div>
@@ -814,7 +814,7 @@ export default function ConsultationDetailsPage() {
                         <div
                           className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
                             isConsultant
-                              ? 'bg-blue-600 text-white rounded-tr-xs'
+                              ? 'bg-brand-600 text-white rounded-tr-xs'
                               : 'bg-slate-100 text-slate-800 rounded-tl-xs'
                           }`}
                         >
@@ -839,7 +839,7 @@ export default function ConsultationDetailsPage() {
                     }
                   }}
                   placeholder={t('consultation.typeMessagePlaceholder')}
-                  className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2 text-xs outline-none focus:border-blue-500"
+                  className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2 text-xs outline-none focus:border-brand-500"
                 />
                 <Button
                   variant="primary"
@@ -860,11 +860,11 @@ export default function ConsultationDetailsPage() {
           {request.ratingByCandidate && (
             <Card className="border-amber-200 bg-amber-50/40">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                <h3 className="font-medium text-sm text-slate-900 flex items-center gap-1.5">
                   <Star size={16} className="text-amber-500 fill-amber-500" />
                   <span>{t('consultation.candidateReviewTitle')}</span>
                 </h3>
-                <span className="text-amber-600 font-bold text-sm">
+                <span className="text-amber-600 font-medium text-sm">
                   {'★'.repeat(request.ratingByCandidate.stars)}
                 </span>
               </div>
@@ -881,12 +881,12 @@ export default function ConsultationDetailsPage() {
 
       {/* Resume Preview Modal */}
       {showResumeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-surface p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <FileText size={20} className="text-blue-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+                <FileText size={20} className="text-brand-600" />
+                <h3 className="text-lg font-medium text-slate-900">
                   {request.candidate.attachedResumeName || t('consultation.viewModalResumeTitle')}
                 </h3>
               </div>
@@ -900,20 +900,20 @@ export default function ConsultationDetailsPage() {
 
             {/* Resume Summary Details */}
             <div className="space-y-4 text-xs text-slate-700">
-              <div className="flex items-center justify-between rounded-xl bg-blue-50 p-3">
+              <div className="flex items-center justify-between rounded-xl bg-brand-50 p-3">
                 <div>
-                  <p className="font-bold text-slate-800 text-sm">{request.candidate.name}</p>
+                  <p className="font-medium text-slate-800 text-sm">{request.candidate.name}</p>
                   <p className="text-slate-600">{request.candidate.currentTitle}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-md">
+                  <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-1 rounded-md">
                     ATS Score: {request.candidate.attachedResumeScore}/100
                   </span>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                <h4 className="font-medium text-slate-900 text-xs uppercase tracking-wider mb-1">
                   1. Mục Tiêu Nghề Nghiệp (Professional Summary)
                 </h4>
                 <p className="rounded-lg bg-slate-50 p-2.5 leading-relaxed">
@@ -923,7 +923,7 @@ export default function ConsultationDetailsPage() {
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                <h4 className="font-medium text-slate-900 text-xs uppercase tracking-wider mb-1">
                   2. Kỹ Năng Chuyên Môn (Core Competencies)
                 </h4>
                 <div className="flex flex-wrap gap-1.5">
@@ -939,12 +939,12 @@ export default function ConsultationDetailsPage() {
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                <h4 className="font-medium text-slate-900 text-xs uppercase tracking-wider mb-1">
                   3. Góp Ý Chuyên Môn Nhanh từ Hệ thống AI ATS
                 </h4>
-                <div className="space-y-1.5 rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-[11px]">
-                  <p className="font-semibold text-blue-900 flex items-center gap-1.5">
-                    <CheckCircle2 size={13} className="text-blue-600" />
+                <div className="space-y-1.5 rounded-xl border border-brand-100 bg-brand-50/50 p-3 text-[11px]">
+                  <p className="font-semibold text-brand-900 flex items-center gap-1.5">
+                    <CheckCircle2 size={13} className="text-brand-600" />
                     Định dạng cột đơn (Single-column) đạt chuẩn ATS, phông chữ chuẩn hóa.
                   </p>
                   <p className="font-semibold text-amber-900 flex items-center gap-1.5">

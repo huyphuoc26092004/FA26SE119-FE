@@ -16,7 +16,7 @@ import {
   Compass,
   DollarSign,
   Route,
-  Sparkles,
+  Lightbulb,
   ShieldCheck,
   Check,
 } from 'lucide-react';
@@ -95,17 +95,17 @@ export default function ConsultantDashboardPage() {
   const getTopicIcon = (topic: ConsultationTopic) => {
     switch (topic) {
       case 'CV_REVIEW':
-        return <FileText size={16} className="text-blue-600" />;
+        return <FileText size={16} className="text-brand-600" />;
       case 'CAREER_ORIENTATION':
         return <Compass size={16} className="text-amber-600" />;
       case 'MOCK_INTERVIEW':
         return <Video size={16} className="text-emerald-600" />;
       case 'SALARY_NEGOTIATION':
-        return <DollarSign size={16} className="text-purple-600" />;
+        return <DollarSign size={16} className="text-brand-600" />;
       case 'SKILL_ROADMAP':
-        return <Route size={16} className="text-pink-600" />;
+        return <Route size={16} className="text-brand-600" />;
       default:
-        return <FileText size={16} className="text-blue-600" />;
+        return <FileText size={16} className="text-brand-600" />;
     }
   };
 
@@ -133,7 +133,7 @@ export default function ConsultantDashboardPage() {
     switch (priority) {
       case 'URGENT':
         return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700 border border-red-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 border border-red-200">
             <AlertCircle size={12} />
             {t('consultation.urgent')}
           </span>
@@ -157,7 +157,7 @@ export default function ConsultantDashboardPage() {
     <div className="space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-xl animate-fade-in border border-slate-700">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-sm animate-fade-in border border-slate-700">
           <CheckCircle2 size={18} className="text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -197,7 +197,7 @@ export default function ConsultantDashboardPage() {
 
       {/* KPI Overview Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Link to="/consultant/consultations" className="block transition-transform hover:-translate-y-0.5">
+        <Link to="/consultant/consultations" className="block transition-transform">
           <StatCard
             label={t('consultation.assignedRequests')}
             value={String(currentStats.totalAssigned)}
@@ -207,7 +207,7 @@ export default function ConsultantDashboardPage() {
         </Link>
         <Link
           to="/consultant/consultations"
-          className="block transition-transform hover:-translate-y-0.5"
+          className="block transition-transform"
         >
           <StatCard
             label={t('consultation.pendingReview')}
@@ -229,7 +229,7 @@ export default function ConsultantDashboardPage() {
             label={t('consultation.todaySessionsCount')}
             value={String(currentStats.todaySessionsCount)}
             detail={isVietnamese ? '2 phiên Google Meet' : '2 Google Meet sessions'}
-            icon={<Clock size={20} className="text-blue-600" />}
+            icon={<Clock size={20} className="text-brand-600" />}
           />
         </div>
         <div className="block">
@@ -256,10 +256,10 @@ export default function ConsultantDashboardPage() {
 
       {/* Spotlight Next Session Banner */}
       {nextSession && (
-        <Card className="border-blue-200 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-md">
+        <Card className="border-brand-200 bg-brand-600 text-white">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-white backdrop-blur-sm border border-white/20">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-white border border-white/20">
                 <Video size={24} />
               </div>
               <div>
@@ -273,7 +273,7 @@ export default function ConsultantDashboardPage() {
                         ? 'Phiên tư vấn kế tiếp hôm nay'
                         : 'Upcoming Session Today'}
                   </span>
-                  <span className="text-xs text-blue-100 font-medium">
+                  <span className="text-xs text-brand-100 font-medium">
                     {new Date(nextSession.meeting.scheduledAt).toLocaleTimeString('vi-VN', {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -281,10 +281,10 @@ export default function ConsultantDashboardPage() {
                     ({nextSession.meeting.durationMinutes} phút)
                   </span>
                 </div>
-                <h3 className="mt-1 text-lg font-bold text-white">
+                <h3 className="mt-1 text-lg font-medium text-white">
                   {nextSession.candidate.name} · {nextSession.topicLabel}
                 </h3>
-                <p className="text-xs text-blue-100 line-clamp-1 mt-0.5">
+                <p className="text-xs text-brand-100 line-clamp-1 mt-0.5">
                   Mục tiêu: {nextSession.targetGoal}
                 </p>
               </div>
@@ -295,14 +295,14 @@ export default function ConsultantDashboardPage() {
                 href={nextSession.meeting.meetingUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-blue-800 shadow-sm transition hover:bg-blue-50 cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl bg-surface px-4 py-2.5 text-xs font-medium text-brand-800 shadow-sm transition hover:bg-brand-50 cursor-pointer"
               >
                 <Video size={15} />
                 <span>{t('consultation.joinMeeting')}</span>
                 <ExternalLink size={13} />
               </a>
               <Link to={`/consultant/consultations/${nextSession.id}`}>
-                <button className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 cursor-pointer">
+                <button className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-white/20 cursor-pointer">
                   <span>{t('consultation.viewDetails')}</span>
                   <ArrowRight size={13} />
                 </button>
@@ -320,7 +320,7 @@ export default function ConsultantDashboardPage() {
           <Card>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <div>
-                <h2 className="text-base font-bold text-slate-900">
+                <h2 className="text-base font-medium text-slate-900">
                   {t('consultation.urgentRequests')}
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -335,7 +335,7 @@ export default function ConsultantDashboardPage() {
                   onClick={() => setActiveTab('PENDING')}
                   className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
                     activeTab === 'PENDING'
-                      ? 'bg-white text-blue-700 shadow-xs'
+                      ? 'bg-white text-brand-700 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -345,7 +345,7 @@ export default function ConsultantDashboardPage() {
                   onClick={() => setActiveTab('SCHEDULED')}
                   className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
                     activeTab === 'SCHEDULED'
-                      ? 'bg-white text-blue-700 shadow-xs'
+                      ? 'bg-white text-brand-700 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -355,7 +355,7 @@ export default function ConsultantDashboardPage() {
                   onClick={() => setActiveTab('ALL')}
                   className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
                     activeTab === 'ALL'
-                      ? 'bg-white text-blue-700 shadow-xs'
+                      ? 'bg-white text-brand-700 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -384,7 +384,7 @@ export default function ConsultantDashboardPage() {
                       />
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-bold text-sm text-slate-900">
+                          <span className="font-medium text-sm text-slate-900">
                             {req.candidate.name}
                           </span>
                           <span className="text-xs text-slate-400 font-mono">#{req.id}</span>
@@ -407,7 +407,7 @@ export default function ConsultantDashboardPage() {
                         <button
                           onClick={() => acceptMutation.mutate(req.id)}
                           disabled={acceptMutation.isPending}
-                          className="inline-flex items-center gap-1 rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-xl bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100 transition cursor-pointer disabled:opacity-50"
                         >
                           <Check size={14} />
                           <span>{t('consultation.acceptQuick')}</span>
@@ -427,7 +427,7 @@ export default function ConsultantDashboardPage() {
             <div className="mt-4 border-t border-slate-100 pt-3 text-center">
               <Link
                 to="/consultant/consultations"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
                 <span>
                   {isVietnamese
@@ -443,8 +443,8 @@ export default function ConsultantDashboardPage() {
           <Card>
             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Calendar size={18} className="text-blue-600" />
-                <h2 className="text-base font-bold text-slate-900">
+                <Calendar size={18} className="text-brand-600" />
+                <h2 className="text-base font-medium text-slate-900">
                   {t('consultation.weeklySchedule')}
                 </h2>
               </div>
@@ -459,11 +459,11 @@ export default function ConsultantDashboardPage() {
                   key={day.date}
                   className={`rounded-xl border p-3 ${
                     day.date === '2026-10-19'
-                      ? 'border-blue-300 bg-blue-50/50 ring-1 ring-blue-400/30'
+                      ? 'border-brand-300 bg-brand-50/50 ring-1 ring-brand-400/30'
                       : 'border-slate-200/80 bg-white'
                   }`}
                 >
-                  <p className="text-xs font-bold text-slate-700">{day.dayOfWeek}</p>
+                  <p className="text-xs font-medium text-slate-700">{day.dayOfWeek}</p>
                   <p className="text-[11px] text-slate-400">{day.date}</p>
 
                   <div className="mt-2 space-y-1.5">
@@ -476,12 +476,12 @@ export default function ConsultantDashboardPage() {
                         <Link
                           key={sess.id}
                           to={`/consultant/consultations/${sess.id}`}
-                          className="block rounded-lg bg-white p-2 text-xs shadow-xs border border-slate-100 hover:border-blue-300 transition"
+                          className="block rounded-lg bg-surface p-2 text-xs shadow-xs border border-slate-100 hover:border-brand-300 transition"
                         >
-                          <span className="block font-bold text-slate-800 truncate">
+                          <span className="block font-medium text-slate-800 truncate">
                             {sess.candidateName}
                           </span>
-                          <span className="block text-[10px] text-blue-600 font-medium">
+                          <span className="block text-[10px] text-brand-600 font-medium">
                             {sess.time}
                           </span>
                         </Link>
@@ -497,32 +497,32 @@ export default function ConsultantDashboardPage() {
         {/* Right Column: Consultant Profile, Topic Distribution & Reviews */}
         <div className="space-y-6">
           {/* Consultant Profile Card */}
-          <Card className="border border-slate-200/90 bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30">
+          <Card className="border border-slate-200/90 bg-surface">
             <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-lg font-bold text-white shadow-sm">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-600 text-lg font-medium text-white shadow-sm">
                 TL
               </span>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h3 className="font-bold text-slate-900">Taylor Lee</h3>
-                  <ShieldCheck size={16} className="text-blue-600" />
+                  <h3 className="font-medium text-slate-900">Taylor Lee</h3>
+                  <ShieldCheck size={16} className="text-brand-600" />
                 </div>
                 <p className="text-xs text-slate-500">{t('consultation.consultantBio')}</p>
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 text-center">
-              <div className="rounded-xl bg-white p-2.5 border border-slate-100">
+              <div className="rounded-xl bg-surface p-2.5 border border-slate-100">
                 <span className="text-xs text-slate-500">
                   {isVietnamese ? 'Phản hồi trung bình' : 'Avg Response'}
                 </span>
-                <p className="font-bold text-slate-800 text-sm">{currentStats.avgResponseTime}</p>
+                <p className="font-medium text-slate-800 text-sm">{currentStats.avgResponseTime}</p>
               </div>
-              <div className="rounded-xl bg-white p-2.5 border border-slate-100">
+              <div className="rounded-xl bg-surface p-2.5 border border-slate-100">
                 <span className="text-xs text-slate-500">
                   {isVietnamese ? 'Ứng viên hài lòng' : 'Satisfaction'}
                 </span>
-                <p className="font-bold text-emerald-600 text-sm">
+                <p className="font-medium text-emerald-600 text-sm">
                   {currentStats.completionRate}%
                 </p>
               </div>
@@ -530,10 +530,10 @@ export default function ConsultantDashboardPage() {
           </Card>
 
           {/* AI Consultant Coaching Insights */}
-          <Card className="border-amber-200/80 bg-gradient-to-br from-amber-50/50 to-white">
+          <Card className="border-amber-200/80 bg-amber-50/50">
             <div className="flex items-center gap-2 text-amber-800 mb-2">
-              <Sparkles size={18} className="text-amber-600" />
-              <h3 className="font-bold text-sm">
+              <Lightbulb size={18} className="text-amber-600" />
+              <h3 className="font-medium text-sm">
                 {isVietnamese ? 'Gợi ý Trợ lý AI cho Cố vấn' : 'AI Career Assistant Insights'}
               </h3>
             </div>
@@ -545,7 +545,7 @@ export default function ConsultantDashboardPage() {
             <div className="mt-3">
               <Link
                 to="/consultant/consultations/CR-2026-081"
-                className="text-xs font-bold text-amber-700 hover:text-amber-800 inline-flex items-center gap-1"
+                className="text-xs font-medium text-amber-700 hover:text-amber-800 inline-flex items-center gap-1"
               >
                 <span>{isVietnamese ? 'Mở hồ sơ Alex Morgan' : 'Open Alex Morgan profile'}</span>
                 <ArrowRight size={12} />
@@ -556,8 +556,8 @@ export default function ConsultantDashboardPage() {
           {/* Topics Distribution */}
           <Card>
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                <TrendingUp size={16} className="text-blue-600" />
+              <h3 className="font-medium text-sm text-slate-900 flex items-center gap-1.5">
+                <TrendingUp size={16} className="text-brand-600" />
                 <span>{t('consultation.topicDistribution')}</span>
               </h3>
             </div>
@@ -567,7 +567,7 @@ export default function ConsultantDashboardPage() {
                 <div key={item.topic}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="font-medium text-slate-700">{item.label}</span>
-                    <span className="font-bold text-slate-800">
+                    <span className="font-medium text-slate-800">
                       {item.count} ({item.percentage}%)
                     </span>
                   </div>
@@ -585,18 +585,18 @@ export default function ConsultantDashboardPage() {
           {/* Recent Candidate Testimonials */}
           <Card>
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                <Users size={16} className="text-blue-600" />
+              <h3 className="font-medium text-sm text-slate-900 flex items-center gap-1.5">
+                <Users size={16} className="text-brand-600" />
                 <span>{t('consultation.recentReviews')}</span>
               </h3>
-              <span className="text-xs text-amber-600 font-bold">4.95 / 5.0 ★</span>
+              <span className="text-xs text-amber-600 font-medium">4.95 / 5.0 ★</span>
             </div>
 
             <div className="space-y-3 text-xs">
               <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-slate-800">Đặng Thanh Tùng</span>
-                  <span className="text-amber-500 font-bold">★★★★★</span>
+                  <span className="font-medium text-slate-800">Đặng Thanh Tùng</span>
+                  <span className="text-amber-500 font-medium">★★★★★</span>
                 </div>
                 <p className="text-slate-600 italic">
                   "Lời khuyên đàm phán offer của Chuyên gia cực kỳ sắc bén! Em đã chốt thành công gói
@@ -607,8 +607,8 @@ export default function ConsultantDashboardPage() {
 
               <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-slate-800">Nguyễn Thị Mai Linh</span>
-                  <span className="text-amber-500 font-bold">★★★★★</span>
+                  <span className="font-medium text-slate-800">Nguyễn Thị Mai Linh</span>
+                  <span className="text-amber-500 font-medium">★★★★★</span>
                 </div>
                 <p className="text-slate-600 italic">
                   "Buổi mock interview giúp em tự tin trả lời sự cố hệ thống SRE bằng tiếng Anh. Rất

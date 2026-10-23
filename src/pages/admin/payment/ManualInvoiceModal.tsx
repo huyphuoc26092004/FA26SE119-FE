@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { X, FileText, Check, AlertCircle, Calculator } from 'lucide-react';
+import {
+  X,
+  FileText,
+  Check,
+  AlertCircle,
+  Calculator,
+} from 'lucide-react';
 import type { CreateInvoicePayload } from '../../../types/paymentManagement';
 import type { PaymentMethodType } from '../../../types/subscription';
 
@@ -71,17 +77,17 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-2xl my-8 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-2xl my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-blue-50/60">
-          <div className="flex items-center gap-2.5 text-blue-900">
-            <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-brand-50/60">
+          <div className="flex items-center gap-2.5 text-brand-900">
+            <div className="p-2 rounded-xl bg-brand-100 text-brand-700">
               <FileText size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-sm">Lập Hóa đơn điện tử VAT mới (Ad-hoc)</h3>
-              <p className="text-[11px] text-blue-600">
+              <h3 className="font-medium text-sm">Lập Hóa đơn điện tử VAT mới (Ad-hoc)</h3>
+              <p className="text-[11px] text-brand-600">
                 Xuất hóa đơn GTGT tuân thủ Thông tư 78/2021/TT-BTC & NĐ 123/2020/NĐ-CP
               </p>
             </div>
@@ -105,7 +111,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
 
           {/* Section 1: Customer details */}
           <div>
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-2">
+            <span className="text-xs font-medium text-slate-800 uppercase tracking-wider block mb-2">
               1. Thông tin người mua / Đơn vị nhận hóa đơn
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -119,7 +125,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Ví dụ: Nguyễn Văn An"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
               </div>
 
@@ -133,7 +139,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="email@company.vn"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
               </div>
 
@@ -146,7 +152,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   value={customerCompany}
                   onChange={(e) => setCustomerCompany(e.target.value)}
                   placeholder="Công ty Cổ phần..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
               </div>
 
@@ -159,7 +165,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   value={customerTaxCode}
                   onChange={(e) => setCustomerTaxCode(e.target.value)}
                   placeholder="0318xxxxxx"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
               </div>
 
@@ -172,7 +178,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   placeholder="0908xxxxxx"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
               </div>
 
@@ -185,7 +191,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   value={orderCode}
                   onChange={(e) => setOrderCode(e.target.value)}
                   placeholder="CP-PAY-..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-mono"
                 />
               </div>
 
@@ -198,7 +204,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
                   placeholder="Số nhà, Tòa nhà, Phường/Xã, Quận/Huyện, Tỉnh/TP"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
               </div>
             </div>
@@ -206,7 +212,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
 
           {/* Section 2: Items & Pricing */}
           <div className="pt-2 border-t border-slate-100">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-2">
+            <span className="text-xs font-medium text-slate-800 uppercase tracking-wider block mb-2">
               2. Nội dung hàng hóa, dịch vụ & Thuế suất
             </span>
             <div className="space-y-3">
@@ -219,7 +225,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   required
                   value={itemName}
                   onChange={(e) => setItemName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
               </div>
 
@@ -235,7 +241,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                     required
                     value={amountVND}
                     onChange={(e) => setAmountVND(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs font-bold text-slate-900 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="w-full px-3 py-2 text-xs font-medium text-slate-900 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   />
                 </div>
 
@@ -246,7 +252,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   <select
                     value={vatRatePercent}
                     onChange={(e) => setVatRatePercent(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
                   >
                     <option value={8}>8% (Dịch vụ CNTT & Phần mềm)</option>
                     <option value={10}>10% (Thuế suất chuẩn)</option>
@@ -261,7 +267,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as PaymentMethodType)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
                   >
                     <option value="vietqr">VietQR (Chuyển khoản)</option>
                     <option value="momo">Ví MoMo</option>
@@ -274,9 +280,9 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
           </div>
 
           {/* Section 3: Tax calculation preview */}
-          <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-2 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-blue-900 pb-1 border-b border-blue-200/60">
-              <Calculator size={14} className="text-blue-600" />
+          <div className="p-4 rounded-2xl bg-brand-50/50 border border-brand-200/80 space-y-2 text-xs">
+            <div className="flex items-center gap-1.5 font-medium text-brand-900 pb-1 border-b border-brand-200/60">
+              <Calculator size={14} className="text-brand-600" />
               <span>Bảng tính thuế giá trị gia tăng tự động</span>
             </div>
             <div className="flex justify-between text-slate-600">
@@ -287,7 +293,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
               <span>Tiền thuế GTGT ({vatRatePercent}%):</span>
               <span className="font-semibold text-slate-900">{vatAmount.toLocaleString('vi-VN')} đ</span>
             </div>
-            <div className="flex justify-between pt-1 border-t border-blue-200 text-sm font-black text-blue-700">
+            <div className="flex justify-between pt-1 border-t border-brand-200 text-sm font-semibold text-brand-700">
               <span>Tổng thanh toán đã gồm thuế:</span>
               <span>{amountVND.toLocaleString('vi-VN')} đ</span>
             </div>
@@ -306,7 +312,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition shadow-xs shadow-blue-500/20 disabled:opacity-50 flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
             >
               <Check size={14} />
               <span>{isSubmitting ? 'Đang ký số & Lập HĐ...' : 'Ký số & Phát hành Hóa đơn'}</span>

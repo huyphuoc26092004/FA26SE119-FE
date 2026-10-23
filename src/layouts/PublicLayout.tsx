@@ -1,15 +1,37 @@
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
 import { Button } from '../components/ui';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
-import { Sparkles, Bot, Briefcase, ArrowRight, LogIn, LayoutDashboard, LogOut } from 'lucide-react';
+import {
+  ArrowRight,
+  LogOut,
+  Menu,
+  X,
+} from 'lucide-react';
 
 export default function PublicLayout() {
   const { isAuthenticated, role, user, logout } = useAuthStore();
   const { t, isVietnamese } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
 
   const getRoleLabel = () => {
     if (role === 'ADMIN') return t('common.roleAdmin', 'Quản trị viên');
@@ -31,153 +53,195 @@ export default function PublicLayout() {
     '/verify-otp',
   ].includes(location.pathname);
 
-  if (isAuthPage) {
+  // The guest trial page brings its own sidebar shell.
+  if (isAuthPage || location.pathname === '/guest-trial') {
     return <Outlet />;
   }
 
+  const linkClass =
+    'inline-flex min-h-10 items-center gap-2 text-[15px] transition-colors duration-150 focus-visible:outline-offset-2';
+  const standardLinkClass = `${linkClass} text-slate-700 hover:text-brand`;
+  const activeLinkClass = `${linkClass} text-brand`;
+  const isJobsPage = location.pathname.startsWith('/jobs');
+
+  const openFeatureSection = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    setMobileMenuOpen(false);
+    if (window.location.pathname !== '/') {
+      event.preventDefault();
+      navigate('/#features');
+    }
+  };
+
+  const publicNavigation = (
+    <>
+      <Link
+        to="/"
+        className={location.pathname === '/' ? activeLinkClass : standardLinkClass}
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        {t('nav.overview', 'Tổng quan')}
+      </Link>
+      <Link
+        to="/jobs"
+        className={isJobsPage ? activeLinkClass : standardLinkClass}
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        <span>{t('nav.jobDiscovery', 'Khám phá việc làm')}</span>
+      </Link>
+      <a href="#features" onClick={openFeatureSection} className={standardLinkClass}>
+        <span>{t('nav.aiAgentMatching', 'Khớp nối AI Agent')}</span>
+      </a>
+      <Link
+        to="/guest-trial"
+        className={location.pathname === '/guest-trial' ? activeLinkClass : standardLinkClass}
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        {t('nav.guestTrial', isVietnamese ? 'Trải nghiệm ngay' : 'Guest trial')}
+      </Link>
+    </>
+  );
+
+  const accountActions =
+    isAuthenticated && user ? (
+      <>
+        <Link
+          to={getRoleDashboardPath()}
+          onClick={() => setMobileMenuOpen(false)}
+          className="inline-flex min-h-10 items-center justify-center gap-3 rounded-full bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-brand-800 focus-visible:outline-offset-2"
+        >
+          <span>{t('common.openWorkspace', 'Mở không gian làm việc')}</span>
+          <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+        </Link>
+        <Button
+          type="button"
+          variant="ghost"
+          className="min-h-10 px-3 text-sm text-slate-700 hover:bg-red-50 hover:text-red-700"
+          onClick={() => {
+            logout();
+            setMobileMenuOpen(false);
+          }}
+          title={t('common.signOut', 'Đăng xuất')}
+        >
+          <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {t('common.signOut', 'Đăng xuất')}
+        </Button>
+      </>
+    ) : (
+      <>
+        <Link
+          to="/login"
+          onClick={() => setMobileMenuOpen(false)}
+          className={`${standardLinkClass} justify-center`}
+        >
+          {t('common.signIn', 'Đăng nhập')}
+        </Link>
+        <Link
+          to="/register"
+          onClick={() => setMobileMenuOpen(false)}
+          className="inline-flex min-h-10 items-center justify-center gap-3 rounded-full bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-brand-800 focus-visible:outline-offset-2"
+        >
+          {t('common.getStarted', 'Bắt đầu ngay')}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </>
+    );
+
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex h-18 w-full max-w-[1536px] items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-12">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group shrink-0 mr-4 lg:mr-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-500/20 group-hover:bg-blue-700 transition-colors">
-              <Bot className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-slate-900 tracking-tight text-lg">Jobie</span>
-                <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">AI</span>
-              </div>
-              <p className="text-[10px] text-slate-500 font-medium">FA26SE119 • Capstone</p>
-            </div>
+    <div className="flex min-h-screen flex-col bg-canvas text-ink">
+      <header className="sticky top-0 z-40 border-b border-border bg-canvas">
+        <div className="relative mx-auto flex h-16 w-full max-w-[1680px] items-center justify-between gap-6 px-5 sm:px-8 lg:px-[clamp(2rem,4vw,5rem)]">
+          <Link
+            to="/"
+            className="flex shrink-0 items-baseline gap-1 rounded-control focus-visible:outline-offset-4"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <span className="text-2xl font-medium tracking-[-0.02em] text-ink">Jobie</span>
+            <span className="text-xs text-brand">ai</span>
           </Link>
 
-          {/* Nav links */}
-          <nav className="hidden md:flex items-center gap-2 lg:gap-3 text-sm font-medium text-slate-600 shrink-0">
-            <Link
-              to="/"
-              className={`transition-colors whitespace-nowrap px-3 py-1.5 rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                location.pathname === '/'
-                  ? 'bg-blue-50/80 text-blue-700 font-bold border border-blue-200/60 shadow-2xs'
-                  : 'hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              {t('nav.overview', 'Tổng quan')}
-            </Link>
-            <Link
-              to="/jobs"
-              className={`transition-colors flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                location.pathname.startsWith('/jobs')
-                  ? 'bg-blue-50/80 text-blue-700 font-bold border border-blue-200/60 shadow-2xs'
-                  : 'hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              <Briefcase className={`h-4 w-4 ${location.pathname.startsWith('/jobs') ? 'text-blue-600' : 'text-slate-400'}`} />
-              <span>{t('nav.jobDiscovery', 'Khám phá việc làm')}</span>
-            </Link>
-            <a
-              href="#features"
-              onClick={(e) => {
-                if (window.location.pathname !== '/') {
-                  e.preventDefault();
-                  navigate('/#features');
-                }
-              }}
-              className="hover:text-blue-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              <Sparkles className="h-4 w-4 text-blue-600" />
-              <span>{t('nav.aiAgentMatching', 'Khớp nối AI Agent')}</span>
-            </a>
-            <Link
-              to="/guest-trial"
-              className="transition-colors flex items-center gap-1.5 whitespace-nowrap outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded-full ml-1"
-            >
-              <span className="rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold text-blue-700 border border-blue-200/80 hover:bg-blue-100 hover:text-blue-800 transition shadow-2xs whitespace-nowrap">
-                {isVietnamese ? 'Trải nghiệm ngay' : 'Guest Trial'}
-              </span>
-            </Link>
+          <nav
+            aria-label={t(
+              'nav.publicNavigation',
+              isVietnamese ? 'Điều hướng chính' : 'Main navigation',
+            )}
+            className="hidden items-center gap-7 lg:flex"
+          >
+            {publicNavigation}
           </nav>
 
-          {/* Controls & Auth CTA */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-            {/* Language Switcher */}
+          <div className="hidden shrink-0 items-center gap-4 xl:flex">
             <LanguageSwitcher />
-
-            {/* Vertical separator */}
-            <div className="h-6 w-px bg-slate-200/80 hidden sm:block" />
-
-            {isAuthenticated && user ? (
-              <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
-                {/* User Identity Card */}
-                <div className="hidden xl:flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white/90 py-1.5 px-3 shadow-2xs">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-xs shadow-xs">
-                    {user.name.charAt(0)}
-                  </div>
-                  <div className="text-left leading-tight">
-                    <div className="text-xs font-bold text-slate-800 line-clamp-1">{user.name}</div>
-                    <div className="text-[10px] font-semibold text-blue-600">{getRoleLabel()}</div>
-                  </div>
-                </div>
-
-                {/* Open Workspace button */}
-                <Link to={getRoleDashboardPath()} className="shrink-0">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-sm whitespace-nowrap">
-                    <LayoutDashboard className="h-4 w-4 shrink-0" />
-                    <span>{t('common.openWorkspace', 'Mở không gian làm việc')}</span>
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0" />
-                  </Button>
-                </Link>
-
-                {/* Sign Out Button */}
-                <Button
-                  variant="ghost"
-                  className="text-xs sm:text-sm py-2 px-3 text-slate-600 hover:text-red-600 hover:bg-red-50 flex items-center gap-1.5 whitespace-nowrap shrink-0 rounded-xl"
-                  onClick={logout}
-                  title={t('common.signOut', 'Đăng xuất')}
-                >
-                  <LogOut className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-red-600" />
-                  <span className="hidden sm:inline font-semibold">{t('common.signOut', 'Đăng xuất')}</span>
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 sm:gap-2.5">
-                <Link to="/login">
-                  <Button variant="ghost" className="text-xs sm:text-sm py-2.5 px-3.5 text-slate-700 hover:text-blue-600 flex items-center gap-1.5 font-semibold rounded-xl">
-                    <LogIn className="h-4 w-4" />
-                    <span>{t('common.signIn', 'Đăng nhập')}</span>
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-sm">
-                    <span>{t('common.getStarted', 'Bắt đầu ngay')}</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
+            {isAuthenticated && user && (
+              <span className="max-w-36 border-l border-border pl-4">
+                <span className="block truncate text-xs text-ink">{user.name}</span>
+                <span className="block text-xs text-slate-600">{getRoleLabel()}</span>
+              </span>
             )}
+            {accountActions}
           </div>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2 lg:hidden">
+            <LanguageSwitcher variant="compact" />
+            <button
+              type="button"
+              className="grid h-10 w-10 place-items-center rounded-full text-slate-700 transition-colors hover:bg-slate-100 hover:text-ink"
+              aria-label={
+                mobileMenuOpen
+                  ? t('layout.closeMenu', 'Close navigation')
+                  : t('layout.openMenu', 'Open navigation')
+              }
+              aria-expanded={mobileMenuOpen}
+              aria-controls="public-mobile-navigation"
+              onClick={() => setMobileMenuOpen((current) => !current)}
+            >
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+
+          {mobileMenuOpen && (
+            <div
+              id="public-mobile-navigation"
+              className="absolute inset-x-0 top-full border-b border-border bg-canvas px-5 py-4 lg:hidden sm:px-8"
+            >
+              <nav
+                aria-label={t(
+                  'nav.publicNavigation',
+                  isVietnamese ? 'Điều hướng chính' : 'Main navigation',
+                )}
+                className="grid gap-1"
+              >
+                {publicNavigation}
+              </nav>
+              <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-border pt-3">
+                {accountActions}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1">
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-slate-700">{t('footer.projectCode', 'Mã đồ án: FA26SE119')}</span>
-              <span>•</span>
-              <span>{t('footer.projectDescription', 'Hệ thống AI Agent khớp nối CV thông minh hỗ trợ gợi ý việc làm và tư vấn lộ trình nghề nghiệp')}</span>
-            </div>
-            <div>
-              {t('footer.capstoneTag', 'Đồ án Tốt nghiệp Đại học FPT • Mô hình Kiến trúc Frontend')}
-            </div>
+      <footer className="border-t border-border py-8">
+        <div className="mx-auto flex max-w-[1680px] flex-col items-start justify-between gap-3 px-5 text-xs text-slate-600 sm:px-8 lg:px-[clamp(2rem,4vw,5rem)] md:flex-row md:items-center">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-slate-700">{t('footer.projectCode', 'Mã đồ án: FA26SE119')}</span>
+            <span aria-hidden="true">·</span>
+            <span>
+              {t(
+                'footer.projectDescription',
+                'Hệ thống AI Agent khớp nối CV thông minh hỗ trợ gợi ý việc làm và tư vấn lộ trình nghề nghiệp',
+              )}
+            </span>
+          </div>
+          <div>
+            {t('footer.capstoneTag', 'Đồ án Tốt nghiệp Đại học FPT • Mô hình Kiến trúc Frontend')}
           </div>
         </div>
       </footer>

@@ -18,7 +18,7 @@ import {
   Phone,
   MapPin,
   Clock,
-  Sparkles,
+  Lightbulb,
   CreditCard,
   Zap,
   Check,
@@ -172,14 +172,14 @@ export default function UserDetailsPage() {
     switch (role) {
       case 'ADMIN':
         return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 border border-rose-200">
             <ShieldAlert size={13} />
             <span>Administrator</span>
           </span>
         );
       case 'CAREER_CONSULTANT':
         return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700 border border-purple-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 border border-brand-200">
             <ShieldCheck size={13} />
             <span>Career Consultant</span>
           </span>
@@ -187,7 +187,7 @@ export default function UserDetailsPage() {
       case 'CANDIDATE':
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 border border-brand-200">
             <Users size={13} />
             <span>Job Candidate</span>
           </span>
@@ -199,21 +199,21 @@ export default function UserDetailsPage() {
     switch (status) {
       case 'ACTIVE':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 border border-emerald-200">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Hoạt động (Active)</span>
           </span>
         );
       case 'SUSPENDED':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700 border border-red-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700 border border-red-200">
             <Lock size={12} />
             <span>Đã bị khóa (Suspended)</span>
           </span>
         );
       case 'PENDING':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 border border-amber-200">
             <Clock size={12} />
             <span>Chờ kích hoạt (Pending)</span>
           </span>
@@ -230,7 +230,7 @@ export default function UserDetailsPage() {
     <div className="space-y-6">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-xl animate-fade-in border border-slate-700">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-sm animate-fade-in border border-slate-700">
           <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -240,7 +240,7 @@ export default function UserDetailsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/admin/users"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 transition"
         >
           <ArrowLeft size={14} />
           <span>{isVietnamese ? 'Quay lại danh sách người dùng' : 'Back to Users'}</span>
@@ -252,17 +252,17 @@ export default function UserDetailsPage() {
       </div>
 
       {/* Profile Header Hero Card */}
-      <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-white via-white to-blue-50/30 p-6">
+      <Card className="border-slate-200 shadow-sm bg-surface p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <img
               src={user.avatar}
               alt={user.name}
-              className="h-20 w-20 shrink-0 rounded-2xl object-cover border-2 border-white shadow-md ring-2 ring-blue-100"
+              className="h-20 w-20 shrink-0 rounded-2xl object-cover border-2 border-white ring-2 ring-brand-100"
             />
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">{user.name}</h1>
+                <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight">{user.name}</h1>
                 {getRoleBadge(user.role)}
                 {getStatusBadge(user.status)}
                 {user.isVerified ? (
@@ -323,7 +323,7 @@ export default function UserDetailsPage() {
                 setSelectedPermissions(user.permissions || getDefaultPermissionsForRole(user.role));
                 setShowRoleModal(true);
               }}
-              className="text-xs py-2 px-3 gap-1.5 border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100"
+              className="text-xs py-2 px-3 gap-1.5 border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
             >
               <Shield size={14} />
               <span>Phân quyền (Role)</span>
@@ -335,7 +335,7 @@ export default function UserDetailsPage() {
                 setLockReason(user.suspendedReason || '');
                 setShowLockModal(true);
               }}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition cursor-pointer ${
                 user.status === 'SUSPENDED'
                   ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                   : 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
@@ -349,7 +349,7 @@ export default function UserDetailsPage() {
             <button
               onClick={() => resetPasswordMutation.mutate()}
               disabled={resetPasswordMutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
               title="Đặt lại mật khẩu mặc định"
             >
               <RefreshCw size={13} className={resetPasswordMutation.isPending ? 'animate-spin' : ''} />
@@ -360,7 +360,7 @@ export default function UserDetailsPage() {
             {user.email !== 'admin@example.com' && (
               <button
                 onClick={() => setShowDeleteModal(true)}
-                className="rounded-xl border border-slate-200 bg-white p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                className="rounded-xl border border-slate-200 bg-surface p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                 title="Xóa tài khoản"
               >
                 <Trash2 size={16} />
@@ -375,7 +375,7 @@ export default function UserDetailsPage() {
         <div className="rounded-2xl border border-red-200 bg-red-50/70 p-4 text-xs text-red-900 flex items-start gap-3">
           <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold text-red-800 text-sm">Tài khoản này đang bị khóa bởi Quản trị viên</h4>
+            <h4 className="font-medium text-red-800 text-sm">Tài khoản này đang bị khóa bởi Quản trị viên</h4>
             <p className="mt-0.5">
               Lý do: <strong>{user.suspendedReason || 'Vi phạm điều khoản sử dụng hệ thống'}</strong>
             </p>
@@ -388,9 +388,9 @@ export default function UserDetailsPage() {
       <div className="flex border-b border-slate-200 overflow-x-auto space-x-2">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'profile'
-              ? 'border-blue-600 text-blue-700'
+              ? 'border-brand-600 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -400,9 +400,9 @@ export default function UserDetailsPage() {
 
         <button
           onClick={() => setActiveTab('permissions')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'permissions'
-              ? 'border-purple-600 text-purple-700'
+              ? 'border-brand-600 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -412,7 +412,7 @@ export default function UserDetailsPage() {
 
         <button
           onClick={() => setActiveTab('subscription')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'subscription'
               ? 'border-emerald-600 text-emerald-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -424,9 +424,9 @@ export default function UserDetailsPage() {
 
         <button
           onClick={() => setActiveTab('activities')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'activities'
-              ? 'border-indigo-600 text-indigo-700'
+              ? 'border-brand-600 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -443,7 +443,7 @@ export default function UserDetailsPage() {
           <div className="space-y-6">
             {/* Bio / Summary */}
             <Card>
-              <h3 className="font-bold text-sm text-slate-900 mb-2 border-b border-slate-100 pb-2">
+              <h3 className="font-medium text-sm text-slate-900 mb-2 border-b border-slate-100 pb-2">
                 Giới Thiệu Bản Thân
               </h3>
               <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100">
@@ -453,7 +453,7 @@ export default function UserDetailsPage() {
 
             {/* Basic Information Grid */}
             <Card>
-              <h3 className="font-bold text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2">
+              <h3 className="font-medium text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2">
                 Thông Tin Chi Tiết Tài Khoản
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -488,10 +488,10 @@ export default function UserDetailsPage() {
           {/* Right Column: Admin Notes & Security Card */}
           <div className="space-y-6">
             {/* Admin Private Notes */}
-            <Card className="border-amber-200 bg-gradient-to-br from-amber-50/20 via-white to-white">
+            <Card className="border-amber-200 bg-amber-50/20">
               <div className="flex items-center justify-between mb-2 border-b border-slate-100 pb-2">
-                <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900">
-                  <Sparkles size={16} className="text-amber-500" />
+                <div className="flex items-center gap-1.5 font-medium text-sm text-slate-900">
+                  <Lightbulb size={16} className="text-amber-500" />
                   <span>Ghi Chú Quản Trị Viên</span>
                 </div>
                 <Badge tone="amber">Private</Badge>
@@ -501,7 +501,7 @@ export default function UserDetailsPage() {
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 placeholder="Nhập ghi chú riêng của ban quản trị về ứng viên/cố vấn này..."
-                className="w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-amber-500 bg-white leading-relaxed"
+                className="w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-amber-500 bg-surface leading-relaxed"
               />
               <div className="flex justify-end mt-2">
                 <Button
@@ -518,17 +518,17 @@ export default function UserDetailsPage() {
 
             {/* Quick Security Status */}
             <Card>
-              <h3 className="font-bold text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2">
+              <h3 className="font-medium text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2">
                 Bảo Mật & Tuân Thủ
               </h3>
               <div className="space-y-2.5 text-xs text-slate-600">
                 <div className="flex items-center justify-between">
                   <span>Mã hóa mật khẩu:</span>
-                  <span className="font-bold text-emerald-700">PBKDF2 SHA-256</span>
+                  <span className="font-medium text-emerald-700">PBKDF2 SHA-256</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Xác thực 2 bước (OTP):</span>
-                  <span className="font-bold text-emerald-700">Đã kích hoạt</span>
+                  <span className="font-medium text-emerald-700">Đã kích hoạt</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Lần đổi mật khẩu cuối:</span>
@@ -551,8 +551,8 @@ export default function UserDetailsPage() {
         <Card className="space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Shield size={18} className="text-purple-600" />
+              <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
+                <Shield size={18} className="text-brand-600" />
                 <span>Danh Sách Quyền Hạn Của Tài Khoản</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -566,7 +566,7 @@ export default function UserDetailsPage() {
                 setSelectedPermissions(user.permissions || getDefaultPermissionsForRole(user.role));
                 setShowRoleModal(true);
               }}
-              className="text-xs py-2 px-3.5 gap-1.5 bg-purple-600 hover:bg-purple-700"
+              className="text-xs py-2 px-3.5 gap-1.5 bg-brand-600 hover:bg-brand-700"
             >
               <Shield size={14} />
               <span>Chỉnh sửa phân quyền</span>
@@ -581,14 +581,14 @@ export default function UserDetailsPage() {
                   key={p.key}
                   className={`rounded-xl border p-3.5 space-y-1 transition ${
                     hasPermission
-                      ? 'border-purple-200 bg-purple-50/40 text-purple-950'
+                      ? 'border-brand-200 bg-brand-50/40 text-brand-950'
                       : 'border-slate-200/60 bg-slate-50/50 text-slate-400 opacity-60'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-900">{p.name}</span>
+                    <span className="font-medium text-sm text-slate-900">{p.name}</span>
                     {hasPermission ? (
-                      <span className="inline-flex items-center gap-1 rounded bg-purple-100 px-1.5 py-0.2 text-[10px] font-bold text-purple-800">
+                      <span className="inline-flex items-center gap-1 rounded bg-brand-100 px-1.5 py-0.2 text-[10px] font-medium text-brand-800">
                         <Check size={11} /> Cấp quyền
                       </span>
                     ) : (
@@ -611,15 +611,15 @@ export default function UserDetailsPage() {
       {/* ========================================================================= */}
       {activeTab === 'subscription' && (
         <div className="space-y-6">
-          <Card className="border-blue-200 bg-gradient-to-r from-blue-50/50 via-white to-purple-50/40 p-6">
+          <Card className="border-brand-200 bg-brand-50/50 p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white font-bold shadow-sm">
+                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand-600 text-white font-medium shadow-sm">
                   <CreditCard size={28} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold text-slate-900">{user.planName}</h3>
+                    <h3 className="text-xl font-medium text-slate-900">{user.planName}</h3>
                     <Badge tone="blue">{user.planId.toUpperCase()}</Badge>
                   </div>
                   <p className="text-xs text-slate-600 mt-1">
@@ -631,11 +631,11 @@ export default function UserDetailsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-blue-200 bg-white p-4 text-center shrink-0 min-w-[200px] shadow-2xs">
-                <span className="text-[11px] uppercase font-bold text-slate-400 block">
+              <div className="rounded-2xl border border-brand-200 bg-surface p-4 text-center shrink-0 min-w-[200px] shadow-2xs">
+                <span className="text-[11px] uppercase font-medium text-slate-400 block">
                   Đã sử dụng tháng này
                 </span>
-                <span className="text-2xl font-black text-blue-700">
+                <span className="text-2xl font-semibold text-brand-700">
                   {user.tokensUsedThisMonth.toLocaleString()}
                 </span>
                 <span className="text-xs text-slate-500 block mt-0.5">
@@ -648,7 +648,7 @@ export default function UserDetailsPage() {
             <div className="mt-5 space-y-1.5">
               <div className="flex justify-between text-xs text-slate-600 font-medium">
                 <span>0 Tokens</span>
-                <span className="text-blue-700 font-bold">
+                <span className="text-brand-700 font-medium">
                   Còn lại: {(user.tokenMonthlyQuota - user.tokensUsedThisMonth).toLocaleString()} Tokens
                 </span>
                 <span>{user.tokenMonthlyQuota.toLocaleString()} Tokens</span>
@@ -656,7 +656,7 @@ export default function UserDetailsPage() {
               <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    tokenUsagePercent > 80 ? 'bg-red-500' : 'bg-blue-600'
+                    tokenUsagePercent > 80 ? 'bg-red-500' : 'bg-brand-600'
                   }`}
                   style={{ width: `${tokenUsagePercent}%` }}
                 />
@@ -673,8 +673,8 @@ export default function UserDetailsPage() {
         <Card className="space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <History size={18} className="text-blue-600" />
-              <h3 className="font-bold text-sm text-slate-900">
+              <History size={18} className="text-brand-600" />
+              <h3 className="font-medium text-sm text-slate-900">
                 Lịch Sử Kiểm Toán & Hoạt Động Của Người Dùng
               </h3>
             </div>
@@ -700,10 +700,10 @@ export default function UserDetailsPage() {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">Sửa thông tin: {user.name}</h3>
+              <h3 className="text-base font-medium text-slate-900">Sửa thông tin: {user.name}</h3>
               <button onClick={() => setShowEditModal(false)} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
                 <X size={18} />
               </button>
@@ -722,26 +722,26 @@ export default function UserDetailsPage() {
               className="space-y-3 text-xs"
             >
               <div>
-                <label className="font-bold block mb-1">Họ và tên *</label>
-                <input name="name" defaultValue={user.name} required className="w-full rounded-xl border p-2.5 outline-none focus:border-blue-500" />
+                <label className="font-medium block mb-1">Họ và tên *</label>
+                <input name="name" defaultValue={user.name} required className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
               </div>
               <div>
-                <label className="font-bold block mb-1">Email *</label>
-                <input name="email" type="email" defaultValue={user.email} required className="w-full rounded-xl border p-2.5 outline-none focus:border-blue-500" />
+                <label className="font-medium block mb-1">Email *</label>
+                <input name="email" type="email" defaultValue={user.email} required className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold block mb-1">Số điện thoại</label>
-                  <input name="phone" defaultValue={user.phone} className="w-full rounded-xl border p-2.5 outline-none focus:border-blue-500" />
+                  <label className="font-medium block mb-1">Số điện thoại</label>
+                  <input name="phone" defaultValue={user.phone} className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Địa điểm</label>
-                  <input name="location" defaultValue={user.location} className="w-full rounded-xl border p-2.5 outline-none focus:border-blue-500" />
+                  <label className="font-medium block mb-1">Địa điểm</label>
+                  <input name="location" defaultValue={user.location} className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
                 </div>
               </div>
               <div>
-                <label className="font-bold block mb-1">Chức danh / Headline</label>
-                <input name="headline" defaultValue={user.headline} className="w-full rounded-xl border p-2.5 outline-none focus:border-blue-500" />
+                <label className="font-medium block mb-1">Chức danh / Headline</label>
+                <input name="headline" defaultValue={user.headline} className="w-full rounded-xl border p-2.5 outline-none focus:border-brand-500" />
               </div>
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>Hủy</Button>
@@ -756,9 +756,9 @@ export default function UserDetailsPage() {
 
       {/* Lock Modal */}
       {showLockModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-slate-900">
               {user.status === 'SUSPENDED' ? 'Mở Khóa Tài Khoản' : 'Khóa Tài Khoản Người Dùng'}
             </h3>
             <p className="text-xs text-slate-600">
@@ -796,17 +796,17 @@ export default function UserDetailsPage() {
 
       {/* Role Modal */}
       {showRoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl my-8 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
+          <div className="w-full max-w-xl rounded-2xl bg-surface p-6 shadow-sm my-8 space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-base font-bold text-slate-900">Phân Quyền Vai Trò (Roles)</h3>
+              <h3 className="text-base font-medium text-slate-900">Phân Quyền Vai Trò (Roles)</h3>
               <button onClick={() => setShowRoleModal(false)} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
                 <X size={18} />
               </button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-bold block mb-1">Chọn vai trò chính</label>
+                <label className="font-medium block mb-1">Chọn vai trò chính</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['CANDIDATE', 'CAREER_CONSULTANT', 'ADMIN'] as const).map((r) => (
                     <button
@@ -816,8 +816,8 @@ export default function UserDetailsPage() {
                         setNewRole(r);
                         setSelectedPermissions(getDefaultPermissionsForRole(r));
                       }}
-                      className={`p-2.5 rounded-xl border text-center font-bold transition cursor-pointer ${
-                        newRole === r ? 'border-purple-600 bg-purple-50 text-purple-700' : 'border-slate-200'
+                      className={`p-2.5 rounded-xl border text-center font-medium transition cursor-pointer ${
+                        newRole === r ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-200'
                       }`}
                     >
                       {r}
@@ -832,7 +832,7 @@ export default function UserDetailsPage() {
                 variant="primary"
                 onClick={() => roleMutation.mutate({ role: newRole, permissions: selectedPermissions })}
                 disabled={roleMutation.isPending}
-                className="bg-purple-600"
+                className="bg-brand-600"
               >
                 Lưu Phân Quyền
               </Button>
@@ -843,9 +843,9 @@ export default function UserDetailsPage() {
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-red-600">Xóa Tài Khoản Vĩnh Viễn</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-red-600">Xóa Tài Khoản Vĩnh Viễn</h3>
             <p className="text-xs text-slate-600">
               Bạn có chắc chắn muốn xóa tài khoản <strong>{user.name}</strong> không? Hành động này không thể hoàn tác.
             </p>

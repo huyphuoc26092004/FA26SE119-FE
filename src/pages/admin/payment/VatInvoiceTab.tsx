@@ -80,8 +80,8 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
         );
       case 'ISSUED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-            <ShieldCheck size={12} className="text-blue-600" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
+            <ShieldCheck size={12} className="text-brand-600" />
             Đã phát hành
           </span>
         );
@@ -159,25 +159,25 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Tổng số HĐ đã phát hành
             </p>
-            <p className="text-2xl font-black text-slate-900 mt-1">{totalCount}</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{totalCount}</p>
             <p className="text-[11px] text-slate-500 mt-1">Ký hiệu mẫu: 1C26TTA</p>
           </div>
-          <div className="p-3.5 rounded-2xl bg-blue-50 text-blue-600">
+          <div className="p-3.5 rounded-2xl bg-brand-50 text-brand-600">
             <Receipt size={24} />
           </div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Đã gửi Email cho khách
             </p>
-            <p className="text-2xl font-black text-emerald-600 mt-1">{sentCount}</p>
+            <p className="text-2xl font-semibold text-emerald-600 mt-1">{sentCount}</p>
             <p className="text-[11px] text-slate-500 mt-1">Kèm mã tra cứu & bản thể hiện</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-emerald-50 text-emerald-600">
@@ -185,29 +185,29 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
           </div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Tổng thuế GTGT 8% đầu ra
             </p>
-            <p className="text-2xl font-black text-slate-900 mt-1">
+            <p className="text-2xl font-semibold text-slate-900 mt-1">
               {totalVatVND.toLocaleString('vi-VN')} đ
             </p>
             <p className="text-[11px] text-slate-500 mt-1">
               Doanh số: {totalGrossVND.toLocaleString('vi-VN')} đ
             </p>
           </div>
-          <div className="p-3.5 rounded-2xl bg-purple-50 text-purple-600">
+          <div className="p-3.5 rounded-2xl bg-brand-50 text-brand-600">
             <ShieldCheck size={24} />
           </div>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="p-5 rounded-3xl bg-surface border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Hóa đơn đã hủy / Điều chỉnh
             </p>
-            <p className="text-2xl font-black text-rose-600 mt-1">{cancelledCount}</p>
+            <p className="text-2xl font-semibold text-rose-600 mt-1">{cancelledCount}</p>
             <p className="text-[11px] text-slate-500 mt-1">Đã lưu lý do biên bản hủy</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-rose-50 text-rose-600">
@@ -217,7 +217,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
       </div>
 
       {/* Action and Filter Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-3">
+      <div className="p-4 rounded-3xl bg-surface border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           {/* Search */}
           <div className="relative flex-1">
@@ -227,7 +227,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo Số HĐ (008412), Mã tra cứu, Mã đơn, Tên khách hàng, MST Công ty..."
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+              className="w-full pl-10 pr-4 py-2 text-xs rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
             />
           </div>
 
@@ -235,7 +235,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportCSV}
-              className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
+              className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
             >
               <Download size={14} />
               <span>Xuất sổ HĐ</span>
@@ -243,7 +243,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
 
             <button
               onClick={onOpenManualModal}
-              className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs shadow-blue-500/20"
+              className="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs"
             >
               <Plus size={15} />
               <span>Lập Hóa đơn mới</span>
@@ -261,7 +261,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-surface text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
           >
             <option value="ALL">Tất cả hóa đơn</option>
             <option value="ISSUED">Đã phát hành (ISSUED)</option>
@@ -275,7 +275,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
                 setStatusFilter('ALL');
                 setSearchQuery('');
               }}
-              className="text-blue-600 hover:text-blue-700 text-xs font-semibold ml-auto"
+              className="text-brand-600 hover:text-brand-700 text-xs font-semibold ml-auto"
             >
               Xóa bộ lọc
             </button>
@@ -284,11 +284,11 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
       </div>
 
       {/* Invoice Ledger Table */}
-      <div className="rounded-3xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="rounded-3xl bg-surface border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] font-medium tracking-wider">
                 <th className="py-3.5 px-4">Số HĐ & Mẫu</th>
                 <th className="py-3.5 px-4">Khách hàng & MST</th>
                 <th className="py-3.5 px-4">Hàng hóa / Dịch vụ</th>
@@ -314,7 +314,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
                     {/* Invoice Number & Series */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-blue-700 text-sm group-hover:underline cursor-pointer" onClick={() => onOpenViewModal(inv)}>
+                        <span className="font-mono font-medium text-brand-700 text-sm group-hover:underline cursor-pointer" onClick={() => onOpenViewModal(inv)}>
                           {inv.invoiceNumber}
                         </span>
                       </div>
@@ -332,12 +332,12 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
                       <div className="text-[11px] text-slate-500">{inv.customerEmail}</div>
                       {inv.customerCompany && (
                         <div className="text-[10px] text-slate-700 font-medium truncate max-w-[170px] mt-0.5 flex items-center gap-1">
-                          <Building size={11} className="text-blue-500 shrink-0" />
+                          <Building size={11} className="text-brand-500 shrink-0" />
                           <span>{inv.customerCompany}</span>
                         </div>
                       )}
                       {inv.customerTaxCode && (
-                        <div className="text-[10px] text-blue-800 font-mono">
+                        <div className="text-[10px] text-brand-800 font-mono">
                           MST: {inv.customerTaxCode}
                         </div>
                       )}
@@ -363,7 +363,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
                     </td>
 
                     {/* Total */}
-                    <td className="py-3.5 px-4 text-right font-black text-slate-900 text-sm">
+                    <td className="py-3.5 px-4 text-right font-semibold text-slate-900 text-sm">
                       {inv.totalAmountVND.toLocaleString('vi-VN')} đ
                     </td>
 
@@ -385,7 +385,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
                         {/* View & Print */}
                         <button
                           onClick={() => onOpenViewModal(inv)}
-                          className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition flex items-center gap-1 shadow-2xs"
+                          className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 font-semibold text-xs transition flex items-center gap-1 shadow-2xs"
                           title="Xem bản thể hiện & In hóa đơn"
                         >
                           <Eye size={13} />
@@ -397,7 +397,7 @@ export const VatInvoiceTab: React.FC<VatInvoiceTabProps> = ({
                           <button
                             onClick={() => handleSendEmail(inv)}
                             disabled={sendingId === inv.id}
-                            className="p-1.5 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
+                            className="p-1.5 rounded-xl text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition"
                             title="Gửi email cho khách hàng"
                           >
                             <Mail size={15} />

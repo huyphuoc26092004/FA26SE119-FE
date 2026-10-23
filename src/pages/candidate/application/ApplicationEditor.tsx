@@ -5,7 +5,7 @@ import {
   Download,
   Mail,
   Bookmark,
-  Sparkles,
+  Lightbulb,
   Zap,
   Percent,
   TrendingUp,
@@ -138,9 +138,9 @@ export function ApplicationEditor({
   return (
     <div className="space-y-4">
       {/* AI Instant Refine Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-white p-3">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900">
-          <Sparkles size={15} className="text-blue-600" />
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-brand-200/80 bg-brand-50/70 p-3">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-brand-900">
+          <Lightbulb size={15} className="text-brand-600" />
           <span>{t('applicationAssistance.quickRefineTitle')}:</span>
         </div>
 
@@ -149,7 +149,7 @@ export function ApplicationEditor({
             type="button"
             disabled={isRefining}
             onClick={() => onRefine('make_shorter')}
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-surface px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 transition disabled:opacity-50 cursor-pointer shadow-2xs"
           >
             <Zap size={12} className="text-amber-500" />
             <span>{t('applicationAssistance.refineShorter')}</span>
@@ -159,7 +159,7 @@ export function ApplicationEditor({
             type="button"
             disabled={isRefining}
             onClick={() => onRefine('add_metrics')}
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-surface px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 transition disabled:opacity-50 cursor-pointer shadow-2xs"
           >
             <Percent size={12} className="text-emerald-500" />
             <span>{t('applicationAssistance.refineMetrics')}</span>
@@ -169,9 +169,9 @@ export function ApplicationEditor({
             type="button"
             disabled={isRefining}
             onClick={() => onRefine('more_confident')}
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-surface px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 transition disabled:opacity-50 cursor-pointer shadow-2xs"
           >
-            <TrendingUp size={12} className="text-blue-500" />
+            <TrendingUp size={12} className="text-brand-500" />
             <span>{t('applicationAssistance.refineConfident')}</span>
           </button>
 
@@ -179,9 +179,9 @@ export function ApplicationEditor({
             type="button"
             disabled={isRefining}
             onClick={() => onRefine('translate')}
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-surface px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 transition disabled:opacity-50 cursor-pointer shadow-2xs"
           >
-            <Languages size={12} className="text-indigo-500" />
+            <Languages size={12} className="text-brand-500" />
             <span>
               {draft.language === 'Vietnamese' ? 'Dịch sang English' : 'Dịch sang Tiếng Việt'}
             </span>
@@ -190,11 +190,11 @@ export function ApplicationEditor({
       </div>
 
       {/* Editor Main Canvas */}
-      <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs space-y-4">
+      <div className="rounded-3xl border border-slate-200/90 bg-surface p-5 sm:p-7 shadow-xs space-y-4">
         {/* Subject Line Input (For emails and inmails) */}
         {(isEmail || isInMail || draft.subject) && (
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-slate-500 block">
               {t('applicationAssistance.subjectLine')}
             </label>
             <input
@@ -202,7 +202,7 @@ export function ApplicationEditor({
               value={draft.subject || ''}
               onChange={(e) => onChangeSubject?.(e.target.value)}
               placeholder="Tiêu đề email..."
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition"
             />
           </div>
         )}
@@ -210,7 +210,7 @@ export function ApplicationEditor({
         {/* Content Body Textarea */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span className="font-bold uppercase tracking-wider text-[11px] text-slate-400">
+            <span className="font-medium uppercase tracking-wider text-[11px] text-slate-400">
               {t('applicationAssistance.letterContent')}
             </span>
             <span className="text-[11px]">Có thể chỉnh sửa trực tiếp bên dưới</span>
@@ -220,7 +220,7 @@ export function ApplicationEditor({
             rows={15}
             value={draft.content}
             onChange={(e) => onChangeContent(e.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-[#fdfdfd] p-4 text-xs sm:text-sm leading-relaxed text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition font-sans"
+            className="w-full rounded-2xl border border-slate-200 bg-surface p-4 text-xs sm:text-sm leading-relaxed text-slate-800 outline-none focus:border-brand-500 focus:bg-surface focus:ring-2 focus:ring-brand-100 transition font-sans"
             placeholder="Nội dung thư ứng tuyển..."
           />
         </div>
@@ -232,12 +232,12 @@ export function ApplicationEditor({
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
               {copied ? (
                 <>
                   <Check size={14} className="text-emerald-600" />
-                  <span className="text-emerald-600 font-bold">{t('applicationAssistance.copied')}</span>
+                  <span className="text-emerald-600 font-medium">{t('applicationAssistance.copied')}</span>
                 </>
               ) : (
                 <>
@@ -250,7 +250,7 @@ export function ApplicationEditor({
             <button
               type="button"
               onClick={handlePrintPdf}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
               <Printer size={14} className="text-slate-500" />
               <span>{t('applicationAssistance.downloadPdf')}</span>
@@ -259,7 +259,7 @@ export function ApplicationEditor({
             <button
               type="button"
               onClick={handleDownloadTxt}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
               <Download size={14} className="text-slate-500" />
               <span>{t('applicationAssistance.downloadTxt')}</span>
@@ -269,9 +269,9 @@ export function ApplicationEditor({
               <button
                 type="button"
                 onClick={handleOpenEmailClient}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100 transition cursor-pointer"
               >
-                <Mail size={14} className="text-blue-600" />
+                <Mail size={14} className="text-brand-600" />
                 <span>{t('applicationAssistance.sendEmailClient')}</span>
               </button>
             )}

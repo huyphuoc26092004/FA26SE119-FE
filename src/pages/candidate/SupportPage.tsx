@@ -17,7 +17,6 @@ import {
   ChevronRight,
   ShieldCheck,
   User,
-  Bot,
   Loader2,
   AlertTriangle,
 } from 'lucide-react';
@@ -147,7 +146,7 @@ export const SupportPage: React.FC = () => {
     switch (status) {
       case 'open':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-400">
             <Clock className="w-3 h-3" />
             <span>Mới tiếp nhận</span>
           </span>
@@ -179,14 +178,14 @@ export const SupportPage: React.FC = () => {
     switch (priority) {
       case 'urgent':
         return (
-          <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+          <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             <span>Khẩn cấp</span>
           </span>
         );
       case 'high':
         return (
-          <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+          <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" />
             <span>Cao</span>
           </span>
@@ -220,7 +219,7 @@ export const SupportPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2.5">
+          <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight flex items-center gap-3 [&>svg]:hidden">
             <LifeBuoy className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             <span>{isVietnamese ? 'Trung tâm Hỗ trợ & Báo lỗi' : 'Support Desk & Tickets'}</span>
           </h1>
@@ -233,7 +232,7 @@ export const SupportPage: React.FC = () => {
 
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-semibold transition flex items-center gap-2 shadow-sm shadow-emerald-500/25 self-start md:self-auto"
+          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-2 shadow-sm self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>{isVietnamese ? 'Tạo yêu cầu hỗ trợ mới' : 'Create New Ticket'}</span>
@@ -242,28 +241,28 @@ export const SupportPage: React.FC = () => {
 
       {/* Summary Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+        <div className="p-4.5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
           <span className="text-xs text-neutral-500 block mb-1">Tổng phiếu hỗ trợ</span>
-          <div className="text-2xl font-black text-neutral-900 dark:text-neutral-100">{tickets.length}</div>
+          <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{tickets.length}</div>
         </div>
 
-        <div className="p-4.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+        <div className="p-4.5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
           <span className="text-xs text-neutral-500 block mb-1">Mới tiếp nhận</span>
-          <div className="text-2xl font-black text-blue-600">
+          <div className="text-2xl font-semibold text-brand-600">
             {tickets.filter((t) => t.status === 'open').length}
           </div>
         </div>
 
-        <div className="p-4.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+        <div className="p-4.5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
           <span className="text-xs text-neutral-500 block mb-1">Đang xử lý</span>
-          <div className="text-2xl font-black text-amber-500">
+          <div className="text-2xl font-semibold text-amber-500">
             {tickets.filter((t) => t.status === 'in_progress').length}
           </div>
         </div>
 
-        <div className="p-4.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
+        <div className="p-4.5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs">
           <span className="text-xs text-neutral-500 block mb-1">Đã giải quyết</span>
-          <div className="text-2xl font-black text-emerald-600">
+          <div className="text-2xl font-semibold text-emerald-600">
             {tickets.filter((t) => t.status === 'resolved').length}
           </div>
         </div>
@@ -278,7 +277,7 @@ export const SupportPage: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isVietnamese ? 'Tìm theo mã phiếu, tiêu đề...' : 'Search ticket ID, title...'}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
@@ -287,7 +286,7 @@ export const SupportPage: React.FC = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 focus:outline-none"
+            className="px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 focus:outline-none"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="open">Mới tiếp nhận</option>
@@ -300,7 +299,7 @@ export const SupportPage: React.FC = () => {
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 focus:outline-none"
+            className="px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 focus:outline-none"
           >
             <option value="all">Tất cả phân loại</option>
             <option value="technical">Lỗi kỹ thuật</option>
@@ -312,10 +311,10 @@ export const SupportPage: React.FC = () => {
       </div>
 
       {/* Tickets Table */}
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-xs">
+      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
+            <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 dark:text-neutral-400 font-medium uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
               <tr>
                 <th className="py-3 px-4">Mã phiếu</th>
                 <th className="py-3 px-4">Tiêu đề yêu cầu</th>
@@ -341,7 +340,7 @@ export const SupportPage: React.FC = () => {
                     onClick={() => setSelectedTicket(ticket)}
                     className="hover:bg-neutral-50/70 dark:hover:bg-neutral-800/50 cursor-pointer transition"
                   >
-                    <td className="py-3.5 px-4 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                    <td className="py-3.5 px-4 font-mono font-medium text-neutral-900 dark:text-neutral-100">
                       {ticket.id}
                     </td>
                     <td className="py-3.5 px-4 max-w-sm">
@@ -383,30 +382,30 @@ export const SupportPage: React.FC = () => {
 
       {/* Contact Channels Footer */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
+        <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Phone className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+            <h4 className="text-xs font-medium uppercase tracking-wider text-neutral-500">
               Hotline hỗ trợ trực tiếp 24/7
             </h4>
-            <div className="text-lg font-black text-neutral-900 dark:text-neutral-100 font-mono">
+            <div className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 font-mono">
               1900 6868 (Ext: 2)
             </div>
             <p className="text-xs text-neutral-400">Hỗ trợ khẩn cấp về thanh toán và tài khoản</p>
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400 flex items-center justify-center shrink-0">
+        <div className="p-5 rounded-2xl bg-surface dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-400 flex items-center justify-center shrink-0">
             <Mail className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+            <h4 className="text-xs font-medium uppercase tracking-wider text-neutral-500">
               Email Chăm sóc khách hàng
             </h4>
-            <div className="text-base font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+            <div className="text-base font-medium text-neutral-900 dark:text-neutral-100 font-mono">
               support@careerpilot.ai
             </div>
             <p className="text-xs text-neutral-400">Phản hồi trong vòng tối đa 2 giờ làm việc</p>
@@ -416,13 +415,13 @@ export const SupportPage: React.FC = () => {
 
       {/* Ticket Details Drawer / Modal */}
       {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-3xl my-8 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-3xl my-8 bg-surface dark:bg-neutral-900 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col max-h-[90vh]">
             {/* Drawer Header */}
             <div className="p-6 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40 flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="font-mono text-xs font-bold text-neutral-600 dark:text-neutral-400">
+                  <span className="font-mono text-xs font-medium text-neutral-600 dark:text-neutral-400">
                     {selectedTicket.id}
                   </span>
                   <span>·</span>
@@ -432,7 +431,7 @@ export const SupportPage: React.FC = () => {
                   <span>·</span>
                   {getStatusBadge(selectedTicket.status)}
                 </div>
-                <h3 className="text-base md:text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                <h3 className="text-base md:text-lg font-medium text-neutral-900 dark:text-neutral-100">
                   {selectedTicket.subject}
                 </h3>
                 {selectedTicket.relatedFeature && (
@@ -462,7 +461,7 @@ export const SupportPage: React.FC = () => {
                   }`}
                 >
                   {msg.sender !== 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[11px] shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-medium text-[11px] shrink-0">
                       {msg.sender === 'agent' ? 'CP' : 'AI'}
                     </div>
                   )}
@@ -484,7 +483,7 @@ export const SupportPage: React.FC = () => {
                   </div>
 
                   {msg.sender === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 flex items-center justify-center font-bold text-[11px] shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 flex items-center justify-center font-medium text-[11px] shrink-0">
                       You
                     </div>
                   )}
@@ -504,7 +503,7 @@ export const SupportPage: React.FC = () => {
                       : 'Type your reply message...'
                   }
                   rows={2}
-                  className="flex-1 px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="flex-1 px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <button
                   type="submit"
@@ -553,15 +552,15 @@ export const SupportPage: React.FC = () => {
 
       {/* Create Ticket Modal */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-xl my-8 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-xl my-8 bg-surface dark:bg-neutral-900 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col">
             <div className="flex items-center justify-between px-6 py-4.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
                   <LifeBuoy className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                  <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
                     {isVietnamese ? 'Tạo yêu cầu hỗ trợ mới' : 'Submit Support Ticket'}
                   </h3>
                   <p className="text-xs text-neutral-500">
@@ -588,7 +587,7 @@ export const SupportPage: React.FC = () => {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Ví dụ: Gặp lỗi khi tải bản PDF hoặc Token trừ không đúng..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -600,7 +599,7 @@ export const SupportPage: React.FC = () => {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as TicketCategory)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none"
                   >
                     <option value="technical">Lỗi kỹ thuật</option>
                     <option value="billing">Gói cước & Thanh toán</option>
@@ -618,7 +617,7 @@ export const SupportPage: React.FC = () => {
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as TicketPriority)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none"
                   >
                     <option value="low">Thấp</option>
                     <option value="medium">Trung bình</option>
@@ -635,7 +634,7 @@ export const SupportPage: React.FC = () => {
                 <select
                   value={relatedFeature}
                   onChange={(e) => setRelatedFeature(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none"
                 >
                   <option value="Phân tích CV ATS">Phân tích CV ATS</option>
                   <option value="Khớp nối CV–Job Fit">Khớp nối CV–Job Fit</option>
@@ -656,7 +655,7 @@ export const SupportPage: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Vui lòng cung cấp chi tiết lỗi, các bước tái hiện hoặc thông tin bạn cần hỗ trợ..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-surface dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -671,7 +670,7 @@ export const SupportPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-sm shadow-emerald-500/20"
+                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-sm"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

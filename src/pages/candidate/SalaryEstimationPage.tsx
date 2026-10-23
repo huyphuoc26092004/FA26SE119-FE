@@ -25,7 +25,6 @@ import {
   Percent,
   Search,
   ShieldCheck,
-  Sparkles,
   Target,
   TrendingUp,
   Zap,
@@ -124,11 +123,11 @@ export default function SalaryEstimationPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight">
               Dự báo & Ước tính Lương (Salary Estimation)
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-0.5 text-xs font-bold text-emerald-700 shadow-2xs">
-              <Sparkles size={13} className="text-emerald-600 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-0.5 text-xs font-medium text-emerald-700 shadow-2xs">
+              <Lightbulb size={13} className="text-emerald-600 animate-pulse" />
               AI Market Intelligence 2026
             </span>
           </div>
@@ -139,13 +138,13 @@ export default function SalaryEstimationPage() {
 
         {/* Currency Switcher & Quick Navigation */}
         <div className="flex items-center gap-3 self-start md:self-center">
-          <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+          <div className="flex items-center rounded-xl border border-slate-200 bg-surface p-1 shadow-2xs">
             <button
               type="button"
               onClick={() => setCurrency('USD')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                 currency === 'USD'
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? 'bg-brand-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -154,9 +153,9 @@ export default function SalaryEstimationPage() {
             <button
               type="button"
               onClick={() => setCurrency('VND')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                 currency === 'VND'
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? 'bg-brand-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -166,9 +165,9 @@ export default function SalaryEstimationPage() {
 
           <Link
             to="/candidate/jobs"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-2xs transition"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 shadow-2xs transition"
           >
-            <BriefcaseBusiness size={14} className="text-blue-600" />
+            <BriefcaseBusiness size={14} className="text-brand-600" />
             <span>Xem việc làm</span>
           </Link>
         </div>
@@ -176,7 +175,7 @@ export default function SalaryEstimationPage() {
 
       {/* Career Track Selector Grid */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">
           1. Chọn định hướng nghề nghiệp (Career Track):
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -189,17 +188,17 @@ export default function SalaryEstimationPage() {
                 onClick={() => handleTrackChange(track.id)}
                 className={`flex flex-col items-start p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
                   isSelected
-                    ? 'border-blue-600 bg-blue-50/70 shadow-sm ring-1 ring-blue-500'
-                    : 'border-slate-200/90 bg-white hover:border-slate-300 hover:bg-slate-50/80'
+                    ? 'border-brand-600 bg-brand-50/70 shadow-sm ring-1 ring-brand-500'
+                    : 'border-slate-200/90 bg-surface hover:border-slate-300 hover:bg-slate-50/80'
                 }`}
               >
                 <div className="flex items-center justify-between w-full mb-2">
                   <span className="text-2xl">{track.icon}</span>
-                  <span className="rounded-full bg-emerald-100/90 text-emerald-800 text-[10px] font-extrabold px-1.5 py-0.5">
+                  <span className="rounded-full bg-emerald-100/90 text-emerald-800 text-[10px] font-semibold px-1.5 py-0.5">
                     {track.annualGrowthRate}
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-slate-900 line-clamp-2 leading-tight mb-1">
+                <h4 className="text-xs font-medium text-slate-900 line-clamp-2 leading-tight mb-1">
                   {track.name}
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-auto">
@@ -212,12 +211,12 @@ export default function SalaryEstimationPage() {
       </div>
 
       {/* Main Parameters Configuration Card */}
-      <Card className="p-5 md:p-6 border border-slate-200/90 bg-white shadow-2xs rounded-3xl">
+      <Card className="p-5 md:p-6 border border-slate-200/90 bg-surface shadow-2xs rounded-3xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Experience Level & Location */}
           <div className="space-y-5">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2.5">
+              <label className="block text-xs font-medium uppercase tracking-wider text-slate-600 mb-2.5">
                 2. Cấp bậc & Số năm kinh nghiệm:
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -231,15 +230,15 @@ export default function SalaryEstimationPage() {
                       onClick={() => setSelectedLevel(lvl)}
                       className={`p-3 rounded-xl border text-left transition cursor-pointer ${
                         active
-                          ? 'border-blue-600 bg-blue-600 text-white shadow-xs'
-                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-800'
+                          ? 'border-brand-600 bg-brand-600 text-white shadow-xs'
+                          : 'border-slate-200 bg-surface hover:bg-slate-50 text-slate-800'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold">{info.label}</span>
+                        <span className="text-xs font-medium">{info.label}</span>
                         {active && <Check size={13} className="text-white" />}
                       </div>
-                      <span className={`text-[10px] block mt-0.5 ${active ? 'text-blue-100' : 'text-slate-400'}`}>
+                      <span className={`text-[10px] block mt-0.5 ${active ? 'text-brand-100' : 'text-slate-400'}`}>
                         {info.years}
                       </span>
                     </button>
@@ -250,7 +249,7 @@ export default function SalaryEstimationPage() {
 
             {/* Location Selector */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2.5">
+              <label className="block text-xs font-medium uppercase tracking-wider text-slate-600 mb-2.5">
                 3. Thị trường làm việc & Vị trí địa lý:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -263,15 +262,15 @@ export default function SalaryEstimationPage() {
                       onClick={() => setSelectedLocation(loc.location)}
                       className={`flex items-center justify-between p-3 rounded-xl border text-left transition cursor-pointer ${
                         active
-                          ? 'border-indigo-600 bg-indigo-50/80 text-indigo-950 font-bold shadow-2xs ring-1 ring-indigo-500'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                          ? 'border-brand-600 bg-brand-50/80 text-brand-950 font-medium shadow-2xs ring-1 ring-brand-500'
+                          : 'border-slate-200 bg-surface text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <MapPin size={14} className={active ? 'text-indigo-600' : 'text-slate-400'} />
+                        <MapPin size={14} className={active ? 'text-brand-600' : 'text-slate-400'} />
                         <span className="text-xs">{loc.label}</span>
                       </div>
-                      {active && <Check size={13} className="text-indigo-600" />}
+                      {active && <Check size={13} className="text-brand-600" />}
                     </button>
                   );
                 })}
@@ -282,10 +281,10 @@ export default function SalaryEstimationPage() {
           {/* Right: Skill Boosters */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              <label className="text-xs font-medium uppercase tracking-wider text-slate-600">
                 4. Tổ hợp kỹ năng chuyên sâu (+% Tăng giá trị thị trường):
               </label>
-              <span className="text-[11px] text-blue-600 font-bold">
+              <span className="text-[11px] text-brand-600 font-medium">
                 +{result.totalSkillBoostPercentage}% tăng thêm
               </span>
             </div>
@@ -299,8 +298,8 @@ export default function SalaryEstimationPage() {
                     onClick={() => toggleSkill(booster.id)}
                     className={`flex items-center justify-between p-2.5 rounded-xl border transition cursor-pointer ${
                       isChecked
-                        ? 'border-blue-400 bg-blue-50/60 shadow-2xs'
-                        : 'border-slate-200/90 bg-white hover:bg-slate-50'
+                        ? 'border-brand-400 bg-brand-50/60 shadow-2xs'
+                        : 'border-slate-200/90 bg-surface hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
@@ -308,7 +307,7 @@ export default function SalaryEstimationPage() {
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => {}} // handled by parent div
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 pointer-events-none"
                       />
                       <span className="text-xs font-semibold text-slate-800">
                         {booster.name}
@@ -316,7 +315,7 @@ export default function SalaryEstimationPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="rounded-md bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800">
+                      <span className="rounded-md bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
                         +{booster.boostPercentage}%
                       </span>
                       <span className="text-[10px] text-slate-400 hidden sm:inline">
@@ -328,40 +327,40 @@ export default function SalaryEstimationPage() {
               })}
             </div>
             <p className="mt-2 text-[11px] text-slate-400 leading-normal">
-              💡 <em>Các kỹ năng chuyên sâu được tính lũy tiến dựa trên dữ liệu tuyển dụng thực tế và nhu cầu khát nhân lực của doanh nghiệp.</em>
+              <em>Các kỹ năng chuyên sâu được tính lũy tiến dựa trên dữ liệu tuyển dụng thực tế và nhu cầu khát nhân lực của doanh nghiệp.</em>
             </p>
           </div>
         </div>
       </Card>
 
       {/* Salary Result Hero Display */}
-      <div className="rounded-3xl bg-gradient-to-r from-slate-950 via-indigo-950 to-blue-950 p-6 md:p-8 text-white shadow-xl border border-indigo-900/50 relative overflow-hidden">
-        <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute right-60 -top-12 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="rounded-3xl bg-slate-950 p-6 md:p-8 text-white shadow-sm border border-brand-900/50 relative overflow-hidden">
+        <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-brand-500/20 rounded-full hidden pointer-events-none" />
+        <div className="absolute right-60 -top-12 w-48 h-48 bg-brand-500/20 rounded-full hidden pointer-events-none" />
 
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
           {/* Main Range */}
           <div className="lg:col-span-2 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-blue-500/20 border border-blue-400/40 px-3 py-1 text-xs font-bold text-blue-300">
+              <span className="rounded-full bg-brand-500/20 border border-brand-400/40 px-3 py-1 text-xs font-medium text-brand-300">
                 {activeTrack.name} • {selectedLevel}
               </span>
-              <span className="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-3 py-1 text-xs font-bold text-emerald-300">
+              <span className="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-3 py-1 text-xs font-medium text-emerald-300">
                 Hệ số vùng: {Math.round(result.locationMultiplier * 100)}%
               </span>
               {result.totalSkillBoostPercentage > 0 && (
-                <span className="rounded-full bg-purple-500/20 border border-purple-400/40 px-3 py-1 text-xs font-bold text-purple-300">
+                <span className="rounded-full bg-brand-500/20 border border-brand-400/40 px-3 py-1 text-xs font-medium text-brand-300">
                   Bonus kỹ năng: +{result.totalSkillBoostPercentage}%
                 </span>
               )}
             </div>
 
             <div>
-              <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">
+              <p className="text-xs uppercase tracking-wider text-slate-400 font-medium">
                 Khoảng lương dự báo thị trường (Market Range):
               </p>
               <div className="mt-1 flex flex-wrap items-baseline gap-3">
-                <span className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
+                <span className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-white">
                   {formatSalary(result.minMonthlyUSD, result.minMonthlyVND)} – {formatSalary(result.maxMonthlyUSD, result.maxMonthlyVND)}
                 </span>
                 <span className="text-sm font-semibold text-slate-400">
@@ -370,11 +369,11 @@ export default function SalaryEstimationPage() {
               </div>
 
               {currency === 'USD' ? (
-                <p className="text-xs text-blue-200/90 mt-1">
+                <p className="text-xs text-brand-200/90 mt-1">
                   Tương đương khoảng <strong className="text-white">{formatVNDText(result.minMonthlyVND)}</strong> đến <strong className="text-white">{formatVNDText(result.maxMonthlyVND)}</strong> / tháng
                 </p>
               ) : (
-                <p className="text-xs text-blue-200/90 mt-1">
+                <p className="text-xs text-brand-200/90 mt-1">
                   Tương đương khoảng <strong className="text-white">${result.minMonthlyUSD.toLocaleString()}</strong> đến <strong className="text-white">${result.maxMonthlyUSD.toLocaleString()} USD</strong> / tháng
                 </p>
               )}
@@ -382,11 +381,11 @@ export default function SalaryEstimationPage() {
           </div>
 
           {/* Median Score Tile */}
-          <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-5 text-center flex flex-col justify-center items-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-200">
+          <div className="rounded-2xl bg-white/10 border border-white/15 p-5 text-center flex flex-col justify-center items-center">
+            <span className="text-xs font-medium uppercase tracking-wider text-brand-200">
               Mức trung vị thị trường (Median / P50)
             </span>
-            <p className="text-3xl sm:text-4xl font-black text-amber-300 mt-1 mb-1">
+            <p className="text-3xl sm:text-4xl font-semibold text-amber-300 mt-1 mb-1">
               {formatSalary(result.medianMonthlyUSD, result.medianMonthlyVND)}
             </p>
             <p className="text-2xs text-slate-300">
@@ -397,11 +396,11 @@ export default function SalaryEstimationPage() {
       </div>
 
       {/* Percentiles Spectrum Gauge */}
-      <Card className="p-5 md:p-6 border border-slate-200/90 bg-white shadow-2xs rounded-3xl">
+      <Card className="p-5 md:p-6 border border-slate-200/90 bg-surface shadow-2xs rounded-3xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <BarChart3 size={18} className="text-blue-600" />
+            <h3 className="text-base font-medium text-slate-900 flex items-center gap-2">
+              <BarChart3 size={18} className="text-brand-600" />
               Phổ phân vị mức lương thị trường (Percentiles Spectrum)
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -439,7 +438,7 @@ export default function SalaryEstimationPage() {
               desc: '50% trung bình',
               usd: result.percentilesUSD.p50,
               vnd: result.percentilesVND.p50,
-              color: 'text-blue-700 bg-blue-50/80 border-blue-300 ring-1 ring-blue-400 font-extrabold',
+              color: 'text-brand-700 bg-brand-50/80 border-brand-300 ring-1 ring-brand-400 font-extrabold',
             },
             {
               id: 'P75',
@@ -447,7 +446,7 @@ export default function SalaryEstimationPage() {
               desc: 'Top 25% thị trường',
               usd: result.percentilesUSD.p75,
               vnd: result.percentilesVND.p75,
-              color: 'text-indigo-800 bg-indigo-50 border-indigo-200',
+              color: 'text-brand-800 bg-brand-50 border-brand-200',
             },
             {
               id: 'P90',
@@ -455,15 +454,15 @@ export default function SalaryEstimationPage() {
               desc: 'Top 10% xuất sắc',
               usd: result.percentilesUSD.p90,
               vnd: result.percentilesVND.p90,
-              color: 'text-purple-900 bg-purple-50 border-purple-200 font-black',
+              color: 'text-brand-900 bg-brand-50 border-brand-200 font-black',
             },
           ].map((item) => (
             <div
               key={item.id}
               className={`p-3.5 rounded-2xl border text-center transition-all ${item.color}`}
             >
-              <span className="text-xs font-bold block">{item.label}</span>
-              <p className="text-lg sm:text-xl font-black mt-1.5 mb-0.5">
+              <span className="text-xs font-medium block">{item.label}</span>
+              <p className="text-lg sm:text-xl font-semibold mt-1.5 mb-0.5">
                 {formatSalary(item.usd, item.vnd)}
               </p>
               <span className="text-[10px] text-slate-400 block">{item.desc}</span>
@@ -473,10 +472,10 @@ export default function SalaryEstimationPage() {
 
         {/* Visual Gradient Spectrum Bar */}
         <div className="mt-6 pt-4 border-t border-slate-100">
-          <div className="relative h-3 w-full rounded-full bg-gradient-to-r from-blue-300 via-indigo-500 to-purple-600 shadow-inner" />
+          <div className="relative h-3 w-full rounded-full bg-brand-300 shadow-inner" />
           <div className="flex justify-between text-[11px] text-slate-400 mt-1.5">
             <span>Mức cơ sở</span>
-            <span className="text-blue-600 font-bold">▲ Mức bạn đang khảo sát (P50)</span>
+            <span className="text-brand-600 font-medium">▲ Mức bạn đang khảo sát (P50)</span>
             <span>Mức Top đầu</span>
           </div>
         </div>
@@ -485,8 +484,8 @@ export default function SalaryEstimationPage() {
       {/* Two Column Section: Career Ladder Progression & Market Growth */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Career Ladder Progression */}
-        <Card className="p-5 md:p-6 border border-slate-200/90 bg-white shadow-2xs rounded-3xl">
-          <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+        <Card className="p-5 md:p-6 border border-slate-200/90 bg-surface shadow-2xs rounded-3xl">
+          <h3 className="text-base font-medium text-slate-900 mb-1 flex items-center gap-2">
             <TrendingUp size={18} className="text-emerald-600" />
             Lộ trình tăng lương theo cấp bậc ({activeTrack.name})
           </h3>
@@ -507,25 +506,25 @@ export default function SalaryEstimationPage() {
                   onClick={() => setSelectedLevel(lvl)}
                   className={`flex items-center justify-between p-3.5 rounded-2xl border transition cursor-pointer ${
                     isCurrent
-                      ? 'border-blue-500 bg-blue-50/70 shadow-2xs ring-1 ring-blue-400'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                      ? 'border-brand-500 bg-brand-50/70 shadow-2xs ring-1 ring-brand-400'
+                      : 'border-slate-200 bg-surface hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span
-                      className={`grid h-8 w-8 place-items-center rounded-xl font-bold text-xs ${
+                      className={`grid h-8 w-8 place-items-center rounded-xl font-medium text-xs ${
                         isCurrent
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-brand-600 text-white'
                           : 'bg-slate-100 text-slate-600'
                       }`}
                     >
                       {lvl.charAt(0)}
                     </span>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <h4 className="text-xs font-medium text-slate-900 flex items-center gap-1.5">
                         {lvl}
                         {isCurrent && (
-                          <span className="rounded-full bg-blue-100 px-2 py-0.2 text-[10px] text-blue-700">
+                          <span className="rounded-full bg-brand-100 px-2 py-0.2 text-[10px] text-brand-700">
                             Đang xem
                           </span>
                         )}
@@ -535,7 +534,7 @@ export default function SalaryEstimationPage() {
                   </div>
 
                   <div className="text-right">
-                    <p className="text-xs font-bold text-slate-900">
+                    <p className="text-xs font-medium text-slate-900">
                       {formatSalary(usdMedian, vndMedian)}
                     </p>
                     <span className="text-[10px] text-slate-400">Trung vị / tháng</span>
@@ -547,9 +546,9 @@ export default function SalaryEstimationPage() {
         </Card>
 
         {/* Selected Skill Boosters Breakdown */}
-        <Card className="p-5 md:p-6 border border-slate-200/90 bg-white shadow-2xs rounded-3xl flex flex-col justify-between">
+        <Card className="p-5 md:p-6 border border-slate-200/90 bg-surface shadow-2xs rounded-3xl flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+            <h3 className="text-base font-medium text-slate-900 mb-1 flex items-center gap-2">
               <Zap size={18} className="text-amber-500" />
               Giá trị gia tăng từ Kỹ năng ({result.skillBonuses.length} kỹ năng)
             </h3>
@@ -576,7 +575,7 @@ export default function SalaryEstimationPage() {
                     </div>
 
                     <div className="text-right">
-                      <span className="text-xs font-bold text-emerald-700">
+                      <span className="text-xs font-medium text-emerald-700">
                         +{formatSalary(bonus.monthlyValueUSD, bonus.monthlyValueVND)}/tháng
                       </span>
                       <span className="text-[10px] text-slate-400 block">
@@ -592,11 +591,11 @@ export default function SalaryEstimationPage() {
           {/* Quick CTA to Jobs */}
           <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
             <span className="text-xs text-slate-500">
-              Có <strong className="text-slate-900 font-bold">{activeTrack.relatedJobCount}</strong> việc làm đang tuyển vị trí này
+              Có <strong className="text-slate-900 font-medium">{activeTrack.relatedJobCount}</strong> việc làm đang tuyển vị trí này
             </span>
             <Link
               to={`/candidate/jobs?search=${encodeURIComponent(activeTrack.name)}`}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 transition"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-800 transition"
             >
               <span>Xem việc làm thực tế</span>
               <ArrowRight size={13} />
@@ -606,13 +605,13 @@ export default function SalaryEstimationPage() {
       </div>
 
       {/* AI Salary Negotiation Tactics Card */}
-      <Card className="p-5 md:p-6 border border-slate-200/90 bg-gradient-to-br from-white to-blue-50/40 shadow-2xs rounded-3xl">
+      <Card className="p-5 md:p-6 border border-slate-200/90 bg-surface shadow-2xs rounded-3xl">
         <div className="flex items-center gap-3 mb-4">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-100 text-blue-700">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-brand-700">
             <Lightbulb size={20} />
           </span>
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-medium text-slate-900">
               Bí quyết đàm phán lương hiệu quả từ AI (AI Negotiation Advice)
             </h3>
             <p className="text-xs text-slate-500">
@@ -625,9 +624,9 @@ export default function SalaryEstimationPage() {
           {activeTrack.negotiationChecklist.map((tip, index) => (
             <div
               key={index}
-              className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-start gap-3"
+              className="p-4 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs flex items-start gap-3"
             >
-              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-blue-600 text-white font-extrabold text-xs">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-600 text-white font-semibold text-xs">
                 {index + 1}
               </span>
               <p className="text-xs text-slate-700 leading-relaxed font-medium">

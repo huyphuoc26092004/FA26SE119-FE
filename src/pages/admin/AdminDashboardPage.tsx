@@ -25,7 +25,7 @@ import {
   X,
   CreditCard,
   Layers,
-  Sparkles,
+  Lightbulb,
   BarChart3,
   ExternalLink,
   ShieldAlert,
@@ -174,7 +174,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-xl animate-fade-in border border-slate-700">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-sm animate-fade-in border border-slate-700">
           <CheckCircle2 size={18} className="text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
                   key={range}
                   onClick={() => setTimeRange(range)}
                   className={`rounded-lg px-2.5 py-1.5 transition cursor-pointer ${
-                    timeRange === range ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                    timeRange === range ? 'bg-white text-brand-700 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {range === '24h' ? '24 Giờ' : range === '7d' ? '7 Ngày' : range === '30d' ? '30 Ngày' : '90 Ngày'}
@@ -209,10 +209,10 @@ export default function AdminDashboardPage() {
             <button
               onClick={() => refetch()}
               disabled={isFetching}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
               title="Làm mới dữ liệu"
             >
-              <RefreshCw size={14} className={isFetching ? 'animate-spin text-blue-600' : ''} />
+              <RefreshCw size={14} className={isFetching ? 'animate-spin text-brand-600' : ''} />
               <span>{isVietnamese ? 'Làm mới' : 'Refresh'}</span>
             </button>
 
@@ -220,7 +220,7 @@ export default function AdminDashboardPage() {
             <button
               onClick={() => purgeCacheMutation.mutate()}
               disabled={purgeCacheMutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
               title="Xóa bộ nhớ đệm cache"
             >
               <Trash2 size={14} className="text-amber-500" />
@@ -236,7 +236,7 @@ export default function AdminDashboardPage() {
             {/* Maintenance Mode Toggle Button */}
             <button
               onClick={() => setShowMaintenanceModal(true)}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition cursor-pointer ${
                 systemHealth.overallStatus === 'MAINTENANCE'
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-slate-900 text-white hover:bg-slate-800'
@@ -261,7 +261,7 @@ export default function AdminDashboardPage() {
       <Card
         className={`border p-4 transition-all ${
           systemHealth.overallStatus === 'OPERATIONAL'
-            ? 'border-emerald-200 bg-gradient-to-r from-emerald-50/70 via-white to-blue-50/40'
+            ? 'border-emerald-200  bg-emerald-50/70  '
             : 'border-amber-300 bg-amber-50'
         }`}
       >
@@ -276,7 +276,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900 text-sm">
+                <span className="font-medium text-slate-900 text-sm">
                   {systemHealth.overallStatus === 'OPERATIONAL'
                     ? isVietnamese
                       ? 'Nền tảng vận hành bình thường (All Systems Operational)'
@@ -286,7 +286,7 @@ export default function AdminDashboardPage() {
                     : 'System is in Scheduled Maintenance Mode'}
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
                     systemHealth.overallStatus === 'OPERATIONAL'
                       ? 'bg-emerald-100 text-emerald-800'
                       : 'bg-amber-100 text-amber-800'
@@ -306,11 +306,11 @@ export default function AdminDashboardPage() {
 
           <div className="flex items-center gap-3 text-xs shrink-0 font-medium text-slate-600">
             <span className="flex items-center gap-1">
-              <Cpu size={14} className="text-blue-500" /> CPU: <strong>{systemHealth.resources.cpuUsagePercent}%</strong>
+              <Cpu size={14} className="text-brand-500" /> CPU: <strong>{systemHealth.resources.cpuUsagePercent}%</strong>
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
-              <HardDrive size={14} className="text-purple-500" /> RAM: <strong>{systemHealth.resources.memoryUsedGB}GB</strong>
+              <HardDrive size={14} className="text-brand-500" /> RAM: <strong>{systemHealth.resources.memoryUsedGB}GB</strong>
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
@@ -325,7 +325,7 @@ export default function AdminDashboardPage() {
         {/* Metric 1: System & Uptime */}
         <div
           onClick={() => setActiveTab('system')}
-          className="cursor-pointer transition-transform hover:-translate-y-0.5"
+          className="cursor-pointer transition-transform"
         >
           <StatCard
             label={isVietnamese ? 'Hạ Tầng & Sức Khỏe' : 'System Infrastructure'}
@@ -338,7 +338,7 @@ export default function AdminDashboardPage() {
         {/* Metric 2: AI Telemetry */}
         <div
           onClick={() => setActiveTab('ai')}
-          className="cursor-pointer transition-transform hover:-translate-y-0.5"
+          className="cursor-pointer transition-transform"
         >
           <StatCard
             label={isVietnamese ? 'Mức Sử Dụng AI (Tokens)' : 'AI Token Telemetry'}
@@ -355,7 +355,7 @@ export default function AdminDashboardPage() {
         {/* Metric 3: Revenue & Financials */}
         <div
           onClick={() => setActiveTab('revenue')}
-          className="cursor-pointer transition-transform hover:-translate-y-0.5"
+          className="cursor-pointer transition-transform"
         >
           <StatCard
             label={isVietnamese ? 'Tổng Doanh Thu (VND)' : 'Total Gross Revenue'}
@@ -365,14 +365,14 @@ export default function AdminDashboardPage() {
                 ? `+${revenueMetrics.growthPercentMoM}% MoM · ${revenueMetrics.paidSubscribersCount} gói trả phí`
                 : `+${revenueMetrics.growthPercentMoM}% MoM · ${revenueMetrics.paidSubscribersCount} paid subs`
             }
-            icon={<Wallet size={20} className="text-blue-600" />}
+            icon={<Wallet size={20} className="text-brand-600" />}
           />
         </div>
 
         {/* Metric 4: Total Users */}
         <div
           onClick={() => setActiveTab('users')}
-          className="cursor-pointer transition-transform hover:-translate-y-0.5"
+          className="cursor-pointer transition-transform"
         >
           <StatCard
             label={isVietnamese ? 'Tổng Người Dùng' : 'Total Registered Users'}
@@ -382,7 +382,7 @@ export default function AdminDashboardPage() {
                 ? `+${userMetrics.newUsersThisMonth} mới tháng này · DAU: ${userMetrics.dau}`
                 : `+${userMetrics.newUsersThisMonth} new this month · DAU: ${userMetrics.dau}`
             }
-            icon={<Users size={20} className="text-indigo-600" />}
+            icon={<Users size={20} className="text-brand-600" />}
           />
         </div>
       </div>
@@ -391,9 +391,9 @@ export default function AdminDashboardPage() {
       <div className="flex border-b border-slate-200 overflow-x-auto space-x-2">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'overview'
-              ? 'border-blue-600 text-blue-700'
+              ? 'border-brand-600 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -403,22 +403,22 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setActiveTab('system')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'system'
-              ? 'border-blue-600 text-blue-700'
+              ? 'border-brand-600 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <Server size={16} />
           <span>{isVietnamese ? 'Hạ Tầng Kỹ Thuật' : 'System & Services'}</span>
-          <span className="rounded-full bg-emerald-100 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800">
+          <span className="rounded-full bg-emerald-100 px-1.5 py-0.2 text-[10px] font-medium text-emerald-800">
             {systemHealth.uptimePercentage}%
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('ai')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'ai'
               ? 'border-amber-600 text-amber-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -426,37 +426,37 @@ export default function AdminDashboardPage() {
         >
           <Zap size={16} className="text-amber-500" />
           <span>{isVietnamese ? 'Sử Dụng AI & Tokens' : 'AI Telemetry'}</span>
-          <span className="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800">
+          <span className="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-medium text-amber-800">
             {aiMetrics.totalRequests.toLocaleString()}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('revenue')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'revenue'
-              ? 'border-blue-600 text-blue-700'
+              ? 'border-brand-600 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <DollarSign size={16} />
           <span>{isVietnamese ? 'Doanh Thu & Gói Cước' : 'Revenue & Subscriptions'}</span>
-          <span className="rounded-full bg-blue-100 px-1.5 py-0.2 text-[10px] font-bold text-blue-800">
+          <span className="rounded-full bg-brand-100 px-1.5 py-0.2 text-[10px] font-medium text-brand-800">
             {revenueMetrics.paidSubscribersCount}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer ${
             activeTab === 'users'
-              ? 'border-indigo-600 text-indigo-700'
+              ? 'border-brand-600 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <Users size={16} />
           <span>{isVietnamese ? 'Người Dùng & Hoạt Động' : 'Users & Demographics'}</span>
-          <span className="rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-800">
+          <span className="rounded-full bg-brand-100 px-1.5 py-0.2 text-[10px] font-medium text-brand-800">
             {userMetrics.totalUsers}
           </span>
         </button>
@@ -475,7 +475,7 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center gap-2">
                   <Zap size={18} className="text-amber-500" />
                   <div>
-                    <h2 className="text-base font-bold text-slate-900">
+                    <h2 className="text-base font-medium text-slate-900">
                       {isVietnamese ? 'Xu Hướng Sử Dụng AI (7 Ngày Gần Nhất)' : 'AI Daily Usage Trend'}
                     </h2>
                     <p className="text-xs text-slate-500">
@@ -496,12 +496,12 @@ export default function AdminDashboardPage() {
                     const heightPercent = Math.min(100, Math.round((point.totalTokens / maxTokens) * 100));
                     return (
                       <div key={point.date} className="flex-1 flex flex-col items-center gap-1.5 group">
-                        <span className="text-[10px] font-semibold text-slate-400 group-hover:text-blue-600 transition">
+                        <span className="text-[10px] font-semibold text-slate-400 group-hover:text-brand-600 transition">
                           {(point.totalTokens / 1000000).toFixed(1)}M
                         </span>
                         <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden flex flex-col justify-end h-32 relative">
                           <div
-                            className="w-full bg-gradient-to-t from-blue-600 via-indigo-600 to-amber-500 rounded-t-lg transition-all duration-500 group-hover:brightness-110"
+                            className="w-full bg-brand-600 rounded-t-lg transition-all duration-500 group-hover:brightness-110"
                             style={{ height: `${heightPercent}%` }}
                           />
                         </div>
@@ -522,7 +522,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2">
                     <span className="text-slate-400 block text-[11px]">{isVietnamese ? 'Tỉ Lệ Trúng Cache' : 'Cache Hit Ratio'}</span>
-                    <strong className="text-blue-700">{aiMetrics.cacheHitRatioPercent}%</strong>
+                    <strong className="text-brand-700">{aiMetrics.cacheHitRatioPercent}%</strong>
                   </div>
                 </div>
               </div>
@@ -532,9 +532,9 @@ export default function AdminDashboardPage() {
             <Card>
               <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <Wallet size={18} className="text-blue-600" />
+                  <Wallet size={18} className="text-brand-600" />
                   <div>
-                    <h2 className="text-base font-bold text-slate-900">
+                    <h2 className="text-base font-medium text-slate-900">
                       {isVietnamese ? 'Doanh Thu Theo Gói Đăng Ký' : 'Subscription Revenue Breakdown'}
                     </h2>
                     <p className="text-xs text-slate-500">
@@ -549,12 +549,12 @@ export default function AdminDashboardPage() {
                 {revenueMetrics.activeSubscriptionsByPlan.map((plan) => (
                   <div key={plan.planId} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-800">{plan.planName}</span>
+                      <span className="font-medium text-slate-800">{plan.planName}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-slate-500 font-medium">
                           {plan.activeCount.toLocaleString()} {isVietnamese ? 'người dùng' : 'users'}
                         </span>
-                        <strong className="text-slate-900 font-bold">
+                        <strong className="text-slate-900 font-medium">
                           {plan.totalRevenueVND > 0 ? `${plan.totalRevenueVND.toLocaleString()} đ` : 'Miễn phí'}
                         </strong>
                       </div>
@@ -570,14 +570,14 @@ export default function AdminDashboardPage() {
 
                 {/* Gateway Split */}
                 <div className="border-t border-slate-100 pt-3">
-                  <span className="font-bold text-slate-500 text-[11px] uppercase tracking-wider block mb-2">
+                  <span className="font-medium text-slate-500 text-[11px] uppercase tracking-wider block mb-2">
                     {isVietnamese ? 'Cổng Thanh Toán Chiếm Ưu Thế' : 'Payment Methods Distribution'}
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                     {revenueMetrics.paymentMethodDistribution.map((m) => (
                       <div key={m.method} className="rounded-xl border border-slate-100 bg-slate-50 p-2">
                         <span className="block text-[10px] text-slate-500 truncate">{m.label.split('(')[0]}</span>
-                        <span className="font-bold text-slate-800 text-sm">{m.percentage}%</span>
+                        <span className="font-medium text-slate-800 text-sm">{m.percentage}%</span>
                       </div>
                     ))}
                   </div>
@@ -593,13 +593,13 @@ export default function AdminDashboardPage() {
               <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
                   <Server size={17} className="text-emerald-600" />
-                  <h3 className="font-bold text-sm text-slate-900">
+                  <h3 className="font-medium text-sm text-slate-900">
                     {isVietnamese ? 'Tình Trạng Microservices Trực Tuyến' : 'Live Microservice Health'}
                   </h3>
                 </div>
                 <button
                   onClick={() => setActiveTab('system')}
-                  className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  className="text-xs font-medium text-brand-600 hover:underline cursor-pointer"
                 >
                   {isVietnamese ? 'Xem chi tiết →' : 'View details →'}
                 </button>
@@ -611,7 +611,7 @@ export default function AdminDashboardPage() {
                     <div className="flex items-center gap-2.5">
                       <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                       <div>
-                        <p className="font-bold text-slate-800">{svc.name}</p>
+                        <p className="font-medium text-slate-800">{svc.name}</p>
                         <p className="text-[11px] text-slate-400">{svc.details}</p>
                       </div>
                     </div>
@@ -627,14 +627,14 @@ export default function AdminDashboardPage() {
             <Card>
               <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert size={17} className="text-blue-600" />
-                  <h3 className="font-bold text-sm text-slate-900">
+                  <ShieldAlert size={17} className="text-brand-600" />
+                  <h3 className="font-medium text-sm text-slate-900">
                     {isVietnamese ? 'Nhật Ký Sự Kiện Hệ Thống Gần Nhất' : 'Recent System Audit Events'}
                   </h3>
                 </div>
                 <button
                   onClick={() => setActiveTab('system')}
-                  className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  className="text-xs font-medium text-brand-600 hover:underline cursor-pointer"
                 >
                   {isVietnamese ? 'Xem tất cả →' : 'View all logs →'}
                 </button>
@@ -646,12 +646,12 @@ export default function AdminDashboardPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`rounded px-1.5 py-0.2 text-[10px] font-bold ${
+                          className={`rounded px-1.5 py-0.2 text-[10px] font-medium ${
                             log.severity === 'SUCCESS'
                               ? 'bg-emerald-100 text-emerald-800'
                               : log.severity === 'WARN'
                               ? 'bg-amber-100 text-amber-800'
-                              : 'bg-blue-100 text-blue-800'
+                              : 'bg-brand-100 text-brand-800'
                           }`}
                         >
                           {log.severity}
@@ -678,7 +678,7 @@ export default function AdminDashboardPage() {
           <Card>
             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-medium text-slate-900 flex items-center gap-2">
                   <Server size={18} className="text-emerald-600" />
                   <span>{isVietnamese ? 'Trạng Thái Từng Cụm Microservice' : 'Microservices Health Matrix'}</span>
                 </h2>
@@ -698,8 +698,8 @@ export default function AdminDashboardPage() {
                   className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4 space-y-2 hover:border-emerald-300 transition"
                 >
                   <div className="flex items-start justify-between">
-                    <span className="font-bold text-slate-900 text-sm">{svc.name}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                    <span className="font-medium text-slate-900 text-sm">{svc.name}</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       {svc.status}
                     </span>
@@ -725,15 +725,15 @@ export default function AdminDashboardPage() {
             {/* CPU */}
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                  <Cpu size={15} className="text-blue-600" />
+                <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                  <Cpu size={15} className="text-brand-600" />
                   <span>CPU (8 Cores)</span>
                 </span>
-                <span className="font-black text-sm text-blue-700">{systemHealth.resources.cpuUsagePercent}%</span>
+                <span className="font-semibold text-sm text-brand-700">{systemHealth.resources.cpuUsagePercent}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-blue-600"
+                  className="h-full rounded-full bg-brand-600"
                   style={{ width: `${systemHealth.resources.cpuUsagePercent}%` }}
                 />
               </div>
@@ -745,17 +745,17 @@ export default function AdminDashboardPage() {
             {/* RAM */}
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                  <HardDrive size={15} className="text-purple-600" />
+                <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                  <HardDrive size={15} className="text-brand-600" />
                   <span>Bộ Nhớ RAM</span>
                 </span>
-                <span className="font-black text-sm text-purple-700">
+                <span className="font-semibold text-sm text-brand-700">
                   {systemHealth.resources.memoryUsedGB} / {systemHealth.resources.memoryTotalGB} GB
                 </span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-purple-600"
+                  className="h-full rounded-full bg-brand-600"
                   style={{ width: `${systemHealth.resources.memoryUsagePercent}%` }}
                 />
               </div>
@@ -767,11 +767,11 @@ export default function AdminDashboardPage() {
             {/* Disk */}
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
                   <Database size={15} className="text-emerald-600" />
                   <span>Lưu Trữ NVMe</span>
                 </span>
-                <span className="font-black text-sm text-emerald-700">
+                <span className="font-semibold text-sm text-emerald-700">
                   {systemHealth.resources.diskUsedGB} / {systemHealth.resources.diskTotalGB} GB
                 </span>
               </div>
@@ -789,11 +789,11 @@ export default function AdminDashboardPage() {
             {/* Database Connections */}
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
                   <Radio size={15} className="text-amber-600" />
                   <span>Database Pool</span>
                 </span>
-                <span className="font-black text-sm text-amber-700">
+                <span className="font-semibold text-sm text-amber-700">
                   {systemHealth.resources.dbPoolActive} / {systemHealth.resources.dbPoolMax}
                 </span>
               </div>
@@ -817,8 +817,8 @@ export default function AdminDashboardPage() {
           <Card>
             <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
-                <Layers size={17} className="text-blue-600" />
-                <h3 className="font-bold text-sm text-slate-900">
+                <Layers size={17} className="text-brand-600" />
+                <h3 className="font-medium text-sm text-slate-900">
                   {isVietnamese ? 'Hàng Đợi Xử Lý Nền (Background Worker Queues)' : 'Background Queues'}
                 </h3>
               </div>
@@ -828,7 +828,7 @@ export default function AdminDashboardPage() {
               {systemHealth.backgroundQueues.map((q) => (
                 <div key={q.queueName} className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">{q.queueName}</span>
+                    <span className="font-medium text-slate-800">{q.queueName}</span>
                     <span
                       className={`h-2 w-2 rounded-full ${
                         q.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
@@ -849,9 +849,9 @@ export default function AdminDashboardPage() {
           <Card>
             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <ShieldAlert size={18} className="text-blue-600" />
+                <ShieldAlert size={18} className="text-brand-600" />
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900">
+                  <h3 className="font-medium text-sm text-slate-900">
                     {isVietnamese ? 'Nhật Ký Kiểm Toán Hoạt Động (Security & System Audit Logs)' : 'Audit Trail Logs'}
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -870,12 +870,12 @@ export default function AdminDashboardPage() {
                   <div className="space-y-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className={`rounded px-1.5 py-0.2 text-[10px] font-bold ${
+                        className={`rounded px-1.5 py-0.2 text-[10px] font-medium ${
                           log.severity === 'SUCCESS'
                             ? 'bg-emerald-100 text-emerald-800'
                             : log.severity === 'WARN'
                             ? 'bg-amber-100 text-amber-800'
-                            : 'bg-blue-100 text-blue-800'
+                            : 'bg-brand-100 text-brand-800'
                         }`}
                       >
                         {log.severity}
@@ -909,14 +909,14 @@ export default function AdminDashboardPage() {
       {activeTab === 'ai' && (
         <div className="space-y-6">
           {/* AI Hero Summary Banner */}
-          <Card className="border-amber-200 bg-gradient-to-r from-amber-50/60 via-white to-purple-50/40 p-6">
+          <Card className="border-amber-200 bg-amber-50/60 p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-500 text-white shadow-sm font-bold">
+                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-500 text-white shadow-sm font-medium">
                   <Zap size={28} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">
+                  <h3 className="text-xl font-medium text-slate-900">
                     {isVietnamese ? 'Thống Kê Động Cơ Trí Tuệ Nhân Tạo (AI Engine Telemetry)' : 'AI Engine Telemetry'}
                   </h3>
                   <p className="text-xs text-slate-600 mt-1 max-w-xl leading-relaxed">
@@ -928,22 +928,22 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 shrink-0 text-center">
-                <div className="rounded-xl bg-white p-3 border border-amber-200 shadow-2xs">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                <div className="rounded-xl bg-surface p-3 border border-amber-200 shadow-2xs">
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">
                     {isVietnamese ? 'Chi Phí API Ước Tính' : 'Estimated API Cost'}
                   </span>
-                  <span className="font-black text-base text-amber-700">
+                  <span className="font-semibold text-base text-amber-700">
                     ${aiMetrics.totalCostUSD} USD
                   </span>
                   <span className="text-[10px] text-slate-400 block">
                     ~{aiMetrics.totalCostVND.toLocaleString()} đ
                   </span>
                 </div>
-                <div className="rounded-xl bg-white p-3 border border-emerald-200 shadow-2xs">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                <div className="rounded-xl bg-surface p-3 border border-emerald-200 shadow-2xs">
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">
                     {isVietnamese ? 'Tiết Kiệm Nhờ Cache' : 'Saved from Cache'}
                   </span>
-                  <span className="font-black text-base text-emerald-700">
+                  <span className="font-semibold text-base text-emerald-700">
                     ${aiMetrics.costSavedUSD} USD
                   </span>
                   <span className="text-[10px] text-emerald-600 font-semibold block">
@@ -959,8 +959,8 @@ export default function AdminDashboardPage() {
             {aiMetrics.modelBreakdown.map((m) => (
               <Card key={m.modelName} className="space-y-3 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 text-sm truncate">{m.modelName}</span>
-                  <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                  <span className="font-medium text-slate-900 text-sm truncate">{m.modelName}</span>
+                  <span className="text-xs font-medium text-brand-700 bg-brand-50 px-2 py-0.5 rounded">
                     {m.sharePercentage}%
                   </span>
                 </div>
@@ -995,9 +995,9 @@ export default function AdminDashboardPage() {
           <Card>
             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Sparkles size={18} className="text-purple-600" />
+                <Lightbulb size={18} className="text-brand-600" />
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900">
+                  <h3 className="font-medium text-sm text-slate-900">
                     {isVietnamese ? 'Phân Bổ Token Theo Tính Năng Sản Phẩm' : 'Token Usage by Feature'}
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -1013,7 +1013,7 @@ export default function AdminDashboardPage() {
               {aiMetrics.featureBreakdown.map((f) => (
                 <div key={f.featureKey} className="space-y-1 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">{f.featureName}</span>
+                    <span className="font-medium text-slate-800">{f.featureName}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-slate-500 font-medium">
                         {f.requestCount.toLocaleString()} {isVietnamese ? 'lượt gọi' : 'requests'}
@@ -1040,11 +1040,11 @@ export default function AdminDashboardPage() {
         <div className="space-y-6">
           {/* Revenue Hero Metrics */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="p-4 bg-gradient-to-br from-blue-50/50 to-white">
+            <Card className="p-4 bg-brand-50/50">
               <span className="text-xs text-slate-500 block mb-1">
                 {isVietnamese ? 'Doanh Thu Định Kỳ Tháng (MRR)' : 'Monthly Recurring Revenue'}
               </span>
-              <p className="text-2xl font-black text-blue-700">
+              <p className="text-2xl font-semibold text-brand-700">
                 {revenueMetrics.mrrVND.toLocaleString()} đ
               </p>
               <span className="text-[11px] text-emerald-600 font-semibold block mt-1">
@@ -1052,31 +1052,31 @@ export default function AdminDashboardPage() {
               </span>
             </Card>
 
-            <Card className="p-4 bg-gradient-to-br from-purple-50/50 to-white">
+            <Card className="p-4 bg-brand-50/50">
               <span className="text-xs text-slate-500 block mb-1">
                 {isVietnamese ? 'Doanh Thu Quy Mô Năm (ARR)' : 'Annual Run Rate'}
               </span>
-              <p className="text-2xl font-black text-purple-700">
+              <p className="text-2xl font-semibold text-brand-700">
                 {(revenueMetrics.arrVND / 1000000000).toFixed(2)} Tỷ đ
               </p>
               <span className="text-[11px] text-slate-400 block mt-1">Dự báo dựa trên chu kỳ hiện tại</span>
             </Card>
 
-            <Card className="p-4 bg-gradient-to-br from-emerald-50/50 to-white">
+            <Card className="p-4 bg-emerald-50/50">
               <span className="text-xs text-slate-500 block mb-1">
                 {isVietnamese ? 'Doanh Thu TB / Người Trả Phí (ARPU)' : 'ARPU (Paid Users)'}
               </span>
-              <p className="text-2xl font-black text-emerald-700">
+              <p className="text-2xl font-semibold text-emerald-700">
                 {revenueMetrics.arpuVND.toLocaleString()} đ
               </p>
               <span className="text-[11px] text-slate-400 block mt-1">Gói Pro & Executive kết hợp</span>
             </Card>
 
-            <Card className="p-4 bg-gradient-to-br from-amber-50/50 to-white">
+            <Card className="p-4 bg-amber-50/50">
               <span className="text-xs text-slate-500 block mb-1">
                 {isVietnamese ? 'Tỷ Lệ Chuyển Đổi Trả Phí' : 'Paid Conversion Rate'}
               </span>
-              <p className="text-2xl font-black text-amber-700">
+              <p className="text-2xl font-semibold text-amber-700">
                 {revenueMetrics.conversionRatePercent}%
               </p>
               <span className="text-[11px] text-slate-500 block mt-1">
@@ -1091,8 +1091,8 @@ export default function AdminDashboardPage() {
             <Card>
               <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <BarChart3 size={18} className="text-blue-600" />
-                  <h3 className="font-bold text-sm text-slate-900">
+                  <BarChart3 size={18} className="text-brand-600" />
+                  <h3 className="font-medium text-sm text-slate-900">
                     {isVietnamese ? 'Tăng Trưởng Doanh Thu (6 Tháng Gần Nhất)' : '6-Month Revenue Growth'}
                   </h3>
                 </div>
@@ -1105,14 +1105,14 @@ export default function AdminDashboardPage() {
                   return (
                     <div key={m.month} className="space-y-1 text-xs">
                       <div className="flex justify-between">
-                        <span className="font-bold text-slate-700">{m.month}</span>
+                        <span className="font-medium text-slate-700">{m.month}</span>
                         <div className="flex gap-2">
                           <span className="text-slate-400">{m.transactionsCount} GD</span>
-                          <strong className="text-blue-700 font-bold">{m.revenueVND.toLocaleString()} đ</strong>
+                          <strong className="text-brand-700 font-medium">{m.revenueVND.toLocaleString()} đ</strong>
                         </div>
                       </div>
                       <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                        <div className="h-full rounded-full bg-blue-600" style={{ width: `${pct}%` }} />
+                        <div className="h-full rounded-full bg-brand-600" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -1125,7 +1125,7 @@ export default function AdminDashboardPage() {
               <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <CreditCard size={18} className="text-emerald-600" />
-                  <h3 className="font-bold text-sm text-slate-900">
+                  <h3 className="font-medium text-sm text-slate-900">
                     {isVietnamese ? 'Tỷ Trọng Cổng Thanh Toán' : 'Payment Gateways Breakdown'}
                   </h3>
                 </div>
@@ -1135,8 +1135,8 @@ export default function AdminDashboardPage() {
                 {revenueMetrics.paymentMethodDistribution.map((gw) => (
                   <div key={gw.method} className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="font-bold text-slate-800">{gw.label}</span>
-                      <span className="font-bold text-slate-900">
+                      <span className="font-medium text-slate-800">{gw.label}</span>
+                      <span className="font-medium text-slate-900">
                         {gw.amountVND.toLocaleString()} đ ({gw.percentage}%)
                       </span>
                     </div>
@@ -1153,7 +1153,7 @@ export default function AdminDashboardPage() {
           <Card>
             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-bold text-sm text-slate-900">
+                <h3 className="font-medium text-sm text-slate-900">
                   {isVietnamese ? 'Giao Dịch Thanh Toán Gần Nhất' : 'Recent Financial Transactions'}
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -1165,7 +1165,7 @@ export default function AdminDashboardPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider font-bold text-[11px]">
+                  <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider font-medium text-[11px]">
                     <th className="pb-2.5">Mã Đơn</th>
                     <th className="pb-2.5">Khách Hàng</th>
                     <th className="pb-2.5">Gói Đăng Ký</th>
@@ -1179,13 +1179,13 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-slate-100">
                   {revenueMetrics.recentTransactions.map((tx) => (
                     <tr key={tx.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3 font-mono font-bold text-slate-800">{tx.orderCode}</td>
+                      <td className="py-3 font-mono font-medium text-slate-800">{tx.orderCode}</td>
                       <td className="py-3">
-                        <p className="font-bold text-slate-900">{tx.candidateName}</p>
+                        <p className="font-medium text-slate-900">{tx.candidateName}</p>
                         <p className="text-[11px] text-slate-400">{tx.candidateEmail}</p>
                       </td>
                       <td className="py-3 font-medium text-slate-700">{tx.planName}</td>
-                      <td className="py-3 font-bold text-emerald-700">{tx.amountVND.toLocaleString()} đ</td>
+                      <td className="py-3 font-medium text-emerald-700">{tx.amountVND.toLocaleString()} đ</td>
                       <td className="py-3">
                         <span className="rounded bg-slate-100 px-2 py-0.5 font-semibold text-[11px] text-slate-700">
                           {tx.paymentMethod}
@@ -1193,7 +1193,7 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className="py-3">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                             tx.status === 'success'
                               ? 'bg-emerald-100 text-emerald-800'
                               : tx.status === 'pending'
@@ -1216,7 +1216,7 @@ export default function AdminDashboardPage() {
                       <td className="py-3 text-right">
                         <button
                           onClick={() => setSelectedTx(tx)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline cursor-pointer"
                         >
                           <Eye size={13} />
                           <span>{isVietnamese ? 'Hóa đơn' : 'Receipt'}</span>
@@ -1242,7 +1242,7 @@ export default function AdminDashboardPage() {
               <span className="text-xs text-slate-500 block mb-1">
                 {isVietnamese ? 'Ứng Viên (Candidates)' : 'Candidates'}
               </span>
-              <p className="text-2xl font-black text-slate-900">
+              <p className="text-2xl font-semibold text-slate-900">
                 {userMetrics.candidateCount.toLocaleString()}
               </p>
               <span className="text-[11px] text-slate-400 block mt-1">Chiếm 98.1% tổng người dùng</span>
@@ -1252,7 +1252,7 @@ export default function AdminDashboardPage() {
               <span className="text-xs text-slate-500 block mb-1">
                 {isVietnamese ? 'Cố Vấn Nghề Nghiệp' : 'Career Consultants'}
               </span>
-              <p className="text-2xl font-black text-blue-700">
+              <p className="text-2xl font-semibold text-brand-700">
                 {userMetrics.consultantCount}
               </p>
               <span className="text-[11px] text-slate-400 block mt-1">Đã được xác minh chuyên môn</span>
@@ -1262,7 +1262,7 @@ export default function AdminDashboardPage() {
               <span className="text-xs text-slate-500 block mb-1">
                 {isVietnamese ? 'Chỉ Số Gắn Kết (DAU / MAU)' : 'Stickiness (DAU/MAU)'}
               </span>
-              <p className="text-2xl font-black text-emerald-700">
+              <p className="text-2xl font-semibold text-emerald-700">
                 {userMetrics.stickinessRatio}%
               </p>
               <span className="text-[11px] text-emerald-600 font-semibold block mt-1">
@@ -1274,7 +1274,7 @@ export default function AdminDashboardPage() {
               <span className="text-xs text-slate-500 block mb-1">
                 {isVietnamese ? 'Xác Thực Tài Khoản OTP' : 'OTP Verified Accounts'}
               </span>
-              <p className="text-2xl font-black text-purple-700">
+              <p className="text-2xl font-semibold text-brand-700">
                 {userMetrics.verifiedPercent}%
               </p>
               <span className="text-[11px] text-slate-400 block mt-1">
@@ -1287,7 +1287,7 @@ export default function AdminDashboardPage() {
           <Card>
             <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-bold text-sm text-slate-900">
+                <h3 className="font-medium text-sm text-slate-900">
                   {isVietnamese ? 'Danh Mục Quản Trị Người Dùng' : 'User Accounts Directory'}
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -1306,14 +1306,14 @@ export default function AdminDashboardPage() {
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     placeholder={isVietnamese ? 'Tìm theo tên, email...' : 'Search name, email...'}
-                    className="w-48 sm:w-64 rounded-xl border border-slate-200 pl-8 pr-3 py-1.5 text-xs outline-none focus:border-blue-500"
+                    className="w-48 sm:w-64 rounded-xl border border-slate-200 pl-8 pr-3 py-1.5 text-xs outline-none focus:border-brand-500"
                   />
                 </div>
 
                 <select
                   value={userRoleFilter}
                   onChange={(e) => setUserRoleFilter(e.target.value as UserRole | 'ALL')}
-                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-blue-500 cursor-pointer"
+                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
                 >
                   <option value="ALL">{isVietnamese ? 'Tất cả vai trò' : 'All Roles'}</option>
                   <option value="CANDIDATE">Ứng viên (Candidate)</option>
@@ -1326,7 +1326,7 @@ export default function AdminDashboardPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider font-bold text-[11px]">
+                  <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider font-medium text-[11px]">
                     <th className="pb-2.5">ID</th>
                     <th className="pb-2.5">Người Dùng</th>
                     <th className="pb-2.5">Vai Trò</th>
@@ -1341,19 +1341,19 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredUsers.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3 font-mono font-bold text-slate-400">#{u.id}</td>
+                      <td className="py-3 font-mono font-medium text-slate-400">#{u.id}</td>
                       <td className="py-3">
-                        <p className="font-bold text-slate-900">{u.name}</p>
+                        <p className="font-medium text-slate-900">{u.name}</p>
                         <p className="text-[11px] text-slate-400">{u.email}</p>
                       </td>
                       <td className="py-3">
                         <span
-                          className={`rounded px-2 py-0.5 text-[11px] font-bold ${
+                          className={`rounded px-2 py-0.5 text-[11px] font-medium ${
                             u.role === 'ADMIN'
                               ? 'bg-rose-100 text-rose-800'
                               : u.role === 'CAREER_CONSULTANT'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-blue-100 text-blue-800'
+                              ? 'bg-brand-100 text-brand-800'
+                              : 'bg-brand-100 text-brand-800'
                           }`}
                         >
                           {u.role}
@@ -1363,7 +1363,7 @@ export default function AdminDashboardPage() {
                       <td className="py-3 font-mono text-slate-600">{u.tokensUsed.toLocaleString()}</td>
                       <td className="py-3">
                         {u.isVerified ? (
-                          <span className="text-emerald-700 font-bold flex items-center gap-1">
+                          <span className="text-emerald-700 font-medium flex items-center gap-1">
                             <CheckCircle2 size={13} />
                             <span>Đã xác minh</span>
                           </span>
@@ -1373,7 +1373,7 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className="py-3">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                             u.status === 'ACTIVE'
                               ? 'bg-emerald-100 text-emerald-800'
                               : 'bg-red-100 text-red-800'
@@ -1387,7 +1387,7 @@ export default function AdminDashboardPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setSelectedUser(u)}
-                            className="rounded-lg p-1 text-slate-500 hover:text-blue-600 hover:bg-slate-100 cursor-pointer"
+                            className="rounded-lg p-1 text-slate-500 hover:text-brand-600 hover:bg-slate-100 cursor-pointer"
                             title="Xem chi tiết hồ sơ"
                           >
                             <Eye size={15} />
@@ -1423,12 +1423,12 @@ export default function AdminDashboardPage() {
       {/* MODAL 1: TRANSACTION RECEIPT DETAIL                                       */}
       {/* ========================================================================= */}
       {selectedTx && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Wallet size={18} className="text-blue-600" />
-                <h3 className="text-base font-bold text-slate-900">
+                <Wallet size={18} className="text-brand-600" />
+                <h3 className="text-base font-medium text-slate-900">
                   {isVietnamese ? 'Biên Lai Giao Dịch' : 'Transaction Receipt'}
                 </h3>
               </div>
@@ -1456,11 +1456,11 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Gói đăng ký:</span>
-                  <span className="font-bold text-blue-700">{selectedTx.planName}</span>
+                  <span className="font-medium text-brand-700">{selectedTx.planName}</span>
                 </div>
                 <div className="flex justify-between border-t border-slate-200/60 pt-2">
-                  <span className="text-slate-500 font-bold">Số tiền thanh toán:</span>
-                  <strong className="text-base font-black text-emerald-700">
+                  <span className="text-slate-500 font-medium">Số tiền thanh toán:</span>
+                  <strong className="text-base font-semibold text-emerald-700">
                     {selectedTx.amountVND.toLocaleString()} đ
                   </strong>
                 </div>
@@ -1493,12 +1493,12 @@ export default function AdminDashboardPage() {
       {/* MODAL 2: USER PROFILE QUICK INSPECT                                       */}
       {/* ========================================================================= */}
       {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Users size={18} className="text-blue-600" />
-                <h3 className="text-base font-bold text-slate-900">
+                <Users size={18} className="text-brand-600" />
+                <h3 className="text-base font-medium text-slate-900">
                   {isVietnamese ? 'Thông Tin Tài Khoản Người Dùng' : 'User Account Details'}
                 </h3>
               </div>
@@ -1511,12 +1511,12 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="space-y-3 text-xs text-slate-700">
-              <div className="flex items-center justify-between rounded-xl bg-blue-50/60 p-3.5 border border-blue-100">
+              <div className="flex items-center justify-between rounded-xl bg-brand-50/60 p-3.5 border border-brand-100">
                 <div>
-                  <h4 className="font-bold text-slate-900 text-sm">{selectedUser.name}</h4>
+                  <h4 className="font-medium text-slate-900 text-sm">{selectedUser.name}</h4>
                   <p className="text-slate-500 font-mono">{selectedUser.email}</p>
                 </div>
-                <span className="rounded bg-blue-100 px-2 py-0.5 font-bold text-blue-800 text-xs">
+                <span className="rounded bg-brand-100 px-2 py-0.5 font-medium text-brand-800 text-xs">
                   {selectedUser.role}
                 </span>
               </div>
@@ -1528,7 +1528,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Lượng Token Đã Dùng:</span>
-                  <strong className="text-purple-700">{selectedUser.tokensUsed.toLocaleString()}</strong>
+                  <strong className="text-brand-700">{selectedUser.tokensUsed.toLocaleString()}</strong>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Ngày Tạo Tài Khoản:</span>
@@ -1551,7 +1551,7 @@ export default function AdminDashboardPage() {
                     status: selectedUser.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE',
                   });
                 }}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition cursor-pointer ${
                   selectedUser.status === 'ACTIVE'
                     ? 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
                     : 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -1581,11 +1581,11 @@ export default function AdminDashboardPage() {
       {/* MODAL 3: MAINTENANCE MODE SAFETY CONFIRMATION                             */}
       {/* ========================================================================= */}
       {showMaintenanceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2 text-amber-600">
               <AlertTriangle size={24} />
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-lg font-medium text-slate-900">
                 {isVietnamese ? 'Xác Nhận Chế Độ Bảo Trì' : 'Confirm Maintenance Mode'}
               </h3>
             </div>

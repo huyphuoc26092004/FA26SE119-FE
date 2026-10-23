@@ -1,5 +1,7 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import {
+  Lightbulb,
+} from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export function getMatchScoreColor(score: number): {
@@ -18,9 +20,9 @@ export function getMatchScoreColor(score: number): {
   }
   if (score >= 70) {
     return {
-      bg: 'bg-blue-50 text-blue-700',
-      text: 'text-blue-700',
-      border: 'border-blue-200',
+      bg: 'bg-brand-50 text-brand-700',
+      text: 'text-brand-700',
+      border: 'border-brand-200',
       label: 'Good Match',
     };
   }
@@ -58,7 +60,7 @@ export const MatchScoreBadge: React.FC<MatchScoreBadgeProps> = ({
   const sizeClasses = {
     sm: 'text-xs px-2 py-0.5 gap-1',
     md: 'text-xs font-semibold px-2.5 py-1 gap-1.5',
-    lg: 'text-sm font-bold px-3 py-1.5 gap-2',
+    lg: 'text-sm font-medium px-3 py-1.5 gap-2',
   };
 
   return (
@@ -71,7 +73,7 @@ export const MatchScoreBadge: React.FC<MatchScoreBadgeProps> = ({
         className
       )}
     >
-      <Sparkles className="h-3.5 w-3.5 shrink-0 opacity-80" />
+      <Lightbulb className="h-3.5 w-3.5 shrink-0 opacity-80" />
       <span>{score}%</span>
       {showLabel && <span className="opacity-90">• {meta.label}</span>}
     </span>

@@ -71,7 +71,7 @@ const INITIAL_PLANS: AdminSubscriptionPlan[] = [
   {
     id: 'pro',
     name: 'Chuyên nghiệp (Professional Pro)',
-    badge: 'Phổ biến nhất ⭐',
+    badge: 'Phổ biến nhất',
     description: 'Dành cho ứng viên đang tích cực tìm kiếm cơ hội việc làm chất lượng cao và muốn tối ưu hóa hồ sơ không giới hạn.',
     monthlyPriceVND: 199000,
     yearlyPriceVND: 1890000, // Tiết kiệm ~21%
@@ -107,7 +107,7 @@ const INITIAL_PLANS: AdminSubscriptionPlan[] = [
   {
     id: 'executive',
     name: 'Cao cấp (Executive VIP)',
-    badge: 'Đặc quyền VIP 👑',
+    badge: 'Đặc quyền VIP',
     description: 'Gói giải pháp toàn diện cho Senior, Tech Lead và Quản lý với hỗ trợ 1-on-1 độc quyền từ chuyên gia hàng đầu.',
     monthlyPriceVND: 499000,
     yearlyPriceVND: 4790000, // Tiết kiệm ~20%
@@ -142,7 +142,7 @@ const INITIAL_PLANS: AdminSubscriptionPlan[] = [
   {
     id: 'enterprise',
     name: 'Doanh nghiệp (Enterprise Partner)',
-    badge: 'Doanh nghiệp 🏢',
+    badge: 'Doanh nghiệp',
     description: 'Dành cho tổ chức, trường đại học hoặc tập đoàn tuyển dụng cần tài khoản nhóm, tích hợp API ATS và quản trị viên tập trung.',
     monthlyPriceVND: 1490000,
     yearlyPriceVND: 14900000,

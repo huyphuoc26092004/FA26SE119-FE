@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle, ShieldAlert } from 'lucide-react';
+import {
+  X,
+  AlertTriangle,
+  ShieldAlert,
+} from 'lucide-react';
 import type { VatInvoiceItem } from '../../../types/paymentManagement';
 
 interface CancelInvoiceModalProps {
@@ -47,8 +51,8 @@ export const CancelInvoiceModal: React.FC<CancelInvoiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in">
+      <div className="relative w-full max-w-lg bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-rose-50/70">
           <div className="flex items-center gap-2.5 text-rose-800">
@@ -56,7 +60,7 @@ export const CancelInvoiceModal: React.FC<CancelInvoiceModalProps> = ({
               <AlertTriangle size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-sm">Hủy / Thu hồi Hóa đơn điện tử VAT</h3>
+              <h3 className="font-medium text-sm">Hủy / Thu hồi Hóa đơn điện tử VAT</h3>
               <p className="text-[11px] text-rose-600">
                 Số HĐ: {invoice.invoiceNumber} · Ký hiệu: {invoice.invoiceSeries}
               </p>
@@ -82,7 +86,7 @@ export const CancelInvoiceModal: React.FC<CancelInvoiceModalProps> = ({
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
             <div className="flex justify-between">
               <span className="text-slate-500">Khách hàng:</span>
-              <span className="font-bold text-slate-900">{invoice.customerName}</span>
+              <span className="font-medium text-slate-900">{invoice.customerName}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Nội dung:</span>
@@ -90,12 +94,12 @@ export const CancelInvoiceModal: React.FC<CancelInvoiceModalProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Tổng thanh toán:</span>
-              <span className="font-bold text-rose-600">{invoice.totalAmountVND.toLocaleString('vi-VN')} đ</span>
+              <span className="font-medium text-rose-600">{invoice.totalAmountVND.toLocaleString('vi-VN')} đ</span>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">
+            <label className="block text-xs font-medium text-slate-700 mb-2">
               Lý do hủy hóa đơn (Lưu hồ sơ thuế)
             </label>
             <div className="space-y-1.5">
@@ -147,7 +151,7 @@ export const CancelInvoiceModal: React.FC<CancelInvoiceModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition shadow-xs shadow-rose-500/20 disabled:opacity-50 flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
             >
               <AlertTriangle size={14} />
               <span>{isSubmitting ? 'Đang hủy...' : 'Xác nhận hủy Hóa đơn'}</span>

@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { X, RotateCcw, ShieldAlert } from 'lucide-react';
+import {
+  X,
+  RotateCcw,
+  ShieldAlert,
+} from 'lucide-react';
 import type { AdminPaymentTransaction } from '../../../types/paymentManagement';
 
 interface RefundModalProps {
@@ -47,8 +51,8 @@ export const RefundModal: React.FC<RefundModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in">
+      <div className="relative w-full max-w-lg bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-rose-50/60">
           <div className="flex items-center gap-2.5 text-rose-800">
@@ -56,7 +60,7 @@ export const RefundModal: React.FC<RefundModalProps> = ({
               <RotateCcw size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-sm">Xác nhận hoàn tiền giao dịch</h3>
+              <h3 className="font-medium text-sm">Xác nhận hoàn tiền giao dịch</h3>
               <p className="text-[11px] text-rose-600">Đơn hàng: {transaction.orderCode}</p>
             </div>
           </div>
@@ -73,7 +77,7 @@ export const RefundModal: React.FC<RefundModalProps> = ({
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
             <div className="flex justify-between items-center">
               <span className="text-slate-500">Khách hàng:</span>
-              <span className="font-bold text-slate-900">{transaction.candidateName}</span>
+              <span className="font-medium text-slate-900">{transaction.candidateName}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500">Gói / Dịch vụ:</span>
@@ -81,11 +85,11 @@ export const RefundModal: React.FC<RefundModalProps> = ({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500">Cổng thanh toán:</span>
-              <span className="font-bold uppercase text-slate-700">{transaction.paymentMethod}</span>
+              <span className="font-medium uppercase text-slate-700">{transaction.paymentMethod}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-sm">
               <span className="font-semibold text-slate-700">Số tiền hoàn trả:</span>
-              <span className="font-black text-rose-600 text-base">
+              <span className="font-semibold text-rose-600 text-base">
                 {transaction.finalAmountVND.toLocaleString('vi-VN')} đ
               </span>
             </div>
@@ -103,7 +107,7 @@ export const RefundModal: React.FC<RefundModalProps> = ({
 
           {/* Preset reasons */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">
+            <label className="block text-xs font-medium text-slate-700 mb-2">
               Lý do hoàn tiền (Lưu vết kiểm toán & kê khai thuế)
             </label>
             <div className="space-y-1.5">
@@ -132,7 +136,7 @@ export const RefundModal: React.FC<RefundModalProps> = ({
 
           {/* Custom Note */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Ghi chú bổ sung (Tùy chọn)
             </label>
             <textarea
@@ -157,7 +161,7 @@ export const RefundModal: React.FC<RefundModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition shadow-xs shadow-rose-500/20 disabled:opacity-50 flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
             >
               <RotateCcw size={14} />
               <span>{isSubmitting ? 'Đang xử lý...' : 'Xác nhận hoàn tiền'}</span>

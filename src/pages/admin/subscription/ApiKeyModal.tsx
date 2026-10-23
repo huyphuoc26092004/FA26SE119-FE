@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { X, Check, Key, Copy, AlertCircle, ShieldCheck } from 'lucide-react';
+import {
+  X,
+  Check,
+  Key,
+  Copy,
+  AlertCircle,
+  ShieldCheck,
+} from 'lucide-react';
 import type { ApiKeyItem, CreateApiKeyPayload } from '../../../types/subscriptionManagement';
 
 interface ApiKeyModalProps {
@@ -59,16 +66,16 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-md my-8 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-md my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-indigo-600 text-white shadow-sm">
+            <div className="p-2.5 rounded-2xl bg-brand-600 text-white shadow-sm">
               <Key size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Khởi tạo API Key mới</h2>
+              <h2 className="text-lg font-medium text-slate-900">Khởi tạo API Key mới</h2>
               <p className="text-xs text-slate-500">
                 Ủy quyền truy cập Token Service & Rate Limits cho đối tác
               </p>
@@ -86,7 +93,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
         {generatedKey ? (
           <div className="p-6 space-y-4">
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-2">
-              <div className="flex items-center gap-2 font-bold text-emerald-800">
+              <div className="flex items-center gap-2 font-medium text-emerald-800">
                 <ShieldCheck size={18} />
                 <span>API Key đã được khởi tạo thành công!</span>
               </div>
@@ -109,7 +116,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0"
+                  className="px-3.5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shrink-0"
                 >
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                   <span>{copied ? 'Đã chép' : 'Sao chép'}</span>
@@ -120,7 +127,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
             <button
               type="button"
               onClick={onClose}
-              className="w-full mt-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+              className="w-full mt-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition"
             >
               Đã sao lưu & Đóng hộp thoại
             </button>
@@ -144,7 +151,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ví dụ: TopCV Webhook Integration"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
               />
             </div>
 
@@ -158,7 +165,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
                 value={ownerEmail}
                 onChange={(e) => setOwnerEmail(e.target.value)}
                 placeholder="dev@partner.com"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
               />
             </div>
 
@@ -182,7 +189,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
                       setTpm(150000);
                     }
                   }}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
                 >
                   <option value="Standard Tier">Standard (30 RPM)</option>
                   <option value="Pro Tier">Pro (60 RPM)</option>
@@ -199,7 +206,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
                   min="5"
                   value={rpm}
                   onChange={(e) => setRpm(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
             </div>
@@ -209,14 +216,14 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50 transition"
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-surface text-slate-600 text-xs font-semibold hover:bg-slate-50 transition"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <span>Đang sinh khóa...</span>
