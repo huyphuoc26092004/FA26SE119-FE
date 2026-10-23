@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  CreditCard,
-  Zap,
-  Cpu,
-  Wallet,
-  RefreshCw,
-  Download,
-  CheckCircle2,
-  Plus,
-} from 'lucide-react';
 import { useTranslation } from '../../i18n';
+import {
+  StatRow,
+  Toast,
+  UnderlineTabs,
+  formatMillions,
+  smallPrimary,
+  textLink,
+} from '../../components/admin/AdminKit';
 import {
   getAdminPlans,
   createAdminPlan,
@@ -167,7 +165,7 @@ export default function SubscriptionQuotaManagementPage({
     refetchApiKeys();
     refetchEndpoints();
     refetchTransactions();
-    showToast(isVietnamese ? 'Đã làm mới dữ liệu hệ thống!' : 'Refreshed system data!');
+    showToast(isVietnamese ? 'Đã làm mới dữ liệu.' : 'Data refreshed.');
   };
 
   // -------------------------------------------------------------
@@ -391,194 +389,109 @@ export default function SubscriptionQuotaManagementPage({
     showToast(isVietnamese ? 'Đã xuất file cấu hình JSON thành công!' : 'Exported config JSON!');
   };
 
+  const tabs: { value: SubscriptionManagementTabKey; label: string; count?: number }[] = [
+    { value: 'plans', label: isVietnamese ? 'Gói cước' : 'Plans', count: plans.length },
+    { value: 'tokens', label: isVietnamese ? 'Hạn mức token & quy tắc' : 'Token quotas & rules' },
+    { value: 'api', label: isVietnamese ? 'Cổng API & giới hạn' : 'API gateway & limits' },
+    {
+      value: 'payments',
+      label: isVietnamese ? 'Giao dịch & hoá đơn' : 'Payments & invoices',
+      count: overview && overview.pendingTransactionsCount > 0 ? overview.pendingTransactionsCount : undefined,
+    },
+  ];
+
   return (
-    <div className="space-y-8 animate-fade-in pb-16">
-      {/* Toast notification banner */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-sm animate-fade-in">
-          <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div>
+      <Toast message={toastMessage} />
 
-      {/* Page Title & Main Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="p-2.5 rounded-2xl bg-brand-600 text-white shadow-sm">
-              <CreditCard size={22} />
-            </span>
-            <div>
-              <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight">
-                {isVietnamese ? 'Quản lý Gói cước & Hạn mức' : 'Subscription & Quota Management'}
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {isVietnamese
-                  ? 'Quản trị danh mục gói dịch vụ, định mức tiêu thụ AI Tokens, chính sách cấp phát và cổng API Rate Limits'
-                  : 'Manage pricing tiers, AI token quotas, consumption rules, and API gateway rate limits'}
-              </p>
-            </div>
+      {/* Header */}
+      <header>
+        <div className="mb-[clamp(1.25rem,2.5vw,2rem)] flex flex-wrap items-center justify-between gap-4">
+          <p className="text-[13px] text-brand">{isVietnamese ? 'Gói & token' : 'Plans & tokens'}</p>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <button type="button" onClick={handleRefreshAll} className={`${textLink} text-[13px] text-slate-600`}>
+              {isVietnamese ? 'Làm mới' : 'Refresh'}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportFullConfig}
+              className={`${textLink} text-[13px] text-slate-600`}
+              title={isVietnamese ? 'Xuất file sao lưu cấu hình' : 'Download a config backup'}
+            >
+              {isVietnamese ? 'Sao lưu cấu hình' : 'Backup config'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPlanForEdit(null);
+                setIsPlanModalOpen(true);
+              }}
+              className={smallPrimary}
+            >
+              {isVietnamese ? 'Thêm gói cước' : 'Add plan'}
+            </button>
           </div>
         </div>
-
-        {/* Action buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto">
-          <button
-            onClick={handleExportFullConfig}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
-            title="Xuất file backup cấu hình hệ thống"
-          >
-            <Download size={14} />
-            <span>{isVietnamese ? 'Sao lưu cấu hình' : 'Backup Config'}</span>
-          </button>
-
-          <button
-            onClick={handleRefreshAll}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs"
-            title="Làm mới toàn bộ dữ liệu"
-          >
-            <RefreshCw size={14} />
-            <span>{isVietnamese ? 'Làm mới' : 'Refresh'}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setSelectedPlanForEdit(null);
-              setIsPlanModalOpen(true);
-            }}
-            className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs"
-          >
-            <Plus size={15} />
-            <span>{isVietnamese ? 'Thêm gói cước' : 'Add Plan'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Top Aggregated KPI Stats */}
-      {overview && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4.5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 block mb-1">
-              Doanh thu định kỳ (MRR)
-            </span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl md:text-2xl font-semibold text-slate-900">
-                {(overview.totalMrrVND / 1000000).toFixed(1)}M
-              </span>
-              <span className="text-xs font-medium text-slate-500">VND</span>
-            </div>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">
-              +14.8% tăng trưởng
-            </span>
-          </div>
-
-          <div className="p-4.5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 block mb-1">
-              Thuê bao đang kích hoạt
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl md:text-2xl font-semibold text-brand-700">
-                {overview.activeSubscribers.toLocaleString()}
-              </span>
-              <span className="text-xs text-slate-500">user</span>
-            </div>
-            <span className="text-[11px] text-slate-400 mt-1 block">
-              {plans.length} gói cước lưu hành
-            </span>
-          </div>
-
-          <div className="p-4.5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 block mb-1">
-              Mức sử dụng Token tháng
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl md:text-2xl font-semibold text-amber-600">
-                {overview.tokenUtilizationPercent}%
-              </span>
-              <span className="text-xs text-slate-400">hạn ngạch</span>
-            </div>
-            <span className="text-[11px] text-slate-400 mt-1 block">
-              {(overview.monthlyTokensConsumed / 1000000).toFixed(1)}M /{' '}
-              {(overview.monthlyTokensAllocated / 1000000).toFixed(1)}M tokens
-            </span>
-          </div>
-
-          <div className="p-4.5 rounded-2xl bg-surface border border-slate-200/80 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 block mb-1">
-              Lưu lượng API (24h)
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl md:text-2xl font-semibold text-emerald-700">
-                {overview.apiRequestsToday.toLocaleString()}
-              </span>
-              <span className="text-xs text-slate-400">reqs</span>
-            </div>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">
-              TB {overview.avgApiLatencyMs}ms · {overview.apiSuccessRatePercent}% OK
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Main Navigation Tabs */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200/80 self-start overflow-x-auto max-w-full">
-        <button
-          onClick={() => handleTabChange('plans')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'plans'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <CreditCard size={15} className="text-brand-600" />
-          <span>{isVietnamese ? 'Quản lý Gói cước (Plans)' : 'Subscription Plans'}</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-medium">
-            {plans.length}
+        <h1 className="text-[clamp(2.25rem,4.6vw,4rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {isVietnamese ? 'Gói cước & hạn mức.' : 'Plans & quotas.'}
+          <span className="block text-brand">
+            {overview
+              ? isVietnamese
+                ? `${overview.activeSubscribers.toLocaleString('vi-VN')} thuê bao đang hoạt động.`
+                : `${overview.activeSubscribers.toLocaleString('en-US')} active subscribers.`
+              : isVietnamese
+                ? 'Một nơi để quản lý.'
+                : 'Managed in one place.'}
           </span>
-        </button>
+        </h1>
+        <p className="mt-[clamp(1rem,2vw,1.5rem)] max-w-[38rem] text-[clamp(1rem,1.25vw,1.0625rem)] leading-8 text-slate-600">
+          {isVietnamese
+            ? 'Quản lý danh mục gói, định mức token cho từng tính năng, chính sách cấp phát và giới hạn gọi API.'
+            : 'Manage pricing tiers, per-feature token costs, grant policies and API rate limits.'}
+        </p>
+      </header>
 
-        <button
-          onClick={() => handleTabChange('tokens')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'tokens'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Zap size={15} className="text-amber-500" />
-          <span>{isVietnamese ? 'Hạn mức Token & Quy tắc' : 'Token Quotas & Rules'}</span>
-        </button>
+      {/* KPI row */}
+      {overview && (
+        <div className="mt-[clamp(2rem,4vw,3rem)]">
+          <StatRow
+            items={[
+              {
+                label: isVietnamese ? 'Doanh thu định kỳ (MRR)' : 'Monthly recurring (MRR)',
+                value: formatMillions(overview.totalMrrVND, isVietnamese ? 'vi' : 'en'),
+                detail: isVietnamese ? '+14,8% tăng trưởng' : '+14.8% growth',
+                detailTone: 'brand',
+              },
+              {
+                label: isVietnamese ? 'Thuê bao đang kích hoạt' : 'Active subscribers',
+                value: overview.activeSubscribers.toLocaleString(isVietnamese ? 'vi-VN' : 'en-US'),
+                detail: isVietnamese ? `${plans.length} gói cước lưu hành` : `${plans.length} plans on sale`,
+              },
+              {
+                label: isVietnamese ? 'Token đã dùng tháng này' : 'Tokens used this month',
+                value: `${overview.tokenUtilizationPercent}%`,
+                detail: `${(overview.monthlyTokensConsumed / 1000000).toFixed(1)}M / ${(overview.monthlyTokensAllocated / 1000000).toFixed(1)}M token`,
+                valueTone: overview.tokenUtilizationPercent > 85 ? 'warning' : 'ink',
+              },
+              {
+                label: isVietnamese ? 'Lượt gọi API (24 giờ)' : 'API requests (24h)',
+                value: overview.apiRequestsToday.toLocaleString(isVietnamese ? 'vi-VN' : 'en-US'),
+                detail: `${isVietnamese ? 'TB' : 'Avg'} ${overview.avgApiLatencyMs} ms · ${overview.apiSuccessRatePercent}% OK`,
+              },
+            ]}
+          />
+        </div>
+      )}
 
-        <button
-          onClick={() => handleTabChange('api')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'api'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Cpu size={15} className="text-brand-600" />
-          <span>{isVietnamese ? 'Cổng API & Rate Limits' : 'API Gateway & Rate Limits'}</span>
-        </button>
+      <UnderlineTabs
+        className="mt-[clamp(2.5rem,5vw,3.5rem)]"
+        tabs={tabs}
+        value={activeTab}
+        onChange={handleTabChange}
+        label={isVietnamese ? 'Mục quản lý' : 'Sections'}
+      />
 
-        <button
-          onClick={() => handleTabChange('payments')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'payments'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Wallet size={15} className="text-emerald-600" />
-          <span>{isVietnamese ? 'Giao dịch & Hóa đơn' : 'Payments & Invoices'}</span>
-          {overview && overview.pendingTransactionsCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-white font-medium animate-pulse">
-              {overview.pendingTransactionsCount} chờ duyệt
-            </span>
-          )}
-        </button>
-      </div>
-
+      <div className="mt-8">
       {/* Tab 1: Plan Management */}
       {activeTab === 'plans' && (
         <PlanManagementTab
@@ -660,8 +573,11 @@ export default function SubscriptionQuotaManagementPage({
         />
       )}
 
+      </div>
+
       {/* Modals */}
       <PlanEditorModal
+        key={selectedPlanForEdit?.id ?? 'new'}
         isOpen={isPlanModalOpen}
         onClose={() => {
           setIsPlanModalOpen(false);

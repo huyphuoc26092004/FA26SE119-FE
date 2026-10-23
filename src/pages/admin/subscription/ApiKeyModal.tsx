@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Check,
-  Key,
-  Copy,
-  AlertCircle,
-  ShieldCheck,
-} from 'lucide-react';
 import type { ApiKeyItem, CreateApiKeyPayload } from '../../../types/subscriptionManagement';
+import {
+  Modal,
+  Note,
+  fieldLabel,
+  primaryButton,
+  smallPrimary,
+  textLink,
+  underlineInput,
+  underlineSelect,
+} from '../../../components/admin/AdminKit';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -66,178 +68,87 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onCre
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-md my-8 bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-brand-600 text-white shadow-sm">
-              <Key size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-medium text-slate-900">Khởi tạo API Key mới</h2>
-              <p className="text-xs text-slate-500">
-                Ủy quyền truy cập Token Service & Rate Limits cho đối tác
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-          >
-            <X size={20} />
+    <Modal
+      eyebrow="Khoá API"
+      title={generatedKey ? 'Khoá đã được tạo.' : 'Tạo khoá API mới.'}
+      onClose={onClose}
+      width="max-w-lg"
+      footer={
+        generatedKey ? (
+          <button type="button" onClick={onClose} className={primaryButton}>
+            Đã lưu, đóng lại
           </button>
-        </div>
-
-        {/* Form or Result */}
-        {generatedKey ? (
-          <div className="p-6 space-y-4">
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-2">
-              <div className="flex items-center gap-2 font-medium text-emerald-800">
-                <ShieldCheck size={18} />
-                <span>API Key đã được khởi tạo thành công!</span>
-              </div>
-              <p>
-                Đây là lần duy nhất mã khóa bảo mật này được hiển thị nguyên bản. Vui lòng sao lưu vào kho lưu trữ bí mật (Secret Vault) ngay bây giờ.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                API Secret Token
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={generatedKey}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-mono text-xs text-slate-800 select-all"
-                />
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="px-3.5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shrink-0"
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  <span>{copied ? 'Đã chép' : 'Sao chép'}</span>
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full mt-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition"
-            >
-              Đã sao lưu & Đóng hộp thoại
-            </button>
-          </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {error && (
-              <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                <AlertCircle size={15} className="shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Tên ứng dụng / Mục đích sử dụng <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ví dụ: TopCV Webhook Integration"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Email quản trị viên / Kỹ sư phụ trách
-              </label>
-              <input
-                type="email"
-                required
-                value={ownerEmail}
-                onChange={(e) => setOwnerEmail(e.target.value)}
-                placeholder="dev@partner.com"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Cấp bậc gói (Tier)
-                </label>
-                <select
-                  value={tier}
-                  onChange={(e) => {
-                    setTier(e.target.value);
-                    if (e.target.value === 'Enterprise Tier') {
-                      setRpm(120);
-                      setTpm(1000000);
-                    } else if (e.target.value === 'Pro Tier') {
-                      setRpm(60);
-                      setTpm(500000);
-                    } else {
-                      setRpm(30);
-                      setTpm(150000);
-                    }
-                  }}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
-                >
-                  <option value="Standard Tier">Standard (30 RPM)</option>
-                  <option value="Pro Tier">Pro (60 RPM)</option>
-                  <option value="Enterprise Tier">Enterprise (120 RPM)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Giới hạn RPM
-                </label>
-                <input
-                  type="number"
-                  min="5"
-                  value={rpm}
-                  onChange={(e) => setRpm(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-brand-500 focus:outline-hidden"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl border border-slate-200 bg-surface text-slate-600 text-xs font-semibold hover:bg-slate-50 transition"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <span>Đang sinh khóa...</span>
-                ) : (
-                  <>
-                    <Key size={14} />
-                    <span>Tạo API Key</span>
-                  </>
-                )}
+          <>
+            <button type="button" onClick={onClose} disabled={isSubmitting} className={`${textLink} text-slate-600`}>
+              Huỷ
+            </button>
+            <button type="submit" form="api-key-form" disabled={isSubmitting} className={primaryButton}>
+              {isSubmitting ? 'Đang tạo…' : 'Tạo khoá'}
+            </button>
+          </>
+        )
+      }
+    >
+      {generatedKey ? (
+        <div className="space-y-6">
+          <Note tone="warning">Khoá chỉ hiện nguyên bản một lần. Hãy lưu vào kho bí mật ngay bây giờ.</Note>
+          <div>
+            <p className={fieldLabel}>Secret token</p>
+            <div className="mt-1 flex items-end gap-4">
+              <input type="text" readOnly value={generatedKey} onFocus={(e) => e.currentTarget.select()} className={`${underlineInput} flex-1 font-mono text-sm`} />
+              <button type="button" onClick={handleCopy} className={smallPrimary}>
+                {copied ? 'Đã chép' : 'Sao chép'}
               </button>
             </div>
-          </form>
-        )}
-      </div>
-    </div>
+          </div>
+        </div>
+      ) : (
+        <form id="api-key-form" onSubmit={handleSubmit} className="space-y-6">
+          {error && <p className="border-l-2 border-danger pl-4 text-[13px] text-danger">{error}</p>}
+          <label className="block">
+            <span className={fieldLabel}>
+              Tên ứng dụng / mục đích <span className="text-danger">*</span>
+            </span>
+            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="TopCV Webhook Integration" className={underlineInput} />
+          </label>
+          <label className="block">
+            <span className={fieldLabel}>Email kỹ sư phụ trách</span>
+            <input type="email" required value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="dev@partner.com" className={underlineInput} />
+          </label>
+          <div className="grid grid-cols-2 gap-x-8">
+            <label className="block">
+              <span className={fieldLabel}>Cấp bậc</span>
+              <select
+                value={tier}
+                onChange={(e) => {
+                  setTier(e.target.value);
+                  if (e.target.value === 'Enterprise Tier') {
+                    setRpm(120);
+                    setTpm(1000000);
+                  } else if (e.target.value === 'Pro Tier') {
+                    setRpm(60);
+                    setTpm(500000);
+                  } else {
+                    setRpm(30);
+                    setTpm(150000);
+                  }
+                }}
+                className={underlineSelect}
+              >
+                <option value="Standard Tier">Standard · 30 RPM</option>
+                <option value="Pro Tier">Pro · 60 RPM</option>
+                <option value="Enterprise Tier">Enterprise · 120 RPM</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className={fieldLabel}>Giới hạn RPM</span>
+              <input type="number" min="5" value={rpm} onChange={(e) => setRpm(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
+            </label>
+          </div>
+          <p className="text-[13px] text-slate-500">TPM đi kèm: {tpm.toLocaleString('vi-VN')} token / phút.</p>
+        </form>
+      )}
+    </Modal>
   );
 };

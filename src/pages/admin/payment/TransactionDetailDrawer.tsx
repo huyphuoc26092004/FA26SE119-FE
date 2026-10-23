@@ -1,18 +1,8 @@
-import React from 'react';
-import {
-  X,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  RotateCcw,
-  Receipt,
-  User,
-  CreditCard,
-  Check,
-  ExternalLink,
-  Tag,
-} from 'lucide-react';
+import React, { useEffect } from 'react';
+import { X } from 'lucide-react';
 import type { AdminPaymentTransaction } from '../../../types/paymentManagement';
+import { InfoRow, SubHead, dangerLink, primaryButton, textLink } from '../../../components/admin/AdminKit';
+import { METHOD_LABEL, PAYMENT_STATUS_LABEL, paymentStatusTone, transactionTitle } from './TransactionLedgerTab';
 
 interface TransactionDetailDrawerProps {
   isOpen: boolean;
@@ -23,6 +13,15 @@ interface TransactionDetailDrawerProps {
   onViewInvoice?: (transaction: AdminPaymentTransaction) => void;
 }
 
+const TYPE_LABEL: Record<string, string> = {
+  TOKEN_TOPUP: 'Nạp token',
+  ENTERPRISE_CONTRACT: 'Hợp đồng doanh nghiệp',
+  SUBSCRIPTION_RENEW: 'Gia hạn gói',
+  SUBSCRIPTION_NEW: 'Đăng ký gói mới',
+};
+
+const money = (v: number) => `${v.toLocaleString('vi-VN')}đ`;
+
 export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = ({
   isOpen,
   onClose,
@@ -32,6 +31,13 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
   onViewInvoice,
 }) => {
   const [isApproving, setIsApproving] = React.useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !transaction) return null;
 
@@ -45,300 +51,134 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
     }
   };
 
-  const getStatusBadge = () => {
-    switch (transaction.status) {
-      case 'success':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 size={13} />
-            Đã thanh toán thành công
-          </span>
-        );
-      case 'pending':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock size={13} className="animate-spin" />
-            Đang chờ duyệt chuyển khoản
-          </span>
-        );
-      case 'refunded':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
-            <RotateCcw size={13} />
-            Đã hoàn tiền
-          </span>
-        );
-      case 'failed':
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-            <AlertCircle size={13} />
-            Thanh toán thất bại / Hết hạn
-          </span>
-        );
-    }
-  };
-
-  const getTypeBadge = () => {
-    switch (transaction.transactionType) {
-      case 'TOKEN_TOPUP':
-        return (
-          <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200">
-            Nạp Token AI
-          </span>
-        );
-      case 'ENTERPRISE_CONTRACT':
-        return (
-          <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200">
-            Hợp đồng Doanh nghiệp
-          </span>
-        );
-      case 'SUBSCRIPTION_RENEW':
-        return (
-          <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200">
-            Gia hạn gói cước
-          </span>
-        );
-      case 'SUBSCRIPTION_NEW':
-      default:
-        return (
-          <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-medium bg-brand-50 text-brand-700 border border-brand-200">
-            Đăng ký gói mới
-          </span>
-        );
-    }
-  };
+  const tx = transaction;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 animate-fade-in">
-      <div className="relative w-full max-w-xl h-full bg-surface shadow-sm flex flex-col overflow-hidden animate-slide-left">
+    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40" onClick={onClose}>
+      <aside
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className="relative flex h-full w-full max-w-xl flex-col bg-canvas"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 bg-slate-50/80">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-base font-semibold text-slate-900">
-                {transaction.orderCode}
-              </span>
-              {getTypeBadge()}
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Mã giao dịch nội bộ: <span className="font-mono">{transaction.id}</span>
+        <div className="border-b border-ink px-6 pb-5 pt-6 sm:px-8">
+          <div className="flex items-start justify-between gap-6">
+            <p className="text-[13px] text-brand">
+              {TYPE_LABEL[tx.transactionType] ?? tx.transactionType} · {tx.orderCode}
             </p>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Đóng"
+              className="-mr-2 -mt-1.5 grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-200 hover:text-ink"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition"
-          >
-            <X size={18} />
-          </button>
+          <h3 className="mt-3 text-[clamp(1.5rem,2.6vw,2rem)] font-normal leading-tight tracking-[-0.02em] text-ink">
+            {transactionTitle(tx)}.
+            <span className="block tabular-nums text-brand">{money(tx.finalAmountVND)}</span>
+          </h3>
+          <p className="mt-3 text-[13px] text-slate-600">
+            <span className={paymentStatusTone(tx.status)}>{PAYMENT_STATUS_LABEL[tx.status] ?? tx.status}</span>
+            {' · '}
+            {tx.candidateName} · {tx.createdAt}
+          </p>
+          {tx.status === 'pending' && onApprove && (
+            <button type="button" onClick={handleApprove} disabled={isApproving} className={`${primaryButton} mt-5`}>
+              {isApproving ? 'Đang duyệt…' : 'Duyệt đơn & xuất hoá đơn'}
+            </button>
+          )}
         </div>
 
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Status & Quick Action Banner */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="text-[10px] uppercase font-medium text-slate-400 block mb-1">
-                Trạng thái giao dịch
-              </span>
-              {getStatusBadge()}
-            </div>
-            {transaction.status === 'pending' && onApprove && (
-              <button
-                onClick={handleApprove}
-                disabled={isApproving}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-              >
-                <Check size={14} />
-                <span>{isApproving ? 'Đang duyệt...' : '1-Click Duyệt đơn & Xuất HĐ'}</span>
-              </button>
-            )}
-          </div>
-
-          {/* Refund Notice if refunded */}
-          {transaction.status === 'refunded' && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
-              <div className="flex items-center gap-1.5 font-medium text-rose-900">
-                <RotateCcw size={14} />
-                <span>ĐÃ HOÀN TIỀN VÀO {transaction.refundedAt}</span>
-              </div>
-              <p className="text-rose-700">Lý do hoàn: {transaction.refundReason}</p>
+        {/* Body */}
+        <div className="min-h-0 flex-1 space-y-9 overflow-y-auto px-6 py-7 sm:px-8">
+          {tx.status === 'refunded' && (
+            <div className="border-l-2 border-danger py-1 pl-4 text-[13px] leading-6">
+              <p className="text-danger">Đã hoàn tiền lúc {tx.refundedAt}</p>
+              <p className="text-slate-600">Lý do: {tx.refundReason}</p>
             </div>
           )}
 
-          {/* Customer / Candidate Information */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-medium text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <User size={14} className="text-brand-600" />
-              Thông tin khách hàng & Pháp nhân
-            </h4>
-            <div className="p-4 rounded-2xl border border-slate-200 space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Họ và tên:</span>
-                <span className="font-medium text-slate-900">{transaction.candidateName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Email:</span>
-                <span className="font-medium text-slate-800">{transaction.candidateEmail}</span>
-              </div>
-              {transaction.candidatePhone && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Số điện thoại:</span>
-                  <span className="font-medium text-slate-800">{transaction.candidatePhone}</span>
-                </div>
-              )}
-              {transaction.customerCompany && (
-                <div className="flex justify-between pt-2 border-t border-slate-100">
-                  <span className="text-slate-500">Doanh nghiệp:</span>
-                  <span className="font-medium text-slate-900">{transaction.customerCompany}</span>
-                </div>
-              )}
-              {transaction.customerTaxCode && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Mã số thuế (MST):</span>
-                  <span className="font-mono font-medium text-brand-700">{transaction.customerTaxCode}</span>
-                </div>
-              )}
-            </div>
-          </div>
+          <section>
+            <SubHead title="01  Khách hàng" />
+            <dl>
+              <InfoRow label="Họ và tên">{tx.candidateName}</InfoRow>
+              <InfoRow label="Email">{tx.candidateEmail}</InfoRow>
+              {tx.candidatePhone && <InfoRow label="Số điện thoại">{tx.candidatePhone}</InfoRow>}
+              {tx.customerCompany && <InfoRow label="Doanh nghiệp">{tx.customerCompany}</InfoRow>}
+              {tx.customerTaxCode && <InfoRow label="Mã số thuế">{tx.customerTaxCode}</InfoRow>}
+            </dl>
+          </section>
 
-          {/* Purchased Service / Plan */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-medium text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Tag size={14} className="text-brand-600" />
-              Gói dịch vụ & Chi phí thanh toán
-            </h4>
-            <div className="p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Tên gói / Sản phẩm:</span>
-                <span className="font-medium text-slate-900">{transaction.planName}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Chu kỳ thanh toán:</span>
-                <span className="font-medium text-slate-800">
-                  {transaction.billingCycle === 'yearly' ? 'Hàng năm (12 Tháng)' : 'Hàng tháng'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Giá niêm yết (Gộp):</span>
-                <span className="font-medium text-slate-700">
-                  {transaction.amountVND.toLocaleString('vi-VN')} đ
-                </span>
-              </div>
-              {transaction.discountAmountVND > 0 && (
-                <div className="flex justify-between items-center text-emerald-700">
-                  <span>Khuyến mại ({transaction.voucherCode || 'Ưu đãi chu kỳ'}):</span>
-                  <span className="font-medium">
-                    -{transaction.discountAmountVND.toLocaleString('vi-VN')} đ
-                  </span>
-                </div>
+          <section>
+            <SubHead title="02  Gói & chi phí" />
+            <dl>
+              <InfoRow label="Gói / sản phẩm">{tx.planName}</InfoRow>
+              <InfoRow label="Chu kỳ">{tx.billingCycle === 'yearly' ? 'Hàng năm (12 tháng)' : 'Hàng tháng'}</InfoRow>
+              <InfoRow label="Giá niêm yết">{money(tx.amountVND)}</InfoRow>
+              {tx.discountAmountVND > 0 && (
+                <InfoRow label={`Khuyến mại${tx.voucherCode ? ` · ${tx.voucherCode}` : ''}`} tone="brand">
+                  −{money(tx.discountAmountVND)}
+                </InfoRow>
               )}
-              <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-sm font-semibold text-brand-700">
-                <span>Số tiền thực thu (Đã gồm 8% VAT):</span>
-                <span>{transaction.finalAmountVND.toLocaleString('vi-VN')} đ</span>
-              </div>
-            </div>
-          </div>
+              <InfoRow label="Thực thu (gồm 8% VAT)">
+                <span className="text-[17px] tabular-nums">{money(tx.finalAmountVND)}</span>
+              </InfoRow>
+            </dl>
+          </section>
 
-          {/* Payment Gateway & Technical Audit */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-medium text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <CreditCard size={14} className="text-brand-600" />
-              Thông tin kỹ thuật cổng thanh toán
-            </h4>
-            <div className="p-4 rounded-2xl border border-slate-200 space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Cổng thanh toán:</span>
-                <span className="font-medium uppercase text-slate-900">{transaction.paymentMethod}</span>
-              </div>
-              {transaction.gatewayRefId && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Mã giao dịch đối tác (Gateway Ref):</span>
-                  <span className="font-mono text-slate-800 font-medium">{transaction.gatewayRefId}</span>
-                </div>
-              )}
-              {transaction.bankAccountRef && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Tài khoản ngân hàng thụ hưởng:</span>
-                  <span className="font-medium text-slate-800">{transaction.bankAccountRef}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-slate-500">Thời gian tạo đơn:</span>
-                <span className="text-slate-800">{transaction.createdAt}</span>
-              </div>
-              {transaction.completedAt && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Thời gian quyết toán thành công:</span>
-                  <span className="text-slate-800 font-medium">{transaction.completedAt}</span>
-                </div>
-              )}
-              {transaction.ipAddress && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Địa chỉ IP người mua:</span>
-                  <span className="font-mono text-slate-600">{transaction.ipAddress}</span>
-                </div>
-              )}
-            </div>
-          </div>
+          <section>
+            <SubHead title="03  Cổng thanh toán" />
+            <dl>
+              <InfoRow label="Cổng">{METHOD_LABEL[tx.paymentMethod] ?? tx.paymentMethod}</InfoRow>
+              {tx.gatewayRefId && <InfoRow label="Mã đối tác">{tx.gatewayRefId}</InfoRow>}
+              {tx.bankAccountRef && <InfoRow label="Tài khoản thụ hưởng">{tx.bankAccountRef}</InfoRow>}
+              <InfoRow label="Tạo đơn">{tx.createdAt}</InfoRow>
+              {tx.completedAt && <InfoRow label="Quyết toán">{tx.completedAt}</InfoRow>}
+              {tx.ipAddress && <InfoRow label="IP người mua">{tx.ipAddress}</InfoRow>}
+            </dl>
+          </section>
 
-          {/* VAT Electronic Invoice Section */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-medium text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Receipt size={14} className="text-brand-600" />
-              Hóa đơn điện tử GTGT (e-VAT)
-            </h4>
-            <div className="p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 text-xs">
-              {transaction.vatInvoiceNumber ? (
-                <div>
-                  <p className="font-medium text-slate-900">
-                    Số HĐ: <span className="text-brand-700 font-mono">{transaction.vatInvoiceNumber}</span>
-                  </p>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
-                    Trạng thái: <strong>{transaction.vatInvoiceStatus || 'Đã phát hành'}</strong>
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-slate-500">Chưa liên kết hóa đơn điện tử</p>
-                  <p className="text-[11px] text-slate-400">Sẽ tự động xuất khi đơn chuyển sang thành công</p>
-                </div>
-              )}
-
-              {transaction.vatInvoiceNumber && onViewInvoice && (
-                <button
-                  onClick={() => onViewInvoice(transaction)}
-                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 font-semibold transition flex items-center gap-1.5 text-xs shadow-2xs"
-                >
-                  <ExternalLink size={13} />
-                  <span>Xem & In HĐ</span>
-                </button>
-              )}
-            </div>
-          </div>
+          <section>
+            <SubHead
+              title="04  Hoá đơn VAT"
+              action={
+                tx.vatInvoiceNumber && onViewInvoice ? (
+                  <button type="button" onClick={() => onViewInvoice(tx)} className={`${textLink} text-[13px]`}>
+                    Xem & in
+                  </button>
+                ) : undefined
+              }
+            />
+            {tx.vatInvoiceNumber ? (
+              <dl>
+                <InfoRow label="Số hoá đơn">{tx.vatInvoiceNumber}</InfoRow>
+                <InfoRow label="Trạng thái">{tx.vatInvoiceStatus || 'Đã phát hành'}</InfoRow>
+              </dl>
+            ) : (
+              <p className="border-b border-border py-3.5 text-[13px] text-slate-500">
+                Chưa có hoá đơn. Hệ thống tự xuất khi giao dịch thành công.
+              </p>
+            )}
+          </section>
         </div>
 
-        {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/80 flex items-center justify-between">
-          <div>
-            {transaction.status === 'success' && onOpenRefund && (
-              <button
-                onClick={() => onOpenRefund(transaction)}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition flex items-center gap-1.5"
-              >
-                <RotateCcw size={13} />
-                <span>Hoàn tiền giao dịch</span>
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-6 border-t border-border px-6 py-4 sm:px-8">
+          <span>
+            {tx.status === 'success' && onOpenRefund && (
+              <button type="button" onClick={() => onOpenRefund(tx)} className={dangerLink}>
+                Hoàn tiền giao dịch
               </button>
             )}
-          </div>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-slate-700 bg-surface border border-slate-200 hover:bg-slate-100 transition"
-          >
-            Đóng cửa sổ
+          </span>
+          <button type="button" onClick={onClose} className={`${textLink} text-slate-600`}>
+            Đóng
           </button>
         </div>
-      </div>
+      </aside>
     </div>
   );
 };

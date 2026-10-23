@@ -1,12 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Wallet,
-  Receipt,
-  CreditCard,
-  FileSpreadsheet,
-  RefreshCw,
-  CheckCircle2,
-} from 'lucide-react';
 import type {
   AdminPaymentTransaction,
   VatInvoiceItem,
@@ -31,6 +23,7 @@ import {
   autoReconcileAll,
   getTaxReportSummary,
 } from '../../services/paymentManagementService';
+import { Toast, textLink } from '../../components/admin/AdminKit';
 
 import { TransactionLedgerTab } from './payment/TransactionLedgerTab';
 import { VatInvoiceTab } from './payment/VatInvoiceTab';
@@ -49,6 +42,36 @@ type ActiveTab = 'transactions' | 'invoices' | 'gateways' | 'tax';
 interface PaymentInvoiceManagementPageProps {
   defaultTab?: ActiveTab;
 }
+
+const SECTIONS: { key: ActiveTab; label: string }[] = [
+  { key: 'transactions', label: 'Giao dịch' },
+  { key: 'invoices', label: 'Hoá đơn VAT' },
+  { key: 'gateways', label: 'Cổng thanh toán & đối soát' },
+  { key: 'tax', label: 'Báo cáo doanh thu & thuế' },
+];
+
+const HEADINGS: Record<ActiveTab, { line1: string; line2: string; intro: string }> = {
+  transactions: {
+    line1: 'Mọi giao dịch.',
+    line2: 'Một danh sách.',
+    intro: 'Theo dõi đăng ký gói và nạp token, xác nhận giao dịch chờ và hoàn tiền khi cần.',
+  },
+  invoices: {
+    line1: 'Hoá đơn VAT.',
+    line2: 'Lập, ký số và gửi đi.',
+    intro: 'Hoá đơn điện tử chuẩn Nghị định 123: xem bản in, gửi email cho khách hàng hoặc huỷ theo quy định.',
+  },
+  gateways: {
+    line1: 'Cổng thanh toán.',
+    line2: 'Đối soát mỗi ngày.',
+    intro: 'Cấu hình VietQR, MoMo, VNPay, Stripe, kiểm tra webhook và đối soát số tiền với ngân hàng.',
+  },
+  tax: {
+    line1: 'Doanh thu & thuế.',
+    line2: 'Số liệu năm 2026.',
+    intro: 'Tổng hợp doanh thu trước thuế, thuế GTGT đã thu và số hoá đơn theo từng tháng.',
+  },
+};
 
 export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPageProps> = ({
   defaultTab = 'transactions',
@@ -109,49 +132,46 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadData();
-    showToast('Đã làm mới dữ liệu giao dịch & hóa đơn thành công!');
+    showToast('Đã làm mới dữ liệu giao dịch và hoá đơn.');
   };
 
   // Transaction Actions
   const handleApproveTransaction = async (orderId: string) => {
     await approvePaymentTransaction(orderId);
     await loadData();
-    showToast(`Đã duyệt thành công đơn hàng ${orderId} & tự động xuất hóa đơn điện tử VAT!`);
+    showToast(`Đã duyệt đơn hàng ${orderId} và tự động xuất hoá đơn VAT.`);
   };
 
   const handleConfirmRefund = async (orderId: string, reason: string) => {
     await refundPaymentTransaction(orderId, reason);
     await loadData();
-    showToast(`Đã hoàn tiền đơn hàng ${orderId}. Hóa đơn điện tử liên quan đã được hủy.`);
+    showToast(`Đã hoàn tiền đơn hàng ${orderId}. Hoá đơn liên quan đã được huỷ.`);
   };
 
   // VAT Invoice Actions
   const handleCreateManualInvoice = async (payload: CreateInvoicePayload) => {
     const newInv = await createManualVatInvoice(payload);
     await loadData();
-    showToast(`Đã lập thành công Hóa đơn điện tử VAT số ${newInv.invoiceNumber}!`);
+    showToast(`Đã lập hoá đơn VAT số ${newInv.invoiceNumber}.`);
   };
 
   const handleSendInvoiceEmail = async (invoiceId: string) => {
     await sendInvoiceEmail(invoiceId);
     await loadData();
-    showToast('Đã gửi email thông báo hóa đơn điện tử cho khách hàng!');
+    showToast('Đã gửi email hoá đơn điện tử cho khách hàng.');
   };
 
   const handleConfirmCancelInvoice = async (invoiceId: string, reason: string) => {
     await cancelVatInvoice(invoiceId, reason);
     await loadData();
-    showToast('Đã hủy hóa đơn điện tử theo quy định.');
+    showToast('Đã huỷ hoá đơn điện tử theo quy định.');
   };
 
   // Gateway Actions
-  const handleSaveGateway = async (
-    gatewayId: PaymentGatewayId,
-    patch: Partial<PaymentGatewayConfig>
-  ) => {
+  const handleSaveGateway = async (gatewayId: PaymentGatewayId, patch: Partial<PaymentGatewayConfig>) => {
     await updateGatewayConfig(gatewayId, patch);
     await loadData();
-    showToast('Đã cập nhật cấu hình cổng thanh toán thành công!');
+    showToast('Đã cập nhật cấu hình cổng thanh toán.');
   };
 
   const handlePingGateway = async (gatewayId: PaymentGatewayId) => {
@@ -163,7 +183,7 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
   const handleAutoReconcile = async () => {
     const res = await autoReconcileAll();
     await loadData();
-    showToast(`Đối soát xong: ${res.matchedCount} đơn khớp 100%, ${res.discrepancyCount} lệch tiền.`);
+    showToast(`Đối soát xong: ${res.matchedCount} đơn khớp, ${res.discrepancyCount} đơn lệch tiền.`);
     return res;
   };
 
@@ -203,116 +223,50 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
   };
 
   const pendingCount = transactions.filter((t) => t.status === 'pending').length;
+  const heading = HEADINGS[activeTab];
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-16 font-sans">
-      {/* Toast notification */}
-      {toastMsg && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-semibold shadow-sm animate-slide-left border border-slate-800">
-          <CheckCircle2 size={16} className="text-emerald-400" />
-          <span>{toastMsg}</span>
+    <div>
+      <Toast message={toastMsg} />
+
+      <header>
+        <div className="mb-[clamp(1.25rem,2.5vw,2rem)] flex flex-wrap items-center justify-between gap-4">
+          <p className="text-[13px] text-brand">Thanh toán</p>
+          <button type="button" onClick={handleRefresh} disabled={isRefreshing} className={`${textLink} text-[13px] text-slate-600`}>
+            {isRefreshing ? 'Đang đồng bộ…' : 'Đồng bộ dữ liệu'}
+          </button>
         </div>
-      )}
-
-      {/* Top Header */}
-      <div className="bg-surface border-b border-slate-200/80 sticky top-0 z-20 bg-white/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
-                <span>Quản trị hệ thống</span>
-                <span>/</span>
-                <span className="text-brand-600 font-medium">Thanh toán & Hóa đơn VAT</span>
-              </div>
-              <h1 className="text-3xl font-normal tracking-[-0.02em] text-ink md:text-[2.5rem] md:leading-tight flex items-center gap-3 [&>svg]:hidden">
-                <Wallet className="text-brand-600" size={26} />
-                Quản lý Giao dịch Thanh toán & Hóa đơn
-              </h1>
-              <p className="text-xs text-slate-500 mt-1">
-                Quản lý luồng tiền vào, đối soát VietQR / MoMo / VNPAY / Stripe, lập và ký số Hóa đơn điện tử VAT chuẩn NĐ 123
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="px-3.5 py-2 rounded-2xl border border-slate-200 bg-surface hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
-              >
-                <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-brand-600' : ''} />
-                <span>{isRefreshing ? 'Đang đồng bộ...' : 'Đồng bộ dữ liệu'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 mt-6 overflow-x-auto border-b border-slate-200 -mb-px">
+        <h1 className="text-[clamp(2.25rem,4.6vw,4rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {heading.line1}
+          <span className="block text-brand">{heading.line2}</span>
+        </h1>
+        <p className="mt-[clamp(1rem,2vw,1.5rem)] max-w-[36rem] text-[clamp(1rem,1.25vw,1.0625rem)] leading-8 text-slate-600">
+          {heading.intro}
+        </p>
+        <nav aria-label="Mục thanh toán" className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[13px]">
+          {SECTIONS.map((s) => (
             <button
-              onClick={() => setActiveTab('transactions')}
-              className={`px-4 py-3 text-xs font-medium transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
-                activeTab === 'transactions'
-                  ? 'border-brand-600 text-brand-600 bg-brand-50/40'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              key={s.key}
+              type="button"
+              onClick={() => setActiveTab(s.key)}
+              aria-current={activeTab === s.key ? 'page' : undefined}
+              className={`border-b pb-px transition-colors ${
+                activeTab === s.key ? 'border-brand text-brand' : 'border-slate-400 text-slate-600 hover:text-ink'
               }`}
             >
-              <Wallet size={15} />
-              <span>Giao dịch thanh toán</span>
-              {pendingCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500 text-white animate-pulse">
-                  {pendingCount}
-                </span>
-              )}
+              {s.label}
+              {s.key === 'transactions' && pendingCount > 0 && <span className="ml-1 text-orange-600">({pendingCount})</span>}
+              {s.key === 'invoices' && <span className="ml-1 text-slate-500">({invoices.length})</span>}
             </button>
+          ))}
+        </nav>
+      </header>
 
-            <button
-              onClick={() => setActiveTab('invoices')}
-              className={`px-4 py-3 text-xs font-medium transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
-                activeTab === 'invoices'
-                  ? 'border-brand-600 text-brand-600 bg-brand-50/40'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <Receipt size={15} />
-              <span>Hóa đơn điện tử VAT (e-VAT)</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">
-                {invoices.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('gateways')}
-              className={`px-4 py-3 text-xs font-medium transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
-                activeTab === 'gateways'
-                  ? 'border-brand-600 text-brand-600 bg-brand-50/40'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <CreditCard size={15} />
-              <span>Cổng thanh toán & Đối soát</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('tax')}
-              className={`px-4 py-3 text-xs font-medium transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
-                activeTab === 'tax'
-                  ? 'border-brand-600 text-brand-600 bg-brand-50/40'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <FileSpreadsheet size={15} />
-              <span>Báo cáo Doanh thu & Thuế</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <div className="mt-[clamp(2rem,4vw,3rem)]">
         {isLoading ? (
-          <div className="py-24 text-center">
-            <RefreshCw size={32} className="animate-spin text-brand-600 mx-auto mb-3" />
-            <p className="text-xs font-semibold text-slate-600">Đang nạp dữ liệu thanh toán & hóa đơn...</p>
-          </div>
+          <p role="status" className="border-y border-border py-10 text-center text-sm text-slate-600">
+            Đang tải dữ liệu thanh toán và hoá đơn…
+          </p>
         ) : (
           <>
             {activeTab === 'transactions' && (
@@ -351,8 +305,6 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
       </div>
 
       {/* MODALS & DRAWERS */}
-
-      {/* E-VAT Invoice Printable View Modal */}
       <VatInvoiceViewModal
         isOpen={!!selectedInvoiceForView}
         onClose={() => setSelectedInvoiceForView(null)}
@@ -364,7 +316,6 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
         }}
       />
 
-      {/* Transaction Detail Drawer */}
       <TransactionDetailDrawer
         isOpen={!!selectedTxForDrawer}
         onClose={() => setSelectedTxForDrawer(null)}
@@ -383,7 +334,6 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
         }}
       />
 
-      {/* Refund Confirmation Modal */}
       <RefundModal
         isOpen={!!selectedTxForRefund}
         onClose={() => setSelectedTxForRefund(null)}
@@ -391,14 +341,12 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
         onConfirmRefund={handleConfirmRefund}
       />
 
-      {/* Manual / Ad-hoc VAT Invoice Modal */}
       <ManualInvoiceModal
         isOpen={isManualInvoiceOpen}
         onClose={() => setIsManualInvoiceOpen(false)}
         onSubmit={handleCreateManualInvoice}
       />
 
-      {/* Cancel Invoice Modal */}
       <CancelInvoiceModal
         isOpen={!!selectedInvoiceForCancel}
         onClose={() => setSelectedInvoiceForCancel(null)}
@@ -406,7 +354,6 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
         onConfirmCancel={handleConfirmCancelInvoice}
       />
 
-      {/* Edit Gateway Settings Modal */}
       <EditGatewayModal
         isOpen={!!selectedGatewayForEdit}
         onClose={() => setSelectedGatewayForEdit(null)}

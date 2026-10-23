@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
-import {
-  X,
-  RotateCcw,
-  ShieldAlert,
-} from 'lucide-react';
 import type { AdminPaymentTransaction } from '../../../types/paymentManagement';
+import {
+  InfoRow,
+  Modal,
+  Note,
+  RadioRow,
+  dangerButton,
+  fieldLabel,
+  textLink,
+  underlineInput,
+} from '../../../components/admin/AdminKit';
+import { METHOD_LABEL, transactionTitle } from './TransactionLedgerTab';
 
 interface RefundModalProps {
   isOpen: boolean;
@@ -51,124 +57,65 @@ export const RefundModal: React.FC<RefundModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in">
-      <div className="relative w-full max-w-lg bg-surface rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-rose-50/60">
-          <div className="flex items-center gap-2.5 text-rose-800">
-            <div className="p-2 rounded-xl bg-rose-100 text-rose-700">
-              <RotateCcw size={18} />
-            </div>
-            <div>
-              <h3 className="font-medium text-sm">Xác nhận hoàn tiền giao dịch</h3>
-              <p className="text-[11px] text-rose-600">Đơn hàng: {transaction.orderCode}</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-          >
-            <X size={18} />
+    <Modal
+      eyebrow={`Đơn ${transaction.orderCode}`}
+      title="Hoàn tiền giao dịch."
+      onClose={onClose}
+      width="max-w-xl"
+      footer={
+        <>
+          <button type="button" onClick={onClose} disabled={isSubmitting} className={`${textLink} text-slate-600`}>
+            Quay lại
           </button>
-        </div>
+          <button type="submit" form="refund-form" disabled={isSubmitting} className={dangerButton}>
+            {isSubmitting ? 'Đang hoàn tiền…' : 'Xác nhận hoàn tiền'}
+          </button>
+        </>
+      }
+    >
+      <form id="refund-form" onSubmit={handleSubmit} className="space-y-7">
+        <dl className="border-t border-border">
+          <InfoRow label="Khách hàng">{transaction.candidateName}</InfoRow>
+          <InfoRow label="Gói / dịch vụ">{transactionTitle(transaction)}</InfoRow>
+          <InfoRow label="Cổng thanh toán">{METHOD_LABEL[transaction.paymentMethod] ?? transaction.paymentMethod}</InfoRow>
+          <InfoRow label="Số tiền hoàn trả" tone="danger">
+            <span className="text-[clamp(1.25rem,2vw,1.5rem)] tabular-nums">
+              {transaction.finalAmountVND.toLocaleString('vi-VN')}đ
+            </span>
+          </InfoRow>
+        </dl>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Target transaction summary */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500">Khách hàng:</span>
-              <span className="font-medium text-slate-900">{transaction.candidateName}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500">Gói / Dịch vụ:</span>
-              <span className="font-medium text-slate-800">{transaction.planName}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500">Cổng thanh toán:</span>
-              <span className="font-medium uppercase text-slate-700">{transaction.paymentMethod}</span>
-            </div>
-            <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-sm">
-              <span className="font-semibold text-slate-700">Số tiền hoàn trả:</span>
-              <span className="font-semibold text-rose-600 text-base">
-                {transaction.finalAmountVND.toLocaleString('vi-VN')} đ
-              </span>
-            </div>
-          </div>
+        <Note tone="warning">
+          Giao dịch sẽ chuyển sang <span className="text-ink">Đã hoàn tiền</span>. Nếu đã xuất hoá đơn VAT, hoá đơn đó sẽ tự
+          động được đánh dấu huỷ để đúng quy định kế toán.
+        </Note>
 
-          {/* Warning */}
-          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
-            <ShieldAlert size={16} className="text-amber-600 shrink-0 mt-0.5" />
-            <p>
-              Hệ thống sẽ chuyển trạng thái giao dịch sang <strong>Đã hoàn tiền (Refunded)</strong>.
-              Nếu giao dịch đã xuất Hóa đơn điện tử VAT, hóa đơn đó sẽ tự động được đánh dấu{' '}
-              <strong>HỦY</strong> để đảm bảo tính hợp lệ theo quy định kế toán.
-            </p>
+        <fieldset>
+          <legend className={`${fieldLabel} mb-1`}>Lý do hoàn tiền (lưu vết kiểm toán)</legend>
+          <div className="border-t border-border">
+            {presets.map((preset) => (
+              <RadioRow
+                key={preset}
+                name="refundReason"
+                checked={selectedPreset === preset}
+                onChange={() => setSelectedPreset(preset)}
+                label={preset}
+              />
+            ))}
           </div>
+        </fieldset>
 
-          {/* Preset reasons */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 mb-2">
-              Lý do hoàn tiền (Lưu vết kiểm toán & kê khai thuế)
-            </label>
-            <div className="space-y-1.5">
-              {presets.map((preset) => (
-                <label
-                  key={preset}
-                  className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
-                    selectedPreset === preset
-                      ? 'bg-rose-50/70 border-rose-300 text-rose-900 font-medium'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="refundReason"
-                    value={preset}
-                    checked={selectedPreset === preset}
-                    onChange={() => setSelectedPreset(preset)}
-                    className="mt-0.5 text-rose-600 focus:ring-rose-500"
-                  />
-                  <span>{preset}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Custom Note */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
-              Ghi chú bổ sung (Tùy chọn)
-            </label>
-            <textarea
-              value={customNote}
-              onChange={(e) => setCustomNote(e.target.value)}
-              placeholder="Nhập thông tin biên nhận ngân hàng, số ticket CSKH hoặc tài khoản nhận hoàn..."
-              rows={2}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
-            >
-              <RotateCcw size={14} />
-              <span>{isSubmitting ? 'Đang xử lý...' : 'Xác nhận hoàn tiền'}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <label className="block">
+          <span className={fieldLabel}>Ghi chú bổ sung</span>
+          <textarea
+            value={customNote}
+            onChange={(e) => setCustomNote(e.target.value)}
+            placeholder="Biên nhận ngân hàng, số ticket CSKH hoặc tài khoản nhận hoàn"
+            rows={2}
+            className={`${underlineInput} resize-none`}
+          />
+        </label>
+      </form>
+    </Modal>
   );
 };
