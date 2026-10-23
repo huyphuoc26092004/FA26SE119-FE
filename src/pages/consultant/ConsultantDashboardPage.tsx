@@ -1,36 +1,155 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowRight, ExternalLink } from 'lucide-react';
+import { Loading, ErrorState } from '../../components/ui';
 import {
-  Calendar,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Star,
-  Users,
-  Video,
-  ExternalLink,
-  ArrowRight,
-  TrendingUp,
-  FileText,
-  Compass,
-  DollarSign,
-  Route,
-  Lightbulb,
-  ShieldCheck,
-  Check,
-} from 'lucide-react';
-import { Card, PageTitle, StatCard, Badge, Button, Loading, ErrorState } from '../../components/ui';
+  Avatar,
+  Headline,
+  PriorityText,
+  SectionHead,
+  StatRow,
+  StatusText,
+  ThinBar,
+  Toast,
+  UnderlineTabs,
+  formatTime,
+  pad2,
+  primaryButton,
+  smallPrimary,
+  textLink,
+} from '../../components/consultation/ConsultantKit';
 import {
   getConsultantDashboardStats,
   getConsultationRequests,
   updateConsultationStatus,
 } from '../../services/consultationService';
-import type { ConsultationRequest, ConsultationTopic } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
 
+const copy = {
+  vi: {
+    eyebrow: 'Bảng điều khiển cố vấn',
+    hello: 'Chào Taylor,',
+    sessionsToday: (n: number) => (n > 0 ? `hôm nay có ${n} phiên tư vấn.` : 'hôm nay chưa có phiên nào.'),
+    pendingLine: (n: number) => (n > 0 ? `${n} yêu cầu đang chờ bạn.` : 'Bạn đã xử lý hết yêu cầu.'),
+    intro: 'Tiếp nhận yêu cầu mới, chuẩn bị trước mỗi phiên và gửi lời khuyên cho ứng viên ngay sau buổi tư vấn.',
+    openList: 'Mở danh sách yêu cầu',
+    candidates: 'Hồ sơ ứng viên',
+    online: 'Đang trực tuyến',
+    offline: 'Đang tạm nghỉ',
+    toggleHint: 'Bấm để đổi trạng thái',
+    stats: {
+      assigned: 'Được giao',
+      assignedDetail: '+2 yêu cầu mới hôm nay',
+      pending: 'Chờ tiếp nhận',
+      pendingSome: 'Có yêu cầu khẩn cấp',
+      pendingNone: 'Đã duyệt hết',
+      today: 'Phiên hôm nay',
+      todayDetail: '2 phiên Google Meet',
+      done: 'Đã hoàn tất',
+      doneDetail: (r: number) => `Tỉ lệ hoàn thành ${r}%`,
+      rating: 'Độ hài lòng',
+      ratingDetail: (n: number) => `${n} lượt đánh giá`,
+    },
+    nowLive: 'Đang diễn ra',
+    next: 'Phiên kế tiếp',
+    minutes: 'phút',
+    goal: 'Mục tiêu',
+    joinMeeting: 'Vào phòng họp',
+    details: 'Chi tiết',
+    requests: 'Yêu cầu cần xử lý',
+    tabs: { PENDING: 'Chờ tiếp nhận', SCHEDULED: 'Đã xếp lịch', ALL: 'Tất cả' },
+    empty: 'Không có yêu cầu nào ở mục này.',
+    accept: 'Tiếp nhận',
+    viewAll: (n: number) => `Xem tất cả ${n} yêu cầu`,
+    week: 'Lịch trong tuần',
+    weekMeta: (n: number) => `${n} phiên`,
+    today: 'Hôm nay',
+    free: 'Trống lịch',
+    profile: 'Hồ sơ cố vấn',
+    bio: 'Cố vấn phát triển sự nghiệp công nghệ, hơn 8 năm tuyển dụng và đồng hành cùng Tech Lead.',
+    avgResponse: 'Phản hồi trung bình',
+    satisfaction: 'Ứng viên hài lòng',
+    tipTitle: 'Gợi ý trước phiên',
+    tip: 'Alex Morgan (CR-2026-081) đạt ATS 84/100 nhưng thiếu số liệu định lượng về hiệu năng. Nên gợi ý ứng viên mô tả FCP, LCP và mức giảm bundle size trong dự án React lớn.',
+    tipLink: 'Mở hồ sơ Alex Morgan',
+    topics: 'Phân bổ chủ đề',
+    reviews: 'Đánh giá gần đây',
+    accepted: (id: string, name: string) => `Đã tiếp nhận yêu cầu ${id} của ${name}.`,
+  },
+  en: {
+    eyebrow: 'Consultant dashboard',
+    hello: 'Hi Taylor,',
+    sessionsToday: (n: number) => (n > 0 ? `you have ${n} sessions today.` : 'no sessions today yet.'),
+    pendingLine: (n: number) => (n > 0 ? `${n} requests are waiting for you.` : 'All requests handled.'),
+    intro: 'Accept new requests, prepare before each session and send your advice right after the meeting.',
+    openList: 'Open request list',
+    candidates: 'Candidate profiles',
+    online: 'Online',
+    offline: 'Away',
+    toggleHint: 'Click to switch status',
+    stats: {
+      assigned: 'Assigned',
+      assignedDetail: '+2 new requests today',
+      pending: 'Awaiting review',
+      pendingSome: 'Urgent requests waiting',
+      pendingNone: 'All caught up',
+      today: 'Sessions today',
+      todayDetail: '2 Google Meet sessions',
+      done: 'Completed',
+      doneDetail: (r: number) => `${r}% completion rate`,
+      rating: 'Satisfaction',
+      ratingDetail: (n: number) => `${n} reviews`,
+    },
+    nowLive: 'Happening now',
+    next: 'Next session',
+    minutes: 'min',
+    goal: 'Goal',
+    joinMeeting: 'Join meeting',
+    details: 'Details',
+    requests: 'Requests to handle',
+    tabs: { PENDING: 'Awaiting review', SCHEDULED: 'Scheduled', ALL: 'All' },
+    empty: 'Nothing in this tab.',
+    accept: 'Accept',
+    viewAll: (n: number) => `View all ${n} requests`,
+    week: 'This week',
+    weekMeta: (n: number) => `${n} sessions`,
+    today: 'Today',
+    free: 'Free',
+    profile: 'Your profile',
+    bio: 'Tech career consultant, 8+ years of hiring and coaching Tech Leads.',
+    avgResponse: 'Avg response',
+    satisfaction: 'Satisfaction',
+    tipTitle: 'Before your next session',
+    tip: 'Alex Morgan (CR-2026-081) scored 84/100 ATS but lacks quantified performance results. Suggest describing FCP, LCP and bundle size reductions in a large React project.',
+    tipLink: 'Open Alex Morgan profile',
+    topics: 'Topic mix',
+    reviews: 'Recent reviews',
+    accepted: (id: string, name: string) => `Accepted request ${id} from ${name}.`,
+  },
+};
+
+const REVIEWS = [
+  {
+    name: 'Đặng Thanh Tùng',
+    stars: 5,
+    quote:
+      'Lời khuyên đàm phán offer của chuyên gia cực kỳ sắc bén! Em đã chốt thành công gói đãi ngộ tăng 8% base kèm sign-on bonus.',
+    context: 'Offer Lead Fullstack',
+  },
+  {
+    name: 'Nguyễn Thị Mai Linh',
+    stars: 5,
+    quote:
+      'Buổi mock interview giúp em tự tin trả lời sự cố hệ thống SRE bằng tiếng Anh. Rất cảm ơn anh Taylor Lee!',
+    context: 'DevOps Mock Interview',
+  },
+];
+
 export default function ConsultantDashboardPage() {
-  const { t, isVietnamese } = useTranslation();
+  const { isVietnamese } = useTranslation();
+  const lang = isVietnamese ? 'vi' : 'en';
+  const c = copy[lang];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -68,11 +187,7 @@ export default function ConsultantDashboardPage() {
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['consultant-stats'] });
       queryClient.invalidateQueries({ queryKey: ['consultation-requests'] });
-      showToast(
-        isVietnamese
-          ? `Đã tiếp nhận yêu cầu #${updated.id} của ứng viên ${updated.candidate.name}!`
-          : `Accepted request #${updated.id} from ${updated.candidate.name}!`
-      );
+      showToast(c.accepted(updated.id, updated.candidate.name));
     },
   });
 
@@ -88,537 +203,297 @@ export default function ConsultantDashboardPage() {
     return true;
   });
 
-  const nextSession = allRequests.find(
-    (r) => r.status === 'IN_PROGRESS' || r.status === 'SCHEDULED'
-  );
-
-  const getTopicIcon = (topic: ConsultationTopic) => {
-    switch (topic) {
-      case 'CV_REVIEW':
-        return <FileText size={16} className="text-brand-600" />;
-      case 'CAREER_ORIENTATION':
-        return <Compass size={16} className="text-amber-600" />;
-      case 'MOCK_INTERVIEW':
-        return <Video size={16} className="text-emerald-600" />;
-      case 'SALARY_NEGOTIATION':
-        return <DollarSign size={16} className="text-brand-600" />;
-      case 'SKILL_ROADMAP':
-        return <Route size={16} className="text-brand-600" />;
-      default:
-        return <FileText size={16} className="text-brand-600" />;
-    }
-  };
-
-  const getStatusBadge = (status: ConsultationRequest['status']) => {
-    switch (status) {
-      case 'PENDING':
-        return <Badge tone="amber">{t('consultation.pending')}</Badge>;
-      case 'SCHEDULED':
-        return <Badge tone="blue">{t('consultation.scheduled')}</Badge>;
-      case 'IN_PROGRESS':
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            {t('consultation.inProgress')}
-          </span>
-        );
-      case 'COMPLETED':
-        return <Badge tone="green">{t('consultation.completed')}</Badge>;
-      case 'CANCELLED':
-        return <Badge tone="gray">{t('consultation.cancelled')}</Badge>;
-    }
-  };
-
-  const getPriorityBadge = (priority: ConsultationRequest['priority']) => {
-    switch (priority) {
-      case 'URGENT':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 border border-red-200">
-            <AlertCircle size={12} />
-            {t('consultation.urgent')}
-          </span>
-        );
-      case 'HIGH':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
-            {t('consultation.high')}
-          </span>
-        );
-      case 'NORMAL':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-            {t('consultation.normal')}
-          </span>
-        );
-    }
-  };
+  const nextSession = allRequests.find((r) => r.status === 'IN_PROGRESS' || r.status === 'SCHEDULED');
+  const weekTotal = currentStats.weeklySchedule.reduce((sum, d) => sum + d.sessions.length, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-sm animate-fade-in border border-slate-700">
-          <CheckCircle2 size={18} className="text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div className="space-y-[clamp(2.5rem,5vw,4rem)] pb-[clamp(3rem,6vw,5rem)]">
+      <Toast message={toastMessage} />
 
-      {/* Header & Quick Action */}
-      <PageTitle
-        title={t('consultation.dashboardTitle')}
-        subtitle={t('consultation.dashboardSubtitle')}
-        action={
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setIsOnline(!isOnline)}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
-                isOnline
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : 'border-slate-200 bg-slate-100 text-slate-600'
-              }`}
-            >
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}
-              />
-              {isOnline ? t('consultation.onlineStatus') : 'Đang tạm nghỉ (Offline)'}
-            </button>
-            <Button
-              variant="primary"
-              onClick={() => navigate('/consultant/consultations')}
-              className="gap-2"
-            >
-              <Calendar size={16} />
-              <span>{t('consultation.listTitle')}</span>
-              <ArrowRight size={14} />
-            </Button>
-          </div>
+      {/* Headline */}
+      <Headline
+        eyebrow={
+          <button
+            type="button"
+            onClick={() => setIsOnline(!isOnline)}
+            title={c.toggleHint}
+            className="inline-flex items-center gap-2 text-[13px] transition-colors hover:text-ink"
+          >
+            <span>{c.eyebrow}</span>
+            <span className="text-slate-400">·</span>
+            <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-brand' : 'bg-slate-400'}`} aria-hidden />
+            <span className={isOnline ? 'text-brand' : 'text-slate-500'}>{isOnline ? c.online : c.offline}</span>
+          </button>
         }
+        line1={
+          <>
+            {c.hello} {c.sessionsToday(currentStats.todaySessionsCount)}
+          </>
+        }
+        line2={c.pendingLine(currentStats.pendingCount)}
+        intro={c.intro}
+      >
+        <button type="button" onClick={() => navigate('/consultant/consultations')} className={primaryButton}>
+          {c.openList}
+          <ArrowRight size={16} />
+        </button>
+        <Link to="/consultant/candidates" className={`${textLink} text-ink`}>
+          {c.candidates}
+        </Link>
+      </Headline>
+
+      {/* KPI row */}
+      <StatRow
+        items={[
+          {
+            label: c.stats.assigned,
+            value: currentStats.totalAssigned,
+            detail: c.stats.assignedDetail,
+          },
+          {
+            label: c.stats.pending,
+            value: currentStats.pendingCount,
+            detail: currentStats.pendingCount > 0 ? c.stats.pendingSome : c.stats.pendingNone,
+          },
+          { label: c.stats.today, value: currentStats.todaySessionsCount, detail: c.stats.todayDetail },
+          {
+            label: c.stats.done,
+            value: currentStats.completedCount,
+            detail: c.stats.doneDetail(currentStats.completionRate),
+          },
+          {
+            label: c.stats.rating,
+            value: (
+              <>
+                {currentStats.satisfactionRate}
+                <span className="text-[0.5em] text-slate-400">/5</span>
+              </>
+            ),
+            detail: c.stats.ratingDetail(currentStats.totalReviews),
+          },
+        ]}
       />
 
-      {/* KPI Overview Metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Link to="/consultant/consultations" className="block transition-transform">
-          <StatCard
-            label={t('consultation.assignedRequests')}
-            value={String(currentStats.totalAssigned)}
-            detail={isVietnamese ? '+2 yêu cầu mới hôm nay' : '+2 new requests today'}
-            icon={<FileText size={20} />}
-          />
-        </Link>
-        <Link
-          to="/consultant/consultations"
-          className="block transition-transform"
-        >
-          <StatCard
-            label={t('consultation.pendingReview')}
-            value={String(currentStats.pendingCount)}
-            detail={
-              currentStats.pendingCount > 0
-                ? isVietnamese
-                  ? 'Có yêu cầu khẩn cấp'
-                  : 'Urgent requests awaiting'
-                : isVietnamese
-                  ? 'Đã duyệt hết'
-                  : 'All caught up'
-            }
-            icon={<AlertCircle size={20} className="text-amber-600" />}
-          />
-        </Link>
-        <div className="block">
-          <StatCard
-            label={t('consultation.todaySessionsCount')}
-            value={String(currentStats.todaySessionsCount)}
-            detail={isVietnamese ? '2 phiên Google Meet' : '2 Google Meet sessions'}
-            icon={<Clock size={20} className="text-brand-600" />}
-          />
-        </div>
-        <div className="block">
-          <StatCard
-            label={t('consultation.completedSessions')}
-            value={String(currentStats.completedCount)}
-            detail={
-              isVietnamese
-                ? `Tỉ lệ hoàn thành ${currentStats.completionRate}%`
-                : `${currentStats.completionRate}% completion rate`
-            }
-            icon={<CheckCircle2 size={20} className="text-emerald-600" />}
-          />
-        </div>
-        <div className="block">
-          <StatCard
-            label={t('consultation.satisfactionScore')}
-            value={`${currentStats.satisfactionRate} ★`}
-            detail={`${currentStats.totalReviews} ${t('consultation.reviewsCount')}`}
-            icon={<Star size={20} className="text-amber-500 fill-amber-500" />}
-          />
-        </div>
-      </div>
-
-      {/* Spotlight Next Session Banner */}
+      {/* Next session */}
       {nextSession && (
-        <Card className="border-brand-200 bg-brand-600 text-white">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-white border border-white/20">
-                <Video size={24} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
-                    {nextSession.status === 'IN_PROGRESS'
-                      ? isVietnamese
-                        ? 'Đang diễn ra ngay bây giờ'
-                        : 'Happening Right Now'
-                      : isVietnamese
-                        ? 'Phiên tư vấn kế tiếp hôm nay'
-                        : 'Upcoming Session Today'}
-                  </span>
-                  <span className="text-xs text-brand-100 font-medium">
-                    {new Date(nextSession.meeting.scheduledAt).toLocaleTimeString('vi-VN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}{' '}
-                    ({nextSession.meeting.durationMinutes} phút)
-                  </span>
-                </div>
-                <h3 className="mt-1 text-lg font-medium text-white">
-                  {nextSession.candidate.name} · {nextSession.topicLabel}
-                </h3>
-                <p className="text-xs text-brand-100 line-clamp-1 mt-0.5">
-                  Mục tiêu: {nextSession.targetGoal}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <a
-                href={nextSession.meeting.meetingUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-surface px-4 py-2.5 text-xs font-medium text-brand-800 shadow-sm transition hover:bg-brand-50 cursor-pointer"
-              >
-                <Video size={15} />
-                <span>{t('consultation.joinMeeting')}</span>
-                <ExternalLink size={13} />
-              </a>
-              <Link to={`/consultant/consultations/${nextSession.id}`}>
-                <button className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-white/20 cursor-pointer">
-                  <span>{t('consultation.viewDetails')}</span>
-                  <ArrowRight size={13} />
-                </button>
-              </Link>
+        <section className="grid gap-6 border-y border-ink py-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <div className="flex min-w-0 items-start gap-4">
+            <Avatar src={nextSession.candidate.avatar} name={nextSession.candidate.name} size="lg" />
+            <div className="min-w-0">
+              <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-slate-600">
+                <span className={nextSession.status === 'IN_PROGRESS' ? 'text-brand' : ''}>
+                  {nextSession.status === 'IN_PROGRESS' ? c.nowLive : c.next}
+                </span>
+                <span className="text-slate-400">·</span>
+                <span className="tabular-nums">{formatTime(nextSession.meeting.scheduledAt)}</span>
+                <span className="text-slate-400">·</span>
+                <span>
+                  {nextSession.meeting.durationMinutes} {c.minutes}
+                </span>
+              </p>
+              <h2 className="mt-1 text-[clamp(1.375rem,2.4vw,1.875rem)] font-normal leading-tight tracking-[-0.015em] text-ink">
+                {nextSession.candidate.name}
+                <span className="text-slate-400"> · </span>
+                <span className="text-brand">{nextSession.topicLabel}</span>
+              </h2>
+              <p className="mt-1.5 line-clamp-2 max-w-3xl text-sm leading-6 text-slate-600">
+                {c.goal}: {nextSession.targetGoal}
+              </p>
             </div>
           </div>
-        </Card>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <a href={nextSession.meeting.meetingUrl} target="_blank" rel="noreferrer" className={primaryButton}>
+              {c.joinMeeting}
+              <ExternalLink size={15} />
+            </a>
+            <Link to={`/consultant/consultations/${nextSession.id}`} className={`${textLink} text-ink`}>
+              {c.details}
+            </Link>
+          </div>
+        </section>
       )}
 
-      {/* Main Two-Column Layout */}
-      <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
-        {/* Left Column: Assigned Requests Management & Schedule */}
-        <div className="space-y-6">
-          {/* Requests Section */}
-          <Card>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <h2 className="text-base font-medium text-slate-900">
-                  {t('consultation.urgentRequests')}
-                </h2>
-                <p className="text-xs text-slate-500">
-                  {isVietnamese
-                    ? 'Danh sách các yêu cầu tư vấn cần duyệt và chuẩn bị nội dung'
-                    : 'Consultation requests requiring confirmation and review'}
-                </p>
-              </div>
-              {/* Tab Pills */}
-              <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
-                <button
-                  onClick={() => setActiveTab('PENDING')}
-                  className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
-                    activeTab === 'PENDING'
-                      ? 'bg-white text-brand-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {t('consultation.pending')} ({currentStats.pendingCount})
-                </button>
-                <button
-                  onClick={() => setActiveTab('SCHEDULED')}
-                  className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
-                    activeTab === 'SCHEDULED'
-                      ? 'bg-white text-brand-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {t('consultation.scheduled')} ({currentStats.scheduledCount})
-                </button>
-                <button
-                  onClick={() => setActiveTab('ALL')}
-                  className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
-                    activeTab === 'ALL'
-                      ? 'bg-white text-brand-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {t('common.all')} ({allRequests.length})
-                </button>
-              </div>
-            </div>
+      <div className="grid gap-x-[clamp(2rem,4vw,4.5rem)] gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,23rem)]">
+        {/* Main column */}
+        <div className="min-w-0 space-y-14">
+          {/* 01 Requests */}
+          <section>
+            <SectionHead index="01" title={c.requests} />
+            <UnderlineTabs
+              value={activeTab}
+              onChange={setActiveTab}
+              tabs={[
+                { value: 'PENDING', label: c.tabs.PENDING, count: currentStats.pendingCount },
+                { value: 'SCHEDULED', label: c.tabs.SCHEDULED, count: currentStats.scheduledCount },
+                { value: 'ALL', label: c.tabs.ALL, count: allRequests.length },
+              ]}
+            />
 
-            {/* Requests List */}
             {filteredRequests.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">
-                {t('consultation.emptyTitle')}
-              </div>
+              <p className="border-b border-border py-10 text-center text-sm text-slate-500">{c.empty}</p>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {filteredRequests.slice(0, 5).map((req) => (
-                  <div
+              <ol>
+                {filteredRequests.slice(0, 5).map((req, idx) => (
+                  <li
                     key={req.id}
-                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between transition hover:bg-slate-50/50 -mx-2 px-2 rounded-xl"
+                    className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 border-b border-border py-5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
                   >
-                    <div className="flex items-start gap-3 min-w-0">
-                      <img
-                        src={req.candidate.avatar}
-                        alt={req.candidate.name}
-                        className="h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200"
-                      />
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium text-sm text-slate-900">
-                            {req.candidate.name}
-                          </span>
-                          <span className="text-xs text-slate-400 font-mono">#{req.id}</span>
-                          {getPriorityBadge(req.priority)}
-                          {getStatusBadge(req.status)}
-                        </div>
-                        <p className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                          {getTopicIcon(req.topic)}
-                          <span className="truncate">{req.topicLabel}</span>
-                        </p>
-                        <p className="text-xs text-slate-400 line-clamp-1">
-                          {isVietnamese ? 'Mục tiêu: ' : 'Goal: '}
-                          {req.targetGoal}
-                        </p>
+                    <span className="w-6 pt-0.5 text-xs tabular-nums text-slate-400 sm:pt-0">{pad2(idx + 1)}</span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <Link
+                          to={`/consultant/consultations/${req.id}`}
+                          className="text-[17px] text-ink transition-colors hover:text-brand"
+                        >
+                          {req.candidate.name}
+                        </Link>
+                        <span className="text-xs tabular-nums text-slate-400">{req.id}</span>
+                        <StatusText status={req.status} lang={lang} />
+                        {req.priority !== 'NORMAL' && <PriorityText priority={req.priority} lang={lang} />}
                       </div>
+                      <p className="mt-1 text-sm text-slate-700">{req.topicLabel}</p>
+                      <p className="mt-0.5 line-clamp-1 text-[13px] text-slate-500">
+                        {c.goal}: {req.targetGoal}
+                      </p>
                     </div>
-
-                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <div className="col-start-2 flex items-center gap-x-5 sm:col-start-auto">
                       {req.status === 'PENDING' && (
                         <button
+                          type="button"
                           onClick={() => acceptMutation.mutate(req.id)}
                           disabled={acceptMutation.isPending}
-                          className="inline-flex items-center gap-1 rounded-xl bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100 transition cursor-pointer disabled:opacity-50"
+                          className={smallPrimary}
                         >
-                          <Check size={14} />
-                          <span>{t('consultation.acceptQuick')}</span>
+                          {c.accept}
                         </button>
                       )}
-                      <Link to={`/consultant/consultations/${req.id}`}>
-                        <Button variant="secondary" className="px-3 py-2 text-xs">
-                          {t('consultation.viewDetails')}
-                        </Button>
+                      <Link to={`/consultant/consultations/${req.id}`} className={`${textLink} text-ink`}>
+                        {c.details}
                       </Link>
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ol>
             )}
 
-            <div className="mt-4 border-t border-slate-100 pt-3 text-center">
-              <Link
-                to="/consultant/consultations"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700"
-              >
-                <span>
-                  {isVietnamese
-                    ? `Xem tất cả ${allRequests.length} yêu cầu tư vấn`
-                    : `View all ${allRequests.length} consultation requests`}
-                </span>
-                <ArrowRight size={13} />
-              </Link>
-            </div>
-          </Card>
+            <Link to="/consultant/consultations" className={`${textLink} mt-5 text-slate-700`}>
+              {c.viewAll(allRequests.length)}
+              <ArrowRight size={14} />
+            </Link>
+          </section>
 
-          {/* Weekly Schedule Preview */}
-          <Card>
-            <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Calendar size={18} className="text-brand-600" />
-                <h2 className="text-base font-medium text-slate-900">
-                  {t('consultation.weeklySchedule')}
-                </h2>
-              </div>
-              <Badge tone="blue">
-                {isVietnamese ? 'Tuần này · 5 phiên' : 'This week · 5 sessions'}
-              </Badge>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-5">
-              {currentStats.weeklySchedule.map((day) => (
-                <div
-                  key={day.date}
-                  className={`rounded-xl border p-3 ${
-                    day.date === '2026-10-19'
-                      ? 'border-brand-300 bg-brand-50/50 ring-1 ring-brand-400/30'
-                      : 'border-slate-200/80 bg-white'
-                  }`}
-                >
-                  <p className="text-xs font-medium text-slate-700">{day.dayOfWeek}</p>
-                  <p className="text-[11px] text-slate-400">{day.date}</p>
-
-                  <div className="mt-2 space-y-1.5">
-                    {day.sessions.length === 0 ? (
-                      <span className="block text-[11px] italic text-slate-400">
-                        {isVietnamese ? 'Trống lịch' : 'No sessions'}
-                      </span>
-                    ) : (
-                      day.sessions.map((sess) => (
-                        <Link
-                          key={sess.id}
-                          to={`/consultant/consultations/${sess.id}`}
-                          className="block rounded-lg bg-surface p-2 text-xs shadow-xs border border-slate-100 hover:border-brand-300 transition"
-                        >
-                          <span className="block font-medium text-slate-800 truncate">
-                            {sess.candidateName}
-                          </span>
-                          <span className="block text-[10px] text-brand-600 font-medium">
-                            {sess.time}
-                          </span>
-                        </Link>
-                      ))
-                    )}
+          {/* 02 Weekly schedule */}
+          <section>
+            <SectionHead index="02" title={c.week} meta={c.weekMeta(weekTotal)} />
+            <div className="grid grid-cols-1 sm:grid-cols-5">
+              {currentStats.weeklySchedule.map((day) => {
+                const isToday = day.date === '2026-10-19';
+                return (
+                  <div
+                    key={day.date}
+                    className={`border-b border-border py-4 sm:min-h-44 sm:border-b-0 sm:border-r sm:px-4 sm:first:pl-0 sm:last:border-r-0 ${
+                      isToday ? 'sm:shadow-[inset_0_2px_0_var(--color-brand)]' : ''
+                    }`}
+                  >
+                    <p className={`text-sm ${isToday ? 'text-brand' : 'text-ink'}`}>
+                      {day.dayOfWeek.replace(' (Hôm nay)', '')}
+                      {isToday && <span className="ml-1.5 text-xs">· {c.today}</span>}
+                    </p>
+                    <p className="text-xs tabular-nums text-slate-400">{day.date}</p>
+                    <div className="mt-3 space-y-3">
+                      {day.sessions.length === 0 ? (
+                        <span className="block text-[13px] text-slate-400">{c.free}</span>
+                      ) : (
+                        day.sessions.map((sess) => (
+                          <Link key={sess.id} to={`/consultant/consultations/${sess.id}`} className="group block">
+                            <span className="block text-xs tabular-nums text-brand">{sess.time}</span>
+                            <span className="block truncate text-sm text-ink transition-colors group-hover:text-brand">
+                              {sess.candidateName}
+                            </span>
+                          </Link>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </Card>
+          </section>
         </div>
 
-        {/* Right Column: Consultant Profile, Topic Distribution & Reviews */}
-        <div className="space-y-6">
-          {/* Consultant Profile Card */}
-          <Card className="border border-slate-200/90 bg-surface">
-            <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-600 text-lg font-medium text-white shadow-sm">
-                TL
-              </span>
+        {/* Aside */}
+        <aside className="min-w-0 space-y-12">
+          {/* Profile */}
+          <section>
+            <SectionHead index="03" title={c.profile} />
+            <div className="flex items-center gap-3 pt-5">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-sm text-white">TL</span>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="font-medium text-slate-900">Taylor Lee</h3>
-                  <ShieldCheck size={16} className="text-brand-600" />
-                </div>
-                <p className="text-xs text-slate-500">{t('consultation.consultantBio')}</p>
+                <p className="text-[17px] text-ink">Taylor Lee</p>
+                <p className="text-[13px] text-slate-500">Career consultant</p>
               </div>
             </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 text-center">
-              <div className="rounded-xl bg-surface p-2.5 border border-slate-100">
-                <span className="text-xs text-slate-500">
-                  {isVietnamese ? 'Phản hồi trung bình' : 'Avg Response'}
-                </span>
-                <p className="font-medium text-slate-800 text-sm">{currentStats.avgResponseTime}</p>
+            <p className="mt-4 text-sm leading-6 text-slate-600">{c.bio}</p>
+            <dl className="mt-4 border-t border-border text-sm">
+              <div className="flex items-baseline justify-between gap-4 border-b border-border py-3">
+                <dt className="text-slate-600">{c.avgResponse}</dt>
+                <dd className="text-ink">{currentStats.avgResponseTime}</dd>
               </div>
-              <div className="rounded-xl bg-surface p-2.5 border border-slate-100">
-                <span className="text-xs text-slate-500">
-                  {isVietnamese ? 'Ứng viên hài lòng' : 'Satisfaction'}
-                </span>
-                <p className="font-medium text-emerald-600 text-sm">
-                  {currentStats.completionRate}%
-                </p>
+              <div className="flex items-baseline justify-between gap-4 border-b border-border py-3">
+                <dt className="text-slate-600">{c.satisfaction}</dt>
+                <dd className="text-brand">{currentStats.completionRate}%</dd>
               </div>
-            </div>
-          </Card>
+            </dl>
+          </section>
 
-          {/* AI Consultant Coaching Insights */}
-          <Card className="border-amber-200/80 bg-amber-50/50">
-            <div className="flex items-center gap-2 text-amber-800 mb-2">
-              <Lightbulb size={18} className="text-amber-600" />
-              <h3 className="font-medium text-sm">
-                {isVietnamese ? 'Gợi ý Trợ lý AI cho Cố vấn' : 'AI Career Assistant Insights'}
-              </h3>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {isVietnamese
-                ? 'Ứng viên Alex Morgan (CR-2026-081) có điểm ATS 84/100, bị thiếu số liệu định lượng về Performance. Bạn nên gợi ý ứng viên mô tả chỉ số FCP, LCP và giảm % bundle size trong dự án React lớn.'
-                : 'Candidate Alex Morgan (CR-2026-081) scored 84/100 ATS with missing quantitative metrics. Recommend focusing on Core Web Vitals (FCP, LCP) and bundle size optimization in STAR format.'}
-            </p>
-            <div className="mt-3">
-              <Link
-                to="/consultant/consultations/CR-2026-081"
-                className="text-xs font-medium text-amber-700 hover:text-amber-800 inline-flex items-center gap-1"
-              >
-                <span>{isVietnamese ? 'Mở hồ sơ Alex Morgan' : 'Open Alex Morgan profile'}</span>
-                <ArrowRight size={12} />
-              </Link>
-            </div>
-          </Card>
+          {/* Tip */}
+          <section>
+            <SectionHead index="04" title={c.tipTitle} />
+            <p className="border-l-2 border-brand py-1 pl-4 mt-5 text-sm leading-7 text-slate-700">{c.tip}</p>
+            <Link to="/consultant/consultations/CR-2026-081" className={`${textLink} mt-4 text-ink`}>
+              {c.tipLink}
+              <ArrowRight size={14} />
+            </Link>
+          </section>
 
-          {/* Topics Distribution */}
-          <Card>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-medium text-sm text-slate-900 flex items-center gap-1.5">
-                <TrendingUp size={16} className="text-brand-600" />
-                <span>{t('consultation.topicDistribution')}</span>
-              </h3>
-            </div>
-
-            <div className="space-y-3">
+          {/* Topic mix */}
+          <section>
+            <SectionHead index="05" title={c.topics} />
+            <ul>
               {currentStats.topicDistribution.map((item) => (
-                <div key={item.topic}>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="font-medium text-slate-700">{item.label}</span>
-                    <span className="font-medium text-slate-800">
-                      {item.count} ({item.percentage}%)
+                <li key={item.topic} className="border-b border-border py-3.5">
+                  <div className="mb-2 flex items-baseline justify-between gap-3 text-sm">
+                    <span className="text-slate-700">{item.label}</span>
+                    <span className="tabular-nums text-ink">
+                      {item.count}
+                      <span className="ml-1.5 text-xs text-slate-400">{item.percentage}%</span>
                     </span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${item.color}`}
-                      style={{ width: `${item.percentage}%` }}
-                    />
-                  </div>
-                </div>
+                  <ThinBar value={item.percentage} />
+                </li>
               ))}
-            </div>
-          </Card>
+            </ul>
+          </section>
 
-          {/* Recent Candidate Testimonials */}
-          <Card>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-medium text-sm text-slate-900 flex items-center gap-1.5">
-                <Users size={16} className="text-brand-600" />
-                <span>{t('consultation.recentReviews')}</span>
-              </h3>
-              <span className="text-xs text-amber-600 font-medium">4.95 / 5.0 ★</span>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-slate-800">Đặng Thanh Tùng</span>
-                  <span className="text-amber-500 font-medium">★★★★★</span>
-                </div>
-                <p className="text-slate-600 italic">
-                  "Lời khuyên đàm phán offer của Chuyên gia cực kỳ sắc bén! Em đã chốt thành công gói
-                  đãi ngộ tăng 8% base kèm sign-on bonus."
-                </p>
-                <span className="text-[10px] text-slate-400 mt-1 block">Offer Lead Fullstack</span>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-slate-800">Nguyễn Thị Mai Linh</span>
-                  <span className="text-amber-500 font-medium">★★★★★</span>
-                </div>
-                <p className="text-slate-600 italic">
-                  "Buổi mock interview giúp em tự tin trả lời sự cố hệ thống SRE bằng tiếng Anh. Rất
-                  cảm ơn anh Taylor Lee!"
-                </p>
-                <span className="text-[10px] text-slate-400 mt-1 block">DevOps Mock Interview</span>
-              </div>
-            </div>
-          </Card>
-        </div>
+          {/* Reviews */}
+          <section>
+            <SectionHead index="06" title={c.reviews} meta="4.95/5" />
+            <ul>
+              {REVIEWS.map((r) => (
+                <li key={r.name} className="border-b border-border py-5">
+                  <p className="text-sm leading-7 text-slate-700">“{r.quote}”</p>
+                  <p className="mt-2 flex flex-wrap items-baseline justify-between gap-2 text-[13px]">
+                    <span className="text-ink">
+                      {r.name}
+                      <span className="text-slate-400"> · {r.context}</span>
+                    </span>
+                    <span className="tabular-nums text-brand">{r.stars}/5</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
       </div>
     </div>
   );

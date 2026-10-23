@@ -1,28 +1,137 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowRight, Search, X } from 'lucide-react';
+import { Loading, ErrorState } from '../../components/ui';
 import {
-  Search,
-  Filter,
-  Users,
-  Award,
-  Target,
-  FileText,
-  Clock,
-  MapPin,
-  ArrowRight,
-  Lightbulb,
-  ChevronRight,
-  X,
-  MessagesSquare,
-} from 'lucide-react';
-import { Card, PageTitle, Badge, Button, Loading, ErrorState, StatCard } from '../../components/ui';
+  Avatar,
+  Headline,
+  StatRow,
+  UnderlineTabs,
+  fieldLabel,
+  pad2,
+  textLink,
+  underlineInput,
+  underlineSelect,
+} from '../../components/consultation/ConsultantKit';
 import { getConsultantCandidates } from '../../services/consultationService';
 import type { ConsultantCandidateSummary } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
 
+type Readiness = ConsultantCandidateSummary['readinessLevel'];
+
+const copy = {
+  vi: {
+    crumbHome: 'Bảng điều khiển',
+    crumb: 'Ứng viên',
+    eyebrow: 'Hồ sơ ứng viên',
+    line1: (n: number) => `${n} ứng viên bạn đang theo dõi.`,
+    line2: (n: number) => `${n} người đã gần sẵn sàng ứng tuyển.`,
+    intro: 'Xem nhanh điểm ATS, độ phù hợp và kết quả đánh giá kỹ năng trước khi mở hồ sơ phân tích đầy đủ.',
+    requests: 'Danh sách yêu cầu tư vấn',
+    stats: {
+      total: 'Ứng viên được giao',
+      totalDetail: 'Đang trong danh sách theo dõi',
+      ready: 'Sẵn sàng cao',
+      readyDetail: (n: number) => `${n} ứng viên sẵn sàng / gần đạt`,
+      ats: 'ATS trung bình',
+      atsDetail: 'Trên thang 100',
+      active: 'Có lịch tư vấn',
+      activeDetail: 'Có yêu cầu hoặc lịch hẹn',
+    },
+    search: 'Tìm kiếm',
+    searchPlaceholder: 'Tên, email, vị trí mục tiêu hoặc kỹ năng',
+    clear: 'Xoá tìm kiếm',
+    role: 'Vị trí',
+    allRoles: 'Tất cả vị trí',
+    sort: 'Sắp xếp',
+    sorts: { fit: 'Độ phù hợp cao nhất', ats: 'Điểm ATS cao nhất', exp: 'Kinh nghiệm nhiều nhất' },
+    all: 'Tất cả',
+    readiness: {
+      Ready: 'Sẵn sàng',
+      'Near Ready': 'Gần đạt chuẩn',
+      Developing: 'Đang phát triển',
+      'Early Stage': 'Giai đoạn đầu',
+    } as Record<Readiness, string>,
+    showing: (a: number, b: number) => `Hiển thị ${a} / ${b} ứng viên`,
+    reset: 'Đặt lại bộ lọc',
+    cols: { candidate: 'Ứng viên', skills: 'Kỹ năng', ats: 'ATS', fit: 'Phù hợp', test: 'Đánh giá', readiness: 'Mức sẵn sàng' },
+    years: (n: number) => `${n} năm`,
+    analysis: 'Phân tích',
+    request: 'Yêu cầu',
+    noRequest: 'Chưa có lịch hẹn',
+    emptyTitle: 'Không tìm thấy ứng viên phù hợp.',
+    emptyDesc: 'Thử đổi từ khoá tìm kiếm hoặc bỏ bớt tiêu chí lọc.',
+  },
+  en: {
+    crumbHome: 'Dashboard',
+    crumb: 'Candidates',
+    eyebrow: 'Candidate profiles',
+    line1: (n: number) => `${n} candidates you are following.`,
+    line2: (n: number) => `${n} are close to ready.`,
+    intro: 'Scan ATS scores, fit and skill test results before opening the full analysis.',
+    requests: 'Consultation requests',
+    stats: {
+      total: 'Assigned candidates',
+      totalDetail: 'In your talent pool',
+      ready: 'High readiness',
+      readyDetail: (n: number) => `${n} ready / near ready`,
+      ats: 'Average ATS',
+      atsDetail: 'Out of 100',
+      active: 'With sessions',
+      activeDetail: 'Have a request or booking',
+    },
+    search: 'Search',
+    searchPlaceholder: 'Name, email, target role or skill',
+    clear: 'Clear search',
+    role: 'Role',
+    allRoles: 'All roles',
+    sort: 'Sort',
+    sorts: { fit: 'Highest fit', ats: 'Highest ATS', exp: 'Most experienced' },
+    all: 'All',
+    readiness: {
+      Ready: 'Ready',
+      'Near Ready': 'Near ready',
+      Developing: 'Developing',
+      'Early Stage': 'Early stage',
+    } as Record<Readiness, string>,
+    showing: (a: number, b: number) => `Showing ${a} of ${b} candidates`,
+    reset: 'Reset filters',
+    cols: { candidate: 'Candidate', skills: 'Skills', ats: 'ATS', fit: 'Fit', test: 'Test', readiness: 'Readiness' },
+    years: (n: number) => `${n} yrs`,
+    analysis: 'Analysis',
+    request: 'Request',
+    noRequest: 'No booking yet',
+    emptyTitle: 'No matching candidates.',
+    emptyDesc: 'Try another keyword or clear some filters.',
+  },
+};
+
+const READINESS: Readiness[] = ['Ready', 'Near Ready', 'Developing', 'Early Stage'];
+const ROLE_TRACKS: { value: string; label: string }[] = [
+  { value: 'Frontend', label: 'Frontend / Web' },
+  { value: 'AI', label: 'AI & Machine Learning' },
+  { value: 'Architect', label: 'Architect / Lead' },
+  { value: 'Fullstack', label: 'Fullstack' },
+  { value: 'DevOps', label: 'DevOps / Cloud' },
+  { value: 'Product', label: 'Product Manager' },
+  { value: 'Data', label: 'Data Analyst' },
+];
+
+function readinessTone(level: Readiness) {
+  if (level === 'Ready') return 'text-brand';
+  if (level === 'Near Ready') return 'text-ink';
+  if (level === 'Developing') return 'text-warning';
+  return 'text-slate-500';
+}
+
+const rowGrid =
+  'lg:grid-cols-[2.5rem_minmax(0,1.6fr)_minmax(0,1.2fr)_4.5rem_4.5rem_5.5rem_minmax(0,0.8fr)_auto]';
+
 export default function ConsultantCandidatesPage() {
-  const { t, isVietnamese } = useTranslation();
+  const { isVietnamese } = useTranslation();
+  const lang = isVietnamese ? 'vi' : 'en';
+  const c = copy[lang];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReadiness, setSelectedReadiness] = useState<string>('ALL');
@@ -93,324 +202,241 @@ export default function ConsultantCandidatesPage() {
     return { total, readyCount, avgAts, activeConsultations };
   }, [candidates]);
 
-  const getReadinessBadge = (level: ConsultantCandidateSummary['readinessLevel']) => {
-    switch (level) {
-      case 'Ready':
-        return <Badge tone="green">{t('consultation.ready')}</Badge>;
-      case 'Near Ready':
-        return <Badge tone="blue">{t('consultation.nearReady')}</Badge>;
-      case 'Developing':
-        return <Badge tone="amber">{t('consultation.developing')}</Badge>;
-      case 'Early Stage':
-        return <Badge tone="gray">{t('consultation.earlyStage')}</Badge>;
-    }
-  };
+  const readinessCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: candidates.length };
+    READINESS.forEach((r) => (counts[r] = candidates.filter((x) => x.readinessLevel === r).length));
+    return counts;
+  }, [candidates]);
 
   if (isLoading) return <Loading />;
   if (isError) return <ErrorState />;
 
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedReadiness('ALL');
+    setSelectedRoleTrack('ALL');
+  };
+  const hasFilters = !!searchQuery || selectedReadiness !== 'ALL' || selectedRoleTrack !== 'ALL';
+
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb Navigation */}
-      <nav className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/consultant" className="hover:text-brand-600 transition">
-          {t('nav.dashboard')}
+    <div className="pb-[clamp(3rem,6vw,5rem)]">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-[13px] text-slate-500">
+        <Link to="/consultant" className="transition-colors hover:text-brand">
+          {c.crumbHome}
         </Link>
-        <span>/</span>
-        <span className="font-semibold text-slate-800">{t('consultation.candidatesTitle')}</span>
+        <span className="text-slate-300">/</span>
+        <span className="text-ink">{c.crumb}</span>
       </nav>
 
-      {/* Header */}
-      <PageTitle
-        title={t('consultation.candidatesTitle')}
-        subtitle={t('consultation.candidatesSubtitle')}
-        action={
-          <div className="flex items-center gap-2">
-            <Link to="/consultant/consultations">
-              <Button variant="secondary" className="gap-1.5 text-xs">
-                <MessagesSquare size={14} />
-                <span>{t('consultation.listTitle')}</span>
-              </Button>
-            </Link>
-          </div>
-        }
-      />
+      <Headline
+        eyebrow={c.eyebrow}
+        line1={c.line1(stats.total)}
+        line2={c.line2(stats.readyCount)}
+        intro={c.intro}
+      >
+        <Link to="/consultant/consultations" className={`${textLink} text-ink`}>
+          {c.requests}
+          <ArrowRight size={14} />
+        </Link>
+      </Headline>
 
-      {/* Overview Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label={isVietnamese ? 'Ứng viên được phân công' : 'Assigned Candidates'}
-          value={String(stats.total)}
-          detail={isVietnamese ? 'Đang trong danh sách theo dõi' : 'In consultant talent pool'}
-          icon={<Users size={20} />}
-        />
-        <StatCard
-          label={isVietnamese ? 'Tỉ lệ sẵn sàng cao' : 'High Readiness Rate'}
-          value={`${Math.round((stats.readyCount / (stats.total || 1)) * 100)}%`}
-          detail={
-            isVietnamese
-              ? `${stats.readyCount} ứng viên Ready/Near Ready`
-              : `${stats.readyCount} candidates ready/near ready`
-          }
-          icon={<Target size={20} className="text-emerald-600" />}
-        />
-        <StatCard
-          label={isVietnamese ? 'Điểm ATS CV trung bình' : 'Average ATS Score'}
-          value={`${stats.avgAts}/100`}
-          detail={isVietnamese ? 'Đạt chuẩn sàn lọc nhà tuyển dụng' : 'Meets top employer threshold'}
-          icon={<FileText size={20} className="text-brand-600" />}
-        />
-        <StatCard
-          label={isVietnamese ? 'Phiên tư vấn liên quan' : 'Active Consultations'}
-          value={String(stats.activeConsultations)}
-          detail={isVietnamese ? 'Có yêu cầu/lịch hẹn tư vấn' : 'Have appointment schedules'}
-          icon={<Award size={20} className="text-brand-600" />}
+      <div className="mt-[clamp(2rem,4vw,3rem)]">
+        <StatRow
+          items={[
+            { label: c.stats.total, value: stats.total, detail: c.stats.totalDetail },
+            {
+              label: c.stats.ready,
+              value: `${Math.round((stats.readyCount / (stats.total || 1)) * 100)}%`,
+              detail: c.stats.readyDetail(stats.readyCount),
+            },
+            { label: c.stats.ats, value: stats.avgAts, detail: c.stats.atsDetail },
+            { label: c.stats.active, value: stats.activeConsultations, detail: c.stats.activeDetail },
+          ]}
         />
       </div>
 
-      {/* Search & Filter Toolbar */}
-      <Card className="p-4 sm:p-5 space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
-          {/* Search Input */}
-          <div className="relative lg:col-span-5">
-            <Search
-              size={17}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-            />
+      {/* Filters */}
+      <section className="mt-10 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <label className="block sm:col-span-2 lg:col-span-1">
+          <span className={fieldLabel}>{c.search}</span>
+          <span className="relative block">
+            <Search size={16} className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('consultation.candidatesSearchPlaceholder')}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-9 text-xs sm:text-sm outline-none transition focus:border-brand-500 focus:bg-surface"
+              placeholder={c.searchPlaceholder}
+              className={`${underlineInput} pl-7 pr-8`}
             />
             {searchQuery && (
               <button
+                type="button"
+                aria-label={c.clear}
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-ink"
               >
                 <X size={15} />
               </button>
             )}
-          </div>
+          </span>
+        </label>
+        <label className="block">
+          <span className={fieldLabel}>{c.role}</span>
+          <select
+            value={selectedRoleTrack}
+            onChange={(e) => setSelectedRoleTrack(e.target.value)}
+            className={underlineSelect}
+          >
+            <option value="ALL">{c.allRoles}</option>
+            {ROLE_TRACKS.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className={fieldLabel}>{c.sort}</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'fit' | 'ats' | 'exp')}
+            className={underlineSelect}
+          >
+            <option value="fit">{c.sorts.fit}</option>
+            <option value="ats">{c.sorts.ats}</option>
+            <option value="exp">{c.sorts.exp}</option>
+          </select>
+        </label>
+      </section>
 
-          {/* Readiness Filter */}
-          <div className="lg:col-span-3">
-            <select
-              value={selectedReadiness}
-              onChange={(e) => setSelectedReadiness(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
-            >
-              <option value="ALL">{t('consultation.allReadiness')}</option>
-              <option value="Ready">{t('consultation.ready')}</option>
-              <option value="Near Ready">{t('consultation.nearReady')}</option>
-              <option value="Developing">{t('consultation.developing')}</option>
-              <option value="Early Stage">{t('consultation.earlyStage')}</option>
-            </select>
-          </div>
+      <div className="mt-8">
+        <UnderlineTabs
+          size="lg"
+          value={selectedReadiness}
+          onChange={setSelectedReadiness}
+          tabs={[
+            { value: 'ALL', label: c.all, count: readinessCounts.ALL },
+            ...READINESS.map((r) => ({ value: r as string, label: c.readiness[r], count: readinessCounts[r] })),
+          ]}
+        />
+      </div>
 
-          {/* Role Track Filter */}
-          <div className="lg:col-span-2">
-            <select
-              value={selectedRoleTrack}
-              onChange={(e) => setSelectedRoleTrack(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
-            >
-              <option value="ALL">{isVietnamese ? 'Tất cả vị trí' : 'All Roles'}</option>
-              <option value="Frontend">Frontend / Web</option>
-              <option value="AI">AI & Machine Learning</option>
-              <option value="Architect">Architect / Lead</option>
-              <option value="Fullstack">Fullstack</option>
-              <option value="DevOps">DevOps / Cloud</option>
-              <option value="Product">Product Manager</option>
-              <option value="Data">Data Analyst</option>
-            </select>
-          </div>
+      <div className="flex flex-wrap items-baseline justify-between gap-3 py-4 text-[13px] text-slate-500">
+        <span>{c.showing(filteredCandidates.length, candidates.length)}</span>
+        {hasFilters && (
+          <button type="button" onClick={resetFilters} className={`${textLink} text-[13px] text-slate-600`}>
+            {c.reset}
+          </button>
+        )}
+      </div>
 
-          {/* Sort By */}
-          <div className="lg:col-span-2">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'fit' | 'ats' | 'exp')}
-              className="w-full rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-xs sm:text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer"
-            >
-              <option value="fit">{isVietnamese ? 'Độ phù hợp cao nhất' : 'Highest Fit'}</option>
-              <option value="ats">{isVietnamese ? 'Điểm ATS cao nhất' : 'Highest ATS'}</option>
-              <option value="exp">{isVietnamese ? 'Kinh nghiệm nhiều nhất' : 'Most Experienced'}</option>
-            </select>
-          </div>
-        </div>
-      </Card>
-
-      {/* Candidate Cards Grid */}
       {filteredCandidates.length === 0 ? (
-        <Card className="py-14 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
-            <Filter size={24} />
-          </div>
-          <h3 className="text-base font-medium text-slate-900">
-            {isVietnamese ? 'Không tìm thấy ứng viên phù hợp' : 'No matching candidates found'}
-          </h3>
-          <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
-            {isVietnamese
-              ? 'Thử điều chỉnh từ khóa tìm kiếm hoặc bỏ các tiêu chí lọc.'
-              : 'Try adjusting your search criteria or resetting filters.'}
-          </p>
-          <div className="mt-4">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedReadiness('ALL');
-                setSelectedRoleTrack('ALL');
-              }}
-            >
-              {t('consultation.resetFilter')}
-            </Button>
-          </div>
-        </Card>
+        <div className="border-y border-ink py-16 text-center">
+          <p className="text-[clamp(1.25rem,2vw,1.5rem)] text-ink">{c.emptyTitle}</p>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">{c.emptyDesc}</p>
+          <button type="button" onClick={resetFilters} className={`${textLink} mt-5 text-ink`}>
+            {c.reset}
+          </button>
+        </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {filteredCandidates.map((c) => (
-            <Card
-              key={c.id}
-              className="flex flex-col justify-between border-slate-200/90 hover:border-brand-300 transition-all p-5"
-            >
-              <div className="space-y-4">
-                {/* Header: Avatar, Name, Role, Readiness */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <img
-                      src={c.avatar}
-                      alt={c.name}
-                      className="h-14 w-14 shrink-0 rounded-2xl object-cover border border-slate-200 shadow-xs"
-                    />
-                    <div className="min-w-0 space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <Link
-                          to={`/consultant/candidates/${c.id}`}
-                          className="font-medium text-base text-slate-900 hover:text-brand-600 transition truncate"
-                        >
-                          {c.name}
-                        </Link>
-                      </div>
-                      <p className="text-xs text-slate-500 truncate">
-                        {c.currentTitle}
+        <div className="border-t border-ink">
+          <div className={`hidden gap-x-6 border-b border-border py-3 text-[13px] text-slate-500 lg:grid ${rowGrid}`}>
+            <span>#</span>
+            <span>{c.cols.candidate}</span>
+            <span>{c.cols.skills}</span>
+            <span className="text-right">{c.cols.ats}</span>
+            <span className="text-right">{c.cols.fit}</span>
+            <span className="text-right">{c.cols.test}</span>
+            <span>{c.cols.readiness}</span>
+            <span className="sr-only">Actions</span>
+          </div>
+
+          <ol>
+            {filteredCandidates.map((cand, idx) => {
+              const test = cand.assessmentSummary[0];
+              return (
+                <li
+                  key={cand.id}
+                  className={`grid grid-cols-[2rem_minmax(0,1fr)] gap-x-4 gap-y-3 border-b border-border py-5 lg:items-center lg:gap-x-6 ${rowGrid}`}
+                >
+                  <span className="pt-2.5 text-xs tabular-nums text-slate-400 lg:pt-0">{pad2(idx + 1)}</span>
+
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar src={cand.avatar} name={cand.name} />
+                    <div className="min-w-0">
+                      <Link
+                        to={`/consultant/candidates/${cand.id}`}
+                        className="block truncate text-[16px] text-ink transition-colors hover:text-brand"
+                      >
+                        {cand.name}
+                      </Link>
+                      <p className="truncate text-[13px] text-slate-500">
+                        {cand.currentTitle} <span className="text-slate-400">→</span>{' '}
+                        <span className="text-brand">{cand.targetRole}</span>
                       </p>
-                      <div className="flex items-center gap-1.5 text-xs pt-0.5">
-                        <span className="font-medium text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md truncate max-w-[200px]">
-                          → {c.targetRole}
-                        </span>
-                      </div>
+                      <p className="truncate text-xs text-slate-400">
+                        {cand.location} · {c.years(cand.yearsOfExperience)}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="shrink-0">{getReadinessBadge(c.readinessLevel)}</div>
-                </div>
+                  <p className="col-start-2 line-clamp-2 text-[13px] leading-5 text-slate-600 lg:col-start-auto">
+                    {cand.topSkills.slice(0, 4).join(' · ')}
+                    {cand.topSkills.length > 4 && <span className="text-slate-400"> +{cand.topSkills.length - 4}</span>}
+                  </p>
 
-                {/* Contact & Location Strip */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 border-t border-slate-100 pt-3">
-                  <span className="flex items-center gap-1">
-                    <MapPin size={12} className="text-slate-400" />
-                    <span>{c.location}</span>
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} className="text-slate-400" />
-                    <span>{c.yearsOfExperience} năm kinh nghiệm</span>
-                  </span>
-                </div>
+                  {/* Numbers: inline on mobile, columns on desktop */}
+                  <div className="col-start-2 flex gap-x-8 lg:contents">
+                    <p className="lg:text-right">
+                      <span className="block text-[clamp(1.375rem,2vw,1.75rem)] leading-none tabular-nums text-ink">
+                        {cand.attachedResumeScore ?? '—'}
+                      </span>
+                      <span className="text-xs text-slate-500 lg:hidden">{c.cols.ats}</span>
+                    </p>
+                    <p className="lg:text-right">
+                      <span className="block text-[clamp(1.375rem,2vw,1.75rem)] leading-none tabular-nums text-brand">
+                        {cand.fitScore}
+                        <span className="text-[0.6em]">%</span>
+                      </span>
+                      <span className="text-xs text-slate-500 lg:hidden">{c.cols.fit}</span>
+                    </p>
+                    <p className="lg:text-right">
+                      <span className="block text-[15px] tabular-nums text-ink">
+                        {test ? `${test.score}%` : '88%'}
+                        <span className="ml-1 text-xs text-slate-500">{test ? test.grade : 'A'}</span>
+                      </span>
+                      <span className="text-xs text-slate-500 lg:hidden">{c.cols.test}</span>
+                    </p>
+                  </div>
 
-                {/* Key Analysis Gauges: ATS Score, Fit Match, Assessments */}
-                <div className="grid grid-cols-3 gap-2 text-center rounded-xl bg-slate-50 p-2.5 border border-slate-100">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-medium uppercase">
-                      Điểm ATS CV
-                    </span>
-                    <span className="font-semibold text-sm text-emerald-600">
-                      {c.attachedResumeScore}/100
-                    </span>
+                  <div className="col-start-2 min-w-0 lg:col-start-auto">
+                    <p className={`text-[13px] ${readinessTone(cand.readinessLevel)}`}>
+                      {c.readiness[cand.readinessLevel]}
+                    </p>
+                    <p className="truncate text-xs text-slate-400">
+                      {cand.latestConsultation ? cand.latestConsultation.topicLabel : c.noRequest}
+                    </p>
                   </div>
-                  <div className="border-x border-slate-200/80">
-                    <span className="text-[10px] text-slate-400 block font-medium uppercase">
-                      Độ Phù Hợp
-                    </span>
-                    <span className="font-semibold text-sm text-brand-600">
-                      {c.fitScore}%
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-medium uppercase">
-                      Đánh Giá AI
-                    </span>
-                    <span className="font-semibold text-sm text-brand-600">
-                      {c.assessmentSummary[0]
-                        ? `${c.assessmentSummary[0].score}% (${c.assessmentSummary[0].grade})`
-                        : '88% (A)'}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Skills Chips */}
-                <div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {c.topSkills.slice(0, 4).map((sk) => (
-                      <span
-                        key={sk}
-                        className="rounded-md bg-surface border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+                  <div className="col-start-2 flex flex-wrap items-center gap-x-5 gap-y-2 lg:col-start-auto lg:justify-end">
+                    {cand.latestConsultation && (
+                      <Link
+                        to={`/consultant/consultations/${cand.latestConsultation.id}`}
+                        className={`${textLink} text-slate-600`}
                       >
-                        {sk}
-                      </span>
-                    ))}
-                    {c.topSkills.length > 4 && (
-                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                        +{c.topSkills.length - 4}
-                      </span>
+                        {c.request}
+                      </Link>
                     )}
+                    <Link to={`/consultant/candidates/${cand.id}`} className={`${textLink} text-ink`}>
+                      {c.analysis}
+                      <ArrowRight size={13} />
+                    </Link>
                   </div>
-                </div>
-
-                {/* Latest Consultation Status Tag if available */}
-                {c.latestConsultation && (
-                  <div className="flex items-center justify-between text-xs rounded-lg bg-brand-50/50 px-2.5 py-1.5 border border-brand-100/60 text-brand-900">
-                    <span className="flex items-center gap-1.5 truncate">
-                      <Lightbulb size={12} className="text-brand-600 shrink-0" />
-                      <span className="truncate">
-                        {c.latestConsultation.topicLabel}
-                      </span>
-                    </span>
-                    <span className="text-[10px] font-medium uppercase shrink-0 text-brand-700">
-                      #{c.latestConsultation.id}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-4 mt-4">
-                {c.latestConsultation ? (
-                  <Link
-                    to={`/consultant/consultations/${c.latestConsultation.id}`}
-                    className="text-xs font-semibold text-slate-600 hover:text-brand-600 transition flex items-center gap-1"
-                  >
-                    <span>{t('consultation.viewConsultationRequest')}</span>
-                    <ChevronRight size={13} />
-                  </Link>
-                ) : (
-                  <span className="text-xs text-slate-400 italic">
-                    Chưa có lịch hẹn mới
-                  </span>
-                )}
-
-                <Link to={`/consultant/candidates/${c.id}`}>
-                  <Button variant="primary" className="text-xs px-3.5 py-2 gap-1.5 shadow-xs">
-                    <span>{t('consultation.viewCareerAnalysis')}</span>
-                    <ArrowRight size={13} />
-                  </Button>
-                </Link>
-              </div>
-            </Card>
-          ))}
+                </li>
+              );
+            })}
+          </ol>
         </div>
       )}
     </div>
