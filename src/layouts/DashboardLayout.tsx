@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Menu, X, MoreHorizontal, UserRound } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
 import { getUserSubscription } from '../services/subscriptionService';
@@ -40,23 +41,35 @@ function findActiveTo(nav: NavItem[], pathname: string, search: string) {
 }
 
 /** Paths shown in the app's bottom tab bar, per area; everything else lives under "More". */
-const APP_TABS: Record<string, { to: string; labelVi: string; label: string }[]> = {
+const APP_TABS: Record<
+  string,
+  {
+    to: string;
+    labelVi: string;
+    label: string;
+    icon?: ComponentType<{ size?: number; strokeWidth?: number }>;
+  }[]
+> = {
   candidate: [
     { to: '/candidate', labelVi: 'Trang chủ', label: 'Home' },
     { to: '/candidate/jobs', labelVi: 'Việc làm', label: 'Jobs' },
     { to: '/candidate/resumes', labelVi: 'CV', label: 'CVs' },
     { to: '/candidate/consultations', labelVi: 'Tư vấn', label: 'Advice' },
+    // App-only account screens replace the "More" drawer.
+    { to: '/candidate/account', labelVi: 'Tài khoản', label: 'Account', icon: UserRound },
   ],
   consultant: [
     { to: '/consultant', labelVi: 'Trang chủ', label: 'Home' },
     { to: '/consultant/consultations', labelVi: 'Yêu cầu', label: 'Requests' },
     { to: '/consultant/candidates', labelVi: 'Ứng viên', label: 'Candidates' },
+    { to: '/consultant/account', labelVi: 'Tài khoản', label: 'Account', icon: UserRound },
   ],
   admin: [
     { to: '/admin', labelVi: 'Tổng quan', label: 'Overview' },
     { to: '/admin/users', labelVi: 'Người dùng', label: 'Users' },
     { to: '/admin/subscriptions', labelVi: 'Gói', label: 'Plans' },
     { to: '/admin/payments', labelVi: 'Thanh toán', label: 'Payments' },
+    { to: '/admin/account', labelVi: 'Tài khoản', label: 'Account', icon: UserRound },
   ],
 };
 
@@ -81,7 +94,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
   // Re-read the token balance on every navigation so top-ups show up right away.
   const subscription = useMemo(
     () => (isCandidate ? getUserSubscription() : null),
-    [isCandidate, location.key]
+    [isCandidate, location.key],
   );
 
   useEffect(() => {
@@ -149,19 +162,38 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
 
   const tokenLimit = subscription?.tokenLimit ?? 0;
   const tokensLeft = Math.max(0, tokenLimit - (subscription?.tokensUsed ?? 0));
-  const tokenPercent = tokenLimit > 0 ? Math.min(100, Math.round((tokensLeft / tokenLimit) * 100)) : 0;
+  const tokenPercent =
+    tokenLimit > 0 ? Math.min(100, Math.round((tokensLeft / tokenLimit) * 100)) : 0;
   const number = (value: number) => value.toLocaleString(isVietnamese ? 'vi-VN' : 'en-US');
 
   const appTabs = (APP_TABS[areaKey] ?? []).map((tab) => ({
     ...tab,
-    icon: nav.find((item) => item.to === tab.to)?.icon ?? MoreHorizontal,
+    icon: tab.icon ?? nav.find((item) => item.to === tab.to)?.icon ?? MoreHorizontal,
   }));
   const activeItem = nav.find((item) => item.to === activeTo);
-  const appTitle = activeItem ? (isVietnamese ? activeItem.labelVi : activeItem.label) : 'CCV';
+  const exactTab = appTabs.find((tab) => tab.to === location.pathname);
+  const appTitle = exactTab
+    ? isVietnamese
+      ? exactTab.labelVi
+      : exactTab.label
+    : activeItem
+      ? isVietnamese
+        ? activeItem.labelVi
+        : activeItem.label
+      : 'CCV';
+  // Screens below a tab (job detail, CV editor…) get a back arrow instead of the logo.
+  const isRootScreen =
+    !!exactTab || nav.some((item) => item.to.split('?')[0] === location.pathname);
+  const hasAccountTab = appTabs.some((tab) => tab.to.endsWith('/account'));
+  const goBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate(activeTab ?? `/${areaKey}`);
+  };
   // Tabs light up for their own sub-pages too (e.g. a job detail stays under "Jobs").
   const activeTab = appTabs.reduce<string | null>((best, tab) => {
     const isRoot = ROOT_PATHS.includes(tab.to);
-    const hit = location.pathname === tab.to || (!isRoot && location.pathname.startsWith(`${tab.to}/`));
+    const hit =
+      location.pathname === tab.to || (!isRoot && location.pathname.startsWith(`${tab.to}/`));
     return hit && (!best || tab.to.length > best.length) ? tab.to : best;
   }, null);
   // On the web the sidebar is pinned from lg up; in the app it always behaves as a drawer.
@@ -257,7 +289,9 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
                 {avatarInitials}
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-[15px] font-medium text-ink">{displayName}</span>
+                <span className="block truncate text-[15px] font-medium text-ink">
+                  {displayName}
+                </span>
                 <span className="block truncate text-[12px] text-slate-600">{userSubtitle}</span>
               </span>
             </div>
@@ -314,11 +348,24 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
         {IS_APP ? (
           <>
             <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-canvas px-4">
-              <CcvLogo height={22} markOnly />
-              <h2 className="min-w-0 flex-1 truncate text-[17px] font-medium text-ink">{appTitle}</h2>
+              {isRootScreen ? (
+                <CcvLogo height={22} markOnly />
+              ) : (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  aria-label={isVietnamese ? 'Quay lại' : 'Back'}
+                  className="-ml-2 grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink active:bg-slate-100"
+                >
+                  <ArrowLeft size={21} />
+                </button>
+              )}
+              <h2 className="min-w-0 flex-1 truncate text-[17px] font-medium text-ink">
+                {appTitle}
+              </h2>
               <button
                 type="button"
-                onClick={() => setOpen(true)}
+                onClick={() => (hasAccountTab ? navigate(`/${areaKey}/account`) : setOpen(true))}
                 aria-label={t('layout.openMenu')}
                 aria-expanded={open}
                 aria-controls="workspace-sidebar"
@@ -349,28 +396,34 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
                           isActive ? 'font-medium text-brand' : 'text-slate-600'
                         }`}
                       >
-                        <span className={`h-[2px] w-6 -mt-[7px] mb-[3px] ${isActive ? 'bg-brand' : 'bg-transparent'}`} />
+                        <span
+                          className={`h-[2px] w-6 -mt-[7px] mb-[3px] ${isActive ? 'bg-brand' : 'bg-transparent'}`}
+                        />
                         <Icon size={20} strokeWidth={isActive ? 1.9 : 1.6} />
                         <span>{isVietnamese ? tab.labelVi : tab.label}</span>
                       </Link>
                     </li>
                   );
                 })}
-                <li className="flex-1">
-                  <button
-                    type="button"
-                    onClick={() => setOpen(true)}
-                    aria-expanded={open}
-                    aria-controls="workspace-sidebar"
-                    className={`flex h-[60px] w-full flex-col items-center justify-center gap-1 text-[11px] ${
-                      activeTab ? 'text-slate-600' : 'font-medium text-brand'
-                    }`}
-                  >
-                    <span className={`h-[2px] w-6 -mt-[7px] mb-[3px] ${activeTab ? 'bg-transparent' : 'bg-brand'}`} />
-                    <MoreHorizontal size={20} strokeWidth={1.6} />
-                    <span>{isVietnamese ? 'Thêm' : 'More'}</span>
-                  </button>
-                </li>
+                {!hasAccountTab && (
+                  <li className="flex-1">
+                    <button
+                      type="button"
+                      onClick={() => setOpen(true)}
+                      aria-expanded={open}
+                      aria-controls="workspace-sidebar"
+                      className={`flex h-[60px] w-full flex-col items-center justify-center gap-1 text-[11px] ${
+                        activeTab ? 'text-slate-600' : 'font-medium text-brand'
+                      }`}
+                    >
+                      <span
+                        className={`h-[2px] w-6 -mt-[7px] mb-[3px] ${activeTab ? 'bg-transparent' : 'bg-brand'}`}
+                      />
+                      <MoreHorizontal size={20} strokeWidth={1.6} />
+                      <span>{isVietnamese ? 'Thêm' : 'More'}</span>
+                    </button>
+                  </li>
+                )}
               </ul>
             </nav>
           </>

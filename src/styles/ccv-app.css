@@ -18,3 +18,8 @@
 .ccv-app [data-app-float] {
   bottom: calc(76px + env(safe-area-inset-bottom));
 }
+
+/* Detail screens with a bottom action bar (MobileKit ActionBar). */
+.ccv-app.has-action-bar [data-app-float] {
+  bottom: calc(150px + env(safe-area-inset-bottom));
+}
