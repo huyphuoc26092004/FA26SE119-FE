@@ -304,14 +304,9 @@ export function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError('');
-    try {
-      await login('candidate@example.com', 'Demo123!');
-      navigate('/candidate', { replace: true });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Đăng nhập Google thất bại');
-    }
+  // TODO(api): POST /api/v1/auth/google cần Google ID token (chưa có Google SDK).
+  const handleGoogleLogin = () => {
+    setError(isVietnamese ? 'Đăng nhập Google chưa được nối với backend.' : 'Google sign-in is not connected to the backend yet.');
   };
 
   return (
@@ -402,7 +397,7 @@ const registerSchema = z
   .object({
     name: z.string().min(2, 'Họ và tên tối thiểu 2 ký tự'),
     email: z.string().email('Email không đúng định dạng'),
-    password: z.string().min(8, 'Mật khẩu phải từ 8 ký tự trở lên'),
+    password: z.string().min(10, 'Mật khẩu phải từ 10 ký tự trở lên'),
     confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu'),
     acceptTerms: z.boolean().refine((val) => val === true, {
       message: 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật',
@@ -418,7 +413,6 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export function RegisterPage() {
   const navigate = useNavigate();
   const registerAction = useAuthStore((s) => s.register);
-  const login = useAuthStore((s) => s.login);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [registrationRole, setRegistrationRole] = useState<'CANDIDATE' | 'CAREER_CONSULTANT'>('CANDIDATE');
@@ -449,15 +443,9 @@ export function RegisterPage() {
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setError('');
-    try {
-      const isRecruiter = registrationRole === 'CAREER_CONSULTANT';
-      await login(isRecruiter ? 'consultant@example.com' : 'candidate@example.com', 'Demo123!');
-      navigate(isRecruiter ? '/consultant' : '/candidate', { replace: true });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Đăng ký Google thất bại');
-    }
+  // TODO(api): POST /api/v1/auth/google cần Google ID token (chưa có Google SDK).
+  const handleGoogleSignup = () => {
+    setError(isVietnamese ? 'Đăng ký bằng Google chưa được nối với backend.' : 'Google sign-up is not connected to the backend yet.');
   };
 
   return (
@@ -583,7 +571,11 @@ export function VerifyOtpPage() {
   const [newEmailInput, setNewEmailInput] = useState(emailParam);
 
   // 6 digit OTP input state
-  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
+  // The backend returns the OTP in dev mode (developmentCode); prefill it when present.
+  const codeParam = searchParams.get('code') || '';
+  const [otpDigits, setOtpDigits] = useState<string[]>(
+    /^[0-9]{6}$/.test(codeParam) ? codeParam.split('') : ['', '', '', '', '', '']
+  );
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [countdown, setCountdown] = useState(60);
@@ -655,7 +647,12 @@ export function VerifyOtpPage() {
       await verifyOtp(email, fullCode);
       setIsSuccess(true);
       setTimeout(() => {
-        const role = useAuthStore.getState().role;
+        const { isAuthenticated, role } = useAuthStore.getState();
+        if (!isAuthenticated) {
+          // Real backend: verification does not sign in, so continue at the login form.
+          navigate(`/login?registered=${encodeURIComponent(email)}`, { replace: true });
+          return;
+        }
         navigate(
           role === 'ADMIN' ? '/admin' : role === 'CAREER_CONSULTANT' ? '/consultant' : '/candidate',
           { replace: true }
@@ -672,13 +669,14 @@ export function VerifyOtpPage() {
   const handleResend = async () => {
     if (!canResend) return;
     try {
-      await resendOtpAction(email);
+      const code = await resendOtpAction(email);
+      if (/^[0-9]{6}$/.test(code)) setOtpDigits(code.split(''));
       setCountdown(60);
       setCanResend(false);
       setResendStatus(t('auth.otpResentNotice', 'Mã OTP mới đã được gửi thành công!'));
       setTimeout(() => setResendStatus(''), 4000);
-    } catch {
-      setError('Không thể gửi lại mã OTP. Vui lòng thử lại.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
     }
   };
 

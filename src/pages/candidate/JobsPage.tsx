@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Bookmark, Check, ChevronDown, RotateCcw, Search, X } from 'lucide-react';
-import { getJobs, getSavedJobIds, getAppliedJobIds } from '../../mocks/services/mockService';
+import { getJobs, getSavedJobIds, getAppliedJobIds } from '../../services/candidateService';
 import {
   markJobApplied,
   openApplySource,

@@ -16,7 +16,7 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { getResumeById, deleteResume, setDefaultResume } from '../../mocks/services/mockService';
+import { getResumeById, deleteResume, setDefaultResume } from '../../services/candidateService';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 

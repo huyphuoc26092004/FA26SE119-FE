@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Loader2, Search } from 'lucide-react';
-import { getLearningResources } from '../../mocks/services/mockService';
+import { getLearningResources } from '../../services/candidateService';
 import {
   analyzeJourneyGap,
   createSkillJourney,

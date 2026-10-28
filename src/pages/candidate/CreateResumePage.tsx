@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ArrowUpRight, X } from 'lucide-react';
-import { createResume } from '../../mocks/services/mockService';
+import { createResume } from '../../services/candidateService';
 import type {
   Resume,
   WorkExperience,

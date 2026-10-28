@@ -6,7 +6,7 @@ import {
   getCandidateProfile,
   getRecommendations,
   getResumes,
-} from '../../mocks/services/mockService';
+} from '../../services/candidateService';
 import { useTranslation } from '../../i18n';
 
 // Short page-only strings that have no i18n key yet.
