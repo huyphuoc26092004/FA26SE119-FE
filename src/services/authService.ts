@@ -48,6 +48,8 @@ const knownMessages: Record<string, string> = {
     'Tài khoản chưa xác minh email hoặc đang bị khóa. Vui lòng xác minh email trước khi đăng nhập.',
   'Wait 60 seconds before requesting a new code': 'Vui lòng đợi 60 giây trước khi yêu cầu mã mới.',
   'Verification attempt limit reached; request a new code': 'Bạn đã nhập sai quá số lần cho phép. Hãy gửi lại mã mới.',
+  'AI is disabled. Enable Ollama and start its local container with the configured model.':
+    'Backend đang tắt AI (AI_ENABLED=false). Bật Ollama và đặt AI_ENABLED=true trong .env của backend rồi chạy lại.',
 };
 
 /** Turns an Axios/ProblemDetail error from the backend into a message the auth pages can show. */
