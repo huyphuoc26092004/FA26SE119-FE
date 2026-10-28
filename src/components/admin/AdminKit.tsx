@@ -351,9 +351,11 @@ export function Modal({
 export function RowMenu({
   label,
   items,
+  placement = 'bottom',
 }: {
   label: string;
   items: { label: ReactNode; onClick: () => void; tone?: 'danger'; hidden?: boolean }[];
+  placement?: 'bottom' | 'top';
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -372,31 +374,43 @@ export function RowMenu({
     };
   }, [open]);
 
+  const positionClass =
+    placement === 'top'
+      ? 'bottom-[calc(100%+6px)] right-0'
+      : 'top-[calc(100%+6px)] right-0';
+
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative inline-block text-left">
       <button
         type="button"
         aria-label={label}
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="grid h-8 w-8 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-200 hover:text-ink"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className="grid h-8 w-8 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-200 hover:text-ink cursor-pointer"
       >
         <MoreHorizontal size={16} />
       </button>
       {open && (
-        <div className="absolute right-0 top-[calc(100%+4px)] z-30 w-52 border border-border bg-canvas py-1 shadow-[0_8px_24px_rgba(23,32,28,0.08)]">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={`absolute ${positionClass} z-50 w-52 rounded-xl border border-slate-200 bg-white py-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.18)]`}
+        >
           {items
             .filter((it) => !it.hidden)
             .map((it, i) => (
               <button
                 key={i}
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setOpen(false);
                   it.onClick();
                 }}
-                className={`block w-full px-4 py-2 text-left text-sm transition-colors hover:bg-slate-100 ${
-                  it.tone === 'danger' ? 'text-danger' : 'text-ink'
+                className={`block w-full px-4 py-2 text-left text-xs font-medium transition-colors hover:bg-slate-50 cursor-pointer ${
+                  it.tone === 'danger' ? 'text-danger hover:bg-red-50' : 'text-slate-800'
                 }`}
               >
                 {it.label}

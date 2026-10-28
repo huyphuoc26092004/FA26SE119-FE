@@ -19,6 +19,7 @@ import {
   MessagesSquare,
   ChartColumn,
   Wallet,
+  LayoutTemplate,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -70,6 +71,7 @@ export const adminNav: NavItem[] = [
   { label: 'Users', labelVi: 'Người dùng', translationKey: 'nav.users', to: '/admin/users', icon: Users, group: 'management' },
   { label: 'Subscriptions', labelVi: 'Quản lý gói dịch vụ', translationKey: 'nav.subscriptions', to: '/admin/subscriptions', icon: CreditCard, group: 'management' },
   { label: 'Payments', labelVi: 'Lịch sử thanh toán', translationKey: 'nav.payments', to: '/admin/payments', icon: Wallet, group: 'management' },
+  { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/admin/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'AI configuration', labelVi: 'Cấu hình AI', translationKey: 'nav.aiConfig', to: '/admin/ai', icon: Settings, group: 'platform' },
   { label: 'Job processing', labelVi: 'Xử lý công việc', translationKey: 'nav.jobProcessing', to: '/admin/jobs', icon: BriefcaseBusiness, group: 'platform' },
   { label: 'Vector database', labelVi: 'Cơ sở dữ liệu Vector', translationKey: 'nav.vectorDatabase', to: '/admin/vector', icon: Database, group: 'platform' },

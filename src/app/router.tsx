@@ -38,6 +38,7 @@ import UserManagementPage from '../pages/admin/UserManagementPage';
 import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import SubscriptionQuotaManagementPage from '../pages/admin/SubscriptionQuotaManagementPage';
 import PaymentInvoiceManagementPage from '../pages/admin/PaymentInvoiceManagementPage';
+import ResumeTemplateManagementPage from '../pages/admin/ResumeTemplateManagementPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
@@ -153,6 +154,8 @@ export const router = createBrowserRouter([
               { path: 'users/:id', element: <UserDetailsPage /> },
               { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
               { path: 'payments', element: <PaymentInvoiceManagementPage /> },
+              { path: 'templates', element: <ResumeTemplateManagementPage /> },
+              { path: 'resume-templates', element: <Navigate to="/admin/templates" replace /> },
               ...placeholders([
                 'ai',
                 'ai/prompts',
