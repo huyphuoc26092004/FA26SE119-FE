@@ -162,7 +162,7 @@ export async function simulateAiCvExtraction(file: File, language: 'vi' | 'en' =
   form.append('language', language);
   const res = await apiClient.post<ApiRow>('/resumes/upload', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 120_000,
+    timeout: 600_000,
   });
   return toResume(res.data);
 }
@@ -261,7 +261,7 @@ export async function generateAiResume(params: AiGenerateResumeParams): Promise<
       seniority: params.level,
       tone: params.tone,
     },
-    { timeout: 180_000 },
+    { timeout: 600_000 },
   );
   return toResume(res.data);
 }
@@ -346,7 +346,7 @@ export async function applySuggestionToResume(resumeId: string, suggestionId: st
 export async function reanalyzeResume(resumeId: string): Promise<ResumeAnalysisResult> {
   const [resume, analysis] = await Promise.all([
     getResumeById(resumeId),
-    apiClient.post<ApiRow>(`/resumes/${resumeId}/analyses`, undefined, { timeout: 120_000 }).then((res) => res.data),
+    apiClient.post<ApiRow>(`/resumes/${resumeId}/analyses`, undefined, { timeout: 600_000 }).then((res) => res.data),
   ]);
   if (!resume) throw new Error('Không tìm thấy CV.');
   return toResumeAnalysis(analysis, resume);
@@ -357,7 +357,7 @@ export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<
   const [cv, job, ats] = await Promise.all([
     getResumeById(cvId),
     getJobById(jobId),
-    apiClient.post<ApiRow>(`/jobs/${jobId}/ats`, { resumeId: cvId }, { timeout: 120_000 }).then((res) => res.data),
+    apiClient.post<ApiRow>(`/jobs/${jobId}/ats`, { resumeId: cvId }, { timeout: 600_000 }).then((res) => res.data),
   ]);
   const score = Math.round(num(ats.ats_score));
   const strengths = texts(ats.strengths_json);
@@ -447,7 +447,7 @@ function toAssessmentResult(session: ApiRow): AssessmentResult {
 
 /** `topicId` là ID job: backend sinh 10 câu hỏi theo JD đã chọn. */
 export async function getAssessmentQuestions(topicId: string): Promise<AssessmentQuestion[]> {
-  const session = await apiClient.post<ApiRow>('/assessments', { jobId: topicId }, { timeout: 180_000 }).then((res) => res.data);
+  const session = await apiClient.post<ApiRow>('/assessments', { jobId: topicId }, { timeout: 600_000 }).then((res) => res.data);
   return rows(session.questions).map((q) => {
     sessionOfQuestion.set(str(q.id), str(session.id));
     return toQuestion(q);
@@ -603,7 +603,7 @@ export async function getPersonalizedRoadmap(params: {
   gapAnalysisId?: string;
 }): Promise<LearningRoadmap> {
   if (!params.targetRoleId) throw new Error('Chọn một việc làm để tạo lộ trình.');
-  const roadmap = await apiClient.post<ApiRow>('/roadmaps', { jobId: params.targetRoleId }, { timeout: 180_000 }).then((res) => res.data);
+  const roadmap = await apiClient.post<ApiRow>('/roadmaps', { jobId: params.targetRoleId }, { timeout: 600_000 }).then((res) => res.data);
   let week = 1;
   return {
     id: str(roadmap.id),
@@ -673,7 +673,7 @@ export async function calculateSalaryEstimate(params: {
   currency?: string;
   language?: 'vi' | 'en';
 }): Promise<SalaryEstimate> {
-  const res = await apiClient.post<ApiRow>('/salary-estimations', params, { timeout: 120_000 }).then((r) => r.data);
+  const res = await apiClient.post<ApiRow>('/salary-estimations', params, { timeout: 600_000 }).then((r) => r.data);
   const reasoning = res.reasoning;
   return {
     id: str(res.id),

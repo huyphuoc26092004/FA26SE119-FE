@@ -141,7 +141,7 @@ export async function sendUserMessageAndGetAiReply(params: AiResponseEngineParam
     `/assistant/conversations/${params.sessionId}/messages`,
     // Truy xuất RAG cần embedding; chỉ bật khi người dùng hỏi về việc học.
     { message: params.userText, retrieve: LEARNING_QUESTION.test(params.userText) },
-    { timeout: 180_000 },
+    { timeout: 600_000 },
   );
   const assistantMessage = toMessage(data, data.sources);
   const updatedSession = await getChatSessionById(params.sessionId);

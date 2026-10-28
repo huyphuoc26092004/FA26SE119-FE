@@ -93,7 +93,7 @@ export async function generateApplicationContent(params: GenerateApplicationPara
   const { data } = await apiClient.post<DraftResponse[]>(
     `/jobs/${params.jobId}/application-drafts`,
     { resumeId: params.cvId, language: params.language === 'English' ? 'en' : 'vi' },
-    { timeout: 180_000 },
+    { timeout: 600_000 },
   );
   const wanted = params.contentType === 'cover_letter' ? 'COVER_LETTER' : 'APPLICATION_EMAIL';
   const row = data.find((d) => d.draft_type === wanted) ?? data[0];
