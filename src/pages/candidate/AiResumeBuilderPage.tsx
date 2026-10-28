@@ -6,6 +6,8 @@ import { ArrowLeft, ArrowRight, Loader2, X } from 'lucide-react';
 import { generateAiResume, translateResumeContent, createResume } from '../../services/candidateService';
 import type { Resume } from '../../types/domain';
 import { useTranslation } from '../../i18n';
+import { authErrorMessage } from '../../services/authService';
+import { useAuthStore } from '../../stores/authStore';
 
 // ─── Options ────────────────────────────────────────────────────────────────
 
@@ -271,6 +273,8 @@ export default function AiResumeBuilderPage() {
   // Wizard state: 'configure' -> 'generating' -> 'review'
   const [wizardState, setWizardState] = useState<'configure' | 'generating' | 'review'>('configure');
   const [generationStep, setGenerationStep] = useState(1);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const userName = useAuthStore((state) => state.user?.name);
   const [isTranslating, setIsTranslating] = useState(false);
 
   // Configuration inputs
@@ -286,6 +290,7 @@ export default function AiResumeBuilderPage() {
 
   // Handle Generate with AI
   const handleStartGeneration = async () => {
+    setGenerateError(null);
     setWizardState('generating');
     setGenerationStep(1);
     window.scrollTo({ top: 0 });
@@ -302,7 +307,7 @@ export default function AiResumeBuilderPage() {
         language: cvLanguage,
         tone: writingTone,
         focusKeywords: focusKeywords.trim(),
-        candidateName: 'Alex Morgan',
+        candidateName: userName,
       });
       clearTimeout(s1);
       clearTimeout(s2);
@@ -310,7 +315,12 @@ export default function AiResumeBuilderPage() {
       clearTimeout(s4);
       setGeneratedCv(result);
       setWizardState('review');
-    } catch {
+    } catch (error) {
+      clearTimeout(s1);
+      clearTimeout(s2);
+      clearTimeout(s3);
+      clearTimeout(s4);
+      setGenerateError(authErrorMessage(error, 'Không tạo được CV bằng AI. Vui lòng thử lại.'));
       setWizardState('configure');
     }
   };
@@ -778,6 +788,11 @@ export default function AiResumeBuilderPage() {
             {isVietnamese ? 'Tự viết CV' : 'Write it myself'}
           </Link>
         </div>
+        {generateError && (
+          <p role="alert" className="mt-4 max-w-[38rem] whitespace-pre-line text-sm text-red-700">
+            {generateError}
+          </p>
+        )}
       </header>
 
       {/* 01 Career track */}
@@ -934,6 +949,11 @@ export default function AiResumeBuilderPage() {
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>
+        {generateError && (
+          <p role="alert" className="mt-4 whitespace-pre-line text-sm text-red-700">
+            {generateError}
+          </p>
+        )}
       </section>
     </div>
   );

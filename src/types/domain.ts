@@ -221,6 +221,8 @@ export interface ResumeAnalysisResult {
 }
 
 export interface SemanticMatchingDetail {
+  /** ID dòng `job_match_results` ở backend, dùng để gửi phản hồi. */
+  matchResultId?: string;
   overallScore: number;
   skillsScore: number;
   experienceScore: number;

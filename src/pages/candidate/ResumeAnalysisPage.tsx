@@ -10,6 +10,7 @@ import {
 } from '../../services/candidateService';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+import { authErrorMessage } from '../../services/authService';
 
 // Short page-only strings that have no i18n key yet.
 const copy = {
@@ -194,6 +195,7 @@ export default function ResumeAnalysisPage() {
     data: analysis,
     isPending,
     isError,
+    error,
   } = useQuery({
     queryKey: ['resumeAnalysis', effectiveResumeId],
     queryFn: () => getResumeAnalysis(effectiveResumeId),
@@ -273,7 +275,8 @@ export default function ResumeAnalysisPage() {
   };
 
   if (isPending) return <Loading />;
-  if (isError || !analysis) return <ErrorState />;
+  if (isError || !analysis)
+    return <ErrorState message={error ? authErrorMessage(error, 'Không đánh giá được CV. Vui lòng thử lại.') : undefined} />;
 
   const priorityLabel = (priority: 'high' | 'medium' | 'low') =>
     priority === 'high'
