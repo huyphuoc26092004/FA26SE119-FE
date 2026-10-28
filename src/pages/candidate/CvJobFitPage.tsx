@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, Link} from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Bookmark, Check, ChevronDown, Search, X } from 'lucide-react';
-import { getResumes, getJobs, getCvJobFitAnalysis, getJobSemanticMatch } from '../../mocks/services/mockService';
+import { getResumes, getJobs, getCvJobFitAnalysis, getJobSemanticMatch } from '../../services/candidateService';
 import {
   JOB_ACTIVITY_QUERY_KEY,
   formatActivityDate,

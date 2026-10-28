@@ -7,7 +7,7 @@ import {
   getSavedJobIds,
   getAppliedJobIds,
   getJobSemanticMatch,
-} from '../../mocks/services/mockService';
+} from '../../services/candidateService';
 import {
   markJobApplied,
   openApplySource,

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { simulateAiCvExtraction, createResume } from '../../mocks/services/mockService';
+import { simulateAiCvExtraction, createResume } from '../../services/candidateService';
 import type { Resume, WorkExperience } from '../../types/domain';
 import { useTranslation } from '../../i18n';
 

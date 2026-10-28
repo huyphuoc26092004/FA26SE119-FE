@@ -24,7 +24,7 @@ import {
   getResumes,
   applyJobExternal,
   getAppliedJobIds,
-} from '../../mocks/services/mockService';
+} from '../../services/candidateService';
 import { Button, Card, ErrorState, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
