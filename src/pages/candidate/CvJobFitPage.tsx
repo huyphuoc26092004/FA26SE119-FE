@@ -15,6 +15,7 @@ import {
 } from '../../services/jobActivityService';
 import type { Job } from '../../types/domain';
 import { EmptyState, ErrorState, Loading } from '../../components/ui';
+import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 
@@ -523,6 +524,7 @@ export default function CvJobFitPage() {
     data: fitResult,
     isPending: isFitPending,
     isError: isFitError,
+    error: fitError,
     refetch: refetchFit,
     isFetching: isFitFetching,
   } = useQuery({
@@ -897,7 +899,7 @@ export default function CvJobFitPage() {
         </div>
       ) : isFitError || !fitResult ? (
         <div className="mt-10">
-          <ErrorState />
+          <ErrorState message={fitError ? authErrorMessage(fitError, 'Không đánh giá được CV với việc làm này.') : undefined} />
         </div>
       ) : (
         <div className={`transition-opacity ${isFitFetching ? 'opacity-60' : ''}`}>

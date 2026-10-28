@@ -120,11 +120,11 @@ export function Loading() {
   );
 }
 
-export function ErrorState() {
+export function ErrorState({ message }: { message?: string }) {
   const { t } = useTranslation();
   return (
     <div role="alert" className="rounded-panel border border-red-200 bg-red-50 p-6 text-sm text-red-800">
-      {t('common.error', 'Something went wrong. Please try again.')}
+      {message || t('common.error', 'Something went wrong. Please try again.')}
     </div>
   );
 }

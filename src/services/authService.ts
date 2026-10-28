@@ -50,6 +50,10 @@ const knownMessages: Record<string, string> = {
   'Verification attempt limit reached; request a new code': 'Bạn đã nhập sai quá số lần cho phép. Hãy gửi lại mã mới.',
   'AI is disabled. Enable Ollama and start its local container with the configured model.':
     'Backend đang tắt AI (AI_ENABLED=false). Bật Ollama và đặt AI_ENABLED=true trong .env của backend rồi chạy lại.',
+  'AI token quota exceeded; upgrade your subscription or wait for the next quota period':
+    'Bạn đã dùng hết lượt AI của gói hiện tại trong kỳ này. Hãy nâng cấp gói hoặc đợi kỳ sau.',
+  'Feature token quota exceeded': 'Bạn đã dùng hết lượt AI cho tính năng này trong kỳ này. Hãy nâng cấp gói hoặc đợi kỳ sau.',
+  'Confirm the CV before analysis': 'Hãy xác nhận (lưu hoàn tất) CV trước khi đánh giá.',
 };
 
 /** Turns an Axios/ProblemDetail error from the backend into a message the auth pages can show. */
