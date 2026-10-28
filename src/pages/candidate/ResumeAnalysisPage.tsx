@@ -7,7 +7,7 @@ import {
   getResumeAnalysis,
   applySuggestionToResume,
   reanalyzeResume,
-} from '../../mocks/services/mockService';
+} from '../../services/candidateService';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 

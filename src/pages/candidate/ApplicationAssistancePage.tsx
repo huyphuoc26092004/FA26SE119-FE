@@ -7,7 +7,7 @@ import {
   getCandidateProfile,
   getResumes,
   getJobs,
-} from '../../mocks/services/mockService';
+} from '../../services/candidateService';
 import {
   getStoredApplications,
   saveApplicationDraft,

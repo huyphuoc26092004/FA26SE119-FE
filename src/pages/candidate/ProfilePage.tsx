@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Check, Plus, Save, X } from 'lucide-react';
-import { getCandidateProfile, updateCandidateProfile, getResumes } from '../../mocks/services/mockService';
+import { getCandidateProfile, updateCandidateProfile, getResumes } from '../../services/candidateService';
 import type { CandidateProfile, SkillItem } from '../../types/domain';
 import { Button, ErrorState, Input, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';

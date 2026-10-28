@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Check, ExternalLink } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { useAuthStore } from '../../stores/authStore';
-import { getCandidateProfile, getResumes } from '../../mocks/services/mockService';
+import { getCandidateProfile, getResumes } from '../../services/candidateService';
 import {
   CONSULTATION_TOPIC_LABELS,
   DEFAULT_CONSULTANT,

@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from '../../../i18n';
-import { getCandidateProfile, getResumes, getJobs } from '../../../mocks/services/mockService';
+import { getCandidateProfile, getResumes, getJobs } from '../../../services/candidateService';
 import { JOB_ACTIVITY_QUERY_KEY, getJobActivity } from '../../../services/jobActivityService';
 import {
   getStoredChatSessions,

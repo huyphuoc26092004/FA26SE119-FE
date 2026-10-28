@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getResumes, deleteResume, setDefaultResume } from '../../mocks/services/mockService';
+import { getResumes, deleteResume, setDefaultResume } from '../../services/candidateService';
 import type { Resume } from '../../types/domain';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';

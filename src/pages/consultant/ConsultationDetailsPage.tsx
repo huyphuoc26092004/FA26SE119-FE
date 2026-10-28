@@ -24,11 +24,6 @@ import {
   saveConsultationAdvice,
   sendConsultationMessage,
 } from '../../services/consultationService';
-import {
-  mockAlexAdvice,
-  mockDucAdvice,
-  generateMockConsultationAdvice,
-} from '../../mocks/data/consultations';
 import type {
   ConsultationStatus,
   ConsultationAdvicePillars,
@@ -260,18 +255,8 @@ export default function ConsultationDetailsPage() {
     setNotesInitialized(true);
   }
 
-  if (request && !adviceData) {
-    if (request.feedback?.advice) {
-      setAdviceData(request.feedback.advice);
-    } else if (request.candidate.id === '1') {
-      setAdviceData(mockAlexAdvice);
-    } else if (request.candidate.id === 'c-102') {
-      setAdviceData(mockDucAdvice);
-    } else {
-      setAdviceData(
-        generateMockConsultationAdvice(request.candidate.name, request.candidate.targetRole, request.topic)
-      );
-    }
+  if (request && !adviceData && request.feedback?.advice) {
+    setAdviceData(request.feedback.advice);
   }
 
   // Status mutation
