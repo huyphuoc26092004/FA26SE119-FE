@@ -15,6 +15,7 @@ import {
   generateApplicationContent,
   refineApplicationContent,
 } from '../../services/applicationService';
+import { authErrorMessage } from '../../services/authService';
 import type {
   ApplicationContentType,
   ApplicationDraft,
@@ -198,10 +199,12 @@ export default function ApplicationAssistancePage() {
     queryFn: () => getJobs(),
   });
 
-  // Saved drafts state
-  const [savedDrafts, setSavedDrafts] = useState<ApplicationDraft[]>(() =>
-    getStoredApplications()
-  );
+  // Saved drafts (stored by the backend)
+  const { data: storedDrafts, refetch: refetchDrafts } = useQuery({
+    queryKey: ['applicationDrafts'],
+    queryFn: getStoredApplications,
+  });
+  const [savedDrafts, setSavedDrafts] = useState<ApplicationDraft[]>([]);
 
   // Active view tab: 'editor' | 'saved'
   const [activeTab, setActiveTab] = useState<'editor' | 'saved'>('editor');
@@ -216,10 +219,18 @@ export default function ApplicationAssistancePage() {
   const [recipientName, setRecipientName] = useState('');
 
   // Active Draft state
-  const [currentDraft, setCurrentDraft] = useState<ApplicationDraft>(() => {
-    const list = getStoredApplications();
-    return list[0];
-  });
+  const [currentDraft, setCurrentDraft] = useState<ApplicationDraft | undefined>(undefined);
+
+  // Backend drafts only carry the job id: fill in job title and company from the job list.
+  useEffect(() => {
+    if (!storedDrafts) return;
+    const withJobs = storedDrafts.map((draft) => {
+      const job = jobs.find((j) => j.id === draft.jobId);
+      return job ? { ...draft, title: `${job.title} · ${job.company}`, jobTitle: job.title, company: job.company } : draft;
+    });
+    setSavedDrafts(withJobs);
+    setCurrentDraft((prev) => prev ?? withJobs[0]);
+  }, [storedDrafts, jobs]);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
@@ -281,10 +292,12 @@ export default function ApplicationAssistancePage() {
       });
 
       setCurrentDraft(result);
+      void refetchDrafts();
       setToastMessage('Đã tạo thư ứng tuyển thành công!');
       setTimeout(() => setToastMessage(null), 3000);
-    } catch {
-      // ignore
+    } catch (error) {
+      setToastMessage(authErrorMessage(error, 'Không tạo được thư ứng tuyển.'));
+      setTimeout(() => setToastMessage(null), 4000);
     } finally {
       setIsGenerating(false);
     }
@@ -307,7 +320,7 @@ export default function ApplicationAssistancePage() {
         company: currentDraft.company,
       });
 
-      setCurrentDraft((prev) => ({
+      setCurrentDraft((prev) => prev && ({
         ...prev,
         content: result.content,
         subject: result.subject || prev.subject,
@@ -329,12 +342,16 @@ export default function ApplicationAssistancePage() {
   };
 
   // Save current draft
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentDraft) return;
-    const saved = saveApplicationDraft(currentDraft);
-    setCurrentDraft(saved);
-    setSavedDrafts(getStoredApplications());
-    setToastMessage(t('applicationAssistance.savedSuccess'));
+    try {
+      const saved = await saveApplicationDraft(currentDraft);
+      setCurrentDraft(saved);
+      void refetchDrafts();
+      setToastMessage(t('applicationAssistance.savedSuccess'));
+    } catch (error) {
+      setToastMessage(authErrorMessage(error, 'Không lưu được bản nháp.'));
+    }
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -352,11 +369,11 @@ export default function ApplicationAssistancePage() {
 
   // Delete a saved draft
   const handleDeleteSavedDraft = (id: string) => {
-    deleteApplicationDraft(id);
-    const updated = getStoredApplications();
-    setSavedDrafts(updated);
-    if (currentDraft?.id === id && updated.length > 0) {
-      setCurrentDraft(updated[0]);
+    try {
+      deleteApplicationDraft(id);
+    } catch (error) {
+      setToastMessage(error instanceof Error ? error.message : 'Không xoá được bản nháp.');
+      setTimeout(() => setToastMessage(null), 3000);
     }
   };
 
@@ -563,7 +580,7 @@ export default function ApplicationAssistancePage() {
               <ApplicationEditor
                 draft={currentDraft}
                 onChangeContent={(content) =>
-                  setCurrentDraft((prev) => ({
+                  setCurrentDraft((prev) => prev && ({
                     ...prev,
                     content,
                     isSaved: false,
@@ -574,7 +591,7 @@ export default function ApplicationAssistancePage() {
                   }))
                 }
                 onChangeSubject={(subject) =>
-                  setCurrentDraft((prev) => ({
+                  setCurrentDraft((prev) => prev && ({
                     ...prev,
                     subject,
                     isSaved: false,

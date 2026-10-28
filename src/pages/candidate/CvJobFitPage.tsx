@@ -1094,7 +1094,7 @@ export default function CvJobFitPage() {
                 ) : (
                   <AiRecommendationFeedbackWidget
                     targetType="match_explanation"
-                    targetId={`fit-${currentCv.id}-${currentJob.id}`}
+                    targetId={semantic?.matchResultId ?? `fit-${currentCv.id}-${currentJob.id}`}
                     targetTitle={`Phân tích Fit CV [${currentCv.position}] với [${currentJob.title} - ${currentJob.company}]`}
                   />
                 )}

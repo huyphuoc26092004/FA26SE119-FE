@@ -386,7 +386,7 @@ export default function JobDetailsPage() {
               ) : (
                 <AiRecommendationFeedbackWidget
                   targetType="job_recommendation"
-                  targetId={job.id}
+                  targetId={semantic?.matchResultId ?? job.id}
                   targetTitle={`${job.title} - ${job.company}`}
                 />
               )}

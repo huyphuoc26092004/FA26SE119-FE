@@ -24,14 +24,15 @@ import { getCandidateProfile, getResumes, getJobs } from '../../../services/cand
 import { JOB_ACTIVITY_QUERY_KEY, getJobActivity } from '../../../services/jobActivityService';
 import {
   getStoredChatSessions,
+  getChatSessionById,
   createChatSession,
   renameChatSession,
   deleteChatSession,
   clearSessionMessages,
   updateMessageFeedback,
-  updateSessionContext,
   sendUserMessageAndGetAiReply,
 } from '../../../services/assistantService';
+import { authErrorMessage } from '../../../services/authService';
 import type { AiChatMessage, AiChatSession } from '../../../types/domain';
 import { MarkdownMessage } from './MarkdownMessage';
 import { ContextInspectorModal } from './ContextInspectorModal';
@@ -130,6 +131,24 @@ const copy = {
   },
 };
 
+// A new chat lives only in the browser until its first message, so the CV/job picked
+// before that message become the conversation's context on the backend.
+const DRAFT_PREFIX = 'draft-';
+const isDraft = (session?: AiChatSession) => !!session && session.id.startsWith(DRAFT_PREFIX);
+
+function newDraftSession(params?: { title?: string; activeCvId?: string; activeJobId?: string }): AiChatSession {
+  const now = new Date().toISOString();
+  return {
+    id: `${DRAFT_PREFIX}${crypto.randomUUID()}`,
+    title: params?.title ?? 'Cuộc trò chuyện mới',
+    createdAt: now,
+    updatedAt: now,
+    activeCvId: params?.activeCvId,
+    activeJobId: params?.activeJobId,
+    messages: [],
+  };
+}
+
 const iconButton =
   'grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink';
 
@@ -159,8 +178,10 @@ export function AssistantChatWidget() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
 
-  const [sessions, setSessions] = useState<AiChatSession[]>(() => getStoredChatSessions());
-  const [activeSessionId, setActiveSessionId] = useState<string>(() => sessions[0]?.id ?? '');
+  const [sessions, setSessions] = useState<AiChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>('');
+  // Conversations whose messages were already read from the backend.
+  const loadedIds = useRef(new Set<string>());
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const [deepLink, setDeepLink] = useState<AssistantChatRequest | null>(null);
@@ -179,6 +200,32 @@ export function AssistantChatWidget() {
   );
   const selectedCv = resumes.find((r) => r.id === activeSession?.activeCvId);
   const selectedJob = jobs.find((j) => j.id === activeSession?.activeJobId);
+
+  // Conversation list from the backend; messages load when a conversation is opened.
+  useEffect(() => {
+    let cancelled = false;
+    getStoredChatSessions()
+      .then((list) => {
+        if (cancelled) return;
+        setSessions((prev) => [...prev.filter(isDraft), ...list]);
+        setActiveSessionId((prev) => prev || list[0]?.id || '');
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const id = activeSession?.id;
+    if (!id || isDraft(activeSession) || loadedIds.current.has(id)) return;
+    loadedIds.current.add(id);
+    getChatSessionById(id)
+      .then((full) => {
+        if (full) setSessions((prev) => prev.map((s) => (s.id === id ? full : s)));
+      })
+      .catch(() => loadedIds.current.delete(id));
+  }, [activeSession]);
 
   // Requests from other pages ("Ask the assistant about this job", the old route…)
   useEffect(() => subscribeAssistantChat((request) => setDeepLink(request)), []);
@@ -210,7 +257,7 @@ export function AssistantChatWidget() {
       else if (jobTitle) sessionTitle = `Tư vấn vị trí ${jobTitle}`;
       else if (cvName) sessionTitle = `Tối ưu CV ${cvName}`;
 
-      const created = createChatSession({ title: sessionTitle, activeCvId: cvId, activeJobId: jobId });
+      const created = newDraftSession({ title: sessionTitle, activeCvId: cvId, activeJobId: jobId });
       setActiveSessionId(created.id);
       return [created, ...prev];
     });
@@ -264,7 +311,7 @@ export function AssistantChatWidget() {
   };
 
   const handleNewSession = () => {
-    const newSession = createChatSession();
+    const newSession = newDraftSession();
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
     setInput('');
@@ -286,12 +333,18 @@ export function AssistantChatWidget() {
     setRenamingId(null);
   };
 
-  const handleDeleteSession = (id: string) => {
+  const handleDeleteSession = async (id: string) => {
     if (!window.confirm(t('assistant.deleteConfirm'))) return;
-    deleteChatSession(id);
+    if (!id.startsWith(DRAFT_PREFIX)) {
+      try {
+        await deleteChatSession(id);
+      } catch {
+        return;
+      }
+    }
     const remaining = sessions.filter((s) => s.id !== id);
     if (remaining.length === 0) {
-      const fresh = createChatSession();
+      const fresh = newDraftSession();
       setSessions([fresh]);
       setActiveSessionId(fresh.id);
       return;
@@ -352,21 +405,21 @@ export function AssistantChatWidget() {
     URL.revokeObjectURL(url);
   };
 
+  // The backend fixes a conversation's context when it is created (first message),
+  // so changing CV/job afterwards only affects this view.
   const handleSelectCv = (cvId?: string) => {
     if (!activeSession) return;
-    updateSessionContext(activeSession.id, { activeCvId: cvId });
     setSessions((prev) => prev.map((s) => (s.id === activeSession.id ? { ...s, activeCvId: cvId } : s)));
   };
 
   const handleSelectJob = (jobId?: string) => {
     if (!activeSession) return;
-    updateSessionContext(activeSession.id, { activeJobId: jobId });
     setSessions((prev) => prev.map((s) => (s.id === activeSession.id ? { ...s, activeJobId: jobId } : s)));
   };
 
   const handleFeedback = (messageId: string, feedback: 'like' | 'dislike') => {
     if (!activeSession) return;
-    updateMessageFeedback(activeSession.id, messageId, feedback);
+    void updateMessageFeedback(messageId, feedback).catch(() => undefined);
     setSessions((prev) =>
       prev.map((s) =>
         s.id === activeSession.id
@@ -378,13 +431,37 @@ export function AssistantChatWidget() {
 
   const handleSend = async (textToSend = input) => {
     const text = textToSend.trim();
-    if (!text || typing || !activeSession) return;
+    if (!text || typing) return;
 
+    let session = activeSession ?? newDraftSession();
+    const now = new Date().toISOString();
+    const userMessage: AiChatMessage = {
+      id: `pending-${Date.now()}`,
+      role: 'user',
+      content: text,
+      timestamp: new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    const draftId = session.id;
+    setSessions((prev) => {
+      const next = { ...session, messages: [...session.messages, userMessage], updatedAt: now };
+      return prev.some((s) => s.id === draftId) ? prev.map((s) => (s.id === draftId ? next : s)) : [next, ...prev];
+    });
+    setActiveSessionId(draftId);
     setInput('');
     setTyping(true);
     try {
+      if (isDraft(session)) {
+        // Name the conversation after its first question unless a page already gave it a title.
+        const title = session.title === 'Cuộc trò chuyện mới' ? text.slice(0, 80) : session.title;
+        session = await createChatSession({ title, activeCvId: session.activeCvId, activeJobId: session.activeJobId });
+        loadedIds.current.add(session.id);
+        const created = session;
+        setSessions((prev) => prev.map((s) => (s.id === draftId ? { ...created, messages: [userMessage] } : s)));
+        setActiveSessionId(created.id);
+      }
+      const sessionId = session.id;
       const result = await sendUserMessageAndGetAiReply({
-        sessionId: activeSession.id,
+        sessionId,
         userText: text,
         profile,
         selectedCv,
@@ -392,9 +469,21 @@ export function AssistantChatWidget() {
         isVietnamese,
         jobActivity: { applied: appliedJobs, saved: savedJobs },
       });
-      setSessions((prev) => prev.map((s) => (s.id === activeSession.id ? result.updatedSession : s)));
-    } catch {
-      // Fallback: keep the conversation as it was
+      setSessions((prev) => prev.map((s) => (s.id === sessionId ? result.updatedSession : s)));
+    } catch (error) {
+      const failedId = session.id;
+      const errorMessage: AiChatMessage = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: authErrorMessage(
+          error,
+          isVietnamese ? 'Trợ lý chưa trả lời được. Vui lòng thử lại.' : 'The assistant could not reply. Please try again.',
+        ),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setSessions((prev) =>
+        prev.map((s) => (s.id === failedId || s.id === draftId ? { ...s, messages: [...s.messages, errorMessage] } : s)),
+      );
     } finally {
       setTyping(false);
       textareaRef.current?.focus();

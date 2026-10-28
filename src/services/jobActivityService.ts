@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Job } from '../types/domain';
 import { pending, notConnected } from './apiPending';
+import { applyJobExternal } from './candidateService';
 
 export type TrackedJobStatus = 'applied' | 'saved';
 
@@ -35,9 +36,10 @@ export async function toggleSavedJob(jobId: string): Promise<{ saved: boolean; i
   return notConnected('BE chưa có API', jobId);
 }
 
-// TODO(api): POST /api/v1/jobs/{id}/external-apply
+/** Ghi nhận ứng viên chuyển sang trang tuyển dụng gốc của job. */
 export async function markJobApplied(jobId: string): Promise<{ applied: boolean; ids: string[]; }> {
-  return notConnected('POST /api/v1/jobs/{id}/external-apply', jobId);
+  const { applied, ids } = await applyJobExternal(jobId);
+  return { applied, ids };
 }
 
 export function refreshJobActivity(queryClient: QueryClient) {
