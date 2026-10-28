@@ -172,13 +172,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
+  /// With AUTH_EXPOSE_DEV_OTP=true the backend returns the OTP as
+  /// `developmentCode` instead of emailing it; prefill it for local testing.
+  void _fillDevCode(dynamic res) {
+    final code = res is Map ? res['developmentCode']?.toString() : null;
+    if (code != null) _code.text = code;
+  }
+
   Future<void> _register() => _run(() async {
-        await ref.read(apiClientProvider).post('/auth/register', auth: false, data: {
+        final res = await ref.read(apiClientProvider).post('/auth/register', auth: false, data: {
           'fullName': _name.text.trim(),
           'email': _email.text.trim(),
           'password': _password.text,
           'preferredLanguage': AppLanguage.vi.value ? 'vi' : 'en',
         });
+        _fillDevCode(res);
         setState(() => _otpStep = true);
       });
 
@@ -191,7 +199,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       });
 
   Future<void> _resend() => _run(() async {
-        await ref.read(apiClientProvider).post('/auth/resend-code', auth: false, data: {'email': _email.text.trim()});
+        _fillDevCode(await ref.read(apiClientProvider).post('/auth/resend-code', auth: false, data: {'email': _email.text.trim()}));
         if (mounted) toast(context, tr('Đã gửi lại mã', 'Code sent again'));
       });
 
