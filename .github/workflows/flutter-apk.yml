@@ -1,0 +1,44 @@
+name: Flutter APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/flutter-apk.yml']
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'Backend URL baked into the APK (e.g. https://api.example.com/api/v1)'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    # ubuntu-24.04 ships the Android SDK, so no setup-android step is needed.
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.8
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - name: Build APK
+        run: |
+          if [ -n "${{ inputs.api_base_url }}" ]; then
+            flutter build apk --release --dart-define=API_BASE_URL=${{ inputs.api_base_url }}
+          else
+            flutter build apk --release
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CCV-apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
 import { Button } from '../components/ui';
@@ -11,7 +11,6 @@ import {
   X,
 } from 'lucide-react';
 import { CcvLogo } from '../components/brand/CcvLogo';
-import { IS_APP } from '../utils/platform';
 
 export default function PublicLayout() {
   const { isAuthenticated, role, user, logout } = useAuthStore();
@@ -54,11 +53,6 @@ export default function PublicLayout() {
     '/reset-password',
     '/verify-otp',
   ].includes(location.pathname);
-
-  // The app has no marketing landing page: it opens on sign-in or the user's workspace.
-  if (IS_APP && location.pathname === '/') {
-    return <Navigate to={isAuthenticated ? getRoleDashboardPath() : '/login'} replace />;
-  }
 
   // The guest trial page brings its own sidebar shell.
   if (isAuthPage || location.pathname === '/guest-trial') {
@@ -235,7 +229,7 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className={`border-t border-border py-8 ${IS_APP ? 'hidden' : ''}`}>
+      <footer className="border-t border-border py-8">
         <div className="mx-auto flex max-w-[1680px] flex-col items-start justify-between gap-3 px-5 text-xs text-slate-600 sm:px-8 lg:px-[clamp(2rem,4vw,5rem)] md:flex-row md:items-center">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-slate-700">{t('footer.projectCode', 'Mã đồ án: FA26SE119')}</span>
