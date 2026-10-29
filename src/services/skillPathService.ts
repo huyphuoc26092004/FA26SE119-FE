@@ -6,7 +6,8 @@ import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
 // Bài đánh giá và lộ trình học theo một JD, dùng trong trang Độ phù hợp CV.
 // Backend: POST /assessments sinh 10 câu theo JD; POST /roadmaps lập lộ trình cho kỹ năng bắt buộc còn thiếu.
 
-const AI_TIMEOUT = 600_000;
+// Backend chờ Ollama tối đa AI_REQUEST_TIMEOUT (mặc định 15 phút), nên phía FE phải chờ lâu hơn thế.
+const AI_TIMEOUT = 16 * 60_000;
 
 /** Backend coi điểm kỹ năng dưới 70 là cần luyện thêm. */
 export const SKILL_PASS_SCORE = 70;

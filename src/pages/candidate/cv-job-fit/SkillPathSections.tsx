@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Loader2 } from 'lucide-react';
 import {
@@ -172,7 +173,13 @@ function Working({ text }: { text: string }) {
 
 function ErrorLine({ error, fallback }: { error: unknown; fallback: string }) {
   if (!error) return null;
-  return <p className="mt-3 text-[13px] leading-6 text-danger">{authErrorMessage(error, fallback)}</p>;
+  // Bước gọi AI dài: tách lỗi hết giờ chờ và lỗi mất kết nối giữa chừng cho dễ tìm nguyên nhân.
+  const message = isAxiosError(error) && !error.response
+    ? error.code === 'ECONNABORTED'
+      ? 'Quá 16 phút chờ AI trả kết quả. Ollama đang quá chậm hoặc bị treo, kiểm tra rồi thử lại.'
+      : 'Mất kết nối tới backend trong lúc xử lý. Xem log backend (dòng lỗi quanh lúc bấm), kiểm tra Ollama rồi thử lại.'
+    : authErrorMessage(error, fallback);
+  return <p className="mt-3 text-[13px] leading-6 text-danger">{message}</p>;
 }
 
 function formatDay(iso: string | undefined, vi: boolean) {
