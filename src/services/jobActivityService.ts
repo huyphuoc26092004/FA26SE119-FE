@@ -24,7 +24,7 @@ export interface JobActivity {
 
 export const JOB_ACTIVITY_QUERY_KEY = ['jobActivity'] as const;
 
-const DEPENDENT_QUERY_KEYS = [['savedJobs'], ['appliedJobs'], JOB_ACTIVITY_QUERY_KEY, ['skillJourneyJobs']];
+const DEPENDENT_QUERY_KEYS = [['savedJobs'], ['appliedJobs'], JOB_ACTIVITY_QUERY_KEY];
 
 // TODO(api): BE chưa có API
 export async function getJobActivity(): Promise<JobActivity> {

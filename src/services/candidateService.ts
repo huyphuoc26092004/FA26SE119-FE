@@ -2,6 +2,7 @@ import type { AssessmentQuestion, AssessmentResult, AssessmentAttempt, Assessmen
 import type {
   CandidateProfile,
   CareerSalaryTrack,
+  CvJobFitGapItem,
   CvJobFitResult,
   Job,
   Resume,
@@ -352,6 +353,8 @@ export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<
   const strengths = texts(ats.strengths_json);
   const missing = texts(ats.missing_skills_json);
   const tips = texts(ats.improvement_suggestions_json);
+  const report = obj(ats.ats_report);
+  if (Object.keys(report).length > 0) return fromAtsReport(report, { cvId, cv, jobId, job, score, strengths, tips, analyzedAt: str(ats.created_at) });
   return {
     cvId,
     cvName: cv?.name ?? '',
@@ -382,6 +385,95 @@ export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<
   };
 }
 
+const ATS_IMPACT: Record<string, CvJobFitGapItem['impact']> = { HIGH: 'critical', MEDIUM: 'moderate', LOW: 'minor' };
+
+const ATS_TOPIC: Record<string, string> = {
+  FORMAT: 'Định dạng CV',
+  IMPACT: 'Thành tích có số liệu',
+  JOB_TITLE: 'Chức danh mục tiêu',
+  KEYWORDS: 'Từ khoá trong JD',
+  LENGTH: 'Độ dài CV',
+  SECTIONS: 'Các mục của CV',
+  SKILLS: 'Mục kỹ năng',
+  SOFT_SKILLS: 'Kỹ năng mềm',
+};
+
+/** Báo cáo rubric ATS (ats-v1): điểm theo nhóm, kỹ năng khớp/thiếu và gợi ý theo mức độ. */
+function fromAtsReport(
+  report: ApiRow,
+  base: { cvId: string; cv?: Resume; jobId: string; job?: Job; score: number; strengths: string[]; tips: string[]; analyzedAt: string },
+): CvJobFitResult {
+  const dimensions = rows(report.categories)
+    .filter((c) => str(c.status) === 'ASSESSED')
+    .map((c) => ({ code: str(c.code), label: str(c.label), score: Math.round(num(c.score)) }));
+  const byCode = (code: string) => dimensions.find((d) => d.code === code)?.score ?? base.score;
+  const matched = rows(report.matched_skills);
+  const missing = rows(report.missing_skills);
+  const ruleTips = rows(report.suggestions);
+  const ruleTexts = new Set(ruleTips.map((s) => str(s.explanation)));
+
+  const skillGaps: CvJobFitGapItem[] = missing.map((s) => {
+    const skill = str(s.name);
+    return {
+      title: skill,
+      skill,
+      description: s.required
+        ? `JD yêu cầu bắt buộc ${skill} nhưng CV chưa nhắc đến.`
+        : `JD ưu tiên ứng viên biết ${skill}, CV chưa nhắc đến.`,
+      impact: s.required ? 'critical' : 'moderate',
+      recommendation: `Nếu đã dùng ${skill}, hãy ghi vào kinh nghiệm hoặc dự án. Nếu chưa, học theo Learning path bên dưới.`,
+    };
+  });
+  // Gợi ý về kỹ năng đã nằm trong danh sách kỹ năng thiếu ở trên.
+  const cvGaps: CvJobFitGapItem[] = ruleTips
+    .filter((s) => !['KEYWORDS', 'SKILLS'].includes(str(s.category)))
+    .map((s) => ({
+      title: ATS_TOPIC[str(s.category)] ?? 'Nội dung CV',
+      description: str(s.explanation),
+      impact: ATS_IMPACT[str(s.severity)] ?? 'minor',
+      recommendation: '',
+    }));
+  const order = { critical: 0, moderate: 1, minor: 2 };
+
+  return {
+    cvId: base.cvId,
+    cvName: base.cv?.name ?? '',
+    jobId: base.jobId,
+    jobTitle: base.job?.title ?? '',
+    company: base.job?.company ?? '',
+    overallScore: base.score,
+    skillsScore: byCode('HARD_SKILLS'),
+    experienceScore: byCode('ROLE_FIT'),
+    educationScore: byCode('SECTIONS'),
+    cultureScore: byCode('SOFT_SKILLS'),
+    fitGrade: grade(base.score),
+    verdict: texts(report.issues).slice(0, 2).join(' '),
+    strengths: base.strengths.length ? base.strengths : texts(report.strengths),
+    gaps: [...skillGaps, ...cvGaps].sort((a, b) => order[a.impact] - order[b.impact]),
+    skillsAnalysis: [
+      ...matched.map((s) => ({
+        name: str(s.name),
+        category: s.required ? ('required' as const) : ('preferred' as const),
+        status: str(s.evidence) === 'SKILLS_ONLY' ? ('partial' as const) : ('matched' as const),
+        cvMention: str(s.evidence) === 'SKILLS_ONLY' ? 'Chỉ có ở mục Kỹ năng, chưa có trong kinh nghiệm hoặc dự án' : 'Có trong kinh nghiệm hoặc dự án',
+        importance: s.required ? ('high' as const) : ('medium' as const),
+      })),
+      ...missing.map((s) => ({
+        name: str(s.name),
+        category: s.required ? ('required' as const) : ('preferred' as const),
+        status: 'missing' as const,
+        importance: s.required ? ('high' as const) : ('medium' as const),
+      })),
+    ],
+    // Gợi ý viết lại của AI; khi AI tắt, gợi ý theo luật đã hiện ở mục cần cải thiện.
+    tailoringTips: base.tips.filter((tip) => !ruleTexts.has(tip)),
+    suggestedBulletPoints: [],
+    analyzedAt: base.analyzedAt || new Date().toISOString(),
+    dimensions,
+    targetScore: num(report.target_score) || undefined,
+  };
+}
+
 // ---- Đánh giá kỹ năng (bài test sinh từ JD) ----
 
 export async function getAssessmentTopics(): Promise<{ id: string; name: string; icon: string; category: string; }[]> {
@@ -391,7 +483,7 @@ export async function getAssessmentTopics(): Promise<{ id: string; name: string;
 // Câu hỏi không mang ID bài; nhớ câu nào thuộc bài nào để nộp bài.
 const sessionOfQuestion = new Map<string, string>();
 
-const toQuestion = (q: ApiRow): AssessmentQuestion => ({
+export const toQuestion = (q: ApiRow): AssessmentQuestion => ({
   id: str(q.id),
   text: str(q.question_text),
   options: Object.entries(obj(q.options)).map(([id, text]) => ({ id, text: str(text) })),
@@ -558,10 +650,12 @@ const RESOURCE_TYPE: Record<string, ResourceType> = {
   practice: 'practice',
 };
 
-const toResource = (r: ApiRow, skill = ''): LearningResource => {
+export const toResource = (row: ApiRow, skill = ''): LearningResource => {
+  // Tài liệu gắn vào node lộ trình nằm trong `resource_snapshot`.
+  const r = row.resource_snapshot ? obj(row.resource_snapshot) : row;
   const meta = obj(r.metadata_json);
   return {
-    id: str(r.id) || str(r.url),
+    id: str(r.id) || str(row.resource_id) || str(r.url),
     title: str(r.title),
     url: str(r.url),
     type: RESOURCE_TYPE[str(r.resource_type).toLowerCase()] ?? 'course',

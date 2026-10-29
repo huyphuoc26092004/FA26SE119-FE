@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, ChevronDown, Plus, X } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createResume,
@@ -468,6 +468,10 @@ export default function ResumeBuilderPage() {
   const uiLang = isVietnamese ? 'vi' : 'en';
   const c = copy[uiLang];
   const navigate = useNavigate();
+  // Mở từ trang Độ phù hợp CV: lưu xong quay lại đó để chấm lại.
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
+  const backTo = returnTo?.startsWith('/candidate/') ? returnTo : null;
   const queryClient = useQueryClient();
 
   const templatesQuery = useQuery({ queryKey: ['resume-templates'], queryFn: getResumeTemplates, staleTime: 5 * 60_000 });
@@ -577,7 +581,8 @@ export default function ResumeBuilderPage() {
         setNotice({ tone: 'ok', text: c.saved });
         if (!isEdit) navigate(`/candidate/resumes/${saved.id}/edit`, { replace: true });
       } else {
-        navigate(`/candidate/resumes/${saved.id}`);
+        if (backTo) queryClient.invalidateQueries({ queryKey: ['cvJobFit'] });
+        navigate(backTo ?? `/candidate/resumes/${saved.id}`);
       }
     } catch (error) {
       setNotice({ tone: 'error', text: authErrorMessage(error, c.saveError) });

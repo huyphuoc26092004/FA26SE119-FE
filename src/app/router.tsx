@@ -1,4 +1,4 @@
-import { Navigate, createBrowserRouter, Outlet, useParams } from 'react-router-dom';
+import { Navigate, createBrowserRouter, Outlet, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import type { UserRole } from '../types/domain';
 import PublicLayout from '../layouts/PublicLayout';
@@ -30,7 +30,6 @@ import ApplicationAssistancePage from '../pages/candidate/ApplicationAssistanceP
 import SubscriptionPage from '../pages/candidate/SubscriptionPage';
 import UsagePage from '../pages/candidate/UsagePage';
 import SupportPage from '../pages/candidate/SupportPage';
-import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
 import ConsultationsPage from '../pages/candidate/ConsultationsPage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
@@ -50,6 +49,13 @@ import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
 function JobMatchRedirect() {
   const { jobId } = useParams();
   return <Navigate to={`/candidate/cv-job-fit${jobId ? `?jobId=${jobId}` : ''}`} replace />;
+}
+
+/** Skill assessment and learning path now live on the CV fit page; keep ?jobId= links working. */
+function SkillPathRedirect() {
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get('jobId');
+  return <Navigate to={{ pathname: '/candidate/cv-job-fit', search: jobId ? `?jobId=${jobId}` : '', hash: '#learning-path' }} replace />;
 }
 
 export function ProtectedRoute() { const authenticated = useAuthStore(s => s.isAuthenticated); return authenticated ? <Outlet /> : <Navigate to="/login" replace />; }
@@ -103,8 +109,8 @@ export const router = createBrowserRouter([
               { path: 'jobs/:jobId/fit-analysis', element: <CvJobFitPage /> },
               { path: 'cv-job-fit', element: <CvJobFitPage /> },
               { path: 'resumes/:resumeId/job-fit', element: <CvJobFitPage /> },
-              { path: 'salary-estimation', element: <Navigate to="/candidate/assessment" replace /> },
-              { path: 'career-intelligence', element: <Navigate to="/candidate/assessment" replace /> },
+              { path: 'salary-estimation', element: <SkillPathRedirect /> },
+              { path: 'career-intelligence', element: <SkillPathRedirect /> },
               { path: 'assistant', element: <AssistantPage /> },
               { path: 'applications', element: <ApplicationAssistancePage /> },
               { path: 'application-assistance', element: <ApplicationAssistancePage /> },
@@ -113,15 +119,12 @@ export const router = createBrowserRouter([
               { path: 'payment', element: <SubscriptionPage /> },
               { path: 'usage', element: <UsagePage /> },
               { path: 'support', element: <SupportPage /> },
-              { path: 'assessment', element: <SkillAssessmentPage /> },
-              // Skill gap and learning roadmap now live inside the skill assessment flow.
-              { path: 'skill-gap', element: <Navigate to="/candidate/assessment" replace /> },
-              { path: 'learning', element: <Navigate to="/candidate/assessment" replace /> },
-              { path: 'learning/roadmap', element: <Navigate to="/candidate/assessment" replace /> },
-              ...placeholders([
-                'assessment/:assessmentId',
-                'assessment/:assessmentId/result',
-              ]),
+              // Skill assessment, skill gap and learning roadmap were merged into the CV fit page.
+              { path: 'assessment', element: <SkillPathRedirect /> },
+              { path: 'assessment/*', element: <SkillPathRedirect /> },
+              { path: 'skill-gap', element: <SkillPathRedirect /> },
+              { path: 'learning', element: <SkillPathRedirect /> },
+              { path: 'learning/roadmap', element: <SkillPathRedirect /> },
               { path: 'consultations', element: <ConsultationsPage /> },
               { path: 'consultations/new', element: <ConsultationsPage /> },
               { path: 'consultations/:consultationId', element: <ConsultationsPage /> },
