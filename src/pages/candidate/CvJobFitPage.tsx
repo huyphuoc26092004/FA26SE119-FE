@@ -18,7 +18,8 @@ import { EmptyState, ErrorState, Loading } from '../../components/ui';
 import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
-import SkillPathSections from './cv-job-fit/SkillPathSections';
+import { NextStepLinks } from './cv-job-fit/SkillPathPages';
+import { skillPathHref } from '../../services/skillPathService';
 import { AfterApplyPrompt } from '../../components/jobs/AfterApplyPrompt';
 
 const copy = {
@@ -640,8 +641,8 @@ export default function CvJobFitPage() {
   const editCvHref = `/candidate/resumes/${selectedCvId}/edit?returnTo=${encodeURIComponent(
     `/candidate/cv-job-fit?cvId=${selectedCvId}&jobId=${selectedJobId}`,
   )}`;
-  const missingSkills = fitResult?.gaps.flatMap((g) => (g.skill ? [g.skill] : [])) ?? [];
-  const flowAnchors = ['fit-score', 'improve', 'skill-test', 'learning-path'];
+  // Hai bước đầu nằm trên trang này; đánh giá kỹ năng và Learning path mở trang riêng.
+  const flowLinks = ['#fit-score', '#improve', skillPathHref('skill-test', selectedJobId, selectedCvId), skillPathHref('learning-path', selectedJobId, selectedCvId)];
 
   const jobMeta: { label: string; value?: string }[] = currentJob
     ? [
@@ -922,10 +923,20 @@ export default function CvJobFitPage() {
           <ol className="grid grid-cols-2 border-t border-slate-400 sm:grid-cols-4">
             {c.flow.map((label, i) => (
               <li key={label} className={`border-b border-border sm:border-b-0 ${i % 2 === 1 ? 'border-l pl-4' : ''} ${i === 2 ? 'sm:border-l sm:pl-4' : ''}`}>
-                <a href={`#${flowAnchors[i]}`} className="group block py-4 pr-3">
-                  <span className="text-xs tabular-nums text-slate-500">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="mt-1 block text-[15px] text-ink transition-colors group-hover:text-brand">{label}</span>
-                </a>
+                {i < 2 ? (
+                  <a href={flowLinks[i]} className="group block py-4 pr-3">
+                    <span className="text-xs tabular-nums text-slate-500">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="mt-1 block text-[15px] text-ink transition-colors group-hover:text-brand">{label}</span>
+                  </a>
+                ) : (
+                  <Link to={flowLinks[i]} className="group block py-4 pr-3">
+                    <span className="flex items-center gap-1.5 text-xs tabular-nums text-slate-500">
+                      {String(i + 1).padStart(2, '0')}
+                      <ArrowRight size={12} aria-hidden="true" />
+                    </span>
+                    <span className="mt-1 block text-[15px] text-ink transition-colors group-hover:text-brand">{label}</span>
+                  </Link>
+                )}
               </li>
             ))}
           </ol>
@@ -1016,9 +1027,9 @@ export default function CvJobFitPage() {
                       {c.fixCv}
                     </Link>
                     {gap.skill && (
-                      <a href="#learning-path" className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                      <Link to={skillPathHref('learning-path', selectedJobId, selectedCvId)} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
                         {c.learnSkill}
-                      </a>
+                      </Link>
                     )}
                   </p>
                 </li>
@@ -1118,14 +1129,12 @@ export default function CvJobFitPage() {
           </section>
           )}
 
-          {/* 05 Skill assessment + 06 Learning path */}
-          <SkillPathSections
+          {/* Bước tiếp theo: đánh giá kỹ năng và Learning path ở trang riêng */}
+          <NextStepLinks
             key={selectedJobId}
             jobId={selectedJobId}
             cvId={selectedCvId}
-            missingSkills={missingSkills}
-            testIndex={fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0 ? '05' : '04'}
-            pathIndex={fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0 ? '06' : '05'}
+            index={fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0 ? '05' : '04'}
           />
 
           {/* Closing CTA */}

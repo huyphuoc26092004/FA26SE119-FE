@@ -24,6 +24,7 @@ import ResumeDetailsPage from '../pages/candidate/ResumeDetailsPage';
 import ResumeAnalysisPage from '../pages/candidate/ResumeAnalysisPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
+import { LearningPathPage, SkillTestPage } from '../pages/candidate/cv-job-fit/SkillPathPages';
 import CvJobFitPage from '../pages/candidate/CvJobFitPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
 import ApplicationAssistancePage from '../pages/candidate/ApplicationAssistancePage';
@@ -51,11 +52,12 @@ function JobMatchRedirect() {
   return <Navigate to={`/candidate/cv-job-fit${jobId ? `?jobId=${jobId}` : ''}`} replace />;
 }
 
-/** Skill assessment and learning path now live on the CV fit page; keep ?jobId= links working. */
-function SkillPathRedirect() {
+/** Old skill assessment / learning pages open the per-job pages; keep ?jobId= links working. */
+function SkillPathRedirect({ to }: { to: 'skill-test' | 'learning-path' }) {
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('jobId');
-  return <Navigate to={{ pathname: '/candidate/cv-job-fit', search: jobId ? `?jobId=${jobId}` : '', hash: '#learning-path' }} replace />;
+  // Without a job, both pages need one picked on the CV fit page first.
+  return <Navigate to={jobId ? `/candidate/${to}?jobId=${jobId}` : '/candidate/cv-job-fit'} replace />;
 }
 
 export function ProtectedRoute() { const authenticated = useAuthStore(s => s.isAuthenticated); return authenticated ? <Outlet /> : <Navigate to="/login" replace />; }
@@ -109,8 +111,8 @@ export const router = createBrowserRouter([
               { path: 'jobs/:jobId/fit-analysis', element: <CvJobFitPage /> },
               { path: 'cv-job-fit', element: <CvJobFitPage /> },
               { path: 'resumes/:resumeId/job-fit', element: <CvJobFitPage /> },
-              { path: 'salary-estimation', element: <SkillPathRedirect /> },
-              { path: 'career-intelligence', element: <SkillPathRedirect /> },
+              { path: 'salary-estimation', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'career-intelligence', element: <SkillPathRedirect to="learning-path" /> },
               { path: 'assistant', element: <AssistantPage /> },
               { path: 'applications', element: <ApplicationAssistancePage /> },
               { path: 'application-assistance', element: <ApplicationAssistancePage /> },
@@ -119,12 +121,14 @@ export const router = createBrowserRouter([
               { path: 'payment', element: <SubscriptionPage /> },
               { path: 'usage', element: <UsagePage /> },
               { path: 'support', element: <SupportPage /> },
-              // Skill assessment, skill gap and learning roadmap were merged into the CV fit page.
-              { path: 'assessment', element: <SkillPathRedirect /> },
-              { path: 'assessment/*', element: <SkillPathRedirect /> },
-              { path: 'skill-gap', element: <SkillPathRedirect /> },
-              { path: 'learning', element: <SkillPathRedirect /> },
-              { path: 'learning/roadmap', element: <SkillPathRedirect /> },
+              // Skill assessment and learning path for one job, opened from the CV fit page.
+              { path: 'skill-test', element: <SkillTestPage /> },
+              { path: 'learning-path', element: <LearningPathPage /> },
+              { path: 'assessment', element: <SkillPathRedirect to="skill-test" /> },
+              { path: 'assessment/*', element: <SkillPathRedirect to="skill-test" /> },
+              { path: 'skill-gap', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'learning', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'learning/roadmap', element: <SkillPathRedirect to="learning-path" /> },
               { path: 'consultations', element: <ConsultationsPage /> },
               { path: 'consultations/new', element: <ConsultationsPage /> },
               { path: 'consultations/:consultationId', element: <ConsultationsPage /> },

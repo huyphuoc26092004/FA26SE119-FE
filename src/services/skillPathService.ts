@@ -3,7 +3,7 @@ import { apiClient } from './apiClient';
 import { toQuestion, toResource } from './candidateService';
 import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
 
-// Bài đánh giá và lộ trình học theo một JD, dùng trong trang Độ phù hợp CV.
+// Bài đánh giá và lộ trình học theo một JD (trang /candidate/skill-test và /candidate/learning-path).
 // Backend: POST /assessments sinh 10 câu theo JD; POST /roadmaps lập lộ trình cho kỹ năng bắt buộc còn thiếu.
 
 // Backend chờ Ollama tối đa AI_REQUEST_TIMEOUT (mặc định 15 phút), nên phía FE phải chờ lâu hơn thế.
@@ -161,4 +161,12 @@ export async function getJdSkillResources(jobId: string): Promise<Record<string,
   return Object.fromEntries(
     rows(prep.skills).map((s) => [str(s.skill_name), rows(s.resources).map((r) => toResource(r, str(s.skill_name)))]),
   );
+}
+
+/** Link tới trang Đánh giá kỹ năng / Learning path của một job (giữ CV đang chọn). */
+export function skillPathHref(page: 'skill-test' | 'learning-path', jobId: string, cvId?: string, extra?: Record<string, string>) {
+  const params = new URLSearchParams({ jobId });
+  if (cvId) params.set('cvId', cvId);
+  Object.entries(extra ?? {}).forEach(([key, value]) => params.set(key, value));
+  return `/candidate/${page}?${params.toString()}`;
 }

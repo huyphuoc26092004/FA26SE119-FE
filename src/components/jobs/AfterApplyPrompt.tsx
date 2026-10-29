@@ -74,7 +74,7 @@ export function AfterApplyPrompt({ job, cvId, onClose }: { job: Job | null; cvId
           <button type="button" onClick={onClose} className="self-center border-b border-current pb-px text-sm text-ink transition-colors hover:text-brand cursor-pointer">
             {c.later}
           </button>
-          <Link to={`/candidate/cv-job-fit?${params.toString()}#skill-test`} onClick={onClose} className={primaryButton}>
+          <Link to={`/candidate/skill-test?${params.toString()}`} onClick={onClose} className={primaryButton}>
             {c.start}
             <ArrowRight size={15} aria-hidden="true" />
           </Link>

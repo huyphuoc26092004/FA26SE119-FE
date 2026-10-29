@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Loader2 } from 'lucide-react';
 import {
   SKILL_PASS_SCORE,
   createLearningPath,
+  skillPathHref,
   getLatestJdAssessment,
   getLatestLearningPath,
   setLearningNodeStatus,
@@ -17,6 +18,7 @@ import {
 } from '../../../services/skillPathService';
 import type { LearningResource } from '../../../types/assessment';
 import { authErrorMessage } from '../../../services/authService';
+import { getJobById } from '../../../services/candidateService';
 import { Loading } from '../../../components/ui';
 import { useTranslation } from '../../../i18n';
 
@@ -54,9 +56,8 @@ const copy = {
     pathTitle: 'Learning path',
     pathNote: 'Lộ trình chỉ gồm kỹ năng bắt buộc của JD mà CV và hồ sơ chưa có, hoặc bài đánh giá dưới 70 điểm.',
     pathIntro: 'Chưa có Learning path cho công việc này.',
-    pathMissing: (n: number) => `Theo phân tích ở trên, CV đang thiếu ${n} kỹ năng của JD:`,
     pathUsesTest: 'Lộ trình sẽ dùng cả kết quả bài đánh giá kỹ năng.',
-    pathNoTest: 'Bạn có thể làm bài đánh giá ở trên trước để lộ trình chính xác hơn.',
+    pathNoTest: 'Làm bài đánh giá trước để lộ trình chính xác hơn.',
     pathCreate: 'Tạo Learning path',
     pathCreating: 'Đang lập lộ trình học. Việc này có thể mất vài phút.',
     pathRebuild: 'Lập lại theo CV đang chọn',
@@ -77,6 +78,18 @@ const copy = {
     free: 'Miễn phí',
     paid: 'Trả phí',
     loadError: 'Không tải được dữ liệu.',
+    crumbFit: 'Độ phù hợp CV',
+    noJob: 'Chưa chọn công việc. Hãy chọn job ở trang',
+    goTest: 'Làm bài đánh giá',
+    nextTitle: 'Bước tiếp theo',
+    nextNote: 'Làm bài đánh giá kỹ năng theo JD, rồi lập Learning path cho những kỹ năng còn thiếu hoặc còn yếu.',
+    testSummary: 'Mười câu hỏi theo JD, chấm điểm từng kỹ năng.',
+    testNone: 'Chưa làm',
+    testOpen: 'Đang làm dở',
+    testDone: (score: number) => `Đã làm · ${score}%`,
+    pathSummary: 'Lộ trình học kỹ năng còn thiếu, kèm tài liệu và tiến độ.',
+    pathNone: 'Chưa lập',
+    pathDone: (progress: number, n: number) => `${n} kỹ năng · ${progress}% hoàn thành`,
   },
   en: {
     testTitle: 'Skill assessment',
@@ -111,9 +124,8 @@ const copy = {
     pathTitle: 'Learning path',
     pathNote: 'Only the required JD skills missing from your CV and profile, or scored under 70 in the assessment.',
     pathIntro: 'No learning path for this job yet.',
-    pathMissing: (n: number) => `The analysis above found ${n} JD skills missing from your CV:`,
     pathUsesTest: 'The path will also use your assessment result.',
-    pathNoTest: 'Take the assessment above first for a more accurate path.',
+    pathNoTest: 'Take the assessment first for a more accurate path.',
     pathCreate: 'Create learning path',
     pathCreating: 'Building your learning path. This can take a few minutes.',
     pathRebuild: 'Rebuild for the selected CV',
@@ -134,6 +146,18 @@ const copy = {
     free: 'Free',
     paid: 'Paid',
     loadError: 'Could not load data.',
+    crumbFit: 'CV fit',
+    noJob: 'No job selected. Pick one on the',
+    goTest: 'Take the assessment',
+    nextTitle: 'Next steps',
+    nextNote: 'Take the JD skill assessment, then build a learning path for the skills that are missing or weak.',
+    testSummary: 'Ten JD questions, scored per skill.',
+    testNone: 'Not taken',
+    testOpen: 'In progress',
+    testDone: (score: number) => `Done · ${score}%`,
+    pathSummary: 'A study plan for the missing skills, with resources and progress.',
+    pathNone: 'Not built',
+    pathDone: (progress: number, n: number) => `${n} skills · ${progress}% done`,
   },
 };
 
@@ -440,25 +464,61 @@ function NodeRow({
   );
 }
 
-// ─── Sections ───────────────────────────────────────────────────────────────
+// ─── Pages ──────────────────────────────────────────────────────────────────
 
-export default function SkillPathSections({
-  jobId,
-  cvId,
-  missingSkills,
-  testIndex,
-  pathIndex,
-}: {
-  jobId: string;
-  cvId: string;
-  /** Kỹ năng JD còn thiếu theo phân tích ATS ở trên. */
-  missingSkills: string[];
-  testIndex: string;
-  pathIndex: string;
-}) {
+/** Khung chung của hai trang: breadcrumb về trang độ phù hợp CV, tiêu đề và job đang xét. */
+function PageShell({ title, note, jobId, cvId, action, children }: { title: string; note: string; jobId: string; cvId: string; action?: ReactNode; children: ReactNode }) {
+  const { isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
+  const { data: job } = useQuery({ queryKey: ['job', jobId], queryFn: () => getJobById(jobId), enabled: !!jobId });
+  const fitHref = `/candidate/cv-job-fit?${new URLSearchParams({ jobId, ...(cvId ? { cvId } : {}) }).toString()}`;
+  return (
+    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+      <nav className="flex flex-wrap items-baseline gap-1.5 text-[13px] text-slate-600">
+        <Link to={fitHref} className="border-b border-current pb-px transition-colors hover:text-ink">
+          {c.crumbFit}
+        </Link>
+        <span>/</span>
+        <span className="text-brand">{title}</span>
+      </nav>
+      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)] border-b border-ink pb-5">
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <h1 className="text-[clamp(2rem,4.5vw,3.5rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">{title}</h1>
+          {action}
+        </div>
+        {job && (
+          <p className="mt-3 text-[15px] text-ink">
+            {job.title}
+            {job.company && <span className="text-slate-600"> · {job.company}</span>}
+          </p>
+        )}
+        <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600">{note}</p>
+      </header>
+      {!jobId ? (
+        <p className="py-6 text-[15px] leading-7 text-slate-700">
+          {c.noJob}{' '}
+          <Link to="/candidate/cv-job-fit" className={`${textLink} text-ink`}>
+            {c.crumbFit}
+          </Link>
+        </p>
+      ) : (
+        children
+      )}
+    </div>
+  );
+}
+
+function useJobAndCv() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  return { jobId: searchParams.get('jobId') ?? '', cvId: searchParams.get('cvId') ?? '', searchParams, setSearchParams };
+}
+
+/** Trang Đánh giá kỹ năng theo JD: tạo bài, làm bài, xem điểm từng kỹ năng. */
+export function SkillTestPage() {
   const { isVietnamese } = useTranslation();
   const c = isVietnamese ? copy.vi : copy.en;
   const queryClient = useQueryClient();
+  const { jobId, cvId, searchParams, setSearchParams } = useJobAndCv();
 
   const testQuery = useQuery({ queryKey: ['jdAssessment', jobId], queryFn: () => getLatestJdAssessment(jobId), enabled: !!jobId });
   const pathQuery = useQuery({ queryKey: ['learningPath', jobId], queryFn: () => getLatestLearningPath(jobId), enabled: !!jobId });
@@ -478,19 +538,8 @@ export default function SkillPathSections({
     },
   });
   const completedTest = session?.status === 'completed' ? session : null;
-  const buildPath = useMutation({
-    mutationFn: () => createLearningPath({ jobId, resumeId: cvId || undefined, assessmentId: completedTest?.id }),
-    onSuccess: (data) => queryClient.setQueryData(['learningPath', jobId], data),
-  });
-  const nodeStatus = useMutation({
-    mutationFn: ({ nodeId, status }: { nodeId: string; status: LearningPathNode['status'] }) => setLearningNodeStatus(path!.id, nodeId, status),
-    onSuccess: (data) => queryClient.setQueryData(['learningPath', jobId], data),
-  });
-
-  const doneNodes = path?.nodes.filter((n) => n.status === 'completed').length ?? 0;
 
   // Mở từ lời mời sau khi ứng tuyển (?test=start): tạo bài ngay nếu job này chưa có bài nào.
-  const [searchParams, setSearchParams] = useSearchParams();
   const wantsTest = searchParams.get('test') === 'start';
   const { mutate: startTestNow, isPending: startingTest } = startTest;
   useEffect(() => {
@@ -502,167 +551,234 @@ export default function SkillPathSections({
     setSearchParams(next, { replace: true });
   }, [wantsTest, testQuery.isSuccess, testQuery.data, startingTest, startTestNow, searchParams, setSearchParams]);
 
-  // Link có #skill-test / #learning-path: cuộn tới sau khi phần đó có dữ liệu.
-  const { hash } = useLocation();
-  const scrolled = useRef(false);
-  useEffect(() => {
-    if (scrolled.current || !hash || testQuery.isPending || pathQuery.isPending) return;
-    const target = document.getElementById(hash.slice(1));
-    if (target) {
-      scrolled.current = true;
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [hash, testQuery.isPending, pathQuery.isPending]);
-
   const weakSkills = completedTest?.skillScores.filter((s) => s.score < SKILL_PASS_SCORE).map((s) => s.skill) ?? [];
   const pathIsCurrent =
     !!path && !path.outdated && (!completedTest?.submittedAt || new Date(path.createdAt) >= new Date(completedTest.submittedAt));
 
   return (
-    <>
-      {/* Skill assessment */}
-      <section id="skill-test" className="mt-[clamp(3rem,6vw,4.5rem)] scroll-mt-6">
-        <SectionHead
-          index={testIndex}
-          title={c.testTitle}
-          note={c.testNote}
-          action={
-            completedTest && !startTest.isPending ? (
-              <button type="button" onClick={() => startTest.mutate()} className={`${textLink} text-[13px] text-ink`}>
-                {c.retake}
-              </button>
-            ) : undefined
-          }
-        />
-        {testQuery.isPending ? (
-          <Loading />
-        ) : testQuery.isError ? (
-          <ErrorLine error={testQuery.error} fallback={c.loadError} />
-        ) : startTest.isPending ? (
-          <Working text={c.testCreating} />
-        ) : !session ? (
-          <div className="border-b border-border py-6">
-            <p className="max-w-2xl text-[15px] leading-7 text-slate-700">{c.testIntro}</p>
-            <button type="button" onClick={() => startTest.mutate()} className={`${primaryButton} mt-5`}>
-              {c.testStart}
-              <ArrowRight size={15} aria-hidden="true" />
-            </button>
+    <PageShell
+      title={c.testTitle}
+      note={c.testNote}
+      jobId={jobId}
+      cvId={cvId}
+      action={
+        completedTest && !startTest.isPending ? (
+          <button type="button" onClick={() => startTest.mutate()} className={`${textLink} text-[13px] text-ink`}>
+            {c.retake}
+          </button>
+        ) : undefined
+      }
+    >
+      {testQuery.isPending ? (
+        <Loading />
+      ) : testQuery.isError ? (
+        <ErrorLine error={testQuery.error} fallback={c.loadError} />
+      ) : startTest.isPending ? (
+        <Working text={c.testCreating} />
+      ) : !session ? (
+        <div className="border-b border-border py-6">
+          <p className="max-w-2xl text-[15px] leading-7 text-slate-700">{c.testIntro}</p>
+          <button type="button" onClick={() => startTest.mutate()} className={`${primaryButton} mt-5`}>
+            {c.testStart}
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+        </div>
+      ) : session.status === 'in_progress' ? (
+        <Quiz key={session.id} session={session} c={c} onSubmit={(answers) => submitTest.mutate(answers)} submitting={submitTest.isPending} />
+      ) : (
+        <>
+          <AssessmentResult key={session.id} session={session} c={c} vi={isVietnamese} />
+          <div className="flex flex-col gap-4 border-t border-ink pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="max-w-xl text-[15px] leading-7 text-ink">
+              {weakSkills.length ? c.nextWeak(weakSkills.join(', ')) : c.nextAllPass}
+            </p>
+            {pathIsCurrent ? (
+              <Link to={skillPathHref('learning-path', jobId, cvId)} className={`${textLink} shrink-0 text-ink`}>
+                {c.nextView}
+              </Link>
+            ) : (
+              <Link to={skillPathHref('learning-path', jobId, cvId, { build: '1' })} className={`${primaryButton} shrink-0`}>
+                {c.nextBuild}
+                <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            )}
           </div>
-        ) : session.status === 'in_progress' ? (
-          <Quiz key={session.id} session={session} c={c} onSubmit={(answers) => submitTest.mutate(answers)} submitting={submitTest.isPending} />
-        ) : (
-          <>
-            <AssessmentResult key={session.id} session={session} c={c} vi={isVietnamese} />
-            <div className="flex flex-col gap-4 border-t border-ink pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-xl text-[15px] leading-7 text-ink">
-                {weakSkills.length ? c.nextWeak(weakSkills.join(', ')) : c.nextAllPass}
-              </p>
-              {pathIsCurrent ? (
-                <a href="#learning-path" className={`${textLink} shrink-0 text-ink`}>
-                  {c.nextView}
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  disabled={buildPath.isPending}
-                  onClick={() => {
-                    buildPath.mutate();
-                    document.getElementById('learning-path')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                  className={`${primaryButton} shrink-0`}
-                >
-                  {c.nextBuild}
-                  <ArrowRight size={15} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          </>
-        )}
-        <ErrorLine error={startTest.error ?? submitTest.error} fallback={c.loadError} />
-      </section>
+        </>
+      )}
+      <ErrorLine error={startTest.error ?? submitTest.error} fallback={c.loadError} />
+    </PageShell>
+  );
+}
 
-      {/* Learning path */}
-      <section id="learning-path" className="mt-[clamp(3rem,6vw,4.5rem)] scroll-mt-6">
-        <SectionHead
-          index={pathIndex}
-          title={c.pathTitle}
-          note={c.pathNote}
-          action={
-            path && !buildPath.isPending ? (
+/** Trang Learning path theo JD: lập lộ trình từ CV + kết quả đánh giá, theo dõi tiến độ. */
+export function LearningPathPage() {
+  const { isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
+  const queryClient = useQueryClient();
+  const { jobId, cvId, searchParams, setSearchParams } = useJobAndCv();
+
+  const testQuery = useQuery({ queryKey: ['jdAssessment', jobId], queryFn: () => getLatestJdAssessment(jobId), enabled: !!jobId });
+  const pathQuery = useQuery({ queryKey: ['learningPath', jobId], queryFn: () => getLatestLearningPath(jobId), enabled: !!jobId });
+  const path = pathQuery.data ?? null;
+  const completedTest = testQuery.data?.status === 'completed' ? testQuery.data : null;
+
+  const buildPath = useMutation({
+    mutationFn: () => createLearningPath({ jobId, resumeId: cvId || undefined, assessmentId: completedTest?.id }),
+    onSuccess: (data) => queryClient.setQueryData(['learningPath', jobId], data),
+  });
+  const nodeStatus = useMutation({
+    mutationFn: ({ nodeId, status }: { nodeId: string; status: LearningPathNode['status'] }) => setLearningNodeStatus(path!.id, nodeId, status),
+    onSuccess: (data) => queryClient.setQueryData(['learningPath', jobId], data),
+  });
+
+  // Mở từ kết quả bài đánh giá (?build=1): lập lộ trình mới trừ khi lộ trình hiện có đã tính bài đó.
+  const wantsBuild = searchParams.get('build') === '1';
+  const { mutate: buildNow, isPending: building } = buildPath;
+  useEffect(() => {
+    if (!wantsBuild || !pathQuery.isSuccess || !testQuery.isSuccess || building) return;
+    const current = pathQuery.data;
+    const stale =
+      !current || current.outdated || (!!completedTest?.submittedAt && new Date(current.createdAt) < new Date(completedTest.submittedAt));
+    if (stale) buildNow();
+    const next = new URLSearchParams(searchParams);
+    next.delete('build');
+    setSearchParams(next, { replace: true });
+  }, [wantsBuild, pathQuery.isSuccess, pathQuery.data, testQuery.isSuccess, completedTest, building, buildNow, searchParams, setSearchParams]);
+
+  const doneNodes = path?.nodes.filter((n) => n.status === 'completed').length ?? 0;
+
+  return (
+    <PageShell
+      title={c.pathTitle}
+      note={c.pathNote}
+      jobId={jobId}
+      cvId={cvId}
+      action={
+        path && !buildPath.isPending ? (
+          <button type="button" onClick={() => buildPath.mutate()} className={`${textLink} text-[13px] text-ink`}>
+            {c.pathRebuild}
+          </button>
+        ) : undefined
+      }
+    >
+      {pathQuery.isPending ? (
+        <Loading />
+      ) : pathQuery.isError ? (
+        <ErrorLine error={pathQuery.error} fallback={c.loadError} />
+      ) : buildPath.isPending ? (
+        <Working text={c.pathCreating} />
+      ) : !path ? (
+        <div className="border-b border-border py-6">
+          <p className="text-[15px] leading-7 text-ink">{c.pathIntro}</p>
+          <p className="mt-2 text-[13px] text-slate-600">
+            {completedTest ? (
+              c.pathUsesTest
+            ) : (
+              <>
+                {c.pathNoTest}{' '}
+                <Link to={skillPathHref('skill-test', jobId, cvId)} className={`${textLink} text-[13px] text-ink`}>
+                  {c.goTest}
+                </Link>
+              </>
+            )}
+          </p>
+          <button type="button" onClick={() => buildPath.mutate()} className={`${primaryButton} mt-5`}>
+            {c.pathCreate}
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+        </div>
+      ) : (
+        <div>
+          {path.outdated && (
+            <p className="mt-4 border-l-2 border-warning pl-4 text-sm leading-6 text-ink">
+              {c.outdated}{' '}
               <button type="button" onClick={() => buildPath.mutate()} className={`${textLink} text-[13px] text-ink`}>
                 {c.pathRebuild}
               </button>
-            ) : undefined
-          }
-        />
-        {pathQuery.isPending ? (
-          <Loading />
-        ) : pathQuery.isError ? (
-          <ErrorLine error={pathQuery.error} fallback={c.loadError} />
-        ) : buildPath.isPending ? (
-          <Working text={c.pathCreating} />
-        ) : !path ? (
-          <div className="border-b border-border py-6">
-            <p className="text-[15px] leading-7 text-ink">{c.pathIntro}</p>
-            {missingSkills.length > 0 && (
-              <p className="mt-2 max-w-2xl text-[15px] leading-7 text-slate-700">
-                {c.pathMissing(missingSkills.length)} <span className="text-ink">{missingSkills.join(' · ')}</span>
-              </p>
-            )}
-            <p className="mt-2 text-[13px] text-slate-600">{completedTest ? c.pathUsesTest : c.pathNoTest}</p>
-            <button type="button" onClick={() => buildPath.mutate()} className={`${primaryButton} mt-5`}>
-              {c.pathCreate}
-              <ArrowRight size={15} aria-hidden="true" />
-            </button>
-          </div>
-        ) : (
-          <div>
-            {path.outdated && (
-              <p className="mt-4 border-l-2 border-warning pl-4 text-sm leading-6 text-ink">
-                {c.outdated}{' '}
-                <button type="button" onClick={() => buildPath.mutate()} className={`${textLink} text-[13px] text-ink`}>
-                  {c.pathRebuild}
-                </button>
-              </p>
-            )}
-            {path.nodes.length === 0 ? (
-              <p className="border-b border-border py-6 text-[15px] leading-7 text-slate-700">{c.pathEmpty}</p>
-            ) : (
-              <>
-                <dl className="mt-4 grid border-y border-border sm:grid-cols-3">
-                  {[
-                    { label: c.skillsCount, value: String(path.nodes.length) },
-                    { label: c.totalTime, value: c.hours(path.totalHours) },
-                    { label: c.progress, value: `${doneNodes}/${path.nodes.length} · ${path.progress}%` },
-                  ].map((row, i) => (
-                    <div key={row.label} className={`flex items-baseline justify-between gap-4 py-3 text-sm sm:block ${i > 0 ? 'sm:border-l sm:border-border sm:pl-5' : ''}`}>
-                      <dt className="text-slate-600">{row.label}</dt>
-                      <dd className="tabular-nums text-ink sm:mt-1 sm:text-[clamp(1.25rem,2vw,1.5rem)]">{row.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-                <div className="mt-3 h-[2px] w-full bg-slate-200">
-                  <div className="h-full bg-brand transition-[width] duration-500" style={{ width: `${path.progress}%` }} />
-                </div>
-                <ol className="mt-2">
-                  {path.nodes.map((node, i) => (
-                    <NodeRow
-                      key={node.id}
-                      node={node}
-                      index={i}
-                      path={path}
-                      c={c}
-                      busy={nodeStatus.isPending}
-                      onStatus={(status) => nodeStatus.mutate({ nodeId: node.id, status })}
-                    />
-                  ))}
-                </ol>
-              </>
-            )}
-          </div>
-        )}
-        <ErrorLine error={buildPath.error ?? nodeStatus.error} fallback={c.loadError} />
-      </section>
-    </>
+            </p>
+          )}
+          {path.nodes.length === 0 ? (
+            <p className="border-b border-border py-6 text-[15px] leading-7 text-slate-700">{c.pathEmpty}</p>
+          ) : (
+            <>
+              <dl className="mt-4 grid border-y border-border sm:grid-cols-3">
+                {[
+                  { label: c.skillsCount, value: String(path.nodes.length) },
+                  { label: c.totalTime, value: c.hours(path.totalHours) },
+                  { label: c.progress, value: `${doneNodes}/${path.nodes.length} · ${path.progress}%` },
+                ].map((row, i) => (
+                  <div key={row.label} className={`flex items-baseline justify-between gap-4 py-3 text-sm sm:block ${i > 0 ? 'sm:border-l sm:border-border sm:pl-5' : ''}`}>
+                    <dt className="text-slate-600">{row.label}</dt>
+                    <dd className="tabular-nums text-ink sm:mt-1 sm:text-[clamp(1.25rem,2vw,1.5rem)]">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-3 h-[2px] w-full bg-slate-200">
+                <div className="h-full bg-brand transition-[width] duration-500" style={{ width: `${path.progress}%` }} />
+              </div>
+              <ol className="mt-2">
+                {path.nodes.map((node, i) => (
+                  <NodeRow
+                    key={node.id}
+                    node={node}
+                    index={i}
+                    path={path}
+                    c={c}
+                    busy={nodeStatus.isPending}
+                    onStatus={(status) => nodeStatus.mutate({ nodeId: node.id, status })}
+                  />
+                ))}
+              </ol>
+            </>
+          )}
+        </div>
+      )}
+      <ErrorLine error={buildPath.error ?? nodeStatus.error} fallback={c.loadError} />
+    </PageShell>
+  );
+}
+
+/** Tóm tắt hai bước tiếp theo trên trang độ phù hợp CV, mỗi bước mở trang riêng. */
+export function NextStepLinks({ jobId, cvId, index }: { jobId: string; cvId: string; index: string }) {
+  const { isVietnamese } = useTranslation();
+  const c = isVietnamese ? copy.vi : copy.en;
+  const testQuery = useQuery({ queryKey: ['jdAssessment', jobId], queryFn: () => getLatestJdAssessment(jobId), enabled: !!jobId });
+  const pathQuery = useQuery({ queryKey: ['learningPath', jobId], queryFn: () => getLatestLearningPath(jobId), enabled: !!jobId });
+  const test = testQuery.data;
+  const path = pathQuery.data;
+  const rows = [
+    {
+      id: 'skill-test',
+      href: skillPathHref('skill-test', jobId, cvId),
+      title: c.testTitle,
+      body: c.testSummary,
+      status: !test ? c.testNone : test.status === 'completed' ? c.testDone(test.score) : c.testOpen,
+    },
+    {
+      id: 'learning-path',
+      href: skillPathHref('learning-path', jobId, cvId),
+      title: c.pathTitle,
+      body: c.pathSummary,
+      status: !path ? c.pathNone : c.pathDone(path.progress, path.nodes.length),
+    },
+  ];
+  return (
+    <section className="mt-[clamp(3rem,6vw,4.5rem)]">
+      <SectionHead index={index} title={c.nextTitle} note={c.nextNote} />
+      <ul className="grid md:grid-cols-2">
+        {rows.map((row, i) => (
+          <li key={row.id} id={row.id} className={`scroll-mt-6 border-b border-border ${i === 1 ? 'md:border-l md:pl-6' : 'md:pr-6'}`}>
+            <Link to={row.href} className="group block py-5">
+              <span className="text-[12px] text-slate-500">{testQuery.isPending || pathQuery.isPending ? '…' : row.status}</span>
+              <span className="mt-1 flex items-center justify-between gap-4">
+                <span className="text-[clamp(1.0625rem,1.5vw,1.25rem)] text-ink transition-colors group-hover:text-brand">{row.title}</span>
+                <ArrowRight size={16} aria-hidden="true" className="shrink-0 text-slate-400 transition-colors group-hover:text-brand" />
+              </span>
+              <span className="mt-1.5 block max-w-md text-sm leading-6 text-slate-600">{row.body}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
