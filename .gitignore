@@ -24,3 +24,9 @@ dist/
 .github/agents/
 .github/hooks/
 .vscode/
+
+# Local env copies (e.g. ".env (1)"), keep the example
+.env*
+!.env.example
+# Old Capacitor Android build output (mobile app is Flutter now)
+android/
