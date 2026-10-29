@@ -39,6 +39,7 @@ import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import SubscriptionQuotaManagementPage from '../pages/admin/SubscriptionQuotaManagementPage';
 import PaymentInvoiceManagementPage from '../pages/admin/PaymentInvoiceManagementPage';
 import ResumeTemplateManagementPage from '../pages/admin/ResumeTemplateManagementPage';
+import JobCrawlManagementPage from '../pages/admin/JobCrawlManagementPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
@@ -156,11 +157,11 @@ export const router = createBrowserRouter([
               { path: 'payments', element: <PaymentInvoiceManagementPage /> },
               { path: 'templates', element: <ResumeTemplateManagementPage /> },
               { path: 'resume-templates', element: <Navigate to="/admin/templates" replace /> },
+              { path: 'jobs', element: <JobCrawlManagementPage /> },
               ...placeholders([
                 'ai',
                 'ai/prompts',
                 'ai/embeddings',
-                'jobs',
                 'vector',
                 'logs',
                 'audit',
