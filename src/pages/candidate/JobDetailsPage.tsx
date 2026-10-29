@@ -16,6 +16,7 @@ import {
 } from '../../services/jobActivityService';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+import { AfterApplyPrompt } from '../../components/jobs/AfterApplyPrompt';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 
 const textLink =
@@ -64,6 +65,7 @@ export default function JobDetailsPage() {
   const [redirectModalOpen, setRedirectModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [assessOpen, setAssessOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const { data: job, isPending, isError } = useQuery({
@@ -102,12 +104,10 @@ export default function JobDetailsPage() {
 
   const applyMutation = useMutation({
     mutationFn: () => markJobApplied(jobId),
-    onSuccess: (res) => {
-      queryClient.setQueryData(['appliedJobs'], res.ids);
+    onSuccess: () => {
       refreshJobActivity(queryClient);
       setRedirectModalOpen(false);
-      setToastMessage(t('jobs.appliedSuccess'));
-      setTimeout(() => setToastMessage(null), 4000);
+      setAssessOpen(true);
     },
   });
 
@@ -165,6 +165,8 @@ export default function JobDetailsPage() {
       }
     >
       {/* Toast */}
+      <AfterApplyPrompt job={assessOpen ? job : null} onClose={() => setAssessOpen(false)} />
+
       {toastMessage && (
         <div
           role="status"

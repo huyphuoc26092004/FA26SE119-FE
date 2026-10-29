@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Loader2 } from 'lucide-react';
 import {
@@ -45,6 +46,10 @@ const copy = {
     noAnswer: 'Không trả lời',
     retake: 'Làm bài mới',
     doneAt: (d: string) => `Nộp ngày ${d}`,
+    nextWeak: (names: string) => `Kỹ năng cần cải thiện: ${names}. Lập Learning path để học đúng các kỹ năng này.`,
+    nextAllPass: 'Bạn đạt mọi kỹ năng trong bài. Learning path sẽ chỉ gồm kỹ năng bắt buộc mà CV chưa thể hiện.',
+    nextBuild: 'Lập Learning path từ kết quả này',
+    nextView: 'Xem Learning path',
     pathTitle: 'Learning path',
     pathNote: 'Lộ trình chỉ gồm kỹ năng bắt buộc của JD mà CV và hồ sơ chưa có, hoặc bài đánh giá dưới 70 điểm.',
     pathIntro: 'Chưa có Learning path cho công việc này.',
@@ -98,6 +103,10 @@ const copy = {
     noAnswer: 'No answer',
     retake: 'Take a new one',
     doneAt: (d: string) => `Submitted ${d}`,
+    nextWeak: (names: string) => `Skills to improve: ${names}. Build a learning path for exactly these skills.`,
+    nextAllPass: 'You passed every skill in the test. The path will only cover required skills your CV does not show.',
+    nextBuild: 'Build a learning path from this result',
+    nextView: 'View learning path',
     pathTitle: 'Learning path',
     pathNote: 'Only the required JD skills missing from your CV and profile, or scored under 70 in the assessment.',
     pathIntro: 'No learning path for this job yet.',
@@ -473,6 +482,35 @@ export default function SkillPathSections({
 
   const doneNodes = path?.nodes.filter((n) => n.status === 'completed').length ?? 0;
 
+  // Mở từ lời mời sau khi ứng tuyển (?test=start): tạo bài ngay nếu job này chưa có bài nào.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const wantsTest = searchParams.get('test') === 'start';
+  const { mutate: startTestNow, isPending: startingTest } = startTest;
+  useEffect(() => {
+    if (!wantsTest || !testQuery.isSuccess || startingTest) return;
+    // Đã có bài (đang làm hoặc đã nộp) thì hiện bài đó, không tạo thêm.
+    if (!testQuery.data) startTestNow();
+    const next = new URLSearchParams(searchParams);
+    next.delete('test');
+    setSearchParams(next, { replace: true });
+  }, [wantsTest, testQuery.isSuccess, testQuery.data, startingTest, startTestNow, searchParams, setSearchParams]);
+
+  // Link có #skill-test / #learning-path: cuộn tới sau khi phần đó có dữ liệu.
+  const { hash } = useLocation();
+  const scrolled = useRef(false);
+  useEffect(() => {
+    if (scrolled.current || !hash || testQuery.isPending || pathQuery.isPending) return;
+    const target = document.getElementById(hash.slice(1));
+    if (target) {
+      scrolled.current = true;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [hash, testQuery.isPending, pathQuery.isPending]);
+
+  const weakSkills = completedTest?.skillScores.filter((s) => s.score < SKILL_PASS_SCORE).map((s) => s.skill) ?? [];
+  const pathIsCurrent =
+    !!path && !path.outdated && (!completedTest?.submittedAt || new Date(path.createdAt) >= new Date(completedTest.submittedAt));
+
   return (
     <>
       {/* Skill assessment */}
@@ -506,7 +544,32 @@ export default function SkillPathSections({
         ) : session.status === 'in_progress' ? (
           <Quiz key={session.id} session={session} c={c} onSubmit={(answers) => submitTest.mutate(answers)} submitting={submitTest.isPending} />
         ) : (
-          <AssessmentResult key={session.id} session={session} c={c} vi={isVietnamese} />
+          <>
+            <AssessmentResult key={session.id} session={session} c={c} vi={isVietnamese} />
+            <div className="flex flex-col gap-4 border-t border-ink pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="max-w-xl text-[15px] leading-7 text-ink">
+                {weakSkills.length ? c.nextWeak(weakSkills.join(', ')) : c.nextAllPass}
+              </p>
+              {pathIsCurrent ? (
+                <a href="#learning-path" className={`${textLink} shrink-0 text-ink`}>
+                  {c.nextView}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled={buildPath.isPending}
+                  onClick={() => {
+                    buildPath.mutate();
+                    document.getElementById('learning-path')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className={`${primaryButton} shrink-0`}
+                >
+                  {c.nextBuild}
+                  <ArrowRight size={15} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </>
         )}
         <ErrorLine error={startTest.error ?? submitTest.error} fallback={c.loadError} />
       </section>

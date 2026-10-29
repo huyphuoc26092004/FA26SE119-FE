@@ -59,19 +59,34 @@ export async function getJobById(id: string): Promise<Job | undefined> {
   return toJob(await get(`/jobs/${id}`));
 }
 
-// TODO(api): BE chưa có API
+// ---- Wishlist và việc đã ứng tuyển ----
+
+/** Việc trong wishlist, mới lưu trước; mỗi dòng có cột như GET /jobs kèm `saved_at`. */
+export async function getSavedJobRows(): Promise<ApiRow[]> {
+  return isSignedIn() ? get<ApiRow[]>('/me/saved-jobs') : [];
+}
+
+/** Việc đã ứng tuyển qua external-apply, lần gần nhất mỗi job, kèm `applied_at`. */
+export async function getAppliedJobRows(): Promise<ApiRow[]> {
+  return isSignedIn() ? get<ApiRow[]>('/me/applied-jobs') : [];
+}
+
 export async function getSavedJobIds(): Promise<string[]> {
-  return pending([], 'BE chưa có API');
+  return (await getSavedJobRows()).map((row) => str(row.id));
 }
 
-// TODO(api): BE chưa có API
 export async function toggleSaveJob(id: string): Promise<{ saved: boolean; ids: string[] }> {
-  return notConnected('BE chưa có API', id);
+  const ids = await getSavedJobIds();
+  if (ids.includes(id)) {
+    await apiClient.delete(`/me/saved-jobs/${id}`);
+    return { saved: false, ids: ids.filter((x) => x !== id) };
+  }
+  await apiClient.put(`/me/saved-jobs/${id}`);
+  return { saved: true, ids: [id, ...ids] };
 }
 
-// TODO(api): BE chưa có API
 export async function getAppliedJobIds(): Promise<string[]> {
-  return pending([], 'BE chưa có API');
+  return (await getAppliedJobRows()).map((row) => str(row.id));
 }
 
 /** Ghi nhận chuyển sang trang tuyển dụng gốc; backend trả `target_url` để mở. */
