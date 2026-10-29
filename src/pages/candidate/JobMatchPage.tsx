@@ -24,7 +24,7 @@ import {
   getResumes,
   applyJobExternal,
   getAppliedJobIds,
-} from '../../mocks/services/mockService';
+} from '../../services/candidateService';
 import { Button, Card, ErrorState, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
@@ -75,14 +75,14 @@ export default function JobMatchPage() {
   // Record external application mutation
   const applyMutation = useMutation({
     mutationFn: () => applyJobExternal(jobId),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['appliedJobs'] });
       setRedirectModalOpen(false);
       setToastMessage(t('jobs.appliedSuccess'));
       setTimeout(() => setToastMessage(null), 4500);
 
       // Open external URL in new tab
-      const externalUrl = job?.externalSource?.sourceUrl || 'https://itviec.com';
+      const externalUrl = result.targetUrl || job?.externalSource?.sourceUrl || 'https://itviec.com';
       window.open(externalUrl, '_blank', 'noopener,noreferrer');
     },
   });
@@ -400,7 +400,7 @@ export default function JobMatchPage() {
           {job && (
             <AiRecommendationFeedbackWidget
               targetType="match_explanation"
-              targetId={jobId}
+              targetId={matchData.matchResultId ?? jobId}
               targetTitle={`Giải thích khớp nối AI - ${job.title} (${job.company})`}
             />
           )}

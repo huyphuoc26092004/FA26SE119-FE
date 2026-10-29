@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Bookmark, Check, ChevronDown, RotateCcw, Search, X } from 'lucide-react';
-import { getJobs, getSavedJobIds, getAppliedJobIds } from '../../mocks/services/mockService';
+import { getJobs, getSavedJobIds, getAppliedJobIds } from '../../services/candidateService';
 import {
   markJobApplied,
   openApplySource,
@@ -12,6 +12,7 @@ import {
 import type { Job } from '../../types/domain';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+import { AfterApplyPrompt } from '../../components/jobs/AfterApplyPrompt';
 
 // Design tokens (CCV template): ink #14231e, accent #0b6b52, muted #5d6b65, rule #14231e/15
 const fieldBase =
@@ -40,6 +41,7 @@ export default function JobsPage() {
   // External Application Redirect Modal State
   const [redirectJob, setRedirectJob] = useState<Job | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [assessJob, setAssessJob] = useState<Job | null>(null);
 
   // Queries
   const {
@@ -74,12 +76,11 @@ export default function JobsPage() {
 
   const applyMutation = useMutation({
     mutationFn: (jobId: string) => markJobApplied(jobId),
-    onSuccess: (res) => {
-      queryClient.setQueryData(['appliedJobs'], res.ids);
+    onSuccess: (_res, jobId) => {
       refreshJobActivity(queryClient);
       setRedirectJob(null);
-      setToastMessage(t('jobs.appliedSuccess'));
-      setTimeout(() => setToastMessage(null), 4000);
+      // Hỏi tiếp có muốn làm bài đánh giá kỹ năng theo JD vừa ứng tuyển không.
+      setAssessJob(allJobs?.find((j) => j.id === jobId) ?? null);
     },
   });
 
@@ -288,6 +289,8 @@ export default function JobsPage() {
         }
       >
         {/* Toast Notification */}
+        <AfterApplyPrompt job={assessJob} onClose={() => setAssessJob(null)} />
+
         {toastMessage && (
           <div className="fixed right-5 top-5 z-50 flex max-w-lg items-center gap-4 rounded-full bg-ink py-3 pl-6 pr-4 text-white shadow-sm animate-fade-in">
             <p className="text-sm">{toastMessage}</p>

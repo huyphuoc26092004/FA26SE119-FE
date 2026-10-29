@@ -1,5 +1,4 @@
-import type { ReactElement } from 'react';
-import { Navigate, createBrowserRouter, Outlet, useParams } from 'react-router-dom';
+import { Navigate, createBrowserRouter, Outlet, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import type { UserRole } from '../types/domain';
 import PublicLayout from '../layouts/PublicLayout';
@@ -18,27 +17,28 @@ import {
 import DashboardPage from '../pages/candidate/DashboardPage';
 import ProfilePage from '../pages/candidate/ProfilePage';
 import ResumesPage from '../pages/candidate/ResumesPage';
-import CreateResumePage from '../pages/candidate/CreateResumePage';
+import ResumeTemplatePickerPage from '../pages/candidate/ResumeTemplatePickerPage';
+import ResumeBuilderPage from '../pages/candidate/ResumeBuilderPage';
 import UploadResumePage from '../pages/candidate/UploadResumePage';
 import ResumeDetailsPage from '../pages/candidate/ResumeDetailsPage';
-import EditResumePage from '../pages/candidate/EditResumePage';
-import AiResumeBuilderPage from '../pages/candidate/AiResumeBuilderPage';
 import ResumeAnalysisPage from '../pages/candidate/ResumeAnalysisPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
+import { LearningPathPage, SkillTestPage } from '../pages/candidate/cv-job-fit/SkillPathPages';
 import CvJobFitPage from '../pages/candidate/CvJobFitPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
 import ApplicationAssistancePage from '../pages/candidate/ApplicationAssistancePage';
 import SubscriptionPage from '../pages/candidate/SubscriptionPage';
 import UsagePage from '../pages/candidate/UsagePage';
 import SupportPage from '../pages/candidate/SupportPage';
-import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
 import ConsultationsPage from '../pages/candidate/ConsultationsPage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import SubscriptionQuotaManagementPage from '../pages/admin/SubscriptionQuotaManagementPage';
 import PaymentInvoiceManagementPage from '../pages/admin/PaymentInvoiceManagementPage';
+import ResumeTemplateManagementPage from '../pages/admin/ResumeTemplateManagementPage';
+import JobCrawlManagementPage from '../pages/admin/JobCrawlManagementPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
@@ -46,49 +46,23 @@ import ConsultantCandidatesPage from '../pages/consultant/ConsultantCandidatesPa
 import CandidateCareerAnalysisPage from '../pages/consultant/CandidateCareerAnalysisPage';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
 import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
-import { IS_APP } from '../utils/platform';
-import MobileLogin from '../mobile/screens/MobileLogin';
-import MobileConsultantHome from '../mobile/screens/MobileConsultantHome';
-import MobileConsultantRequests from '../mobile/screens/MobileConsultantRequests';
-import MobileConsultationDetail from '../mobile/screens/MobileConsultationDetail';
-import MobileConsultantCandidates from '../mobile/screens/MobileConsultantCandidates';
-import MobileCandidateAnalysis from '../mobile/screens/MobileCandidateAnalysis';
-import MobileStaffAccount from '../mobile/screens/MobileStaffAccount';
-import MobileAdminHome from '../mobile/screens/MobileAdminHome';
-import MobileAdminUsers from '../mobile/screens/MobileAdminUsers';
-import MobileAdminUserDetail from '../mobile/screens/MobileAdminUserDetail';
-import MobileAdminPlans from '../mobile/screens/MobileAdminPlans';
-import MobileAdminPayments from '../mobile/screens/MobileAdminPayments';
-import { adminNav, consultantNav } from '../constants/navigation';
-import MobileHome from '../mobile/screens/MobileHome';
-import MobileJobs from '../mobile/screens/MobileJobs';
-import MobileJobDetail from '../mobile/screens/MobileJobDetail';
-import MobileResumes from '../mobile/screens/MobileResumes';
-import MobileResumeDetail from '../mobile/screens/MobileResumeDetail';
-import MobileConsultations from '../mobile/screens/MobileConsultations';
-import MobileAccount from '../mobile/screens/MobileAccount';
-
-/** Inside the mobile app (see utils/platform.ts) some routes render an app-only screen. */
-const app = (web: ReactElement, mobile: ReactElement) => (IS_APP ? mobile : web);
-// Pages that already have a tab in the app; the account screen lists the rest.
-const CONSULTANT_TABS = ['/consultant', '/consultant/consultations', '/consultant/candidates'];
-const ADMIN_TABS = ['/admin', '/admin/users', '/admin/subscriptions', '/admin/payments'];
 /** Old job match links now open the CV fit page for the same job. */
 function JobMatchRedirect() {
   const { jobId } = useParams();
   return <Navigate to={`/candidate/cv-job-fit${jobId ? `?jobId=${jobId}` : ''}`} replace />;
 }
 
-export function ProtectedRoute() {
-  const authenticated = useAuthStore((s) => s.isAuthenticated);
-  return authenticated ? <Outlet /> : <Navigate to="/login" replace />;
+/** Old skill assessment / learning pages open the per-job pages; keep ?jobId= links working. */
+function SkillPathRedirect({ to }: { to: 'skill-test' | 'learning-path' }) {
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get('jobId');
+  // Without a job, both pages need one picked on the CV fit page first.
+  return <Navigate to={jobId ? `/candidate/${to}?jobId=${jobId}` : '/candidate/cv-job-fit'} replace />;
 }
-export function RoleRoute({ role }: { role: UserRole }) {
-  const current = useAuthStore((s) => s.role);
-  return current === role ? <Outlet /> : <Navigate to="/unauthorized" replace />;
-}
-const placeholders = (paths: string[]) =>
-  paths.map((path) => ({ path, element: <PlaceholderPage /> }));
+
+export function ProtectedRoute() { const authenticated = useAuthStore(s => s.isAuthenticated); return authenticated ? <Outlet /> : <Navigate to="/login" replace />; }
+export function RoleRoute({ role }: { role: UserRole }) { const current = useAuthStore(s => s.role); return current === role ? <Outlet /> : <Navigate to="/unauthorized" replace />; }
+const placeholders = (paths: string[]) => paths.map(path => ({ path, element: <PlaceholderPage /> }));
 export const router = createBrowserRouter([
   {
     element: <PublicLayout />,
@@ -98,7 +72,7 @@ export const router = createBrowserRouter([
       { path: '/trial', element: <Navigate to="/guest-trial" replace /> },
       { path: '/jobs', element: <JobsPage /> },
       { path: '/jobs/:jobId', element: <JobDetailsPage /> },
-      { path: '/login', element: app(<LoginPage />, <MobileLogin />) },
+      { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
       { path: '/verify-otp', element: <VerifyOtpPage /> },
       { path: '/verify-email', element: <VerifyOtpPage /> },
@@ -116,39 +90,29 @@ export const router = createBrowserRouter([
             path: '/candidate',
             element: <CandidateLayout />,
             children: [
-              { index: true, element: app(<DashboardPage />, <MobileHome />) },
-              {
-                path: 'account',
-                element: app(<Navigate to="/candidate/profile" replace />, <MobileAccount />),
-              },
+              { index: true, element: <DashboardPage /> },
               { path: 'profile', element: <ProfilePage /> },
               { path: 'profile/edit', element: <ProfilePage isEditMode={true} /> },
-              { path: 'resumes', element: app(<ResumesPage />, <MobileResumes />) },
-              { path: 'resumes/create', element: <CreateResumePage /> },
+              { path: 'resumes', element: <ResumesPage /> },
+              // CV is built by hand: pick a template, then fill the form with a live preview.
+              { path: 'resumes/create', element: <ResumeTemplatePickerPage /> },
+              { path: 'resumes/create/:templateId', element: <ResumeBuilderPage /> },
               { path: 'resumes/upload', element: <UploadResumePage /> },
-              { path: 'resumes/ai-builder', element: <AiResumeBuilderPage /> },
+              // The AI CV builder was dropped; old links open the template picker.
+              { path: 'resumes/ai-builder', element: <Navigate to="/candidate/resumes/create" replace /> },
               { path: 'resumes/analysis', element: <ResumeAnalysisPage /> },
-              {
-                path: 'resumes/:resumeId',
-                element: app(<ResumeDetailsPage />, <MobileResumeDetail />),
-              },
-              { path: 'resumes/:resumeId/edit', element: <EditResumePage /> },
+              { path: 'resumes/:resumeId', element: <ResumeDetailsPage /> },
+              { path: 'resumes/:resumeId/edit', element: <ResumeBuilderPage /> },
               { path: 'resumes/:resumeId/analysis', element: <ResumeAnalysisPage /> },
-              { path: 'jobs', element: app(<JobsPage />, <MobileJobs />) },
-              { path: 'jobs/:jobId', element: app(<JobDetailsPage />, <MobileJobDetail />) },
+              { path: 'jobs', element: <JobsPage /> },
+              { path: 'jobs/:jobId', element: <JobDetailsPage /> },
               // "Khớp nối AI" was merged into the CV fit page.
               { path: 'jobs/:jobId/match', element: <JobMatchRedirect /> },
               { path: 'jobs/:jobId/fit-analysis', element: <CvJobFitPage /> },
               { path: 'cv-job-fit', element: <CvJobFitPage /> },
               { path: 'resumes/:resumeId/job-fit', element: <CvJobFitPage /> },
-              {
-                path: 'salary-estimation',
-                element: <Navigate to="/candidate/assessment" replace />,
-              },
-              {
-                path: 'career-intelligence',
-                element: <Navigate to="/candidate/assessment" replace />,
-              },
+              { path: 'salary-estimation', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'career-intelligence', element: <SkillPathRedirect to="learning-path" /> },
               { path: 'assistant', element: <AssistantPage /> },
               { path: 'applications', element: <ApplicationAssistancePage /> },
               { path: 'application-assistance', element: <ApplicationAssistancePage /> },
@@ -157,19 +121,15 @@ export const router = createBrowserRouter([
               { path: 'payment', element: <SubscriptionPage /> },
               { path: 'usage', element: <UsagePage /> },
               { path: 'support', element: <SupportPage /> },
-              { path: 'assessment', element: <SkillAssessmentPage /> },
-              // Skill gap and learning roadmap now live inside the skill assessment flow.
-              { path: 'skill-gap', element: <Navigate to="/candidate/assessment" replace /> },
-              { path: 'learning', element: <Navigate to="/candidate/assessment" replace /> },
-              {
-                path: 'learning/roadmap',
-                element: <Navigate to="/candidate/assessment" replace />,
-              },
-              ...placeholders(['assessment/:assessmentId', 'assessment/:assessmentId/result']),
-              {
-                path: 'consultations',
-                element: app(<ConsultationsPage />, <MobileConsultations />),
-              },
+              // Skill assessment and learning path for one job, opened from the CV fit page.
+              { path: 'skill-test', element: <SkillTestPage /> },
+              { path: 'learning-path', element: <LearningPathPage /> },
+              { path: 'assessment', element: <SkillPathRedirect to="skill-test" /> },
+              { path: 'assessment/*', element: <SkillPathRedirect to="skill-test" /> },
+              { path: 'skill-gap', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'learning', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'learning/roadmap', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'consultations', element: <ConsultationsPage /> },
               { path: 'consultations/new', element: <ConsultationsPage /> },
               { path: 'consultations/:consultationId', element: <ConsultationsPage /> },
             ],
@@ -183,34 +143,11 @@ export const router = createBrowserRouter([
             path: '/consultant',
             element: <ConsultantLayout />,
             children: [
-              { index: true, element: app(<ConsultantDashboardPage />, <MobileConsultantHome />) },
-              {
-                path: 'consultations',
-                element: app(<ConsultationListPage />, <MobileConsultantRequests />),
-              },
-              {
-                path: 'consultations/:id',
-                element: app(<ConsultationDetailsPage />, <MobileConsultationDetail />),
-              },
-              {
-                path: 'candidates',
-                element: app(<ConsultantCandidatesPage />, <MobileConsultantCandidates />),
-              },
-              {
-                path: 'candidates/:candidateId',
-                element: app(<CandidateCareerAnalysisPage />, <MobileCandidateAnalysis />),
-              },
-              {
-                path: 'account',
-                element: app(
-                  <Navigate to="/consultant" replace />,
-                  <MobileStaffAccount
-                    role="consultant"
-                    nav={consultantNav}
-                    tabs={CONSULTANT_TABS}
-                  />,
-                ),
-              },
+              { index: true, element: <ConsultantDashboardPage /> },
+              { path: 'consultations', element: <ConsultationListPage /> },
+              { path: 'consultations/:id', element: <ConsultationDetailsPage /> },
+              { path: 'candidates', element: <ConsultantCandidatesPage /> },
+              { path: 'candidates/:candidateId', element: <CandidateCareerAnalysisPage /> },
             ],
           },
         ],
@@ -222,29 +159,18 @@ export const router = createBrowserRouter([
             path: '/admin',
             element: <AdminLayout />,
             children: [
-              { index: true, element: app(<AdminDashboardPage />, <MobileAdminHome />) },
-              { path: 'users', element: app(<UserManagementPage />, <MobileAdminUsers />) },
-              { path: 'users/:id', element: app(<UserDetailsPage />, <MobileAdminUserDetail />) },
-              {
-                path: 'subscriptions',
-                element: app(<SubscriptionQuotaManagementPage />, <MobileAdminPlans />),
-              },
-              {
-                path: 'payments',
-                element: app(<PaymentInvoiceManagementPage />, <MobileAdminPayments />),
-              },
-              {
-                path: 'account',
-                element: app(
-                  <Navigate to="/admin" replace />,
-                  <MobileStaffAccount role="admin" nav={adminNav} tabs={ADMIN_TABS} />,
-                ),
-              },
+              { index: true, element: <AdminDashboardPage /> },
+              { path: 'users', element: <UserManagementPage /> },
+              { path: 'users/:id', element: <UserDetailsPage /> },
+              { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
+              { path: 'payments', element: <PaymentInvoiceManagementPage /> },
+              { path: 'templates', element: <ResumeTemplateManagementPage /> },
+              { path: 'resume-templates', element: <Navigate to="/admin/templates" replace /> },
+              { path: 'jobs', element: <JobCrawlManagementPage /> },
               ...placeholders([
                 'ai',
                 'ai/prompts',
                 'ai/embeddings',
-                'jobs',
                 'vector',
                 'logs',
                 'audit',

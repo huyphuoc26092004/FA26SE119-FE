@@ -26,7 +26,7 @@ import {
   getLearningRoadmapTemplates,
   getPersonalizedRoadmap,
   getLearningResources,
-} from '../../mocks/services/mockService';
+} from '../../services/candidateService';
 import type { LearningRoadmap, LearningResource, RoadmapPhase } from '../../types/assessment';
 import { Button, Card, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';

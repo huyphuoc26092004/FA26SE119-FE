@@ -5,7 +5,6 @@ import {
   BriefcaseBusiness,
   CircleDot,
   Mail,
-  CircleCheck,
   MessageSquare,
   CreditCard,
   Activity,
@@ -19,6 +18,7 @@ import {
   MessagesSquare,
   ChartColumn,
   Wallet,
+  LayoutTemplate,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -52,7 +52,6 @@ export const candidateNav: NavItem[] = [
   { label: 'Job discovery', labelVi: 'Khám phá việc làm', translationKey: 'nav.jobDiscovery', to: '/candidate/jobs', icon: BriefcaseBusiness, group: 'main' },
   { label: 'CV fit', labelVi: 'Độ phù hợp CV', translationKey: 'nav.cvJobFit', to: '/candidate/cv-job-fit', icon: CircleDot, group: 'apply' },
   { label: 'Application help', labelVi: 'Hỗ trợ ứng tuyển', translationKey: 'nav.applicationAssistance', to: '/candidate/applications', icon: Mail, group: 'apply' },
-  { label: 'Skill assessment', labelVi: 'Đánh giá kỹ năng', translationKey: 'nav.skillAssessment', to: '/candidate/assessment', icon: CircleCheck, group: 'grow' },
   { label: 'Career consultation', labelVi: 'Tư vấn nghề nghiệp', translationKey: 'nav.careerConsultation', to: '/candidate/consultations', icon: MessageSquare, group: 'grow' },
   { label: 'Plans & tokens', labelVi: 'Gói đăng ký & token', translationKey: 'nav.subscription', to: '/candidate/subscription', icon: CreditCard, group: 'account' },
   { label: 'AI usage', labelVi: 'Mức sử dụng AI', translationKey: 'nav.aiUsage', to: '/candidate/usage', icon: Activity, group: 'account' },
@@ -70,8 +69,9 @@ export const adminNav: NavItem[] = [
   { label: 'Users', labelVi: 'Người dùng', translationKey: 'nav.users', to: '/admin/users', icon: Users, group: 'management' },
   { label: 'Subscriptions', labelVi: 'Quản lý gói dịch vụ', translationKey: 'nav.subscriptions', to: '/admin/subscriptions', icon: CreditCard, group: 'management' },
   { label: 'Payments', labelVi: 'Lịch sử thanh toán', translationKey: 'nav.payments', to: '/admin/payments', icon: Wallet, group: 'management' },
+  { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/admin/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'AI configuration', labelVi: 'Cấu hình AI', translationKey: 'nav.aiConfig', to: '/admin/ai', icon: Settings, group: 'platform' },
-  { label: 'Job processing', labelVi: 'Xử lý công việc', translationKey: 'nav.jobProcessing', to: '/admin/jobs', icon: BriefcaseBusiness, group: 'platform' },
+  { label: 'Job collection', labelVi: 'Thu thập việc làm', translationKey: 'nav.jobProcessing', to: '/admin/jobs', icon: BriefcaseBusiness, group: 'platform' },
   { label: 'Vector database', labelVi: 'Cơ sở dữ liệu Vector', translationKey: 'nav.vectorDatabase', to: '/admin/vector', icon: Database, group: 'platform' },
   { label: 'System logs', labelVi: 'Nhật ký hệ thống', translationKey: 'nav.systemLogs', to: '/admin/logs', icon: ScrollText, group: 'operations' },
   { label: 'Audit logs', labelVi: 'Nhật ký kiểm toán', translationKey: 'nav.auditLogs', to: '/admin/audit', icon: ScrollText, group: 'operations' },

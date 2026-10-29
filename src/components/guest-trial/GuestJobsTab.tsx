@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   BriefcaseBusiness,
@@ -9,7 +10,7 @@ import {
   X,
   ArrowRight,
 } from 'lucide-react';
-import { mockJobs } from '../../mocks/data/jobs';
+import { getJobs } from '../../services/candidateService';
 import type { Job } from '../../types/domain';
 import { Badge, Button } from '../ui';
 import { useTranslation } from '../../i18n';
@@ -20,9 +21,10 @@ export function GuestJobsTab() {
   const [location, setLocation] = useState('All');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [appliedJobId, setAppliedJobId] = useState<string | null>(null);
+  const { data: jobs = [] } = useQuery({ queryKey: ['guest-jobs'], queryFn: () => getJobs() });
 
   const filteredJobs = useMemo(() => {
-    return mockJobs.filter((job) => {
+    return jobs.filter((job) => {
       const matchSearch =
         `${job.title} ${job.company} ${job.skills.join(' ')}`
           .toLowerCase()
@@ -30,7 +32,7 @@ export function GuestJobsTab() {
       const matchLocation = location === 'All' || job.location === location;
       return matchSearch && matchLocation;
     });
-  }, [search, location]);
+  }, [jobs, search, location]);
 
   const handleQuickApply = (jobId: string) => {
     setAppliedJobId(jobId);

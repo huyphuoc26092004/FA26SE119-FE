@@ -1,8 +1,32 @@
+# Dependencies and build output
 node_modules/
 dist/
+*.log
+
+# Environment
 .env
 .env.local
 .env.*.local
-.DS_Store
-*.log
 .env.development
+
+# macOS / iCloud duplicates ("file 2.ts", "folder 3")
+.DS_Store
+* [0-9]
+* [0-9].*
+* [0-9][0-9]
+* [0-9][0-9].*
+
+# Local AI-assistant and editor tooling (kept on your machine, not in the repo)
+.claude/
+.agents/
+.impeccable/
+.github/skills/
+.github/agents/
+.github/hooks/
+.vscode/
+
+# Local env copies (e.g. ".env (1)"), keep the example
+.env*
+!.env.example
+# Old Capacitor Android build output (mobile app is Flutter now)
+android/

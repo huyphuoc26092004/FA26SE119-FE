@@ -63,7 +63,7 @@ export const en: Translations = {
     subscriptions: 'Subscriptions',
     payments: 'Payments',
     aiConfig: 'AI Configuration',
-    jobProcessing: 'Job Processing',
+    jobProcessing: 'Job Collection',
     vectorDatabase: 'Vector Database',
     systemLogs: 'System Logs',
     auditLogs: 'Audit Logs',

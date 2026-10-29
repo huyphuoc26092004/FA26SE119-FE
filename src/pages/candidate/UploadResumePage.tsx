@@ -3,33 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { simulateAiCvExtraction, createResume } from '../../mocks/services/mockService';
+import { simulateAiCvExtraction, createResume } from '../../services/candidateService';
+import { authErrorMessage } from '../../services/authService';
 import type { Resume, WorkExperience } from '../../types/domain';
 import { useTranslation } from '../../i18n';
-
-const SAMPLE_CV_PRESETS = [
-  {
-    name: 'Alex_Morgan_Senior_Frontend_Architect.pdf',
-    size: 1420000,
-    label: 'Senior Frontend & AI Platform Engineer',
-    language: 'English',
-    badge: 'Phổ biến nhất',
-  },
-  {
-    name: 'Nguyen_Van_A_Fullstack_Dev_TiengViet.pdf',
-    size: 980000,
-    label: 'Full-stack Web Developer (Tiếng Việt)',
-    language: 'Vietnamese',
-    badge: 'Tiếng Việt',
-  },
-  {
-    name: 'Tech_Lead_Engineering_Manager.docx',
-    size: 850000,
-    label: 'Engineering Tech Lead / DevOps',
-    language: 'English',
-    badge: 'DOCX Format',
-  },
-];
 
 // Short page-only strings that have no i18n key yet.
 const copy = {
@@ -42,9 +19,9 @@ const copy = {
       'Tải lên file PDF hoặc DOCX. AI tự trích xuất thông tin và chấm điểm ATS, bạn chỉ cần kiểm tra lại.',
     choose: 'Chọn file CV từ máy của bạn',
     dropHint: 'hoặc kéo thả file vào đây',
-    formats: 'PDF hoặc DOCX · tối đa 10 MB',
+    formats: 'PDF, DOCX, TXT hoặc ảnh · tối đa 10 MB',
     browse: 'Duyệt file',
-    tryPrompt: 'Chỉ muốn xem thử? Dùng file mẫu:',
+    uploadFailed: 'Không tải lên được CV. Vui lòng thử lại.',
     parsingHeadline: 'Đang đọc CV.',
     parsingAccent: 'Chỉ mất vài giây.',
     parsingFile: 'Đang phân tích tệp',
@@ -106,9 +83,9 @@ const copy = {
       'Upload a PDF or DOCX file. AI extracts the details and scores it for ATS — you only need to review.',
     choose: 'Choose a CV file from your computer',
     dropHint: 'or drag and drop it here',
-    formats: 'PDF or DOCX · up to 10 MB',
+    formats: 'PDF, DOCX, TXT or image · up to 10 MB',
     browse: 'Browse files',
-    tryPrompt: 'Just looking? Use a sample file:',
+    uploadFailed: 'Could not upload the CV. Please try again.',
     parsingHeadline: 'Reading your CV.',
     parsingAccent: 'This takes a few seconds.',
     parsingFile: 'Analysing file',
@@ -237,12 +214,14 @@ export default function UploadResumePage() {
 
   // Extracted and editable data
   const [extractedData, setExtractedData] = useState<Partial<Resume>>({});
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [newSkillInput, setNewSkillInput] = useState('');
 
   // Handle file selection
-  const handleStartParsing = async (fileName: string, fileSize: number) => {
-    setSelectedFileName(fileName);
-    setSelectedFileSize(fileSize);
+  const handleStartParsing = async (file: File) => {
+    setSelectedFileName(file.name);
+    setSelectedFileSize(file.size);
+    setUploadError(null);
     setFlowState('parsing');
     setParsingStep(1);
 
@@ -253,14 +232,19 @@ export default function UploadResumePage() {
     const t4 = setTimeout(() => setParsingStep(5), 1350);
 
     try {
-      const parsed = await simulateAiCvExtraction({ name: fileName, size: fileSize });
+      const parsed = await simulateAiCvExtraction(file, isVietnamese ? 'vi' : 'en');
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
       clearTimeout(t4);
       setExtractedData(parsed);
       setFlowState('review');
-    } catch {
+    } catch (error) {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      setUploadError(authErrorMessage(error, c.uploadFailed));
       setFlowState('upload');
     }
   };
@@ -270,14 +254,14 @@ export default function UploadResumePage() {
     setDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      handleStartParsing(file.name, file.size);
+      handleStartParsing(file);
     }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      handleStartParsing(file.name, file.size);
+      handleStartParsing(file);
     }
   };
 
@@ -410,7 +394,7 @@ export default function UploadResumePage() {
               type="file"
               ref={fileInputRef}
               onChange={handleFileInputChange}
-              accept=".pdf,.docx,.doc"
+              accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
               className="hidden"
             />
             <p className="text-[clamp(1.25rem,2vw,1.5rem)] font-normal tracking-[-0.01em] text-ink">
@@ -422,20 +406,11 @@ export default function UploadResumePage() {
             <span className={`${textLink} mt-5 text-[15px] text-brand`}>{c.browse}</span>
           </div>
 
-          <div className="mt-8 flex flex-wrap items-baseline gap-x-5 gap-y-3 text-sm text-slate-600">
-            <span>{c.tryPrompt}</span>
-            {SAMPLE_CV_PRESETS.map((preset) => (
-              <button
-                key={preset.name}
-                type="button"
-                title={preset.name}
-                onClick={() => handleStartParsing(preset.name, preset.size)}
-                className={`${textLink} text-ink`}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
+          {uploadError && (
+            <p role="alert" className="mt-6 whitespace-pre-line text-sm text-red-700">
+              {uploadError}
+            </p>
+          )}
         </section>
       )}
 

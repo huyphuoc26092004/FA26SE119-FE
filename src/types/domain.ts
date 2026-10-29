@@ -143,6 +143,8 @@ export interface Resume {
   atsScore: number;
   status: 'Draft' | 'Processing' | 'Ready' | 'Needs Review';
   isDefault?: boolean;
+  /** Mẫu CV (resume_templates.id) dùng để hiển thị. */
+  templateId?: string;
   fullName?: string;
   email?: string;
   phone?: string;
@@ -221,6 +223,8 @@ export interface ResumeAnalysisResult {
 }
 
 export interface SemanticMatchingDetail {
+  /** ID dòng `job_match_results` ở backend, dùng để gửi phản hồi. */
+  matchResultId?: string;
   overallScore: number;
   skillsScore: number;
   experienceScore: number;
@@ -275,6 +279,8 @@ export interface CvJobFitSkillAnalysis {
 
 export interface CvJobFitGapItem {
   title: string;
+  /** Có khi mục này là một kỹ năng JD yêu cầu mà CV còn thiếu. */
+  skill?: string;
   description: string;
   impact: 'critical' | 'moderate' | 'minor';
   recommendation: string;
@@ -302,6 +308,10 @@ export interface CvJobFitResult {
     text: string;
   }[];
   analyzedAt: string;
+  /** Điểm từng nhóm tiêu chí của rubric ATS (bỏ nhóm không áp dụng). */
+  dimensions?: { code: string; label: string; score: number }[];
+  /** Điểm ATS nên đạt trước khi nộp. */
+  targetScore?: number;
 }
 
 export interface SalarySkillBooster {

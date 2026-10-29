@@ -20,7 +20,7 @@ import {
   getJobRequirementProfiles,
   analyzeSkillGap,
   getCandidateProfile,
-} from '../../mocks/services/mockService';
+} from '../../services/candidateService';
 import type { SkillGapAnalysis, SkillGapItem } from '../../types/assessment';
 import { Button, Card, Loading, PageTitle } from '../../components/ui';
 import { useTranslation } from '../../i18n';
