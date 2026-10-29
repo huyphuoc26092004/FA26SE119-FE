@@ -143,6 +143,8 @@ export interface Resume {
   atsScore: number;
   status: 'Draft' | 'Processing' | 'Ready' | 'Needs Review';
   isDefault?: boolean;
+  /** Mẫu CV (resume_templates.id) dùng để hiển thị. */
+  templateId?: string;
   fullName?: string;
   email?: string;
   phone?: string;
