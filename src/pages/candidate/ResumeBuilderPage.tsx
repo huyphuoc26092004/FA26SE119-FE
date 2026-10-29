@@ -23,6 +23,8 @@ import { ErrorState, Loading } from '../../components/ui';
 import { ResumePaper } from '../../components/resume/ResumePaper';
 import { renderTemplateWithResume } from '../../utils/resumeTemplateRender';
 import { useTranslation } from '../../i18n';
+import { AiSuggest, StepTipsPanel } from './resume-builder/BuilderAssist';
+import { STEP_TIPS, stepChecks } from './resume-builder/builderTips';
 
 // Short page-only strings that have no i18n key yet.
 const copy = {
@@ -463,7 +465,8 @@ export default function ResumeBuilderPage() {
   const { templateId: routeTemplateId, resumeId } = useParams<{ templateId?: string; resumeId?: string }>();
   const isEdit = Boolean(resumeId);
   const { isVietnamese } = useTranslation();
-  const c = copy[isVietnamese ? 'vi' : 'en'];
+  const uiLang = isVietnamese ? 'vi' : 'en';
+  const c = copy[uiLang];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -605,6 +608,7 @@ export default function ResumeBuilderPage() {
         );
       case 'summary':
         return (
+          <>
           <TextArea
             label={f.summary}
             rows={7}
@@ -612,6 +616,22 @@ export default function ResumeBuilderPage() {
             onChange={(v) => update({ summary: v })}
             footer={f.chars(cv.summary?.length ?? 0)}
           />
+          <AiSuggest
+            lang={uiLang}
+            onApply={(text) => update({ summary: text })}
+            params={() => ({
+              field: 'summary',
+              language: cvLang,
+              position: cv.position,
+              skills: cv.skills,
+              current: cv.summary,
+              background: (cv.experience ?? [])
+                .filter((e) => e.role || e.company)
+                .map((e) => [e.role, e.company, [e.startDate, e.isCurrent ? c.present : e.endDate].filter(Boolean).join('–')].filter(Boolean).join(', '))
+                .join('; '),
+            })}
+          />
+          </>
         );
       case 'experience':
         return (
@@ -659,6 +679,19 @@ export default function ResumeBuilderPage() {
                       rows={4}
                       value={(e.highlights ?? []).join('\n')}
                       onChange={(v) => experience.change(e.id, { highlights: v.split('\n') })}
+                    />
+                    <AiSuggest
+                      lang={uiLang}
+                      onApply={(text) => experience.change(e.id, { highlights: text.split('\n') })}
+                      params={() => ({
+                        field: 'experience',
+                        language: cvLang,
+                        position: cv.position,
+                        skills: cv.skills,
+                        title: e.role,
+                        subtitle: [e.company, e.location].filter(Boolean).join(', '),
+                        current: [e.description, ...(e.highlights ?? [])].filter(Boolean).join('\n'),
+                      })}
                     />
                   </div>
                 </ItemRow>
@@ -742,6 +775,17 @@ export default function ResumeBuilderPage() {
                   <Field className="sm:col-span-2" label={f.link} value={p.link} onChange={(v) => projects.change(p.id, { link: v })} />
                   <div className="sm:col-span-2">
                     <TextArea label={f.description} rows={4} value={p.description} onChange={(v) => projects.change(p.id, { description: v })} />
+                    <AiSuggest
+                      lang={uiLang}
+                      onApply={(text) => projects.change(p.id, { description: text })}
+                      params={() => ({
+                        field: 'project',
+                        language: cvLang,
+                        title: p.name,
+                        subtitle: [p.role, (p.techStack ?? []).filter(Boolean).join(', ')].filter(Boolean).join(' · '),
+                        current: p.description,
+                      })}
+                    />
                   </div>
                 </ItemRow>
               ))}
@@ -914,6 +958,7 @@ export default function ResumeBuilderPage() {
           <div className="mt-8">
             <h2 className="text-[clamp(1.375rem,2.2vw,1.75rem)] font-normal tracking-[-0.01em] text-ink">{c.steps[stepKey]}</h2>
             <p className="mt-2 max-w-[36rem] text-[15px] leading-7 text-slate-600">{c.hints[stepKey]}</p>
+            <StepTipsPanel tips={STEP_TIPS[uiLang][stepKey]} checks={stepChecks(stepKey, cv, uiLang)} lang={uiLang} />
             <div className="mt-8">{renderStep()}</div>
           </div>
 
