@@ -17,11 +17,10 @@ import {
 import DashboardPage from '../pages/candidate/DashboardPage';
 import ProfilePage from '../pages/candidate/ProfilePage';
 import ResumesPage from '../pages/candidate/ResumesPage';
-import CreateResumePage from '../pages/candidate/CreateResumePage';
+import ResumeTemplatePickerPage from '../pages/candidate/ResumeTemplatePickerPage';
+import ResumeBuilderPage from '../pages/candidate/ResumeBuilderPage';
 import UploadResumePage from '../pages/candidate/UploadResumePage';
 import ResumeDetailsPage from '../pages/candidate/ResumeDetailsPage';
-import EditResumePage from '../pages/candidate/EditResumePage';
-import AiResumeBuilderPage from '../pages/candidate/AiResumeBuilderPage';
 import ResumeAnalysisPage from '../pages/candidate/ResumeAnalysisPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
@@ -39,6 +38,7 @@ import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import SubscriptionQuotaManagementPage from '../pages/admin/SubscriptionQuotaManagementPage';
 import PaymentInvoiceManagementPage from '../pages/admin/PaymentInvoiceManagementPage';
 import ResumeTemplateManagementPage from '../pages/admin/ResumeTemplateManagementPage';
+import JobCrawlManagementPage from '../pages/admin/JobCrawlManagementPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
 import ConsultationListPage from '../pages/consultant/ConsultationListPage';
 import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage';
@@ -86,12 +86,15 @@ export const router = createBrowserRouter([
               { path: 'profile', element: <ProfilePage /> },
               { path: 'profile/edit', element: <ProfilePage isEditMode={true} /> },
               { path: 'resumes', element: <ResumesPage /> },
-              { path: 'resumes/create', element: <CreateResumePage /> },
+              // CV is built by hand: pick a template, then fill the form with a live preview.
+              { path: 'resumes/create', element: <ResumeTemplatePickerPage /> },
+              { path: 'resumes/create/:templateId', element: <ResumeBuilderPage /> },
               { path: 'resumes/upload', element: <UploadResumePage /> },
-              { path: 'resumes/ai-builder', element: <AiResumeBuilderPage /> },
+              // The AI CV builder was dropped; old links open the template picker.
+              { path: 'resumes/ai-builder', element: <Navigate to="/candidate/resumes/create" replace /> },
               { path: 'resumes/analysis', element: <ResumeAnalysisPage /> },
               { path: 'resumes/:resumeId', element: <ResumeDetailsPage /> },
-              { path: 'resumes/:resumeId/edit', element: <EditResumePage /> },
+              { path: 'resumes/:resumeId/edit', element: <ResumeBuilderPage /> },
               { path: 'resumes/:resumeId/analysis', element: <ResumeAnalysisPage /> },
               { path: 'jobs', element: <JobsPage /> },
               { path: 'jobs/:jobId', element: <JobDetailsPage /> },
@@ -156,11 +159,11 @@ export const router = createBrowserRouter([
               { path: 'payments', element: <PaymentInvoiceManagementPage /> },
               { path: 'templates', element: <ResumeTemplateManagementPage /> },
               { path: 'resume-templates', element: <Navigate to="/admin/templates" replace /> },
+              { path: 'jobs', element: <JobCrawlManagementPage /> },
               ...placeholders([
                 'ai',
                 'ai/prompts',
                 'ai/embeddings',
-                'jobs',
                 'vector',
                 'logs',
                 'audit',

@@ -20,9 +20,8 @@ const copy = {
         : 'Chọn một bản để ứng tuyển.',
     intro:
       'Quản lý các bản CV, xem điểm ATS và chọn bản chính để hệ thống dùng khi gợi ý việc làm.',
-    createWithAi: 'Tạo CV bằng AI',
+    createCv: 'Tạo CV',
     upload: 'Tải CV lên (PDF, DOCX)',
-    createManual: 'Tạo CV thủ công',
     colName: 'Tên CV',
     colAts: 'Điểm ATS',
     colUpdated: 'Cập nhật',
@@ -61,9 +60,8 @@ const copy = {
         : 'Pick one to apply with.',
     intro:
       'Manage your CVs, check ATS scores and choose the primary CV the system uses for job recommendations.',
-    createWithAi: 'Create CV with AI',
+    createCv: 'Create CV',
     upload: 'Upload CV (PDF, DOCX)',
-    createManual: 'Create CV manually',
     colName: 'CV name',
     colAts: 'ATS score',
     colUpdated: 'Updated',
@@ -230,15 +228,12 @@ export default function ResumesPage() {
         </p>
 
         <div className="mt-[clamp(1.75rem,3.5vw,2.5rem)] flex flex-wrap items-center gap-x-7 gap-y-4">
-          <Link to="/candidate/resumes/ai-builder" className={primaryButton}>
-            {c.createWithAi}
+          <Link to="/candidate/resumes/create" className={primaryButton}>
+            {c.createCv}
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
           <Link to="/candidate/resumes/upload" className={`${textLink} text-[15px] text-ink`}>
             {c.upload}
-          </Link>
-          <Link to="/candidate/resumes/create" className={`${textLink} text-[15px] text-ink`}>
-            {c.createManual}
           </Link>
         </div>
       </header>
@@ -358,15 +353,12 @@ export default function ResumesPage() {
                 </p>
                 <p className="mt-2 max-w-xl text-[15px] leading-7 text-slate-600">{c.emptyHint}</p>
                 <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-4">
-                  <Link to="/candidate/resumes/ai-builder" className={primaryButton}>
-                    {c.createWithAi}
+                  <Link to="/candidate/resumes/create" className={primaryButton}>
+                    {c.createCv}
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link to="/candidate/resumes/upload" className={`${textLink} text-ink`}>
                     {c.upload}
-                  </Link>
-                  <Link to="/candidate/resumes/create" className={`${textLink} text-ink`}>
-                    {c.createManual}
                   </Link>
                 </div>
               </>

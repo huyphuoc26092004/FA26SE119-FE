@@ -207,6 +207,7 @@ export function toResume(row: ApiRow): Resume {
     atsScore: 0,
     status: RESUME_STATUS[str(row.status)] ?? 'Draft',
     isDefault: Boolean(row.is_primary),
+    templateId: optStr(row.template_id),
     fullName: optStr(data.full_name),
     email: optStr(data.email),
     phone: optStr(data.phone),
@@ -358,11 +359,14 @@ export function toStructuredData(cv: Partial<Resume>): ApiRow {
   };
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Thân request POST/PATCH /resumes từ `Resume` của FE. */
 export const toResumeWrite = (cv: Partial<Resume>): ApiRow => ({
   title: cv.name || cv.position || 'CV mới',
   language: toLanguageCode(cv.language),
   structured_data: toStructuredData(cv),
+  ...(cv.templateId && UUID.test(cv.templateId) ? { template_id: cv.templateId } : {}),
 });
 
 // ---- Hồ sơ nghề nghiệp ----

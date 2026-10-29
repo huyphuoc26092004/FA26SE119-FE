@@ -73,7 +73,7 @@ export const adminNav: NavItem[] = [
   { label: 'Payments', labelVi: 'Lịch sử thanh toán', translationKey: 'nav.payments', to: '/admin/payments', icon: Wallet, group: 'management' },
   { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/admin/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'AI configuration', labelVi: 'Cấu hình AI', translationKey: 'nav.aiConfig', to: '/admin/ai', icon: Settings, group: 'platform' },
-  { label: 'Job processing', labelVi: 'Xử lý công việc', translationKey: 'nav.jobProcessing', to: '/admin/jobs', icon: BriefcaseBusiness, group: 'platform' },
+  { label: 'Job collection', labelVi: 'Thu thập việc làm', translationKey: 'nav.jobProcessing', to: '/admin/jobs', icon: BriefcaseBusiness, group: 'platform' },
   { label: 'Vector database', labelVi: 'Cơ sở dữ liệu Vector', translationKey: 'nav.vectorDatabase', to: '/admin/vector', icon: Database, group: 'platform' },
   { label: 'System logs', labelVi: 'Nhật ký hệ thống', translationKey: 'nav.systemLogs', to: '/admin/logs', icon: ScrollText, group: 'operations' },
   { label: 'Audit logs', labelVi: 'Nhật ký kiểm toán', translationKey: 'nav.auditLogs', to: '/admin/audit', icon: ScrollText, group: 'operations' },

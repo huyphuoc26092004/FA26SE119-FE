@@ -63,7 +63,7 @@ export const vi: Translations = {
     subscriptions: 'Quản lý gói dịch vụ',
     payments: 'Lịch sử thanh toán',
     aiConfig: 'Cấu hình AI',
-    jobProcessing: 'Xử lý công việc',
+    jobProcessing: 'Thu thập việc làm',
     vectorDatabase: 'Cơ sở dữ liệu Vector',
     systemLogs: 'Nhật ký hệ thống',
     auditLogs: 'Nhật ký kiểm toán',

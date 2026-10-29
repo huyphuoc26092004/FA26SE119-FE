@@ -12,6 +12,7 @@ import type {
 import { useAuthStore } from '../stores/authStore';
 import { apiClient } from './apiClient';
 import { pending, notConnected } from './apiPending';
+import { SEED_TEMPLATES } from './resumeTemplateAdminService';
 import {
   type ApiRow,
   num,
@@ -22,7 +23,6 @@ import {
   texts,
   toCandidateProfile,
   toJob,
-  toLanguageCode,
   toMatchedJob,
   toResume,
   toResumeWrite,
@@ -127,12 +127,39 @@ export async function getResumeById(id: string): Promise<Resume | undefined> {
   return toResume(await get(`/resumes/${id}`));
 }
 
+/** Mẫu CV người dùng chọn khi tự tạo CV; `source: 'local'` là mẫu dựng sẵn ở FE, không lưu được vào template_id. */
+export interface CvTemplate {
+  id: string;
+  name: string;
+  careerPath: string;
+  description: string;
+  language: 'vi' | 'en';
+  htmlContent: string;
+  source: 'api' | 'local';
+}
+
+/** GET /resumes/templates (mẫu đang bật); backend chưa có mẫu nào thì dùng các mẫu dựng sẵn. */
+export async function getResumeTemplates(): Promise<CvTemplate[]> {
+  const rows = (await get<ApiRow[]>('/resumes/templates')).filter((row) => typeof row.html_content === 'string' && row.html_content);
+  const toTemplate = (row: ApiRow, source: CvTemplate['source']): CvTemplate => ({
+    id: String(row.id),
+    name: String(row.name ?? ''),
+    careerPath: String(row.career_path ?? ''),
+    description: String(row.description ?? ''),
+    language: /^en/i.test(String(row.language ?? '')) ? 'en' : 'vi',
+    htmlContent: String(row.html_content),
+    source,
+  });
+  if (rows.length) return rows.map((row) => toTemplate(row, 'api'));
+  return SEED_TEMPLATES.map((t) => toTemplate(t as unknown as ApiRow, 'local'));
+}
+
 /** Xác nhận CV để dùng được cho matching, ATS và lộ trình (status READY). */
 const confirmResume = (id: string) => post(`/resumes/${id}/confirm`).then(toResume);
 
 /**
  * Lưu CV mới; trừ khi lưu nháp, CV được xác nhận luôn để dùng được ngay.
- * CV từ upload hoặc AI builder đã được backend tạo sẵn (có `id`) nên chỉ cần sửa và xác nhận.
+ * CV từ upload đã được backend tạo sẵn (có `id`) nên chỉ cần sửa và xác nhận.
  */
 export async function createResume(data: Partial<Resume>): Promise<Resume> {
   if (data.id) return updateResume(data.id, data);
@@ -231,44 +258,6 @@ export async function updateCandidateProfile(updates: Partial<CandidateProfile>)
     })),
   };
   return toCandidateProfile(await apiClient.put<ApiRow>('/me/career-profile', body).then((res) => res.data), useAuthStore.getState().user);
-}
-
-// ---- Tạo CV bằng AI ----
-
-export interface AiGenerateResumeParams {
-  careerTrack: string;
-  level: string;
-  language: 'Vietnamese' | 'English';
-  tone?: 'impact' | 'technical' | 'modern';
-  focusKeywords?: string;
-  candidateName?: string;
-}
-
-/** AI dựng CV mới (REVIEW_REQUIRED) từ dữ kiện ứng viên và hồ sơ nghề nghiệp ở backend. */
-export async function generateAiResume(params: AiGenerateResumeParams): Promise<Partial<Resume>> {
-  const keywords = (params.focusKeywords ?? '').split(',').map((k) => k.trim()).filter(Boolean);
-  const res = await apiClient.post<ApiRow>(
-    '/resumes/build',
-    {
-      title: `CV ${params.careerTrack} ${params.level}`.trim(),
-      language: toLanguageCode(params.language),
-      structured_data: {
-        full_name: params.candidateName || undefined,
-        position: `${params.level} ${params.careerTrack}`.trim(),
-        skills: keywords,
-      },
-      target_role: params.careerTrack,
-      seniority: params.level,
-      tone: params.tone,
-    },
-    { timeout: 600_000 },
-  );
-  return toResume(res.data);
-}
-
-// TODO(api): BE chưa có API
-export async function translateResumeContent(cv: Partial<Resume>, targetLanguage: 'Vietnamese' | 'English'): Promise<Partial<Resume>> {
-  return notConnected('BE chưa có API', cv, targetLanguage);
 }
 
 // ---- Phân tích CV ----
