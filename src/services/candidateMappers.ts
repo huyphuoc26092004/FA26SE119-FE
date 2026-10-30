@@ -88,6 +88,7 @@ export function toJob(row: ApiRow): Job {
     match: 0,
     posted: formatDate(row.posted_at || row.collected_at),
     description: str(row.parsed_description || row.raw_content),
+    contentHtml: str(row.original_content_format).toLowerCase() === 'html' ? optStr(row.original_content) : undefined,
     department: optStr(row.role_category),
     responsibilities: splitLines(row.parsed_responsibilities),
     requirements: splitLines(row.parsed_requirements),
