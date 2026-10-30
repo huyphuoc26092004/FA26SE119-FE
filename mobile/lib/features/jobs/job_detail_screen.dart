@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
@@ -8,6 +9,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../widgets/kit.dart';
+import '../assistant/assistant_screens.dart';
 import 'jobs_screen.dart';
 
 class JobDetailScreen extends ConsumerWidget {
@@ -120,6 +122,7 @@ class _Body extends StatelessWidget {
             ],
           ]),
         ),
+      _AiTools(job: job),
       if (job.description != null || job.skills.isNotEmpty)
         AppCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -136,6 +139,163 @@ class _Body extends StatelessWidget {
         ),
       for (var i = 0; i < sections.length; i++) _Collapsible(title: sections[i].$1, items: sections[i].$2, initiallyOpen: i == 0),
     ]);
+  }
+}
+
+/// AI tools for this job: ATS check of a CV, a learning roadmap for the
+/// missing skills, and an assistant chat about the job.
+class _AiTools extends ConsumerStatefulWidget {
+  const _AiTools({required this.job});
+  final Job job;
+  @override
+  ConsumerState<_AiTools> createState() => _AiToolsState();
+}
+
+class _AiToolsState extends ConsumerState<_AiTools> {
+  String? _busy; // 'ats' | 'roadmap' | 'chat'
+  AtsResult? _ats;
+  String? _atsCv;
+
+  Future<Resume?> _pickCv() async {
+    final resumes = (await ref.read(resumesProvider.future)).where((r) => r.status == 'READY').toList();
+    if (!mounted) return null;
+    if (resumes.isEmpty) {
+      toast(context, tr('Bạn cần một CV ở trạng thái Sẵn sàng.', 'You need a Ready CV first.'));
+      return null;
+    }
+    if (resumes.length == 1) return resumes.first;
+    resumes.sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+    return showModalBottomSheet<Resume>(
+      context: context,
+      backgroundColor: AppColors.canvas,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), children: [
+          Text(tr('Chọn CV', 'Choose a CV'), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 12),
+          ListGroup(children: [
+            for (final r in resumes)
+              ListRowTile(
+                icon: Icons.description_outlined,
+                title: r.name,
+                detail: r.isPrimary ? tr('CV chính', 'Primary CV') : r.position,
+                onTap: () => Navigator.of(ctx).pop(r),
+              ),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _run(String what, Future<void> Function() action) async {
+    setState(() => _busy = what);
+    try {
+      await action();
+    } catch (e) {
+      if (mounted) toast(context, ApiException.from(e).message);
+    } finally {
+      if (mounted) setState(() => _busy = null);
+    }
+  }
+
+  Future<void> _checkAts() async {
+    final cv = await _pickCv();
+    if (cv == null) return;
+    await _run('ats', () async {
+      final res = await ref.read(repositoryProvider).ats(widget.job.id, cv.id);
+      if (mounted) {
+        setState(() {
+          _ats = res;
+          _atsCv = cv.name;
+        });
+      }
+    });
+  }
+
+  Future<void> _roadmap() async {
+    final cv = await _pickCv();
+    if (cv == null) return;
+    await _run('roadmap', () async {
+      final r = await ref.read(repositoryProvider).createRoadmap(jobId: widget.job.id, resumeId: cv.id);
+      ref.invalidate(roadmapsProvider);
+      if (mounted) context.push('/roadmaps/${r.id}');
+    });
+  }
+
+  Future<void> _chat() => _run('chat', () => startAssistantChat(
+        context,
+        ref,
+        title: tr('Về ${widget.job.title}', 'About ${widget.job.title}'),
+        jobId: widget.job.id,
+      ));
+
+  Widget _list(String title, List<String> items, {TagTone? tone}) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const SizedBox(height: 12),
+        Text(title, style: const TextStyle(fontSize: 13, color: AppColors.subtle)),
+        const SizedBox(height: 6),
+        if (tone != null)
+          Wrap(spacing: 6, runSpacing: 6, children: [for (final s in items) Tag(s, tone: tone)])
+        else
+          for (final s in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text('• $s', style: const TextStyle(fontSize: 13, height: 1.5, color: Color(0xFF3F4843))),
+            ),
+      ]);
+
+  @override
+  Widget build(BuildContext context) {
+    final ats = _ats;
+    final slow = tr('AI chạy trên máy chủ, có thể mất vài phút.', 'AI runs on the server and can take a few minutes.');
+    return AppCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(tr('Công cụ AI', 'AI tools'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        if (_busy != null) ...[
+          const SizedBox(height: 4),
+          Text(slow, style: const TextStyle(fontSize: 12, color: AppColors.subtle)),
+        ],
+        if (ats != null) ...[
+          const SizedBox(height: 12),
+          Row(children: [
+            ScoreRing(value: ats.score, size: 56),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(tr('Điểm ATS', 'ATS score'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                if (_atsCv != null) Text(_atsCv!, style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+              ]),
+            ),
+          ]),
+          if (ats.strengths.isNotEmpty) _list(tr('Điểm mạnh', 'Strengths'), ats.strengths),
+          if (ats.missingSkills.isNotEmpty) _list(tr('Kỹ năng còn thiếu', 'Missing skills'), ats.missingSkills, tone: TagTone.warn),
+          if (ats.suggestions.isNotEmpty) _list(tr('Nên sửa CV', 'Improve your CV'), ats.suggestions),
+        ],
+        const SizedBox(height: 12),
+        BigButton(
+          label: ats == null ? tr('Chấm CV theo việc này', 'Score my CV for this job') : tr('Chấm lại', 'Score again'),
+          tone: ButtonTone.secondary,
+          icon: Icons.fact_check_outlined,
+          busy: _busy == 'ats',
+          onPressed: _busy == null ? _checkAts : null,
+        ),
+        const SizedBox(height: 10),
+        BigButton(
+          label: tr('Tạo lộ trình học kỹ năng còn thiếu', 'Plan the missing skills'),
+          tone: ButtonTone.secondary,
+          icon: Icons.route_outlined,
+          busy: _busy == 'roadmap',
+          onPressed: _busy == null ? _roadmap : null,
+        ),
+        const SizedBox(height: 10),
+        BigButton(
+          label: tr('Hỏi trợ lý AI về việc này', 'Ask the AI about this job'),
+          tone: ButtonTone.secondary,
+          icon: Icons.auto_awesome_outlined,
+          busy: _busy == 'chat',
+          onPressed: _busy == null ? _chat : null,
+        ),
+      ]),
+    );
   }
 }
 
@@ -225,7 +385,7 @@ class _ActionBarState extends ConsumerState<_ActionBar> {
                 side: BorderSide(color: AppColors.ink.withValues(alpha: .25)),
                 backgroundColor: AppColors.surface,
               ),
-              onPressed: () => ref.read(savedJobsProvider.notifier).toggle(widget.job.id),
+              onPressed: () => toggleSavedJob(context, ref, widget.job.id),
               child: Icon(saved ? Icons.bookmark : Icons.bookmark_border, color: saved ? AppColors.brand : AppColors.ink),
             ),
           ),

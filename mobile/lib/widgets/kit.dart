@@ -430,3 +430,74 @@ String relativeDate(DateTime? d) {
   if (diff.inHours >= 1) return tr('${diff.inHours} giờ trước', '${diff.inHours}h ago');
   return tr('Vừa xong', 'Just now');
 }
+
+/// One chat message; used by the assistant and support threads.
+class ChatBubble extends StatelessWidget {
+  const ChatBubble({super.key, required this.text, required this.mine, this.name, this.time, this.footer});
+  final String text;
+  final bool mine;
+  final String? name;
+  final DateTime? time;
+  final Widget? footer;
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * .82),
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: mine ? AppColors.ink : AppColors.surface,
+            border: mine ? null : Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (!mine && name != null) Text(name!, style: const TextStyle(fontSize: 12, color: AppColors.brand)),
+            SelectableText(text, style: TextStyle(fontSize: 14, height: 1.45, color: mine ? Colors.white : AppColors.ink)),
+            if (time != null) ...[
+              const SizedBox(height: 2),
+              Text(relativeDate(time),
+                  style: TextStyle(fontSize: 11, color: mine ? Colors.white.withValues(alpha: .6) : AppColors.subtle)),
+            ],
+            ?footer,
+          ]),
+        ),
+      );
+}
+
+/// Text box with a send button, pinned above the keyboard.
+class ChatComposer extends StatelessWidget {
+  const ChatComposer({super.key, required this.controller, required this.onSend, required this.hint, this.sending = false});
+  final TextEditingController controller;
+  final VoidCallback onSend;
+  final String hint;
+  final bool sending;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: const BoxDecoration(color: AppColors.canvas, border: Border(top: BorderSide(color: AppColors.border))),
+        padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+        child: SafeArea(
+          top: false,
+          child: Row(children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                minLines: 1,
+                maxLines: 4,
+                decoration: InputDecoration(hintText: hint, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filled(
+              style: IconButton.styleFrom(backgroundColor: AppColors.ink),
+              onPressed: sending ? null : onSend,
+              icon: sending
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.arrow_upward, color: Colors.white),
+            ),
+          ]),
+        ),
+      );
+}

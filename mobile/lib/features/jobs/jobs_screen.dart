@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/api_client.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
@@ -38,10 +39,7 @@ class JobCard extends ConsumerWidget {
             visualDensity: VisualDensity.compact,
             tooltip: tr('Lưu', 'Save'),
             icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border, color: saved ? AppColors.brand : AppColors.subtle),
-            onPressed: () async {
-              final now = await ref.read(savedJobsProvider.notifier).toggle(job.id);
-              if (context.mounted) toast(context, now ? tr('Đã lưu việc làm', 'Job saved') : tr('Đã bỏ lưu', 'Removed from saved'));
-            },
+            onPressed: () => toggleSavedJob(context, ref, job.id),
           ),
         ]),
         if (job.location != null) ...[
@@ -70,6 +68,16 @@ class JobCard extends ConsumerWidget {
         ]),
       ]),
     );
+  }
+}
+
+/// Bookmark tap: saves to / removes from the wishlist on the server.
+Future<void> toggleSavedJob(BuildContext context, WidgetRef ref, String jobId) async {
+  try {
+    final now = await ref.read(savedJobsProvider.notifier).toggle(jobId);
+    if (context.mounted) toast(context, now ? tr('Đã lưu việc làm', 'Job saved') : tr('Đã bỏ lưu', 'Removed from saved'));
+  } catch (e) {
+    if (context.mounted) toast(context, ApiException.from(e).message);
   }
 }
 
@@ -129,10 +137,13 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
     final matches = ref.watch(matchesProvider).value ?? const <JobMatch>[];
     final scoreOf = {for (final m in matches) m.job.id: m.score};
 
-    // "For you" lists the latest matching run; other tabs use the job search.
-    final AsyncValue<List<Job>> source = _tab == _Tab.recommended
-        ? ref.watch(matchesProvider).whenData((m) => m.map((x) => x.job).toList())
-        : ref.watch(jobsProvider(_keyword));
+    // "For you" lists the latest matching run, "Saved" the server wishlist;
+    // the other tabs use the job search.
+    final AsyncValue<List<Job>> source = switch (_tab) {
+      _Tab.recommended => ref.watch(matchesProvider).whenData((m) => m.map((x) => x.job).toList()),
+      _Tab.saved => ref.watch(savedJobListProvider),
+      _ => ref.watch(jobsProvider(_keyword)),
+    };
 
     return Column(children: [
       Container(
@@ -171,21 +182,26 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
           loading: () => const Padding(padding: EdgeInsets.all(16), child: Skeleton()),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(16),
-            child: ErrorBox(error: e, onRetry: () => ref.invalidate(jobsProvider(_keyword))),
+            child: ErrorBox(error: e, onRetry: () {
+              ref.invalidate(jobsProvider(_keyword));
+              ref.invalidate(savedJobListProvider);
+              ref.invalidate(matchesProvider);
+            }),
           ),
           data: (jobs) {
             final q = _keyword.toLowerCase();
             final list = jobs.where((j) {
-              if (_tab == _Tab.recommended && q.isNotEmpty) {
+              if ((_tab == _Tab.recommended || _tab == _Tab.saved) && q.isNotEmpty) {
                 if (!'${j.title} ${j.company} ${j.skills.join(' ')}'.toLowerCase().contains(q)) return false;
               }
-              if (_tab == _Tab.saved) return saved.contains(j.id);
+              if (_tab == _Tab.saved) return saved.isEmpty || saved.contains(j.id);
               if (_tab == _Tab.applied) return applied.contains(j.id);
               return true;
             }).toList();
             return ScreenList(
               onRefresh: () async {
                 ref.invalidate(jobsProvider(_keyword));
+                ref.invalidate(savedJobListProvider);
                 ref.invalidate(matchesProvider);
               },
               children: [

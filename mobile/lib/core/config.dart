@@ -8,6 +8,10 @@ import 'package:flutter/foundation.dart';
 class AppConfig {
   static const _fromEnv = String.fromEnvironment('API_BASE_URL');
 
+  /// Web app address for the tools that are not in the mobile app yet
+  /// (`--dart-define=WEB_URL=…`).
+  static const webUrl = String.fromEnvironment('WEB_URL', defaultValue: 'http://localhost:5173');
+
   static String get apiBaseUrl {
     if (_fromEnv.isNotEmpty) return _fromEnv;
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {

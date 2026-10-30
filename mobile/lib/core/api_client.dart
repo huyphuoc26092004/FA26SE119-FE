@@ -82,7 +82,9 @@ class ApiClient {
       },
       onError: (error, handler) async {
         final req = error.requestOptions;
+        // A wrong current password on /me/password is a 401 too; it must not end the session.
         final canRetry = error.response?.statusCode == 401 &&
+            req.path != '/me/password' &&
             req.extra['retried'] != true &&
             req.extra['noAuth'] != true &&
             tokens.refresh != null;
@@ -127,12 +129,15 @@ class ApiClient {
 
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _wrap(() => dio.get(path, queryParameters: query));
-  Future<dynamic> post(String path, {Object? data, bool auth = true}) =>
+  /// [timeout] overrides the 60 s receive limit for AI calls, which run on
+  /// the local Ollama and can take several minutes.
+  Future<dynamic> post(String path, {Object? data, bool auth = true, Duration? timeout}) =>
       _wrap(() => dio.post(path,
           data: data,
           options: Options(
             extra: {'noAuth': !auth},
             contentType: data is FormData ? 'multipart/form-data' : null,
+            receiveTimeout: timeout,
           )));
   Future<dynamic> put(String path, {Object? data}) => _wrap(() => dio.put(path, data: data));
   Future<dynamic> patch(String path, {Object? data}) => _wrap(() => dio.patch(path, data: data));
