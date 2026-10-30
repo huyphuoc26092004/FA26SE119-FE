@@ -20,7 +20,6 @@ import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 import { NextStepLinks } from './cv-job-fit/SkillPathPages';
 import { skillPathHref } from '../../services/skillPathService';
-import { AfterApplyPrompt } from '../../components/jobs/AfterApplyPrompt';
 
 const copy = {
   vi: {
@@ -495,7 +494,6 @@ export default function CvJobFitPage() {
   const [selectedCvId, setSelectedCvId] = useState<string>('');
   const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [assessOpen, setAssessOpen] = useState(false);
   const [redirectModalOpen, setRedirectModalOpen] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [jdOpen, setJdOpen] = useState(false);
@@ -586,7 +584,6 @@ export default function CvJobFitPage() {
     onSuccess: () => {
       refreshJobActivity(queryClient);
       setRedirectModalOpen(false);
-      setAssessOpen(true);
     },
   });
 
@@ -661,7 +658,6 @@ export default function CvJobFitPage() {
   return (
     <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
       {/* Toast Notification */}
-      <AfterApplyPrompt job={assessOpen ? currentJob ?? null : null} cvId={selectedCvId} onClose={() => setAssessOpen(false)} />
 
       {toastMessage && (
         <div

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Bell, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, X } from 'lucide-react';
+import { useSidebarCollapsed } from '../utils/useSidebarCollapsed';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
 import { useQuery } from '@tanstack/react-query';
@@ -50,6 +51,10 @@ function initialsOf(name: string) {
 
 export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string }) {
   const [open, setOpen] = useState(false);
+  // Thu gọn chỉ áp dụng trên desktop; menu mobile luôn hiện đầy đủ.
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed('ccv.sidebar.collapsed');
+  /** Ẩn phần tử khi sidebar thu gọn (desktop). */
+  const full = collapsed ? 'lg:hidden' : '';
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -145,7 +150,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
     'border-b border-slate-400 pb-px text-[13px] text-slate-700 transition-colors hover:border-ink hover:text-ink';
 
   return (
-    <div className="min-h-screen bg-canvas text-ink lg:pl-[280px]">
+    <div className={`min-h-screen bg-canvas text-ink transition-[padding] duration-200 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-[280px]'}`}>
       <button
         type="button"
         className={`fixed inset-0 z-40 bg-ink/30 transition-opacity lg:hidden ${
@@ -159,21 +164,39 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
       <aside
         id="workspace-sidebar"
         aria-label={areaLabel}
-        className={`invisible fixed inset-y-0 left-0 z-50 flex h-dvh w-[280px] max-w-[86vw] -translate-x-full flex-col border-r border-border bg-canvas transition-transform duration-200 ease-out lg:visible lg:translate-x-0 ${
+        className={`invisible fixed inset-y-0 left-0 z-50 flex h-dvh w-[280px] max-w-[86vw] -translate-x-full flex-col border-r border-border bg-canvas transition-[transform,width] duration-200 ease-out lg:visible lg:translate-x-0 ${
+          collapsed ? 'lg:w-[76px]' : ''
+        } ${
           open ? 'visible translate-x-0' : ''
         }`}
       >
-        <div className="flex shrink-0 items-start px-7 pb-7 pt-9">
+        <div className={`flex shrink-0 items-start px-7 pb-7 pt-9 ${collapsed ? 'lg:flex-col lg:items-center lg:gap-4 lg:px-0' : ''}`}>
           <div className="min-w-0">
             <Link
               to="/"
               aria-label="CCV"
               className="inline-flex rounded-control focus-visible:outline-offset-4"
             >
-              <CcvLogo height={36} />
+              <span className={full}>
+                <CcvLogo height={36} />
+              </span>
+              {collapsed && (
+                <span className="hidden lg:inline">
+                  <CcvLogo height={32} markOnly />
+                </span>
+              )}
             </Link>
-            <p className="mt-2.5 text-[13px] text-slate-600">{areaLabel}</p>
+            <p className={`mt-2.5 text-[13px] text-slate-600 ${full}`}>{areaLabel}</p>
           </div>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className={`hidden h-9 w-9 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink lg:grid ${collapsed ? '' : '-mr-2 ml-auto'}`}
+            aria-label={collapsed ? (isVietnamese ? 'Mở rộng thanh bên' : 'Expand sidebar') : isVietnamese ? 'Thu gọn thanh bên' : 'Collapse sidebar'}
+            title={collapsed ? (isVietnamese ? 'Mở rộng thanh bên' : 'Expand sidebar') : isVietnamese ? 'Thu gọn thanh bên' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
+          </button>
           <button
             type="button"
             className="-mr-2 ml-auto grid h-9 w-9 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink lg:hidden"
@@ -184,15 +207,15 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
           </button>
         </div>
 
-        <nav aria-label={areaLabel} className="flex-1 overflow-y-auto px-7 pb-6">
+        <nav aria-label={areaLabel} className={`flex-1 overflow-y-auto px-7 pb-6 ${collapsed ? 'lg:px-3' : ''}`}>
           {groups.map(({ group, items }, groupIndex) => (
             <div key={`${group}-${groupIndex}`} className={groupIndex === 0 ? '' : 'mt-5'}>
               {groupIndex > 0 && (
-                <p className="pb-1.5 pl-[15px] text-[12px] text-slate-500">
+                <p className={`pb-1.5 pl-[15px] text-[12px] text-slate-500 ${full}`}>
                   {isVietnamese ? navGroupLabels[group].vi : navGroupLabels[group].en}
                 </p>
               )}
-              <ul className="border-l border-border">
+              <ul className={collapsed ? 'border-l border-border lg:border-l-0 lg:border-t lg:pt-2' : 'border-l border-border'}>
                 {items.map((item) => {
                   const Icon = item.icon;
                   const isActive = item.to === activeTo;
@@ -201,7 +224,10 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
                       <NavLink
                         to={item.to}
                         aria-current={isActive ? 'page' : undefined}
+                        title={collapsed ? (isVietnamese ? item.labelVi : item.label) : undefined}
                         className={`relative -ml-px flex min-h-[37px] items-center gap-3 border-l-2 py-1.5 pl-[14px] pr-2 text-[15px] transition-colors duration-150 focus-visible:outline-offset-2 ${
+                          collapsed ? 'lg:ml-0 lg:justify-center lg:rounded-lg lg:border-l-0 lg:px-0 lg:hover:bg-slate-100' : ''
+                        } ${isActive && collapsed ? 'lg:bg-brand-50' : ''} ${
                           isActive
                             ? 'border-brand font-medium text-brand'
                             : 'border-transparent text-slate-800 hover:text-brand'
@@ -212,7 +238,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
                           strokeWidth={1.6}
                           className={`shrink-0 ${isActive ? 'text-brand' : 'text-slate-500'}`}
                         />
-                        <span className="min-w-0 truncate">
+                        <span className={`min-w-0 truncate ${full}`}>
                           {isVietnamese ? item.labelVi : item.label}
                         </span>
                       </NavLink>
@@ -224,7 +250,44 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
           ))}
         </nav>
 
-        <div className="shrink-0 px-7 pb-6">
+        {collapsed && (
+          <div className="hidden shrink-0 flex-col items-center gap-2 border-t border-border py-4 lg:flex">
+            <span
+              title={displayName}
+              className="mb-1 grid h-10 w-10 place-items-center rounded-full border border-ink text-[13px] font-medium text-ink"
+            >
+              {avatarInitials}
+            </span>
+            <Link
+              to={`${basePath}/inbox`}
+              title={isVietnamese ? 'Thông báo' : 'Notifications'}
+              aria-label={isVietnamese ? 'Thông báo' : 'Notifications'}
+              className="relative grid h-9 w-9 place-items-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-ink"
+            >
+              <Bell size={17} strokeWidth={1.6} />
+              {unreadNotifications.length > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand" />}
+            </Link>
+            <Link
+              to={`${basePath}/account`}
+              title={isVietnamese ? 'Tài khoản' : 'Account'}
+              aria-label={isVietnamese ? 'Tài khoản' : 'Account'}
+              className="grid h-9 w-9 place-items-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-ink"
+            >
+              <UserRound size={17} strokeWidth={1.6} />
+            </Link>
+            <button
+              type="button"
+              onClick={signOut}
+              title={t('nav.signOut')}
+              aria-label={t('nav.signOut')}
+              className="grid h-9 w-9 cursor-pointer place-items-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-ink"
+            >
+              <LogOut size={17} strokeWidth={1.6} />
+            </button>
+          </div>
+        )}
+
+        <div className={`shrink-0 px-7 pb-6 ${full}`}>
           <div className="border-t border-border pt-5">
             <div className="flex items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-ink text-[13px] font-medium text-ink">
