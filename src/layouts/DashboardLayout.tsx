@@ -3,8 +3,10 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { Menu, X } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
+import { useQuery } from '@tanstack/react-query';
 import { getUserSubscription } from '../services/subscriptionService';
 import { navGroupLabels, type NavItem } from '../constants/navigation';
+import { getNotifications } from '../services/notificationService';
 import { CcvLogo } from '../components/brand/CcvLogo';
 
 const ROOT_PATHS = ['/candidate', '/consultant', '/admin'];
@@ -56,11 +58,20 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
   const isCandidate = areaKey === 'candidate';
   const isAdmin = areaKey === 'admin';
 
-  // Re-read the token balance on every navigation so top-ups show up right away.
-  const subscription = useMemo(
-    () => (isCandidate ? getUserSubscription() : null),
-    [isCandidate, location.key]
-  );
+  const { data: unreadNotifications = [] } = useQuery({
+    queryKey: ['notifications', 'unread-badge'],
+    queryFn: () => getNotifications(true),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  const basePath = `/${areaKey}`;
+
+  const { data: subscription } = useQuery({
+    queryKey: ['userSubscription'],
+    queryFn: getUserSubscription,
+    enabled: isCandidate,
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     setOpen(false);
@@ -223,6 +234,18 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
                 <span className="block truncate text-[15px] font-medium text-ink">{displayName}</span>
                 <span className="block truncate text-[12px] text-slate-600">{userSubtitle}</span>
               </span>
+            </div>
+
+            <div className="mt-4 flex items-center gap-5 text-[13px]">
+              <Link to={`${basePath}/inbox`} className={textLink}>
+                {isVietnamese ? 'Thông báo' : 'Notifications'}
+                {unreadNotifications.length > 0 && (
+                  <span className="ml-1 rounded-full bg-brand px-1.5 text-[11px] leading-5 text-white tabular-nums">{unreadNotifications.length}</span>
+                )}
+              </Link>
+              <Link to={`${basePath}/account`} className={textLink}>
+                {isVietnamese ? 'Tài khoản' : 'Account'}
+              </Link>
             </div>
 
             {isCandidate && subscription && (

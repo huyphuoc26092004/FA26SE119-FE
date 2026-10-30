@@ -45,6 +45,13 @@ import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage
 import ConsultantCandidatesPage from '../pages/consultant/ConsultantCandidatesPage';
 import CandidateCareerAnalysisPage from '../pages/consultant/CandidateCareerAnalysisPage';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
+import AccountPage from '../pages/shared/AccountPage';
+import NotificationsPage from '../pages/shared/NotificationsPage';
+import AiConfigPage from '../pages/admin/AiConfigPage';
+import KnowledgeBasePage from '../pages/admin/KnowledgeBasePage';
+import AnnouncementsPage from '../pages/admin/AnnouncementsPage';
+import AdminSupportPage from '../pages/admin/AdminSupportPage';
+import SystemLogsPage from '../pages/admin/SystemLogsPage';
 import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
 /** Old job match links now open the CV fit page for the same job. */
 function JobMatchRedirect() {
@@ -132,6 +139,8 @@ export const router = createBrowserRouter([
               { path: 'consultations', element: <ConsultationsPage /> },
               { path: 'consultations/new', element: <ConsultationsPage /> },
               { path: 'consultations/:consultationId', element: <ConsultationsPage /> },
+              { path: 'account', element: <AccountPage /> },
+              { path: 'inbox', element: <NotificationsPage /> },
             ],
           },
         ],
@@ -148,6 +157,8 @@ export const router = createBrowserRouter([
               { path: 'consultations/:id', element: <ConsultationDetailsPage /> },
               { path: 'candidates', element: <ConsultantCandidatesPage /> },
               { path: 'candidates/:candidateId', element: <CandidateCareerAnalysisPage /> },
+              { path: 'account', element: <AccountPage /> },
+              { path: 'inbox', element: <NotificationsPage /> },
             ],
           },
         ],
@@ -167,18 +178,17 @@ export const router = createBrowserRouter([
               { path: 'templates', element: <ResumeTemplateManagementPage /> },
               { path: 'resume-templates', element: <Navigate to="/admin/templates" replace /> },
               { path: 'jobs', element: <JobCrawlManagementPage /> },
-              ...placeholders([
-                'ai',
-                'ai/prompts',
-                'ai/embeddings',
-                'vector',
-                'logs',
-                'audit',
-                'notifications',
-                'feedback',
-                'support',
-                'analytics',
-              ]),
+              { path: 'ai', element: <AiConfigPage /> },
+              { path: 'ai/prompts', element: <AiConfigPage /> },
+              { path: 'vector', element: <KnowledgeBasePage /> },
+              { path: 'logs', element: <SystemLogsPage /> },
+              { path: 'audit', element: <SystemLogsPage /> },
+              { path: 'notifications', element: <AnnouncementsPage /> },
+              { path: 'support', element: <AdminSupportPage /> },
+              { path: 'account', element: <AccountPage /> },
+              { path: 'inbox', element: <NotificationsPage /> },
+              // BE chưa có API cho các màn này (xem tài liệu API BE cần bổ sung).
+              ...placeholders(['ai/embeddings', 'feedback', 'analytics']),
             ],
           },
         ],

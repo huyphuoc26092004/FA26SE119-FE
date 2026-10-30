@@ -133,6 +133,7 @@ export interface ConsultationMessage {
   senderAvatar?: string;
   content: string;
   timestamp: string;
+  readAt?: string;
 }
 
 export interface ConsultationTimelineEvent {

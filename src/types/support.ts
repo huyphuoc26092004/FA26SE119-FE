@@ -40,6 +40,8 @@ export interface SupportTicket {
   candidateEmail: string;
   relatedFeature?: string;
   messages: TicketMessage[];
+  ownerId?: string;
+  assignedAdminId?: string;
 }
 
 export interface CreateTicketInput {

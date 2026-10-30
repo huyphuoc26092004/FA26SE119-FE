@@ -6,14 +6,16 @@ import { crawlErrorMessage, getCrawlRuns, getCrawlSettings } from '../../service
 import { CrawlRunTab } from './jobs/CrawlRunTab';
 import { CrawlScheduleTab } from './jobs/CrawlScheduleTab';
 import { CrawlHistoryTab, CrawlRunModal } from './jobs/CrawlHistoryTab';
+import { JobCatalogTab } from './jobs/JobCatalogTab';
 import { RunStatus, describeDelay, formatDateTime } from './jobs/crawlFormat';
 
-type Tab = 'run' | 'schedule' | 'history';
+type Tab = 'run' | 'schedule' | 'history' | 'catalog';
 
 const TABS: { value: Tab; label: string }[] = [
   { value: 'run', label: 'Chạy ngay' },
   { value: 'schedule', label: 'Lịch tự động' },
   { value: 'history', label: 'Lịch sử' },
+  { value: 'catalog', label: 'Kho việc làm' },
 ];
 
 const PAGE_SIZE = 20;
@@ -22,7 +24,7 @@ const PAGE_SIZE = 20;
 export default function JobCrawlManagementPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const tab: Tab = tabParam === 'schedule' || tabParam === 'history' ? tabParam : 'run';
+  const tab: Tab = tabParam === 'schedule' || tabParam === 'history' || tabParam === 'catalog' ? tabParam : 'run';
   const setTab = (next: Tab) => setSearchParams(next === 'run' ? {} : { tab: next }, { replace: true });
 
   const [openRunId, setOpenRunId] = useState<string | null>(null);
@@ -110,6 +112,8 @@ export default function JobCrawlManagementPage() {
             onOpen={setOpenRunId}
           />
         )}
+
+        {tab === 'catalog' && <JobCatalogTab onDone={showToast} />}
       </div>
 
       {openRunId && <CrawlRunModal runId={openRunId} onClose={() => setOpenRunId(null)} />}

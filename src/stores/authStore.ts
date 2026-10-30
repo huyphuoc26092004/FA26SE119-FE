@@ -13,8 +13,9 @@ interface AuthState {
   register: (name: string, email: string, password: string, role: UserRole) => Promise<{ otp: string }>;
   verifyOtp: (email: string, otp: string) => Promise<void>;
   resendOtp: (email: string) => Promise<string>;
+  /** Returns the dev reset token when the backend exposes it, otherwise ''. */
   forgotPassword: (email: string) => Promise<string>;
-  resetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
   setPendingVerificationEmail: (email: string | null) => void;
   refreshSession: () => Promise<string | null>;
   logout: () => void;
@@ -40,9 +41,6 @@ async function call<T>(request: () => Promise<T>, fallback: string): Promise<T> 
     throw new Error(authErrorMessage(error, fallback));
   }
 }
-
-const noPasswordResetApi = () =>
-  new Error('Backend chưa có API quên mật khẩu. Vui lòng liên hệ quản trị viên để được hỗ trợ.');
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -88,13 +86,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return res.developmentCode ?? '';
   },
 
-  // TODO(api): BE chưa có API quên/đặt lại mật khẩu.
-  forgotPassword: async () => {
-    throw noPasswordResetApi();
+  forgotPassword: async (email) => {
+    const res = await call(() => authService.forgotPassword(email), 'Không gửi được link đặt lại mật khẩu.');
+    return res.developmentToken ?? '';
   },
 
-  resetPassword: async () => {
-    throw noPasswordResetApi();
+  resetPassword: async (token, newPassword) => {
+    await call(() => authService.resetPassword(token, newPassword), 'Đặt lại mật khẩu thất bại.');
   },
 
   setPendingVerificationEmail: (email) => set({ pendingVerificationEmail: email }),

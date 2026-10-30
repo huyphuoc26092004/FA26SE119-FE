@@ -63,25 +63,29 @@ export async function getJobById(id: string): Promise<Job | undefined> {
 
 /** Việc trong wishlist, mới lưu trước; mỗi dòng có cột như GET /jobs kèm `saved_at`. */
 export async function getSavedJobRows(): Promise<ApiRow[]> {
-  return isSignedIn() ? get<ApiRow[]>('/me/saved-jobs') : [];
+  return isSignedIn() ? get<ApiRow[]>('/saved-jobs', { limit: 100, offset: 0 }) : [];
 }
 
-/** Việc đã ứng tuyển qua external-apply, lần gần nhất mỗi job, kèm `applied_at`. */
+/**
+ * Việc đã ứng tuyển qua external-apply. Backend ghi event nhưng chưa có API đọc lại,
+ * nên tạm trả rỗng (xem tài liệu API BE cần bổ sung).
+ */
+// TODO(api): GET /api/v1/applied-jobs (BE chưa có API)
 export async function getAppliedJobRows(): Promise<ApiRow[]> {
-  return isSignedIn() ? get<ApiRow[]>('/me/applied-jobs') : [];
+  return pending([], 'BE chưa có API');
 }
 
 export async function getSavedJobIds(): Promise<string[]> {
-  return (await getSavedJobRows()).map((row) => str(row.id));
+  return isSignedIn() ? (await get<ApiRow[]>('/saved-jobs/ids')).map((row) => str(row.job_id)) : [];
 }
 
 export async function toggleSaveJob(id: string): Promise<{ saved: boolean; ids: string[] }> {
   const ids = await getSavedJobIds();
   if (ids.includes(id)) {
-    await apiClient.delete(`/me/saved-jobs/${id}`);
+    await apiClient.delete(`/jobs/${id}/saved`);
     return { saved: false, ids: ids.filter((x) => x !== id) };
   }
-  await apiClient.put(`/me/saved-jobs/${id}`);
+  await apiClient.put(`/jobs/${id}/saved`);
   return { saved: true, ids: [id, ...ids] };
 }
 

@@ -26,6 +26,9 @@ export interface AdminSubscriptionPlan {
   prioritySupport: boolean;
   createdAt?: string;
   updatedAt?: string;
+  tierCode?: string;
+  currency?: string;
+  quotas?: { featureCode: string; quotaValue: number; quotaPeriod: string }[];
 }
 
 export interface TokenConsumptionRule {
@@ -91,7 +94,8 @@ export interface GrantUserTokensPayload {
 export interface AiModelConfig {
   modelId: string;
   displayName: string;
-  provider: 'Google Gemini' | 'OpenAI' | 'Anthropic';
+  provider: string;
+  configType?: string;
   contextWindow: number;
   costPer1mInputUSD: number;
   costPer1mOutputUSD: number;

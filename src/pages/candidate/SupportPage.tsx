@@ -8,10 +8,11 @@ import type {
 } from '../../types/domain';
 import {
   getSupportTickets,
+  getSupportTicket,
   createSupportTicket,
   addTicketReply,
-  updateTicketStatus,
 } from '../../services/supportService';
+import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
 
 const copy = {
@@ -176,8 +177,6 @@ const inputClass =
   'w-full border-0 border-b border-[#aeb7b0] bg-transparent px-0 py-3 text-base text-ink outline-none transition-colors placeholder:text-slate-500 focus:border-ink md:text-[1.0625rem]';
 const selectClass =
   'w-full appearance-none border-0 border-b border-[#aeb7b0] bg-transparent py-3 pr-6 text-base text-ink outline-none transition-colors focus:border-ink cursor-pointer md:text-[1.0625rem]';
-const textLink =
-  'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer disabled:pointer-events-none disabled:opacity-40';
 const primaryButton =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:bg-slate-400 cursor-pointer';
 const outlineButton =
@@ -257,16 +256,28 @@ export const SupportPage: React.FC = () => {
   const [replyText, setReplyText] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
 
+  const [loadError, setLoadError] = useState('');
+
+  const refreshTickets = async () => {
+    try {
+      setTickets(await getSupportTickets());
+      setLoadError('');
+    } catch (err) {
+      setLoadError(authErrorMessage(err, 'Không tải được danh sách yêu cầu hỗ trợ.'));
+    }
+  };
+
   useEffect(() => {
-    setTickets(getSupportTickets());
+    void refreshTickets();
   }, []);
 
-  const refreshTickets = () => {
-    const list = getSupportTickets();
-    setTickets(list);
-    if (selectedTicket) {
-      const updated = list.find((t) => t.id === selectedTicket.id);
-      if (updated) setSelectedTicket(updated);
+  // The list has no messages; load the full ticket when one is opened.
+  const openTicket = async (ticket: SupportTicket) => {
+    setSelectedTicket(ticket);
+    try {
+      setSelectedTicket(await getSupportTicket(ticket.id));
+    } catch (err) {
+      setLoadError(authErrorMessage(err, 'Không tải được chi tiết yêu cầu.'));
     }
   };
 
@@ -283,7 +294,7 @@ export const SupportPage: React.FC = () => {
         description,
         relatedFeature,
       });
-      refreshTickets();
+      void refreshTickets();
       setIsCreateOpen(false);
       // Reset form
       setSubject('');
@@ -293,7 +304,7 @@ export const SupportPage: React.FC = () => {
       // Auto open the new ticket
       setSelectedTicket(newTicket);
     } catch (err) {
-      console.error(err);
+      setLoadError(authErrorMessage(err, 'Không gửi được yêu cầu hỗ trợ.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -308,22 +319,11 @@ export const SupportPage: React.FC = () => {
       const updated = await addTicketReply(selectedTicket.id, replyText);
       setSelectedTicket(updated);
       setReplyText('');
-      refreshTickets();
+      void refreshTickets();
     } catch (err) {
-      console.error(err);
+      setLoadError(authErrorMessage(err, 'Không gửi được tin nhắn.'));
     } finally {
       setIsSendingReply(false);
-    }
-  };
-
-  const handleStatusChange = async (newStatus: TicketStatus) => {
-    if (!selectedTicket) return;
-    try {
-      const updated = await updateTicketStatus(selectedTicket.id, newStatus);
-      setSelectedTicket(updated);
-      refreshTickets();
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -391,6 +391,8 @@ export const SupportPage: React.FC = () => {
         ))}
       </dl>
 
+      {loadError && <p role="alert" className="mt-6 text-[15px] text-danger">{loadError}</p>}
+
       {/* 01 Tickets */}
       <section className="mt-[clamp(2.5rem,5vw,4rem)]">
         <SectionHead index="01" title={c.listTitle} />
@@ -455,7 +457,7 @@ export const SupportPage: React.FC = () => {
               <li key={ticket.id} className="border-b border-border">
                 <button
                   type="button"
-                  onClick={() => setSelectedTicket(ticket)}
+                  onClick={() => void openTicket(ticket)}
                   className="group grid w-full cursor-pointer grid-cols-[1fr_auto] items-start gap-x-6 gap-y-2 py-5 text-left transition-colors hover:bg-surface md:grid-cols-[7.5rem_minmax(0,1fr)_10rem_9rem_2rem] md:items-center md:px-2"
                 >
                   <span className="order-1 font-mono text-xs text-slate-500">{ticket.id}</span>
@@ -620,19 +622,13 @@ export const SupportPage: React.FC = () => {
                 className={`${inputClass} resize-none`}
               />
               <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-slate-600">
-                  {selectedTicket.status !== 'resolved' && (
-                    <button type="button" onClick={() => handleStatusChange('resolved')} className={textLink}>
-                      {c.markResolved}
-                    </button>
-                  )}
-                  {selectedTicket.status !== 'closed' && (
-                    <button type="button" onClick={() => handleStatusChange('closed')} className={textLink}>
-                      {c.closeTicket}
-                    </button>
-                  )}
-                </div>
-                <button type="submit" disabled={isSendingReply || !replyText.trim()} className={primaryButton}>
+                {/* Only the support team can change a ticket's status. */}
+                <p className="text-[13px] text-slate-600">
+                  {selectedTicket.status === 'closed'
+                    ? lang === 'vi' ? 'Yêu cầu đã đóng, không gửi thêm tin nhắn được.' : 'This ticket is closed.'
+                    : lang === 'vi' ? 'Đội hỗ trợ sẽ cập nhật trạng thái khi xử lý xong.' : 'The support team updates the status.'}
+                </p>
+                <button type="submit" disabled={isSendingReply || !replyText.trim() || selectedTicket.status === 'closed'} className={primaryButton}>
                   {isSendingReply ? <Loader2 size={16} className="animate-spin" /> : c.send}
                 </button>
               </div>
