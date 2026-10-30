@@ -159,9 +159,7 @@ export interface CvTemplate {
 }
 
 /** GET /resumes/templates (mẫu đang bật); backend chưa có mẫu nào thì dùng các mẫu dựng sẵn. */
-export async function getResumeTemplates(): Promise<CvTemplate[]> {
-  const rows = (await get<ApiRow[]>('/resumes/templates')).filter((row) => typeof row.html_content === 'string' && row.html_content);
-  const toTemplate = (row: ApiRow, source: CvTemplate['source']): CvTemplate => ({
+const toTemplate = (row: ApiRow, source: CvTemplate['source']): CvTemplate => ({
     id: String(row.id),
     name: String(row.name ?? ''),
     careerPath: String(row.career_path ?? ''),
@@ -170,8 +168,13 @@ export async function getResumeTemplates(): Promise<CvTemplate[]> {
     htmlContent: String(row.html_content),
     source,
   });
-  if (rows.length) return rows.map((row) => toTemplate(row, 'api'));
-  return SEED_TEMPLATES.map((t) => toTemplate(t as unknown as ApiRow, 'local'));
+
+/** Mẫu có sẵn trong FE, dùng khi backend chưa có mẫu nào. */
+export const getLocalResumeTemplates = (): CvTemplate[] => SEED_TEMPLATES.map((t) => toTemplate(t as unknown as ApiRow, 'local'));
+
+export async function getResumeTemplates(): Promise<CvTemplate[]> {
+  const rows = (await get<ApiRow[]>('/resumes/templates')).filter((row) => typeof row.html_content === 'string' && row.html_content);
+  return rows.length ? rows.map((row) => toTemplate(row, 'api')) : getLocalResumeTemplates();
 }
 
 /** Xác nhận CV để dùng được cho matching, ATS và lộ trình (status READY). */
