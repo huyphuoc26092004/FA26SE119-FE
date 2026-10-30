@@ -107,7 +107,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => context.push('/forgot-password'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.brand),
+                child: Text(tr('Quên mật khẩu?', 'Forgot password?')),
+              ),
+            ),
             if (_error != null) ...[
               Container(
                 padding: const EdgeInsets.all(14),
@@ -236,6 +243,115 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             label: _otpStep ? tr('Xác minh và đăng nhập', 'Verify and sign in') : tr('Đăng ký', 'Sign up'),
             busy: _busy,
             onPressed: _otpStep ? _verify : _register,
+          ),
+        ]),
+      );
+}
+
+/// Forgot password: the backend emails a reset link with a token
+/// (with AUTH_EXPOSE_DEV_OTP it returns `developmentToken` instead).
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
+  const ForgotPasswordScreen({super.key});
+  @override
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
+  final _email = TextEditingController();
+  final _token = TextEditingController();
+  final _password = TextEditingController();
+  bool _tokenStep = false;
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _token.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await action();
+    } catch (e) {
+      if (mounted) setState(() => _error = ApiException.from(e).message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Accepts the bare token or the whole link from the email.
+  String get _tokenValue {
+    final raw = _token.text.trim();
+    final uri = Uri.tryParse(raw);
+    return uri?.queryParameters['token'] ?? raw;
+  }
+
+  Future<void> _request() => _run(() async {
+        final res = await ref.read(apiClientProvider).post('/auth/forgot-password', auth: false, data: {'email': _email.text.trim()});
+        final dev = res is Map ? res['developmentToken']?.toString() : null;
+        if (dev != null) _token.text = dev;
+        setState(() => _tokenStep = true);
+      });
+
+  Future<void> _reset() => _run(() async {
+        if (_password.text.length < 10) {
+          throw ApiException(tr('Mật khẩu mới cần ít nhất 10 ký tự.', 'The new password needs at least 10 characters.'));
+        }
+        await ref.read(apiClientProvider).post('/auth/reset-password', auth: false, data: {
+          'token': _tokenValue,
+          'newPassword': _password.text,
+          'newPasswordConfirmation': _password.text,
+        });
+        await ref.read(authProvider.notifier).login(_email.text, _password.text);
+      });
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text(tr('Quên mật khẩu', 'Forgot password'))),
+        body: ListView(padding: const EdgeInsets.all(20), children: [
+          if (!_tokenStep) ...[
+            Text(tr('Nhập email đã đăng ký. CCV sẽ gửi link đặt lại mật khẩu.', 'Enter your account email. CCV sends you a reset link.'),
+                style: const TextStyle(fontSize: 15, height: 1.5)),
+            const SizedBox(height: 16),
+            _label('Email'),
+            TextField(controller: _email, keyboardType: TextInputType.emailAddress, onChanged: (_) => setState(() {})),
+          ] else ...[
+            Text(
+              tr('Mở email gửi tới ${_email.text}, sao chép link hoặc mã trong đó rồi dán vào đây.',
+                  'Open the email sent to ${_email.text}, copy the link or code and paste it here.'),
+              style: const TextStyle(fontSize: 15, height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            _label(tr('Link hoặc mã đặt lại', 'Reset link or code')),
+            TextField(controller: _token, onChanged: (_) => setState(() {})),
+            const SizedBox(height: 16),
+            _label(tr('Mật khẩu mới', 'New password')),
+            TextField(
+              controller: _password,
+              obscureText: true,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(hintText: tr('Ít nhất 10 ký tự', 'At least 10 characters')),
+            ),
+            TextButton(onPressed: _busy ? null : _request, child: Text(tr('Gửi lại email', 'Send the email again'))),
+          ],
+          const SizedBox(height: 16),
+          if (_error != null) ...[
+            Text(_error!, style: const TextStyle(color: AppColors.danger)),
+            const SizedBox(height: 16),
+          ],
+          BigButton(
+            label: _tokenStep ? tr('Đặt mật khẩu mới', 'Set new password') : tr('Gửi link', 'Send link'),
+            busy: _busy,
+            onPressed: _tokenStep
+                ? (_token.text.trim().isEmpty || _password.text.isEmpty ? null : _reset)
+                : (_email.text.trim().isEmpty ? null : _request),
           ),
         ]),
       );

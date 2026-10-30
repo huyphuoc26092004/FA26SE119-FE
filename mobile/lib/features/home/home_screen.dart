@@ -50,7 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       (Icons.description_outlined, tr('CV của tôi', 'My CVs'), '/resumes'),
       (Icons.work_outline, tr('Việc làm', 'Jobs'), '/jobs'),
       (Icons.forum_outlined, tr('Gặp cố vấn', 'Advisor'), '/consultations'),
-      (Icons.person_outline, tr('Tài khoản', 'Account'), '/account'),
+      (Icons.auto_awesome_outlined, tr('Trợ lý AI', 'AI assistant'), '/assistant'),
     ];
 
     return ScreenList(
@@ -90,7 +90,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                onTap: () => context.go(a.$3),
+                // Tabs switch with go(); other screens open on top with push().
+                onTap: () => a.$3 == '/assistant' ? context.push(a.$3) : context.go(a.$3),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Column(children: [

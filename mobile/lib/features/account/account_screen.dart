@@ -1,22 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/api_client.dart';
+import '../../core/config.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../data/repository.dart';
 import '../../widgets/kit.dart';
 import '../auth/auth_controller.dart';
 
-/// Web app address for the tools that are not in the mobile app yet.
-const _webUrl = String.fromEnvironment('WEB_URL', defaultValue: 'http://localhost:5173');
-
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
 
   Future<void> _openWeb(String path) =>
-      launchUrl(Uri.parse('$_webUrl$path'), mode: LaunchMode.externalApplication);
+      launchUrl(Uri.parse('${AppConfig.webUrl}$path'), mode: LaunchMode.externalApplication);
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) => showActionSheet(
+        context,
+        title: tr('Xoá tài khoản?', 'Delete your account?'),
+        body: tr('CV, hồ sơ và lịch sử của bạn sẽ bị khoá và bạn sẽ bị đăng xuất. Bạn không đăng nhập lại được bằng tài khoản này.',
+            'Your CVs, profile and history are locked and you are signed out. You cannot sign in with this account again.'),
+        actions: [
+          BigButton(
+            label: tr('Xoá tài khoản', 'Delete account'),
+            tone: ButtonTone.danger,
+            onPressed: () async {
+              Navigator.of(context).pop();
+              try {
+                await ref.read(repositoryProvider).deleteAccount();
+                await ref.read(authProvider.notifier).forget();
+              } catch (e) {
+                if (context.mounted) toast(context, ApiException.from(e).message);
+              }
+            },
+          ),
+          BigButton(label: tr('Huỷ', 'Cancel'), tone: ButtonTone.secondary, onPressed: () => Navigator.of(context).pop()),
+        ],
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -67,7 +90,7 @@ class AccountScreen extends ConsumerWidget {
                         style: const TextStyle(fontSize: 13, color: AppColors.muted)),
                   ),
                   GestureDetector(
-                    onTap: () => _openWeb('/candidate/subscription'),
+                    onTap: () => context.push('/plans'),
                     child: Text(tr('Nâng cấp', 'Upgrade'), style: const TextStyle(fontSize: 14, color: AppColors.brand)),
                   ),
                 ]),
@@ -86,6 +109,53 @@ class AccountScreen extends ConsumerWidget {
             );
           },
         ),
+        SectionTitle(tr('Công cụ', 'Tools')),
+        ListGroup(children: [
+          ListRowTile(
+            icon: Icons.auto_awesome_outlined,
+            title: tr('Trợ lý AI', 'AI assistant'),
+            detail: tr('Hỏi về CV, việc làm, kỹ năng', 'Ask about CVs, jobs, skills'),
+            onTap: () => context.push('/assistant'),
+          ),
+          ListRowTile(
+            icon: Icons.route_outlined,
+            title: tr('Lộ trình học', 'Learning roadmaps'),
+            detail: tr('Kỹ năng còn thiếu cho từng việc', 'Missing skills for each job'),
+            onTap: () => context.push('/roadmaps'),
+          ),
+          ListRowTile(
+            icon: Icons.workspace_premium_outlined,
+            title: tr('Gói dịch vụ', 'Plans'),
+            detail: sub.value == null ? null : '${tr('Đang dùng', 'Current')} ${sub.value!.planName}',
+            onTap: () => context.push('/plans'),
+          ),
+          ListRowTile(
+            icon: Icons.support_agent,
+            title: tr('Hỗ trợ', 'Support'),
+            detail: tr('Báo lỗi, hỏi về thanh toán', 'Report a problem, billing'),
+            onTap: () => context.push('/support'),
+          ),
+        ]),
+        SectionTitle(tr('Tài khoản', 'Account')),
+        ListGroup(children: [
+          ListRowTile(
+            icon: Icons.badge_outlined,
+            title: tr('Thông tin cá nhân', 'Personal info'),
+            detail: user?.email,
+            onTap: () => context.push('/account/profile'),
+          ),
+          if (user?.authProvider != 'GOOGLE')
+            ListRowTile(
+              icon: Icons.lock_outline,
+              title: tr('Đổi mật khẩu', 'Change password'),
+              onTap: () => context.push('/account/password'),
+            ),
+          ListRowTile(
+            icon: Icons.devices_outlined,
+            title: tr('Phiên đăng nhập', 'Sign-in sessions'),
+            onTap: () => context.push('/account/sessions'),
+          ),
+        ]),
         SectionTitle(tr('Trên bản web', 'On the web app')),
         ListGroup(children: [
           ListRowTile(
@@ -105,11 +175,6 @@ class AccountScreen extends ConsumerWidget {
             title: tr('Đánh giá kỹ năng', 'Skill assessment'),
             onTap: () => _openWeb('/candidate/assessment'),
           ),
-          ListRowTile(
-            icon: Icons.support_agent,
-            title: tr('Hỗ trợ', 'Support'),
-            onTap: () => _openWeb('/candidate/support'),
-          ),
         ]),
         SectionTitle(tr('Cài đặt', 'Settings')),
         ListGroup(children: [
@@ -124,6 +189,12 @@ class AccountScreen extends ConsumerWidget {
             title: tr('Đăng xuất', 'Sign out'),
             danger: true,
             onTap: () => ref.read(authProvider.notifier).logout(),
+          ),
+          ListRowTile(
+            icon: Icons.delete_outline,
+            title: tr('Xoá tài khoản', 'Delete account'),
+            danger: true,
+            onTap: () => _confirmDelete(context, ref),
           ),
         ]),
         const Center(child: Text('CCV · FA26SE119', style: TextStyle(fontSize: 12, color: AppColors.subtle))),

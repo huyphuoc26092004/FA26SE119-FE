@@ -5,14 +5,20 @@ import 'package:go_router/go_router.dart';
 import 'core/i18n.dart';
 import 'core/theme.dart';
 import 'features/account/account_screen.dart';
+import 'features/account/account_settings_screens.dart';
+import 'features/assistant/assistant_screens.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
 import 'features/consultations/consultations_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/jobs/job_detail_screen.dart';
 import 'features/jobs/jobs_screen.dart';
+import 'features/learning/roadmap_screens.dart';
+import 'features/notifications/notifications_screen.dart';
+import 'features/plans/plans_screen.dart';
 import 'features/resumes/resume_detail_screen.dart';
 import 'features/resumes/resumes_screen.dart';
+import 'features/support/support_screens.dart';
 import 'widgets/kit.dart';
 
 /// Re-runs the router redirect whenever the sign-in state changes.
@@ -30,7 +36,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final auth = ref.read(authProvider);
       final loc = state.matchedLocation;
-      final onAuthPage = loc == '/login' || loc == '/register';
+      final onAuthPage = loc == '/login' || loc == '/register' || loc == '/forgot-password';
       if (auth.status == AuthStatus.loading) return loc == '/splash' ? null : '/splash';
       if (auth.status == AuthStatus.signedOut) return onAuthPage ? null : '/login';
       if (auth.user != null && !auth.user!.isCandidate) return loc == '/staff' ? null : '/staff';
@@ -41,6 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (_, _) => const _Splash()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
+      GoRoute(path: '/forgot-password', builder: (_, _) => const ForgotPasswordScreen()),
       GoRoute(path: '/staff', builder: (_, _) => const _StaffNotice()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => _TabShell(shell: shell),
@@ -57,6 +64,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/resumes/:id', builder: (_, s) => ResumeDetailScreen(resumeId: s.pathParameters['id']!)),
       GoRoute(path: '/consultations/new', builder: (_, _) => const NewConsultationScreen()),
       GoRoute(path: '/consultations/:id', builder: (_, s) => ConsultationDetailScreen(id: s.pathParameters['id']!)),
+      GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
+      GoRoute(path: '/account/profile', builder: (_, _) => const EditProfileScreen()),
+      GoRoute(path: '/account/password', builder: (_, _) => const ChangePasswordScreen()),
+      GoRoute(path: '/account/sessions', builder: (_, _) => const SessionsScreen()),
+      GoRoute(path: '/assistant', builder: (_, _) => const AssistantListScreen()),
+      GoRoute(path: '/assistant/:id', builder: (_, s) => AssistantChatScreen(id: s.pathParameters['id']!)),
+      GoRoute(path: '/roadmaps', builder: (_, _) => const RoadmapListScreen()),
+      GoRoute(path: '/roadmaps/:id', builder: (_, s) => RoadmapDetailScreen(id: s.pathParameters['id']!)),
+      GoRoute(path: '/support', builder: (_, _) => const SupportListScreen()),
+      GoRoute(path: '/support/new', builder: (_, _) => const NewTicketScreen()),
+      GoRoute(path: '/support/:id', builder: (_, s) => TicketDetailScreen(id: s.pathParameters['id']!)),
+      GoRoute(path: '/plans', builder: (_, _) => const PlansScreen()),
     ],
   );
 });
@@ -97,7 +116,10 @@ class _TabShell extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(tabs[shell.currentIndex].$3, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
-        actions: const [Padding(padding: EdgeInsets.only(right: 16), child: CcvMark(height: 24))],
+        actions: const [
+          NotificationBell(),
+          Padding(padding: EdgeInsets.only(right: 16, left: 4), child: CcvMark(height: 24)),
+        ],
       ),
       body: shell,
       bottomNavigationBar: NavigationBar(

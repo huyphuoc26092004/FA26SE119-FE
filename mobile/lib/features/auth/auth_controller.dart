@@ -68,6 +68,18 @@ class AuthController extends Notifier<AuthState> {
     state = const AuthState(AuthStatus.signedOut);
   }
 
+  /// Re-reads GET /me after the profile was edited.
+  Future<void> reloadUser() async {
+    if (state.status != AuthStatus.signedIn) return;
+    state = AuthState(AuthStatus.signedIn, await _loadMe());
+  }
+
+  /// Ends the session locally without calling /auth/logout (account deleted).
+  Future<void> forget() async {
+    await _tokens.clear();
+    state = const AuthState(AuthStatus.signedOut);
+  }
+
   void sessionExpired() => state = const AuthState(AuthStatus.signedOut);
 }
 
