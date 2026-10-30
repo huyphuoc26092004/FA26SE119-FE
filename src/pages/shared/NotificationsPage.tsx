@@ -1,13 +1,29 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useLocation } from 'react-router-dom';
 import { EmptyRow, Headline, Note, SectionHead, UnderlineTabs, brandLink } from '../../components/admin/AdminKit';
-import { getAnnouncements, getNotifications, markAllNotificationsRead, markNotificationRead } from '../../services/notificationService';
+import {
+  type UserNotification,
+  getAnnouncements,
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '../../services/notificationService';
 
 type Filter = 'all' | 'unread';
+
+/** Trang mở ra khi bấm vào thông báo; null nếu thông báo không gắn với màn nào. */
+function notificationLink(area: string, n: UserNotification): string | null {
+  if (n.referenceType !== 'CONSULTATION' || !n.referenceId) return null;
+  if (area === 'admin') return '/admin?tab=consultations';
+  if (area === 'candidate' || area === 'consultant') return `/${area}/consultations/${n.referenceId}`;
+  return null;
+}
 
 /** /{role}/inbox — thông báo cá nhân và thông báo hệ thống đang hiệu lực. */
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
+  const area = useLocation().pathname.split('/')[1] ?? '';
   const [filter, setFilter] = useState<Filter>('all');
   const notificationsQuery = useQuery({ queryKey: ['notifications', filter], queryFn: () => getNotifications(filter === 'unread') });
   const announcementsQuery = useQuery({ queryKey: ['announcements'], queryFn: getAnnouncements });
@@ -64,23 +80,32 @@ export default function NotificationsPage() {
           <EmptyRow>{notificationsQuery.isLoading ? 'Đang tải...' : 'Chưa có thông báo nào.'}</EmptyRow>
         ) : (
           <ul>
-            {list.map((n) => (
-              <li key={n.id} className="flex items-start justify-between gap-6 border-b border-border py-4">
-                <div className="min-w-0">
-                  <p className={`text-[15px] ${n.isRead ? 'text-slate-700' : 'font-medium text-ink'}`}>
-                    {!n.isRead && <span aria-hidden className="mr-2 inline-block h-2 w-2 rounded-full bg-brand" />}
-                    {n.title || n.type}
-                  </p>
-                  {n.content && <p className="mt-1 whitespace-pre-line text-[14px] leading-6 text-slate-600">{n.content}</p>}
-                  <p className="mt-1 text-[12px] text-slate-500">{n.createdAt}</p>
-                </div>
-                {!n.isRead && (
-                  <button type="button" className={`${brandLink} shrink-0`} onClick={() => markOne.mutate(n.id)}>
-                    Đã đọc
-                  </button>
-                )}
-              </li>
-            ))}
+            {list.map((n) => {
+              const link = notificationLink(area, n);
+              return (
+                <li key={n.id} className="flex items-start justify-between gap-6 border-b border-border py-4">
+                  <div className="min-w-0">
+                    <p className={`text-[15px] ${n.isRead ? 'text-slate-700' : 'font-medium text-ink'}`}>
+                      {!n.isRead && <span aria-hidden className="mr-2 inline-block h-2 w-2 rounded-full bg-brand" />}
+                      {link ? (
+                        <Link to={link} className="hover:text-brand hover:underline" onClick={() => !n.isRead && markOne.mutate(n.id)}>
+                          {n.title || n.type}
+                        </Link>
+                      ) : (
+                        n.title || n.type
+                      )}
+                    </p>
+                    {n.content && <p className="mt-1 whitespace-pre-line text-[14px] leading-6 text-slate-600">{n.content}</p>}
+                    <p className="mt-1 text-[12px] text-slate-500">{n.createdAt}</p>
+                  </div>
+                  {!n.isRead && (
+                    <button type="button" className={`${brandLink} shrink-0`} onClick={() => markOne.mutate(n.id)}>
+                      Đã đọc
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
