@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Bookmark, Check, Share2, X } from 'lucide-react';
@@ -17,6 +17,7 @@ import {
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
+import { parseJobContent, sectionLength, type JobContentSection } from '../../utils/jobContent';
 
 const textLink =
   'inline-flex items-center gap-1.5 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
@@ -53,6 +54,42 @@ function NumberedList({ items }: { items: string[] }) {
   );
 }
 
+/** Nội dung tin đã tách mục: tiêu đề nhỏ, đoạn văn và gạch đầu dòng. */
+function JobContent({ sections }: { sections: JobContentSection[] }) {
+  return (
+    <div className="space-y-8 pt-5">
+      {sections.map((section, i) => (
+        <div key={i}>
+          {section.title && <h3 className="mb-3 text-[17px] font-medium text-ink">{section.title}</h3>}
+          <div className="space-y-3 text-[15px] leading-7 text-ink">
+            {section.blocks.map((block, j) =>
+              block.type === 'h' ? (
+                <p key={j} className="pt-1 font-medium">
+                  {block.text}
+                </p>
+              ) : block.type === 'p' ? (
+                <p key={j}>{block.text}</p>
+              ) : (
+                <ul key={j} className="space-y-2">
+                  {block.items.map((item, k) => (
+                    <li key={k} className="flex gap-3">
+                      <span aria-hidden="true" className="mt-[11px] h-1 w-1 shrink-0 rounded-full bg-slate-500" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ),
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Nội dung dài hơn ngưỡng này thì thu gọn, bấm "Xem thêm" để mở. */
+const COLLAPSE_AFTER_CHARS = 1400;
+
 export default function JobDetailsPage() {
   const { jobId = '' } = useParams<{ jobId: string }>();
   const { t } = useTranslation();
@@ -65,6 +102,7 @@ export default function JobDetailsPage() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [contentExpanded, setContentExpanded] = useState(false);
 
   const { data: job, isPending, isError } = useQuery({
     queryKey: ['job', jobId],
@@ -86,6 +124,11 @@ export default function JobDetailsPage() {
     queryKey: ['appliedJobs'],
     queryFn: getAppliedJobIds,
   });
+
+  const contentSections = useMemo(
+    () => (job ? parseJobContent(job.contentHtml, job.description) : []),
+    [job],
+  );
 
   const isSaved = savedIds.includes(jobId);
   const isApplied = appliedIds.includes(jobId);
@@ -125,6 +168,10 @@ export default function JobDetailsPage() {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
+  // Điểm lấy từ kết quả matching; chưa có thì không hiển thị 0%.
+  const matchScore: number | null = semantic?.overallScore ?? (job.match > 0 ? job.match : null);
+  const matchText = matchScore === null ? '—' : `${matchScore}%`;
+
   const fitHref = isCandidate ? `/candidate/cv-job-fit?jobId=${job.id}` : '/login';
   const matchedSkills = new Set((semantic?.matchedSkills ?? []).map((s) => s.toLowerCase()));
 
@@ -147,11 +194,18 @@ export default function JobDetailsPage() {
       ]
     : [];
 
-  const sections = [
-    { key: 'resp', title: 'Bạn sẽ làm gì', items: job.responsibilities },
-    { key: 'req', title: 'Yêu cầu ứng viên', items: job.requirements },
-    { key: 'ben', title: 'Quyền lợi', items: job.benefits },
-  ].filter((s) => s.items && s.items.length > 0) as { key: string; title: string; items: string[] }[];
+  // Khi mô tả đã có các mục riêng (trách nhiệm, yêu cầu, quyền lợi) thì các danh sách
+  // parsed_* chỉ lặp lại nội dung đó, nên bỏ đi.
+  const contentHasSections = contentSections.filter((s) => s.title).length >= 2;
+  const sections = contentHasSections
+    ? []
+    : ([
+        { key: 'resp', title: 'Bạn sẽ làm gì', items: job.responsibilities },
+        { key: 'req', title: 'Yêu cầu ứng viên', items: job.requirements },
+        { key: 'ben', title: 'Quyền lợi', items: job.benefits },
+      ].filter((s) => s.items && s.items.length > 0) as { key: string; title: string; items: string[] }[]);
+  const collapsible = sectionLength(contentSections) > COLLAPSE_AFTER_CHARS;
+  const sectionOffset = contentSections.length > 0 ? 1 : 0;
 
   return (
     <div
@@ -215,13 +269,12 @@ export default function JobDetailsPage() {
             </span>
           )}
         </p>
-        <h1 className="mt-3 max-w-[60rem] text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
-          {job.title}.
-          <span className="block text-brand">Phù hợp {job.match}%.</span>
+        <h1 className="mt-3 max-w-[52rem] text-[clamp(1.625rem,3vw,2.5rem)] font-normal leading-[1.15] tracking-[-0.02em] text-ink [overflow-wrap:anywhere]">
+          {job.title}
         </h1>
-        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[44rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
-          {job.description}
-        </p>
+        {matchScore !== null && (
+          <p className="mt-2 text-[clamp(1rem,1.4vw,1.25rem)] text-brand">Phù hợp {matchScore}% với hồ sơ của bạn</p>
+        )}
       </header>
 
       {/* Actions */}
@@ -270,16 +323,43 @@ export default function JobDetailsPage() {
       {/* Body: description + match aside */}
       <div className="mt-[clamp(3rem,6vw,4.5rem)] grid gap-x-[clamp(2.5rem,5vw,5rem)] gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
         <div className="min-w-0 space-y-[clamp(3rem,6vw,4.5rem)]">
+          {contentSections.length > 0 && (
+            <section>
+              <SectionHead index="01" title="Mô tả công việc" />
+              <div className="relative">
+                <div className={collapsible && !contentExpanded ? 'max-h-[34rem] overflow-hidden' : undefined}>
+                  <JobContent sections={contentSections} />
+                </div>
+                {collapsible && !contentExpanded && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-canvas to-transparent"
+                  />
+                )}
+              </div>
+              {collapsible && (
+                <button
+                  type="button"
+                  onClick={() => setContentExpanded((v) => !v)}
+                  aria-expanded={contentExpanded}
+                  className={`${textLink} mt-4 text-ink`}
+                >
+                  {contentExpanded ? 'Thu gọn' : 'Xem thêm'}
+                </button>
+              )}
+            </section>
+          )}
+
           {sections.map((s, i) => (
             <section key={s.key}>
-              <SectionHead index={String(i + 1).padStart(2, '0')} title={s.title} />
+              <SectionHead index={String(i + 1 + sectionOffset).padStart(2, '0')} title={s.title} />
               <NumberedList items={s.items} />
             </section>
           ))}
 
           <section>
             <SectionHead
-              index={String(sections.length + 1).padStart(2, '0')}
+              index={String(sections.length + sectionOffset + 1).padStart(2, '0')}
               title={t('jobs.requiredSkills')}
               action={
                 semantic && (
@@ -304,12 +384,21 @@ export default function JobDetailsPage() {
         <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <div className="border-t border-ink pt-5">
             <p className="text-[13px] text-slate-600">
-              {t('jobs.yourJobMatch')} · {job.match >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng tốt'}
+              {t('jobs.yourJobMatch')}
+              {matchScore !== null && <> · {matchScore >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng tốt'}</>}
             </p>
-            <p className="mt-2 flex items-baseline gap-1 leading-none text-brand">
-              <span className="text-[clamp(3.5rem,6vw,5rem)] font-normal tracking-[-0.04em] tabular-nums">{job.match}</span>
-              <span className="text-[clamp(1.5rem,2.2vw,2rem)]">%</span>
-            </p>
+            {matchScore !== null ? (
+              <p className="mt-2 flex items-baseline gap-1 leading-none text-brand">
+                <span className="text-[clamp(3rem,5vw,4.25rem)] font-normal tracking-[-0.04em] tabular-nums">{matchScore}</span>
+                <span className="text-[clamp(1.5rem,2.2vw,2rem)]">%</span>
+              </p>
+            ) : (
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {isCandidate
+                  ? 'Chưa có điểm phù hợp. Hãy tải lên và xác nhận CV, hoặc việc này chưa nằm trong kết quả gợi ý cho CV của bạn.'
+                  : 'Đăng nhập và tải CV lên để xem mức độ phù hợp.'}
+              </p>
+            )}
 
             {dims.length > 0 && (
               <ul className="mt-6 space-y-4">
@@ -428,7 +517,7 @@ export default function JobDetailsPage() {
                 { label: 'Địa điểm', value: job.location },
                 { label: 'Mức lương', value: job.salary },
                 { label: 'Nguồn', value: externalSource.sourceName },
-                { label: 'Độ phù hợp', value: `${job.match}%` },
+                { label: 'Độ phù hợp', value: matchText },
               ].map((row) => (
                 <div key={row.label} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5">
                   <dt className="text-slate-600">{row.label}</dt>
@@ -438,8 +527,8 @@ export default function JobDetailsPage() {
             </dl>
 
             <p className="mt-5 border-l-2 border-brand pl-4 text-sm leading-6 text-ink">
-              Hồ sơ của bạn phù hợp {job.match}% với vị trí này. Hãy chuẩn bị sẵn bản CV đã tối ưu để nộp trên
-              trang của nhà tuyển dụng.
+              {matchScore !== null ? `Hồ sơ của bạn phù hợp ${matchScore}% với vị trí này. ` : ''}Hãy chuẩn bị sẵn
+              bản CV đã tối ưu để nộp trên trang của nhà tuyển dụng.
             </p>
 
             <div className="mt-6 flex flex-col-reverse items-stretch gap-4 sm:flex-row sm:items-center sm:justify-end sm:gap-6">

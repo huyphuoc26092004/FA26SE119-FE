@@ -260,6 +260,8 @@ export interface Job {
   match: number;
   posted: string;
   description: string;
+  /** HTML gốc của tin (original_content), chỉ dùng để tách mục khi hiển thị. */
+  contentHtml?: string;
   companyLogo?: string;
   department?: string;
   responsibilities?: string[];
