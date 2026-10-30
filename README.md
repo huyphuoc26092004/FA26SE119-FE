@@ -1,54 +1,47 @@
-# CareerPilot Web — FA26SE119
+# CCV Web — FA26SE119
 
-Frontend-only foundation for **Intelligent CV Matching AI Agent**. All application data is **mock data**. No backend, payments, scraping, or LLM calls are implemented.
+Frontend React của **Intelligent CV Matching AI Agent** (CCV). Web gọi thẳng backend [`Intelligent-CV-Matching-AI-Agent-BE`](https://github.com/Quangtr04/Intelligent-CV-Matching-AI-Agent-BE) qua REST `/api/v1`, đăng nhập bằng JWT. Không còn dữ liệu giả (mock).
 
-## Requirements
-- Node.js >= 20.19 (Node 22 LTS recommended)
-- npm 10+
+Có 3 vai trò: **Ứng viên**, **Cố vấn** và **Quản trị**. Ngoài web còn có app mobile Flutter dành cho ứng viên, nằm trong thư mục [`mobile/`](mobile/README.md).
 
-## Quick start
+## Yêu cầu
+- Node.js >= 20.19 (khuyên dùng Node 22 LTS), npm 10+
+- Backend đang chạy ở `http://localhost:8080` (xem README của repo BE)
+
+## Chạy
+
 ```bash
-npm ci               # if package-lock.json exists; otherwise npm install
-npm run dev
+cp .env.example .env.development   # VITE_API_BASE_URL=http://localhost:8080/api/v1
+npm ci
+npm run dev                        # http://localhost:5173
+```
+
+Trước khi mở pull request:
+
+```bash
 npm run lint
 npm run build
 ```
-Open http://localhost:5173.
 
-## Mock accounts (development only)
-| Role | Email | Password |
-| --- | --- | --- |
-| Candidate | candidate@example.com | Demo123! |
-| Consultant | consultant@example.com | Demo123! |
-| Admin | admin@example.com | Demo123! |
+## Tài khoản
 
-Mock sessions are stored in sessionStorage. This is **not real authentication** and must never be used for production security.
+Backend không tạo sẵn tài khoản mẫu.
 
-## Architecture
+- **Ứng viên:** đăng ký trên web. Mã OTP được gửi qua SMTP cấu hình trong `.env` của BE. Nếu đặt `AUTH_EXPOSE_DEV_OTP=true`, mã OTP được trả thẳng trong response.
+- **Quản trị / Cố vấn:** đặt `BOOTSTRAP_ADMIN_*` và `BOOTSTRAP_CONSULTANT_*` trong `.env` của BE, hoặc đăng ký thường rồi đổi `role` trong bảng `users`.
+
+## Cấu trúc
 - `src/app`: router, providers, query client
-- `src/layouts`: public + role-based shells
-- `src/components/ui`: shared visual primitives
-- `src/pages`: initial screens + planned feature placeholders
-- `src/mocks/data`: centralized demo fixtures
-- `src/mocks/services`: asynchronous mock services
-- `src/services`: real Axios client (not used while mocks are enabled)
-- `src/stores`: small global auth state
-- `src/types`: domain models
-- `src/constants`: role navigation
+- `src/layouts`: khung trang public và khung theo vai trò
+- `src/components`: thành phần giao diện dùng chung
+- `src/pages`: màn hình theo vai trò (`candidate`, `consultant`, `admin`, `shared`, `public` gồm cả dùng thử cho khách, `errors`)
+- `src/services`: lớp gọi API (Axios `apiClient`). `candidateMappers.ts` chuyển dữ liệu snake_case của BE sang kiểu của FE. Chức năng nào BE chưa có API thì được đánh dấu `TODO(api)` trong `apiPending.ts`.
+- `src/stores`: trạng thái đăng nhập (access/refresh token, tự làm mới khi gặp 401)
+- `src/types`, `src/constants`, `src/i18n`, `src/utils`
+- `mobile/`: app Flutter cho ứng viên
 
-## Mock → API migration
-1. Implement typed API functions in `src/services/` using `apiClient` and `endpoints`.
-2. Change each TanStack Query `queryFn` from `getJobs` etc. to the real API adapter.
-3. Connect auth store to real login/refresh/logout endpoints and replace sessionStorage mock token handling.
-4. Configure `VITE_API_BASE_URL` per environment and set `VITE_USE_MOCKS=false` once API adapters are ready.
-5. Add error handling and tests for the new contract. **VITE_USE_MOCKS is documentation for the future switch; this milestone deliberately uses mock services directly.**
-
-## Team workflow
-- Keep `main` stable; each developer creates `feature/<feature-name>` branches.
-- Run lint/build before opening a pull request.
-- Do not commit secrets, `.env.local`, or `node_modules`.
-- Commit `package-lock.json` after successful `npm install` so teammates can run `npm ci`.
-- Configure SPA fallback to `index.html` on production hosting for React Router deep links.
-
-## Milestone 1 scope
-Implemented: public landing, mock login, candidate dashboard, profile view, CV list, job search/details, assistant demo chat, consultant/admin dashboard shells, responsive layouts, role guards, 403/404. Registration/reset and remaining features are **explicit placeholders**.
+## Quy trình nhóm
+- Giữ `main` ổn định. Mỗi tính năng làm trên nhánh `feature/<tên>` hoặc `fix/<tên>`, rồi mở PR vào `main`. CI chạy lint và build.
+- Không commit secret, `.env*` (trừ `.env.example`) hay `node_modules`.
+- Stage bằng `git add -u` hoặc đường dẫn cụ thể. Không dùng `git add .`, vì repo nằm trong iCloud có thể sinh file trùng `* 2.*`.
+- Khi deploy, cấu hình SPA fallback về `index.html` để React Router mở được link sâu.
