@@ -1,11 +1,10 @@
 import { useLayoutEffect, useRef, useState, type TextareaHTMLAttributes } from 'react';
-import { ArrowRight, Download, RefreshCw } from 'lucide-react';
+import { ArrowRight, Lock, RefreshCw } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useTranslation } from '../../i18n';
 import type { DemoCvData } from './guestTrialData';
 
 interface GuestAiBuilderTabProps {
-  initialTemplate?: 'modern' | 'tech' | 'classic';
   initialData?: DemoCvData | null;
   onOpenSaveModal?: () => void;
 }
@@ -40,16 +39,16 @@ function AutoTextarea({ value, className = '', ...props }: TextareaHTMLAttribute
   return <textarea ref={ref} rows={1} value={value} className={`${textareaClass} ${className}`} {...props} />;
 }
 
+const GUEST_TEMPLATE = 'modern' as 'modern' | 'tech' | 'classic';
+
 export function GuestAiBuilderTab({
-  initialTemplate = 'modern',
   initialData,
   onOpenSaveModal,
 }: GuestAiBuilderTabProps) {
   const { isVietnamese } = useTranslation();
 
-  const [template, setTemplate] = useState<'modern' | 'tech' | 'classic'>(
-    initialData?.template ?? initialTemplate
-  );
+  // Bản dùng thử chỉ mở mẫu "Hiện đại"; hai mẫu còn lại cần đăng ký.
+  const template = GUEST_TEMPLATE;
 
   // Form states
   const [fullName, setFullName] = useState(initialData?.name ?? 'Nguyễn Văn An');
@@ -101,10 +100,6 @@ export function GuestAiBuilderTab({
     setAtsScore(95);
     setAiEnhanced(true);
     setIsEnhancing(false);
-  };
-
-  const handlePrint = () => {
-    window.print();
   };
 
   const skillList = skills
@@ -179,13 +174,16 @@ export function GuestAiBuilderTab({
       >
         {templates.map((t, index) => {
           const isSelected = template === t.id;
+          const isLocked = t.id !== GUEST_TEMPLATE;
           return (
             <button
               key={t.id}
               type="button"
               role="tab"
               aria-selected={isSelected}
-              onClick={() => setTemplate(t.id)}
+              aria-disabled={isLocked}
+              onClick={() => isLocked && onOpenSaveModal?.()}
+              title={isLocked ? (isVietnamese ? 'Đăng ký để dùng mẫu này' : 'Sign up to use this template') : undefined}
               className={`group -mb-px flex items-baseline gap-3 border-b-2 py-4 text-left transition-colors cursor-pointer sm:pr-6 ${
                 index > 0 ? 'border-t border-t-border sm:border-t-0' : ''
               } ${isSelected ? 'border-b-brand' : 'border-b-transparent'}`}
@@ -205,8 +203,11 @@ export function GuestAiBuilderTab({
                 >
                   {t.label}
                 </span>
-                <span className="mt-0.5 block truncate text-sm text-slate-600">{t.note}</span>
+                <span className="mt-0.5 block truncate text-sm text-slate-600">
+                  {isLocked ? (isVietnamese ? 'Đăng ký để mở khoá' : 'Sign up to unlock') : t.note}
+                </span>
               </span>
+              {isLocked && <Lock size={14} aria-hidden="true" className="shrink-0 self-center text-slate-400" />}
             </button>
           );
         })}
@@ -425,7 +426,9 @@ export function GuestAiBuilderTab({
 
           <div
             id="printable-guest-resume"
-            className={`min-h-[clamp(32rem,64vh,54rem)] rounded-panel border border-border bg-surface p-[clamp(1.25rem,3vw,3rem)] text-ink ${sheetFont}`}
+            onContextMenu={(e) => e.preventDefault()}
+            onCopy={(e) => e.preventDefault()}
+            className={`select-none print:hidden min-h-[clamp(32rem,64vh,54rem)] rounded-panel border border-border bg-surface p-[clamp(1.25rem,3vw,3rem)] text-ink ${sheetFont}`}
           >
             {/* Header per template */}
             {template === 'modern' && (
@@ -514,12 +517,13 @@ export function GuestAiBuilderTab({
 
           {/* Actions */}
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="button" variant="secondary" onClick={handlePrint}>
-              <Download size={16} aria-hidden="true" />
-              {isVietnamese ? 'In bản nháp' : 'Print draft'}
-            </Button>
+            <p className="text-sm text-slate-600">
+              {isVietnamese
+                ? 'Bản dùng thử chỉ xem trước, không tải về được.'
+                : 'The trial is preview only; downloads need an account.'}
+            </p>
             <Button type="button" className="justify-between gap-4 px-6" onClick={onOpenSaveModal}>
-              {isVietnamese ? 'Lưu vào tài khoản và tải PDF' : 'Save to account & get PDF'}
+              {isVietnamese ? 'Đăng ký để lưu và tải PDF' : 'Sign up to save & get PDF'}
               <ArrowRight size={16} aria-hidden="true" />
             </Button>
           </div>

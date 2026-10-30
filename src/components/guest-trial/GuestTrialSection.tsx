@@ -16,15 +16,11 @@ export type GuestTrialTab = 'jobs' | 'resumes' | 'builder';
 export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boolean } = {}) {
   const { t, isVietnamese } = useTranslation();
   const [activeTab, setActiveTab] = useState<GuestTrialTab>('jobs');
-  const [builderTemplate, setBuilderTemplate] = useState<'modern' | 'tech' | 'classic'>('modern');
   const [builderInitialData, setBuilderInitialData] = useState<DemoCvData | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
-  const handleSelectTemplateForBuilder = (
-    template: 'modern' | 'tech' | 'classic',
-    cv: DemoCvData,
-  ) => {
-    setBuilderTemplate(template);
+  // Bản dùng thử luôn dùng mẫu "Hiện đại"; chỉ mang dữ liệu của CV demo sang.
+  const handleSelectTemplateForBuilder = (cv: DemoCvData) => {
     setBuilderInitialData(cv);
     setActiveTab('builder');
     // Smooth scroll to builder
@@ -48,7 +44,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
     {
       id: 'builder' as const,
       label: 'AI Resume Builder',
-      hint: isVietnamese ? 'Tạo CV với các mẫu cơ bản' : 'Build a CV from basic templates',
+      hint: isVietnamese ? 'Tạo CV với 1 mẫu miễn phí' : 'Build a CV with 1 free template',
     },
   ];
 
@@ -99,7 +95,6 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
       )}
       {activeTab === 'builder' && (
         <GuestAiBuilderTab
-          initialTemplate={builderTemplate}
           initialData={builderInitialData}
           onOpenSaveModal={() => setShowSaveModal(true)}
         />
