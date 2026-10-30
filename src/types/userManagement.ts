@@ -43,6 +43,9 @@ export interface AdminManagedUser {
   notes?: string;
   permissions: string[];
   recentActivities: UserActivityLog[];
+  authProvider?: string;
+  /** Tài khoản đã xóa mềm (status DELETED), ẩn khỏi danh sách. */
+  deleted?: boolean;
 }
 
 export interface CreateUserPayload {

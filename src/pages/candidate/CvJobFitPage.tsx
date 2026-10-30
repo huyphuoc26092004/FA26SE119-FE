@@ -18,6 +18,8 @@ import { EmptyState, ErrorState, Loading } from '../../components/ui';
 import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
+import { NextStepLinks } from './cv-job-fit/SkillPathPages';
+import { skillPathHref } from '../../services/skillPathService';
 
 const copy = {
   vi: {
@@ -34,7 +36,9 @@ const copy = {
           : 'Còn khá nhiều khoảng trống.',
     loadingTitle: 'Đang so khớp',
     loadingLine: 'CV với công việc.',
-    intro: 'So sánh bản CV của bạn với tin tuyển dụng để thấy điểm mạnh và điểm còn thiếu.',
+    intro: 'So CV với tin tuyển dụng, xem những điểm cần cải thiện, làm bài đánh giá kỹ năng rồi nhận Learning path cho phần còn thiếu.',
+    flow: ['% phù hợp', 'Cần cải thiện', 'Đánh giá kỹ năng', 'Learning path'],
+    flowLabel: 'Các bước',
     cvLabel: 'Bản CV dùng để so sánh',
     cvHint: 'Chọn bản CV bạn định nộp cho vị trí này.',
     jobLabel: 'Vị trí bạn muốn ứng tuyển',
@@ -88,7 +92,11 @@ const copy = {
     dimSalary: 'Mức lương mong muốn',
     strengths: 'Vì sao bạn phù hợp',
     advice: 'Lời khuyên',
-    gaps: 'Còn thiếu so với yêu cầu',
+    gaps: 'Điểm cần cải thiện',
+    gapsNote: 'Sửa CV với những gì bạn đã có. Kỹ năng chưa có thì học theo Learning path bên dưới.',
+    learnSkill: 'Học kỹ năng này',
+    fixCv: 'Sửa CV',
+    target: (n: number) => `Nên đạt từ ${n}`,
     impact: { critical: 'Cần bổ sung ngay', moderate: 'Khuyên dùng', minor: 'Tối ưu thêm' },
     fix: 'Cách khắc phục:',
     skillsTitle: 'Kỹ năng theo yêu cầu',
@@ -107,7 +115,7 @@ const copy = {
     matched: 'Đã có',
     partial: 'Một phần',
     missing: 'Chưa có',
-    tailorTitle: 'Đề xuất chỉnh sửa CV',
+    tailorTitle: 'Gợi ý viết lại CV',
     editCv: 'Chỉnh sửa CV ngay',
     insertAt: (s: string) => `Vị trí chèn: ${s}`,
     copy: 'Sao chép',
@@ -135,7 +143,9 @@ const copy = {
       score >= 85 ? 'Ready to apply.' : score >= 70 ? 'A few skills to add.' : 'Several gaps to close.',
     loadingTitle: 'Matching your',
     loadingLine: 'CV to the job.',
-    intro: 'Compare your CV with a job posting to see your strengths and what is still missing.',
+    intro: 'Compare your CV with the job posting, see what to improve, take a skill assessment and get a learning path for what is missing.',
+    flow: ['Fit score', 'What to improve', 'Skill assessment', 'Learning path'],
+    flowLabel: 'Steps',
     cvLabel: 'CV to compare',
     cvHint: 'Pick the CV you plan to send for this role.',
     jobLabel: 'Role you want to apply for',
@@ -189,7 +199,11 @@ const copy = {
     dimSalary: 'Expected salary',
     strengths: 'Why you fit',
     advice: 'Advice',
-    gaps: 'Gaps against the requirements',
+    gaps: 'What to improve',
+    gapsNote: 'Fix your CV with what you already have. Learn the missing skills with the learning path below.',
+    learnSkill: 'Learn this skill',
+    fixCv: 'Edit CV',
+    target: (n: number) => `Aim for ${n}+`,
     impact: { critical: 'Add now', moderate: 'Recommended', minor: 'Nice to have' },
     fix: 'How to fix:',
     skillsTitle: 'Skills by requirement',
@@ -208,7 +222,7 @@ const copy = {
     matched: 'Found',
     partial: 'Partial',
     missing: 'Missing',
-    tailorTitle: 'Suggested CV edits',
+    tailorTitle: 'CV rewrite tips',
     editCv: 'Edit CV now',
     insertAt: (s: string) => `Insert in: ${s}`,
     copy: 'Copy',
@@ -570,8 +584,6 @@ export default function CvJobFitPage() {
     onSuccess: () => {
       refreshJobActivity(queryClient);
       setRedirectModalOpen(false);
-      setToastMessage(t('jobs.appliedSuccess'));
-      setTimeout(() => setToastMessage(null), 4000);
     },
   });
 
@@ -605,7 +617,9 @@ export default function CvJobFitPage() {
     minor: 'text-slate-600',
   } as const;
 
-  const dims = fitResult
+  const dims = fitResult?.dimensions?.length
+    ? fitResult.dimensions.map((d) => ({ label: d.label, value: d.score }))
+    : fitResult
     ? [
         { label: c.dimSkills, value: fitResult.skillsScore },
         { label: c.dimExperience, value: fitResult.experienceScore },
@@ -620,6 +634,12 @@ export default function CvJobFitPage() {
   const matchedSkillNames = new Set(
     fitResult?.skillsAnalysis.filter((s) => s.status === 'matched').map((s) => s.name.toLowerCase()) ?? []
   );
+
+  const editCvHref = `/candidate/resumes/${selectedCvId}/edit?returnTo=${encodeURIComponent(
+    `/candidate/cv-job-fit?cvId=${selectedCvId}&jobId=${selectedJobId}`,
+  )}`;
+  // Hai bước đầu nằm trên trang này; đánh giá kỹ năng và Learning path mở trang riêng.
+  const flowLinks = ['#fit-score', '#improve', skillPathHref('skill-test', selectedJobId, selectedCvId), skillPathHref('learning-path', selectedJobId, selectedCvId)];
 
   const jobMeta: { label: string; value?: string }[] = currentJob
     ? [
@@ -638,6 +658,7 @@ export default function CvJobFitPage() {
   return (
     <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
       {/* Toast Notification */}
+
       {toastMessage && (
         <div
           role="status"
@@ -892,6 +913,32 @@ export default function CvJobFitPage() {
           ))}
       </div>
 
+      {/* Flow: fit → improve → assessment → learning path */}
+      {fitResult && !isFitPending && (
+        <nav aria-label={c.flowLabel} className="mt-10">
+          <ol className="grid grid-cols-2 border-t border-slate-400 sm:grid-cols-4">
+            {c.flow.map((label, i) => (
+              <li key={label} className={`border-b border-border sm:border-b-0 ${i % 2 === 1 ? 'border-l pl-4' : ''} ${i === 2 ? 'sm:border-l sm:pl-4' : ''}`}>
+                {i < 2 ? (
+                  <a href={flowLinks[i]} className="group block py-4 pr-3">
+                    <span className="text-xs tabular-nums text-slate-500">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="mt-1 block text-[15px] text-ink transition-colors group-hover:text-brand">{label}</span>
+                  </a>
+                ) : (
+                  <Link to={flowLinks[i]} className="group block py-4 pr-3">
+                    <span className="flex items-center gap-1.5 text-xs tabular-nums text-slate-500">
+                      {String(i + 1).padStart(2, '0')}
+                      <ArrowRight size={12} aria-hidden="true" />
+                    </span>
+                    <span className="mt-1 block text-[15px] text-ink transition-colors group-hover:text-brand">{label}</span>
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
+
       {/* Main Analysis Result View */}
       {isFitPending ? (
         <div className="mt-10 border-t border-slate-400">
@@ -904,7 +951,7 @@ export default function CvJobFitPage() {
       ) : (
         <div className={`transition-opacity ${isFitFetching ? 'opacity-60' : ''}`}>
           {/* Score + dimensions */}
-          <section className="mt-[clamp(2.5rem,5vw,3.5rem)] grid gap-x-[clamp(2rem,5vw,4rem)] gap-y-6 border-t border-slate-400 pt-6 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
+          <section id="fit-score" className="mt-[clamp(2.5rem,5vw,3.5rem)] grid scroll-mt-6 gap-x-[clamp(2rem,5vw,4rem)] gap-y-6 border-t border-slate-400 pt-6 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
             <div>
               <p className="text-[13px] text-slate-600">{c.scoreLabel(fitResult.fitGrade)}</p>
               <p className="mt-2 flex items-baseline gap-1 leading-none text-brand">
@@ -913,7 +960,8 @@ export default function CvJobFitPage() {
                 </span>
                 <span className="text-[clamp(1.5rem,2.4vw,2rem)]">%</span>
               </p>
-              <p className="mt-3 text-[13px] text-slate-600">{c.updatedAt(fitResult.analyzedAt)}</p>
+              {fitResult.targetScore && <p className="mt-3 text-[13px] text-slate-600">{c.target(fitResult.targetScore)}</p>}
+              <p className="mt-1 text-[13px] text-slate-600">{c.updatedAt(fitResult.analyzedAt)}</p>
             </div>
             <ul className="space-y-4">
               {dims.map((dim) => (
@@ -933,7 +981,7 @@ export default function CvJobFitPage() {
             </ul>
           </section>
 
-          <p className="mt-8 max-w-[44rem] text-[15px] leading-7 text-slate-700">{fitResult.verdict}</p>
+          {fitResult.verdict && <p className="mt-8 max-w-[44rem] text-[15px] leading-7 text-slate-700">{fitResult.verdict}</p>}
           {semantic?.recommendation && (
             <p className="mt-4 max-w-[44rem] border-l-2 border-brand pl-4 text-[15px] leading-7 text-ink">
               <span className="text-brand">{c.advice}: </span>
@@ -957,16 +1005,28 @@ export default function CvJobFitPage() {
           </section>
 
           {/* 02 Gaps */}
-          <section className="mt-[clamp(3rem,6vw,4.5rem)]">
-            <SectionHead index="02" title={c.gaps} />
+          <section id="improve" className="mt-[clamp(3rem,6vw,4.5rem)] scroll-mt-6">
+            <SectionHead index="02" title={c.gaps} note={c.gapsNote} />
             <ul>
               {fitResult.gaps.map((gap, idx) => (
                 <li key={idx} className="border-b border-border py-6">
                   <p className={`text-[13px] ${impactTone[gap.impact]}`}>{c.impact[gap.impact]}</p>
                   <h3 className="mt-1.5 text-[clamp(1rem,1.3vw,1.1875rem)] font-normal leading-7 text-ink">{gap.title}</h3>
                   <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">{gap.description}</p>
-                  <p className="mt-3 max-w-3xl text-sm leading-6 text-ink">
-                    <span className="text-brand">{c.fix}</span> {gap.recommendation}
+                  {gap.recommendation && (
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-ink">
+                      <span className="text-brand">{c.fix}</span> {gap.recommendation}
+                    </p>
+                  )}
+                  <p className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                    <Link to={editCvHref} className={`${textLink} text-[13px] text-ink`}>
+                      {c.fixCv}
+                    </Link>
+                    {gap.skill && (
+                      <Link to={skillPathHref('learning-path', selectedJobId, selectedCvId)} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                        {c.learnSkill}
+                      </Link>
+                    )}
                   </p>
                 </li>
               ))}
@@ -1028,12 +1088,13 @@ export default function CvJobFitPage() {
           </section>
 
           {/* 04 Tailoring + STAR bullets */}
+          {(fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0) && (
           <section className="mt-[clamp(3rem,6vw,4.5rem)]">
             <SectionHead
               index="04"
               title={c.tailorTitle}
               action={
-                <Link to={`/candidate/resumes/${selectedCvId}/edit`} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                <Link to={editCvHref} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
                   {c.editCv}
                 </Link>
               }
@@ -1062,6 +1123,15 @@ export default function CvJobFitPage() {
               ))}
             </ul>
           </section>
+          )}
+
+          {/* Bước tiếp theo: đánh giá kỹ năng và Learning path ở trang riêng */}
+          <NextStepLinks
+            key={selectedJobId}
+            jobId={selectedJobId}
+            cvId={selectedCvId}
+            index={fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0 ? '05' : '04'}
+          />
 
           {/* Closing CTA */}
           <section className="mt-[clamp(3rem,6vw,4.5rem)] border-t border-ink pt-6">

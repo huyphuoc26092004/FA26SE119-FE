@@ -1,4 +1,4 @@
-import { Navigate, createBrowserRouter, Outlet, useParams } from 'react-router-dom';
+import { Navigate, createBrowserRouter, Outlet, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import type { UserRole } from '../types/domain';
 import PublicLayout from '../layouts/PublicLayout';
@@ -24,13 +24,13 @@ import ResumeDetailsPage from '../pages/candidate/ResumeDetailsPage';
 import ResumeAnalysisPage from '../pages/candidate/ResumeAnalysisPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
+import { LearningPathPage, SkillTestPage } from '../pages/candidate/cv-job-fit/SkillPathPages';
 import CvJobFitPage from '../pages/candidate/CvJobFitPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
 import ApplicationAssistancePage from '../pages/candidate/ApplicationAssistancePage';
 import SubscriptionPage from '../pages/candidate/SubscriptionPage';
 import UsagePage from '../pages/candidate/UsagePage';
 import SupportPage from '../pages/candidate/SupportPage';
-import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
 import ConsultationsPage from '../pages/candidate/ConsultationsPage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
@@ -45,11 +45,26 @@ import ConsultationDetailsPage from '../pages/consultant/ConsultationDetailsPage
 import ConsultantCandidatesPage from '../pages/consultant/ConsultantCandidatesPage';
 import CandidateCareerAnalysisPage from '../pages/consultant/CandidateCareerAnalysisPage';
 import PlaceholderPage from '../pages/shared/PlaceholderPage';
+import AccountPage from '../pages/shared/AccountPage';
+import NotificationsPage from '../pages/shared/NotificationsPage';
+import AiConfigPage from '../pages/admin/AiConfigPage';
+import KnowledgeBasePage from '../pages/admin/KnowledgeBasePage';
+import AnnouncementsPage from '../pages/admin/AnnouncementsPage';
+import AdminSupportPage from '../pages/admin/AdminSupportPage';
+import SystemLogsPage from '../pages/admin/SystemLogsPage';
 import { NotFoundPage, UnauthorizedPage } from '../pages/errors/ErrorPages';
 /** Old job match links now open the CV fit page for the same job. */
 function JobMatchRedirect() {
   const { jobId } = useParams();
   return <Navigate to={`/candidate/cv-job-fit${jobId ? `?jobId=${jobId}` : ''}`} replace />;
+}
+
+/** Old skill assessment / learning pages open the per-job pages; keep ?jobId= links working. */
+function SkillPathRedirect({ to }: { to: 'skill-test' | 'learning-path' }) {
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get('jobId');
+  // Without a job, both pages need one picked on the CV fit page first.
+  return <Navigate to={jobId ? `/candidate/${to}?jobId=${jobId}` : '/candidate/cv-job-fit'} replace />;
 }
 
 export function ProtectedRoute() { const authenticated = useAuthStore(s => s.isAuthenticated); return authenticated ? <Outlet /> : <Navigate to="/login" replace />; }
@@ -103,8 +118,8 @@ export const router = createBrowserRouter([
               { path: 'jobs/:jobId/fit-analysis', element: <CvJobFitPage /> },
               { path: 'cv-job-fit', element: <CvJobFitPage /> },
               { path: 'resumes/:resumeId/job-fit', element: <CvJobFitPage /> },
-              { path: 'salary-estimation', element: <Navigate to="/candidate/assessment" replace /> },
-              { path: 'career-intelligence', element: <Navigate to="/candidate/assessment" replace /> },
+              { path: 'salary-estimation', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'career-intelligence', element: <SkillPathRedirect to="learning-path" /> },
               { path: 'assistant', element: <AssistantPage /> },
               { path: 'applications', element: <ApplicationAssistancePage /> },
               { path: 'application-assistance', element: <ApplicationAssistancePage /> },
@@ -113,18 +128,19 @@ export const router = createBrowserRouter([
               { path: 'payment', element: <SubscriptionPage /> },
               { path: 'usage', element: <UsagePage /> },
               { path: 'support', element: <SupportPage /> },
-              { path: 'assessment', element: <SkillAssessmentPage /> },
-              // Skill gap and learning roadmap now live inside the skill assessment flow.
-              { path: 'skill-gap', element: <Navigate to="/candidate/assessment" replace /> },
-              { path: 'learning', element: <Navigate to="/candidate/assessment" replace /> },
-              { path: 'learning/roadmap', element: <Navigate to="/candidate/assessment" replace /> },
-              ...placeholders([
-                'assessment/:assessmentId',
-                'assessment/:assessmentId/result',
-              ]),
+              // Skill assessment and learning path for one job, opened from the CV fit page.
+              { path: 'skill-test', element: <SkillTestPage /> },
+              { path: 'learning-path', element: <LearningPathPage /> },
+              { path: 'assessment', element: <SkillPathRedirect to="skill-test" /> },
+              { path: 'assessment/*', element: <SkillPathRedirect to="skill-test" /> },
+              { path: 'skill-gap', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'learning', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'learning/roadmap', element: <SkillPathRedirect to="learning-path" /> },
               { path: 'consultations', element: <ConsultationsPage /> },
               { path: 'consultations/new', element: <ConsultationsPage /> },
               { path: 'consultations/:consultationId', element: <ConsultationsPage /> },
+              { path: 'account', element: <AccountPage /> },
+              { path: 'inbox', element: <NotificationsPage /> },
             ],
           },
         ],
@@ -141,6 +157,8 @@ export const router = createBrowserRouter([
               { path: 'consultations/:id', element: <ConsultationDetailsPage /> },
               { path: 'candidates', element: <ConsultantCandidatesPage /> },
               { path: 'candidates/:candidateId', element: <CandidateCareerAnalysisPage /> },
+              { path: 'account', element: <AccountPage /> },
+              { path: 'inbox', element: <NotificationsPage /> },
             ],
           },
         ],
@@ -160,18 +178,17 @@ export const router = createBrowserRouter([
               { path: 'templates', element: <ResumeTemplateManagementPage /> },
               { path: 'resume-templates', element: <Navigate to="/admin/templates" replace /> },
               { path: 'jobs', element: <JobCrawlManagementPage /> },
-              ...placeholders([
-                'ai',
-                'ai/prompts',
-                'ai/embeddings',
-                'vector',
-                'logs',
-                'audit',
-                'notifications',
-                'feedback',
-                'support',
-                'analytics',
-              ]),
+              { path: 'ai', element: <AiConfigPage /> },
+              { path: 'ai/prompts', element: <AiConfigPage /> },
+              { path: 'vector', element: <KnowledgeBasePage /> },
+              { path: 'logs', element: <SystemLogsPage /> },
+              { path: 'audit', element: <SystemLogsPage /> },
+              { path: 'notifications', element: <AnnouncementsPage /> },
+              { path: 'support', element: <AdminSupportPage /> },
+              { path: 'account', element: <AccountPage /> },
+              { path: 'inbox', element: <NotificationsPage /> },
+              // BE chưa có API cho các màn này (xem tài liệu API BE cần bổ sung).
+              ...placeholders(['ai/embeddings', 'feedback', 'analytics']),
             ],
           },
         ],

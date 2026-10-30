@@ -483,7 +483,9 @@ export default function ConsultationsPage() {
                   {!createMutation.isPending && <ArrowRight size={16} aria-hidden="true" />}
                 </button>
                 <p className="text-[13px] text-slate-600" aria-live="polite">
-                  {sentId ? (
+                  {createMutation.error ? (
+                    <span className="text-danger">{createMutation.error.message}</span>
+                  ) : sentId ? (
                     <span className="inline-flex items-center gap-1.5 text-brand">
                       <Check size={14} aria-hidden="true" />
                       {c.sent(sentId)}
@@ -654,7 +656,7 @@ function RequestRow({
               <p className="mt-1 text-[15px] text-ink">
                 {formatDateTime(r.meeting.scheduledAt, locale)} · {r.meeting.durationMinutes}′ · {r.meeting.platform}
               </p>
-              {(r.status === 'SCHEDULED' || r.status === 'IN_PROGRESS') && (
+              {(r.status === 'SCHEDULED' || r.status === 'IN_PROGRESS') && r.meeting.meetingUrl && (
                 <a
                   href={r.meeting.meetingUrl}
                   target="_blank"
@@ -772,6 +774,7 @@ function RequestRow({
                   >
                     {c.rateSubmit}
                   </button>
+                  {rateMutation.error && <p className="mt-2 text-[13px] text-danger">{rateMutation.error.message}</p>}
                 </div>
               ))}
 
@@ -831,6 +834,7 @@ function RequestRow({
                   </button>
                 </form>
               )}
+              {messageMutation.error && <p className="mt-2 text-[13px] text-danger">{messageMutation.error.message}</p>}
             </div>
           </div>
         </div>

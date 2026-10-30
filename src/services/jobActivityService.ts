@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Job } from '../types/domain';
-import { pending, notConnected } from './apiPending';
-import { applyJobExternal } from './candidateService';
+import { applyJobExternal, getAppliedJobRows, getSavedJobRows, toggleSaveJob } from './candidateService';
+import { str, toJob } from './candidateMappers';
 
 export type TrackedJobStatus = 'applied' | 'saved';
 
@@ -24,16 +24,28 @@ export interface JobActivity {
 
 export const JOB_ACTIVITY_QUERY_KEY = ['jobActivity'] as const;
 
-const DEPENDENT_QUERY_KEYS = [['savedJobs'], ['appliedJobs'], JOB_ACTIVITY_QUERY_KEY, ['skillJourneyJobs']];
+const DEPENDENT_QUERY_KEYS = [['savedJobs'], ['appliedJobs'], JOB_ACTIVITY_QUERY_KEY];
 
-// TODO(api): BE chưa có API
+/** Việc đã ứng tuyển và wishlist của ứng viên, dùng chung cho trang việc làm, độ phù hợp CV và trợ lý. */
 export async function getJobActivity(): Promise<JobActivity> {
-  return pending({ applied: [], saved: [], appliedIds: [], savedIds: [] }, 'BE chưa có API');
+  const [appliedRows, savedRows] = await Promise.all([getAppliedJobRows(), getSavedJobRows()]);
+  const savedAt = new Map(savedRows.map((row) => [str(row.id), str(row.saved_at)]));
+  const appliedIds = appliedRows.map((row) => str(row.id));
+  const applied: TrackedJob[] = appliedRows.map((row) => ({
+    job: toJob(row),
+    status: 'applied',
+    isSaved: savedAt.has(str(row.id)),
+    savedAt: savedAt.get(str(row.id)),
+    appliedAt: str(row.applied_at),
+  }));
+  const saved: TrackedJob[] = savedRows
+    .filter((row) => !appliedIds.includes(str(row.id)))
+    .map((row) => ({ job: toJob(row), status: 'saved', isSaved: true, savedAt: str(row.saved_at) }));
+  return { applied, saved, appliedIds, savedIds: [...savedAt.keys()] };
 }
 
-// TODO(api): BE chưa có API
 export async function toggleSavedJob(jobId: string): Promise<{ saved: boolean; ids: string[]; }> {
-  return notConnected('BE chưa có API', jobId);
+  return toggleSaveJob(jobId);
 }
 
 /** Ghi nhận ứng viên chuyển sang trang tuyển dụng gốc của job. */

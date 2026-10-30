@@ -1,4 +1,11 @@
-export type SubscriptionPlanId = 'free' | 'pro' | 'executive';
+/** Mã gói viết thường theo `tier_code` của backend (free, basic, pro…). */
+export type SubscriptionPlanId = string;
+
+export interface PlanQuota {
+  featureCode: string;
+  quotaValue: number;
+  quotaPeriod: string;
+}
 
 export type BillingCycle = 'monthly' | 'yearly';
 
@@ -21,6 +28,10 @@ export interface SubscriptionPlan {
   consultantDiscountPercent: number;
   features: string[];
   highlight?: boolean;
+  /** UUID của subscription_tiers, cần khi tạo đơn thanh toán. */
+  tierId?: string;
+  tierCode?: string;
+  quotas?: PlanQuota[];
 }
 
 export interface UserSubscriptionStatus {
@@ -36,6 +47,9 @@ export interface UserSubscriptionStatus {
   cvJobFitCount: number;
   coverLettersGeneratedCount: number;
   aiQueriesCount: number;
+  /** ID user_subscriptions đang ACTIVE (không có khi dùng FREE). */
+  subscriptionId?: string;
+  quotas?: PlanQuota[];
 }
 
 export interface QrPaymentDetails {
@@ -65,6 +79,10 @@ export interface PaymentTransaction {
   candidateName: string;
   candidateEmail: string;
   qrDetails?: QrPaymentDetails;
+  durationMonths?: number;
+  provider?: string;
+  invoiceNumber?: string;
+  invoiceUrl?: string;
 }
 
 export interface CheckoutParams {

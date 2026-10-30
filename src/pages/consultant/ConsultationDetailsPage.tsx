@@ -556,6 +556,8 @@ export default function ConsultationDetailsPage() {
                   candidateName={request.candidate.name}
                   candidateRole={request.candidate.targetRole}
                   topic={request.topic}
+                  consultationId={request.status === 'COMPLETED' ? undefined : request.id}
+                  resumeId={request.candidate.attachedResumeId}
                   onSave={async (newAdv) => {
                     setAdviceData(newAdv);
                     await adviceMutation.mutateAsync(newAdv);

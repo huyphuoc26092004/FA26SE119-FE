@@ -1,6 +1,9 @@
 import type { AdminManagedUser, CreateUserPayload, UpdateUserPayload, UserFilterParams, UserPermission } from '../types/userManagement';
 import type { UserRole } from '../types/domain';
-import { pending, notConnected } from './apiPending';
+import type { UserAccountStatus } from '../types/userManagement';
+import { apiClient } from './apiClient';
+import { type ApiRow, str } from './candidateMappers';
+import { formatDateTime } from './supportService';
 
 export const ALL_SYSTEM_PERMISSIONS: UserPermission[] = [
   // Core
@@ -120,42 +123,109 @@ export function getDefaultPermissionsForRole(role: UserRole): string[] {
   }
 }
 
-// TODO(api): GET /api/v1/admin/users
+const STATUS_FROM_API: Record<string, UserAccountStatus> = { ACTIVE: 'ACTIVE', SUSPENDED: 'SUSPENDED', PENDING: 'PENDING' };
+
+/** Một dòng tài khoản từ /admin/users thành người dùng trên trang quản trị. */
+export function toManagedUser(row: ApiRow): AdminManagedUser {
+  const role = (str(row.role) || 'CANDIDATE') as UserRole;
+  return {
+    id: str(row.id),
+    name: str(row.full_name),
+    email: str(row.email),
+    phone: '',
+    role,
+    status: STATUS_FROM_API[str(row.status)] ?? 'SUSPENDED',
+    isVerified: Boolean(row.email_verified_at),
+    createdAt: formatDateTime(row.created_at),
+    lastActiveAt: formatDateTime(row.last_login_at) || '—',
+    // Danh sách tài khoản chưa kèm gói và token đã dùng (xem tài liệu API BE cần bổ sung).
+    planId: 'free',
+    planName: '',
+    tokenMonthlyQuota: 0,
+    tokensUsedThisMonth: 0,
+    permissions: getDefaultPermissionsForRole(role),
+    recentActivities: [],
+    authProvider: str(row.auth_provider),
+    deleted: str(row.status) === 'DELETED',
+  };
+}
+
+const PAGE_SIZE = 100;
+
+/** Đọc tối đa 500 tài khoản (5 trang) rồi lọc vai trò/trạng thái ở FE vì backend chỉ tìm theo tên/email. */
 export async function getManagedUsers(params: UserFilterParams = {}): Promise<AdminManagedUser[]> {
-  return pending([], 'GET /api/v1/admin/users', params);
+  const all: ApiRow[] = [];
+  for (let page = 0; page < 5; page++) {
+    const { data } = await apiClient.get<ApiRow[]>('/admin/users', { params: { search: params.search?.trim() ?? '', page, size: PAGE_SIZE } });
+    all.push(...data);
+    if (data.length < PAGE_SIZE) break;
+  }
+  const users = all
+    .map(toManagedUser)
+    .filter((u) => !u.deleted)
+    .filter((u) => !params.role || params.role === 'ALL' || u.role === params.role)
+    .filter((u) => !params.status || params.status === 'ALL' || u.status === params.status);
+  if (params.sortBy === 'name_asc') users.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+  if (params.sortBy === 'oldest') users.reverse();
+  return users;
 }
 
-// TODO(api): GET /api/v1/admin/users/{id}
 export async function getUserById(id: string): Promise<AdminManagedUser | null> {
-  return pending(null, 'GET /api/v1/admin/users/{id}', id);
+  const { data } = await apiClient.get<ApiRow>(`/admin/users/${id}`);
+  return toManagedUser(data);
 }
 
-// TODO(api): POST /api/v1/admin/users
 export async function createUser(payload: CreateUserPayload): Promise<AdminManagedUser> {
-  return notConnected('POST /api/v1/admin/users', payload);
+  const { data } = await apiClient.post<ApiRow>('/admin/users', {
+    email: payload.email.trim(),
+    fullName: payload.name.trim(),
+    role: payload.role,
+    temporaryPassword: payload.initialPassword && payload.initialPassword.length >= 10 ? payload.initialPassword : 'Ccv@' + crypto.randomUUID().slice(0, 12),
+  });
+  return toManagedUser(data);
 }
 
-// TODO(api): PUT /api/v1/admin/users/{id}
+/** PUT cần đủ tên, vai trò và trạng thái nên đọc tài khoản hiện tại rồi gộp thay đổi. */
+async function putAccount(id: string, changes: { fullName?: string; role?: UserRole; status?: 'ACTIVE' | 'SUSPENDED' }): Promise<AdminManagedUser> {
+  const current = await getUserById(id);
+  if (!current) throw new Error('Không tìm thấy tài khoản.');
+  if (current.status === 'PENDING' && changes.status === 'ACTIVE') throw new Error('Tài khoản chưa xác minh email nên không kích hoạt được.');
+  const { data } = await apiClient.put<ApiRow>(`/admin/users/${id}`, {
+    fullName: changes.fullName ?? current.name,
+    role: changes.role ?? current.role,
+    status: changes.status ?? (current.status === 'PENDING' ? 'SUSPENDED' : current.status),
+  });
+  return toManagedUser(data);
+}
+
 export async function updateUser(id: string, payload: UpdateUserPayload): Promise<AdminManagedUser> {
-  return notConnected('PUT /api/v1/admin/users/{id}', id, payload);
+  return putAccount(id, {
+    fullName: payload.name,
+    role: payload.role,
+    status: payload.status === 'ACTIVE' || payload.status === 'SUSPENDED' ? payload.status : undefined,
+  });
 }
 
-// TODO(api): PUT /api/v1/admin/users/{id}
+/** Lý do khóa chưa được backend lưu. */
 export async function toggleLockUser(id: string, newStatus: 'ACTIVE' | 'SUSPENDED', reason?: string): Promise<AdminManagedUser> {
-  return notConnected('PUT /api/v1/admin/users/{id}', id, newStatus, reason);
+  const user = await putAccount(id, { status: newStatus });
+  return { ...user, suspendedReason: newStatus === 'SUSPENDED' ? reason : undefined };
 }
 
-// TODO(api): PUT /api/v1/admin/users/{id}
+/** Backend chỉ có vai trò, chưa có quyền chi tiết; quyền hiển thị theo vai trò mặc định. */
 export async function updateUserRole(id: string, newRole: UserRole, customPermissions?: string[]): Promise<AdminManagedUser> {
-  return notConnected('PUT /api/v1/admin/users/{id}', id, newRole, customPermissions);
+  const user = await putAccount(id, { role: newRole });
+  return { ...user, permissions: customPermissions?.length ? customPermissions : user.permissions };
 }
 
-// TODO(api): DELETE /api/v1/admin/users/{id}
 export async function deleteUser(id: string): Promise<void> {
-  return notConnected('DELETE /api/v1/admin/users/{id}', id);
+  await apiClient.delete(`/admin/users/${id}`);
 }
 
-// TODO(api): BE chưa có API
-export async function resetUserPassword(id: string, newPassword = 'password123'): Promise<string> {
-  return notConnected('BE chưa có API', id, newPassword);
+/** Không có API admin đặt lại mật khẩu; gửi link đặt lại mật khẩu tới email của người dùng. */
+export async function resetUserPassword(id: string): Promise<string> {
+  const user = await getUserById(id);
+  if (!user) throw new Error('Không tìm thấy tài khoản.');
+  await apiClient.post('/auth/forgot-password', { email: user.email });
+  return `đã gửi link đặt lại tới ${user.email}`;
 }

@@ -29,6 +29,7 @@ import { TransactionLedgerTab } from './payment/TransactionLedgerTab';
 import { VatInvoiceTab } from './payment/VatInvoiceTab';
 import { GatewayConfigTab } from './payment/GatewayConfigTab';
 import { TaxReportTab } from './payment/TaxReportTab';
+import { PaymentReportsTab } from './payment/PaymentReportsTab';
 
 import { VatInvoiceViewModal } from './payment/VatInvoiceViewModal';
 import { TransactionDetailDrawer } from './payment/TransactionDetailDrawer';
@@ -37,7 +38,7 @@ import { ManualInvoiceModal } from './payment/ManualInvoiceModal';
 import { CancelInvoiceModal } from './payment/CancelInvoiceModal';
 import { EditGatewayModal } from './payment/EditGatewayModal';
 
-type ActiveTab = 'transactions' | 'invoices' | 'gateways' | 'tax';
+type ActiveTab = 'transactions' | 'reports' | 'invoices' | 'gateways' | 'tax';
 
 interface PaymentInvoiceManagementPageProps {
   defaultTab?: ActiveTab;
@@ -45,6 +46,7 @@ interface PaymentInvoiceManagementPageProps {
 
 const SECTIONS: { key: ActiveTab; label: string }[] = [
   { key: 'transactions', label: 'Giao dịch' },
+  { key: 'reports', label: 'Báo cáo sự cố' },
   { key: 'invoices', label: 'Hoá đơn VAT' },
   { key: 'gateways', label: 'Cổng thanh toán & đối soát' },
   { key: 'tax', label: 'Báo cáo doanh thu & thuế' },
@@ -55,6 +57,11 @@ const HEADINGS: Record<ActiveTab, { line1: string; line2: string; intro: string 
     line1: 'Mọi giao dịch.',
     line2: 'Một danh sách.',
     intro: 'Theo dõi đăng ký gói và nạp token, xác nhận giao dịch chờ và hoàn tiền khi cần.',
+  },
+  reports: {
+    line1: 'Sự cố thanh toán.',
+    line2: 'Người dùng báo, admin xử lý.',
+    intro: 'Báo cáo người dùng gửi khi đơn thanh toán bị lỗi; ghi cách xử lý để đóng báo cáo.',
   },
   invoices: {
     line1: 'Hoá đơn VAT.',
@@ -298,6 +305,8 @@ export const PaymentInvoiceManagementPage: React.FC<PaymentInvoiceManagementPage
                 onAutoReconcile={handleAutoReconcile}
               />
             )}
+
+            {activeTab === 'reports' && <PaymentReportsTab />}
 
             {activeTab === 'tax' && <TaxReportTab report={taxReport} />}
           </>

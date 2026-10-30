@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, Minus, Plus } from 'lucide-react';
 import type {
   BillingCycle,
@@ -13,7 +14,13 @@ import {
   getPaymentHistory,
   getTopupPacks,
   purchaseTokenTopup,
+  getPaymentOrder,
+  cancelSubscription,
+  reportPaymentIssue,
+  resumeSePayCheckout,
+  submitSePayForm,
 } from '../../services/subscriptionService';
+import { authErrorMessage } from '../../services/authService';
 import { PaymentCheckoutModal } from './subscription/PaymentCheckoutModal';
 import { InvoiceReceiptModal } from './subscription/InvoiceReceiptModal';
 import { TokenQuotaRulesModal } from './subscription/TokenQuotaRulesModal';
@@ -69,7 +76,21 @@ const copy = {
     showLess: 'Thu gọn',
     status: { success: 'Thành công', pending: 'Đang chờ', failed: 'Thất bại' } as Record<string, string>,
     faqTitle: 'Câu hỏi thường gặp',
-    planNames: { free: 'Miễn phí', pro: 'Pro', executive: 'Premium' } as Record<string, string>,
+    planNames: { free: 'Miễn phí', basic: 'Basic', pro: 'Pro' } as Record<string, string>,
+    paidNotice: (plan: string) => `Thanh toán thành công. ${plan} đã được kích hoạt.`,
+    waitingNotice: 'Đã nhận kết quả từ SePay, đang chờ backend xác nhận thanh toán. Tải lại trang sau ít phút.',
+    cancelledNotice: 'Bạn đã hủy thanh toán. Đơn vẫn ở trạng thái chờ, có thể thanh toán lại trong lịch sử.',
+    failedNotice: 'Thanh toán chưa thành công. Bạn có thể thử lại hoặc báo lỗi cho đơn này.',
+    cancelPlan: 'Hủy gói',
+    cancelConfirm: 'Hủy gói hiện tại? Quyền lợi dừng ngay và tài khoản trở về gói Miễn phí.',
+    cancelledPlan: 'Đã hủy gói. Tài khoản trở về gói Miễn phí.',
+    payNow: 'Thanh toán',
+    report: 'Báo lỗi',
+    reportPrompt: 'Mô tả vấn đề với đơn này (ví dụ: đã chuyển tiền nhưng gói chưa kích hoạt):',
+    reportSubject: 'Lỗi thanh toán đơn',
+    reportSent: 'Đã gửi báo lỗi. Quản trị viên sẽ kiểm tra và phản hồi.',
+    invoice: 'Hóa đơn',
+    noPacks: 'Hệ thống chưa có gói nạp token lẻ. Muốn thêm token, hãy nâng cấp gói.',
   },
   en: {
     eyebrow: 'Subscription',
@@ -119,7 +140,21 @@ const copy = {
     showLess: 'Show less',
     status: { success: 'Paid', pending: 'Pending', failed: 'Failed' } as Record<string, string>,
     faqTitle: 'Frequently asked questions',
-    planNames: { free: 'Free', pro: 'Pro', executive: 'Premium' } as Record<string, string>,
+    planNames: { free: 'Free', basic: 'Basic', pro: 'Pro' } as Record<string, string>,
+    paidNotice: (plan: string) => `Payment received. ${plan} is now active.`,
+    waitingNotice: 'SePay returned; waiting for the backend to confirm the payment. Reload in a few minutes.',
+    cancelledNotice: 'You cancelled the payment. The order stays pending and can be paid from your history.',
+    failedNotice: 'The payment did not go through. Try again or report this order.',
+    cancelPlan: 'Cancel plan',
+    cancelConfirm: 'Cancel your current plan? Benefits stop now and you return to Free.',
+    cancelledPlan: 'Plan cancelled. You are back on Free.',
+    payNow: 'Pay',
+    report: 'Report',
+    reportPrompt: 'Describe the problem with this order (e.g. paid but the plan is not active):',
+    reportSubject: 'Payment issue for order',
+    reportSent: 'Report sent. An admin will check it.',
+    invoice: 'Invoice',
+    noPacks: 'There are no token top-up packs yet. Upgrade your plan to get more tokens.',
   },
 };
 
@@ -168,10 +203,26 @@ export const SubscriptionPage: React.FC = () => {
   const vnd = (n: number) => `${n.toLocaleString('vi-VN')}đ`;
 
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(getSubscriptionPlans());
-  const [userSubscription, setUserSubscription] = useState<UserSubscriptionStatus>(getUserSubscription());
-  const [transactions, setTransactions] = useState<PaymentTransaction[]>(getPaymentHistory());
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [userSubscription, setUserSubscription] = useState<UserSubscriptionStatus>({
+    planId: 'free',
+    planName: '',
+    billingCycle: 'monthly',
+    startDate: '',
+    expiresDate: '',
+    autoRenew: false,
+    tokensUsed: 0,
+    tokenLimit: 0,
+    cvParsedCount: 0,
+    cvJobFitCount: 0,
+    coverLettersGeneratedCount: 0,
+    aiQueriesCount: 0,
+  });
+  const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const packs = useMemo(() => getTopupPacks(), []);
+  const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
 
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<SubscriptionPlan | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -185,15 +236,68 @@ export const SubscriptionPage: React.FC = () => {
   const [showAllTxns, setShowAllTxns] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
-  const refreshData = () => {
-    setPlans(getSubscriptionPlans());
-    setUserSubscription(getUserSubscription());
-    setTransactions(getPaymentHistory());
+  const refreshData = async () => {
+    try {
+      const tiers = await getSubscriptionPlans();
+      setPlans(tiers);
+      const [subscription, history] = await Promise.all([getUserSubscription(), getPaymentHistory(tiers)]);
+      setUserSubscription(subscription);
+      setTransactions(history);
+      void queryClient.invalidateQueries({ queryKey: ['userSubscription'] });
+    } catch (err) {
+      setNotice({ tone: 'error', text: authErrorMessage(err, 'Không tải được thông tin gói.') });
+    }
   };
 
   useEffect(() => {
-    refreshData();
+    void refreshData();
   }, []);
+
+  // SePay quay lại trang này với ?orderId=…&payment=success|error|cancel; đọc lại đơn từ backend.
+  useEffect(() => {
+    const orderId = searchParams.get('orderId');
+    const payment = searchParams.get('payment');
+    if (!orderId) return;
+    void getPaymentOrder(orderId)
+      .then((order) => {
+        if (order.status === 'success') setNotice({ tone: 'ok', text: c.paidNotice(order.planName) });
+        else if (payment === 'success') setNotice({ tone: 'ok', text: c.waitingNotice });
+        else setNotice({ tone: 'error', text: payment === 'cancel' ? c.cancelledNotice : c.failedNotice });
+        void refreshData();
+      })
+      .catch((err) => setNotice({ tone: 'error', text: authErrorMessage(err, c.failedNotice) }))
+      .finally(() => setSearchParams({}, { replace: true }));
+  }, []);
+
+  const handleCancelSubscription = async () => {
+    if (!userSubscription.subscriptionId || !window.confirm(c.cancelConfirm)) return;
+    try {
+      await cancelSubscription(userSubscription.subscriptionId);
+      setNotice({ tone: 'ok', text: c.cancelledPlan });
+      void refreshData();
+    } catch (err) {
+      setNotice({ tone: 'error', text: authErrorMessage(err, 'Không hủy được gói.') });
+    }
+  };
+
+  const handleResume = async (txn: PaymentTransaction) => {
+    try {
+      submitSePayForm(await resumeSePayCheckout(txn.id, plans));
+    } catch (err) {
+      setNotice({ tone: 'error', text: authErrorMessage(err, 'Không mở lại được cổng thanh toán.') });
+    }
+  };
+
+  const handleReport = async (txn: PaymentTransaction) => {
+    const description = window.prompt(c.reportPrompt);
+    if (!description?.trim()) return;
+    try {
+      await reportPaymentIssue(txn.id, `${c.reportSubject} ${txn.orderCode}`, description.trim());
+      setNotice({ tone: 'ok', text: c.reportSent });
+    } catch (err) {
+      setNotice({ tone: 'error', text: authErrorMessage(err, 'Không gửi được báo lỗi.') });
+    }
+  };
 
   const handleSelectPlan = (plan: SubscriptionPlan) => {
     setSelectedPlanForCheckout(plan);
@@ -208,7 +312,9 @@ export const SubscriptionPage: React.FC = () => {
       await purchaseTokenTopup(pack.id);
       setToppedUp(pack.tokens);
       setSelectedPackId(null);
-      refreshData();
+      void refreshData();
+    } catch (err) {
+      setNotice({ tone: 'error', text: authErrorMessage(err, 'Chưa nạp được token.') });
     } finally {
       setIsToppingUp(false);
     }
@@ -303,6 +409,11 @@ export const SubscriptionPage: React.FC = () => {
 
   return (
     <div className="pb-[clamp(3rem,6vw,5rem)] pt-[clamp(1.75rem,3.5vw,2.5rem)]">
+      {notice && (
+        <p role="status" className={`mb-8 border-l-2 py-1 pl-4 text-[15px] ${notice.tone === 'ok' ? 'border-brand text-brand' : 'border-danger text-danger'}`}>
+          {notice.text}
+        </p>
+      )}
       {/* ─── Plans ─── */}
       <Headline
         eyebrow={c.eyebrow}
@@ -381,8 +492,13 @@ export const SubscriptionPage: React.FC = () => {
                     {c.switchTo(planName(plan))}
                   </button>
                 )}
-                {isCurrent && (
+                {isCurrent && userSubscription.expiresDate && (
                   <p className="mt-2 text-center text-xs text-slate-500">{c.renews(userSubscription.expiresDate)}</p>
+                )}
+                {isCurrent && userSubscription.subscriptionId && (
+                  <button type="button" onClick={() => void handleCancelSubscription()} className={`${textLink} mt-3 self-center text-xs text-danger`}>
+                    {c.cancelPlan}
+                  </button>
                 )}
               </div>
 
@@ -445,7 +561,8 @@ export const SubscriptionPage: React.FC = () => {
           {/* 01 Packs */}
           <section>
             <SectionHead index="01" title={c.packsTitle} />
-            <div role="radiogroup" aria-label={c.packsTitle}>
+            {packs.length === 0 && <p className="py-6 text-sm text-slate-600">{c.noPacks}</p>}
+            <div role="radiogroup" aria-label={c.packsTitle} hidden={packs.length === 0}>
               {packs.map((pack) => {
                 const active = pack.id === selectedPackId;
                 const saving = basePerThousand ? Math.round((1 - perThousand(pack) / basePerThousand) * 100) : 0;
@@ -485,7 +602,7 @@ export const SubscriptionPage: React.FC = () => {
                 );
               })}
             </div>
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4" hidden={packs.length === 0}>
               <p className="text-sm text-slate-700" aria-live="polite">
                 {toppedUp ? (
                   <span className="inline-flex items-center gap-1.5 text-brand">
@@ -525,9 +642,11 @@ export const SubscriptionPage: React.FC = () => {
                     <span className="block text-[15px] text-brand tabular-nums">
                       {row.label} {c.tokens}
                     </span>
-                    <span className="mt-0.5 block text-xs text-slate-500">
-                      ≈ {vnd(Math.round((row.tokens * basePerThousand) / 1000))}
-                    </span>
+                    {basePerThousand > 0 && (
+                      <span className="mt-0.5 block text-xs text-slate-500">
+                        ≈ {vnd(Math.round((row.tokens * basePerThousand) / 1000))}
+                      </span>
+                    )}
                   </span>
                 </li>
               ))}
@@ -568,8 +687,22 @@ export const SubscriptionPage: React.FC = () => {
                       >
                         {c.status[txn.status] ?? txn.status}
                       </span>
-                      <button type="button" onClick={() => setReceiptTxn(txn)} className={`${textLink} text-xs text-slate-700`}>
-                        {c.receipt}
+                      {txn.status === 'pending' && (
+                        <button type="button" onClick={() => void handleResume(txn)} className={`${textLink} text-xs text-brand`}>
+                          {c.payNow}
+                        </button>
+                      )}
+                      {txn.invoiceUrl ? (
+                        <a href={txn.invoiceUrl} target="_blank" rel="noreferrer" className={`${textLink} text-xs text-slate-700`}>
+                          {c.invoice} {txn.invoiceNumber}
+                        </a>
+                      ) : (
+                        <button type="button" onClick={() => setReceiptTxn(txn)} className={`${textLink} text-xs text-slate-700`}>
+                          {c.receipt}
+                        </button>
+                      )}
+                      <button type="button" onClick={() => void handleReport(txn)} className={`${textLink} text-xs text-slate-700`}>
+                        {c.report}
                       </button>
                     </span>
                   </span>
@@ -622,7 +755,7 @@ export const SubscriptionPage: React.FC = () => {
             setSelectedPlanForCheckout(null);
           }}
           onSuccess={() => {
-            refreshData();
+            void refreshData();
           }}
         />
       )}

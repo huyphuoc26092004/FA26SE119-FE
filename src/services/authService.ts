@@ -54,6 +54,11 @@ const knownMessages: Record<string, string> = {
     'Bạn đã dùng hết lượt AI của gói hiện tại trong kỳ này. Hãy nâng cấp gói hoặc đợi kỳ sau.',
   'Feature token quota exceeded': 'Bạn đã dùng hết lượt AI cho tính năng này trong kỳ này. Hãy nâng cấp gói hoặc đợi kỳ sau.',
   'Confirm the CV before analysis': 'Hãy xác nhận (lưu hoàn tất) CV trước khi đánh giá.',
+  'Invalid or expired reset token': 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Hãy yêu cầu link mới.',
+  'New password must contain at least 10 characters': 'Mật khẩu mới cần ít nhất 10 ký tự.',
+  'Email delivery is disabled; configure MAIL_ENABLED and SMTP settings':
+    'Backend chưa bật gửi email (MAIL_ENABLED). Bật SMTP hoặc AUTH_EXPOSE_DEV_OTP=true khi chạy thử.',
+  'Current password is incorrect': 'Mật khẩu hiện tại không đúng.',
 };
 
 /** Turns an Axios/ProblemDetail error from the backend into a message the auth pages can show. */
@@ -63,7 +68,8 @@ export function authErrorMessage(error: unknown, fallback: string): string {
       return 'Không kết nối được backend. Hãy kiểm tra backend đang chạy và VITE_API_BASE_URL.';
     }
     const data = error.response.data as ProblemDetail | undefined;
-    if (error.response.status === 409) return 'Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.';
+    if (error.response.status === 409 && error.config?.url?.startsWith('/auth/register'))
+      return 'Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.';
     if (data?.errors?.length) return data.errors.join('\n');
     if (data?.detail) return knownMessages[data.detail] ?? data.detail;
   }
@@ -90,6 +96,17 @@ export const authService = {
       .then((res) => res.data),
 
   logout: () => apiClient.post<{ message: string }>('/auth/logout').then((res) => res.data),
+
+  // The backend emails a link to /reset-password?token=…; with AUTH_EXPOSE_DEV_OTP it returns the token instead.
+  forgotPassword: (email: string) =>
+    apiClient
+      .post<{ message: string; expiresIn?: number; developmentToken?: string }>('/auth/forgot-password', { email })
+      .then((res) => res.data),
+
+  resetPassword: (token: string, newPassword: string) =>
+    apiClient
+      .post<{ message: string }>('/auth/reset-password', { token, newPassword, newPasswordConfirmation: newPassword })
+      .then((res) => res.data),
 
   me: () => apiClient.get<ProfileResponse>('/me').then((res) => toUser(res.data)),
 };

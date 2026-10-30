@@ -175,4 +175,5 @@ export interface AdminDashboardData {
   aiMetrics: AdminAiMetrics;
   revenueMetrics: AdminRevenueMetrics;
   userMetrics: AdminUserMetrics;
+  openSupportTickets?: number;
 }

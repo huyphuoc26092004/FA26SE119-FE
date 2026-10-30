@@ -24,6 +24,9 @@ interface ConsultationAdviceBuilderProps {
   candidateName: string;
   candidateRole: string;
   topic?: ConsultationTopic;
+  /** Cuộc tư vấn đang mở và CV của ứng viên, cần để AI đánh giá CV làm bản nháp. */
+  consultationId?: string;
+  resumeId?: string;
   onSave?: (advice: ConsultationAdvicePillars) => void | Promise<void>;
   isSaving?: boolean;
   readOnly?: boolean;
@@ -40,7 +43,7 @@ const copy = {
     save: 'Lưu lời khuyên',
     saving: 'Đang lưu…',
     pillars: { cv: 'CV & ATS', career: 'Định hướng', salary: 'Lương & đàm phán', interview: 'Phỏng vấn' },
-    draftDone: 'Đã tạo bản nháp lời khuyên cho cả 4 nhóm.',
+    draftDone: 'AI đã đánh giá CV và điền bản nháp phần CV & ATS.',
     add: 'Thêm',
     remove: 'Xoá',
     empty: 'Chưa có mục nào.',
@@ -119,7 +122,7 @@ const copy = {
     save: 'Save advice',
     saving: 'Saving…',
     pillars: { cv: 'CV & ATS', career: 'Direction', salary: 'Salary', interview: 'Interview' },
-    draftDone: 'Drafted advice for all 4 groups.',
+    draftDone: 'AI reviewed the CV and drafted the CV & ATS part.',
     add: 'Add',
     remove: 'Remove',
     empty: 'Nothing here yet.',
@@ -294,7 +297,8 @@ export default function ConsultationAdviceBuilder({
   initialAdvice,
   candidateName,
   candidateRole,
-  topic = 'CV_REVIEW',
+  consultationId,
+  resumeId,
   onSave,
   isSaving = false,
   readOnly = false,
@@ -320,10 +324,17 @@ export default function ConsultationAdviceBuilder({
   };
 
   // Generate AI Draft
-  const handleGenerateAiDraft = () => {
-    const draft = generateAiConsultationAdviceDraft(candidateName, candidateRole, topic);
-    setAdvice(draft);
-    triggerToast(c.draftDone);
+  const [drafting, setDrafting] = useState(false);
+  const handleGenerateAiDraft = async () => {
+    setDrafting(true);
+    try {
+      setAdvice(await generateAiConsultationAdviceDraft(consultationId ?? '', resumeId ?? '', advice));
+      triggerToast(c.draftDone);
+    } catch (err) {
+      triggerToast(err instanceof Error ? err.message : c.draftDone);
+    } finally {
+      setDrafting(false);
+    }
   };
 
   // Copy Full Advice Summary to Clipboard
@@ -428,7 +439,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
         <p className="max-w-xl text-[15px] leading-7 text-slate-600">{c.intro}</p>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           {!readOnly && (
-            <button type="button" onClick={handleGenerateAiDraft} className={`${textLink} text-slate-700`}>
+            <button type="button" onClick={() => void handleGenerateAiDraft()} disabled={drafting} className={`${textLink} text-slate-700`}>
               {c.draft}
             </button>
           )}

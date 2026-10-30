@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, X, CheckCircle2, UserCheck } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, FileText, LogIn, PanelLeftClose, PanelLeftOpen, PenLine, X, CheckCircle2, UserCheck } from 'lucide-react';
+import { useSidebarCollapsed } from '../../utils/useSidebarCollapsed';
 import { LanguageSwitcher } from '../common/LanguageSwitcher';
 import { GuestJobsTab } from './GuestJobsTab';
 import { GuestCvDemoTab } from './GuestCvDemoTab';
@@ -16,15 +17,15 @@ export type GuestTrialTab = 'jobs' | 'resumes' | 'builder';
 export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boolean } = {}) {
   const { t, isVietnamese } = useTranslation();
   const [activeTab, setActiveTab] = useState<GuestTrialTab>('jobs');
-  const [builderTemplate, setBuilderTemplate] = useState<'modern' | 'tech' | 'classic'>('modern');
   const [builderInitialData, setBuilderInitialData] = useState<DemoCvData | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed('ccv.guestSidebar.collapsed');
+  const collapseLabel = collapsed
+    ? isVietnamese ? 'Mở rộng thanh bên' : 'Expand sidebar'
+    : isVietnamese ? 'Thu gọn thanh bên' : 'Collapse sidebar';
 
-  const handleSelectTemplateForBuilder = (
-    template: 'modern' | 'tech' | 'classic',
-    cv: DemoCvData,
-  ) => {
-    setBuilderTemplate(template);
+  // Bản dùng thử luôn dùng mẫu "Hiện đại"; chỉ mang dữ liệu của CV demo sang.
+  const handleSelectTemplateForBuilder = (cv: DemoCvData) => {
     setBuilderInitialData(cv);
     setActiveTab('builder');
     // Smooth scroll to builder
@@ -37,18 +38,21 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
   const tabs = [
     {
       id: 'jobs' as const,
+      icon: BriefcaseBusiness,
       label: isVietnamese ? 'Duyệt việc làm' : 'Browse jobs',
       hint: isVietnamese ? 'Công khai, không cần đăng nhập' : 'Public, no sign-in needed',
     },
     {
       id: 'resumes' as const,
+      icon: FileText,
       label: isVietnamese ? 'Xem CV demo' : 'Demo CVs',
       hint: isVietnamese ? 'Mẫu chuẩn ATS, điểm 90+' : 'ATS-ready samples, 90+ score',
     },
     {
       id: 'builder' as const,
+      icon: PenLine,
       label: 'AI Resume Builder',
-      hint: isVietnamese ? 'Tạo CV với các mẫu cơ bản' : 'Build a CV from basic templates',
+      hint: isVietnamese ? 'Tạo CV với 1 mẫu miễn phí' : 'Build a CV with 1 free template',
     },
   ];
 
@@ -91,6 +95,32 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
     </div>
   );
 
+  // Thanh bên thu gọn của trang dùng thử: chỉ còn biểu tượng.
+  const iconTabList = (
+    <div role="tablist" className="flex flex-col items-center gap-2 border-t border-border pt-4">
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.id;
+        const Icon = tab.icon;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            aria-label={tab.label}
+            title={tab.label}
+            onClick={() => setActiveTab(tab.id)}
+            className={`grid h-11 w-11 cursor-pointer place-items-center rounded-xl transition-colors ${
+              isActive ? 'bg-brand-50 text-brand' : 'text-slate-600 hover:bg-slate-100 hover:text-ink'
+            }`}
+          >
+            <Icon size={19} strokeWidth={1.6} />
+          </button>
+        );
+      })}
+    </div>
+  );
+
   const content = (
     <div className="min-h-[500px]">
       {activeTab === 'jobs' && <GuestJobsTab />}
@@ -99,7 +129,6 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
       )}
       {activeTab === 'builder' && (
         <GuestAiBuilderTab
-          initialTemplate={builderTemplate}
           initialData={builderInitialData}
           onOpenSaveModal={() => setShowSaveModal(true)}
         />
@@ -142,13 +171,60 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
       className="scroll-mt-24 [--spacing:clamp(0.25rem,0.2rem+0.11vw,0.32rem)] [--text-xs:clamp(0.75rem,0.69rem+0.17vw,0.9375rem)] [--text-sm:clamp(0.875rem,0.8rem+0.2vw,1.0625rem)] [--text-base:clamp(1rem,0.92rem+0.22vw,1.1875rem)] [--text-lg:clamp(1.125rem,1.03rem+0.26vw,1.375rem)] [--text-xl:clamp(1.25rem,1.13rem+0.32vw,1.5rem)] [--text-2xl:clamp(1.5rem,1.33rem+0.45vw,1.875rem)] [--text-3xl:clamp(1.875rem,1.6rem+0.7vw,2.375rem)]"
     >
       {isStandalone ? (
-        <div className="min-h-screen lg:grid lg:grid-cols-[clamp(18.5rem,21vw,28rem)_minmax(0,1fr)]">
-          <aside className="border-b border-border px-6 py-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:px-[clamp(1.5rem,2vw,2.5rem)] lg:py-10">
-            <Link to="/" aria-label="CCV" className="inline-flex">
-              <CcvLogo height={40} />
-            </Link>
-            <div className="mt-10 flex-1 overflow-y-auto">{tabList}</div>
-            <div className="mt-8">
+        <div
+          className={`min-h-screen lg:grid ${
+            collapsed ? 'lg:grid-cols-[4.75rem_minmax(0,1fr)]' : 'lg:grid-cols-[clamp(18.5rem,21vw,28rem)_minmax(0,1fr)]'
+          }`}
+        >
+          <aside
+            className={`border-b border-border px-6 py-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:py-10 ${
+              collapsed ? 'lg:items-center lg:px-0' : 'lg:px-[clamp(1.5rem,2vw,2.5rem)]'
+            }`}
+          >
+            <div className={`flex items-center justify-between gap-3 ${collapsed ? 'lg:flex-col lg:gap-4' : ''}`}>
+              <Link to="/" aria-label="CCV" className="inline-flex">
+                <span className={collapsed ? 'lg:hidden' : ''}>
+                  <CcvLogo height={40} />
+                </span>
+                {collapsed && (
+                  <span className="hidden lg:inline">
+                    <CcvLogo height={32} markOnly />
+                  </span>
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                aria-label={collapseLabel}
+                title={collapseLabel}
+                className="hidden h-9 w-9 cursor-pointer place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink lg:grid"
+              >
+                {collapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
+              </button>
+            </div>
+            {collapsed && <div className="mt-8 hidden flex-1 lg:block">{iconTabList}</div>}
+            {collapsed && (
+              <div className="mt-6 hidden flex-col items-center gap-2 lg:flex">
+                <Link
+                  to="/register"
+                  aria-label={t('common.getStarted', isVietnamese ? 'Bắt đầu ngay' : 'Get started')}
+                  title={t('common.getStarted', isVietnamese ? 'Bắt đầu ngay' : 'Get started')}
+                  className="grid h-11 w-11 place-items-center rounded-full bg-ink text-white transition-colors hover:bg-brand-800"
+                >
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+                <Link
+                  to="/login"
+                  aria-label={t('common.signIn', isVietnamese ? 'Đăng nhập' : 'Sign in')}
+                  title={t('common.signIn', isVietnamese ? 'Đăng nhập' : 'Sign in')}
+                  className="grid h-10 w-10 place-items-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink"
+                >
+                  <LogIn size={18} aria-hidden="true" />
+                </Link>
+              </div>
+            )}
+            <div className={`mt-10 flex-1 overflow-y-auto ${collapsed ? 'lg:hidden' : ''}`}>{tabList}</div>
+            <div className={`mt-8 ${collapsed ? 'lg:hidden' : ''}`}>
               <Link
                 to="/register"
                 className="btn btn-p btn-m min-h-12 w-full justify-between!"

@@ -803,7 +803,8 @@ export function ForgotPasswordPage() {
   const navigate = useNavigate();
   const forgotPasswordAction = useAuthStore((s) => s.forgotPassword);
   const [error, setError] = useState('');
-  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  // null: form; '': email sent; otherwise the dev reset token returned by the backend.
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const { isVietnamese } = useTranslation();
 
   const {
@@ -821,10 +822,9 @@ export function ForgotPasswordPage() {
   const submit = async (data: ForgotForm) => {
     setError('');
     try {
-      const code = await forgotPasswordAction(data.email);
-      setRecoveryCode(code);
+      setResetToken(await forgotPasswordAction(data.email));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không thể gửi mã khôi phục.');
+      setError(e instanceof Error ? e.message : 'Không thể gửi link đặt lại mật khẩu.');
     }
   };
 
@@ -836,30 +836,26 @@ export function ForgotPasswordPage() {
         accent={isVietnamese ? 'Chỉ mất một phút.' : 'It only takes a minute.'}
         description={
           isVietnamese
-            ? 'Nhập email đã đăng ký. Chúng tôi sẽ gửi mã khôi phục để bạn đặt lại mật khẩu.'
-            : "Enter your account email and we'll send you a recovery code to reset your password."
+            ? 'Nhập email đã đăng ký. Chúng tôi sẽ gửi link đặt lại mật khẩu, link có hiệu lực 10 phút.'
+            : "Enter your account email and we'll send you a reset link. It is valid for 10 minutes."
         }
       />
 
-      {recoveryCode ? (
+      {resetToken !== null ? (
         <div className="space-y-6">
-          <SuccessNote title={isVietnamese ? 'Mã khôi phục đã được tạo!' : 'Recovery code generated!'}>
+          <SuccessNote title={isVietnamese ? 'Đã gửi yêu cầu!' : 'Request sent!'}>
             {isVietnamese
-              ? `Mã xác minh đặt lại mật khẩu gồm 6 chữ số đã được tạo cho ${currentEmail}.`
-              : `A 6-digit password reset verification code has been generated for ${currentEmail}.`}
+              ? `Nếu ${currentEmail} có tài khoản, một link đặt lại mật khẩu đã được gửi tới email này. Mở email và bấm vào link trong 10 phút.`
+              : `If ${currentEmail} has an account, a reset link has been sent to it. Open the email and use the link within 10 minutes.`}
           </SuccessNote>
-          <div className="flex items-baseline justify-between border-b border-ink/80 pb-3">
-            <span className="text-sm text-slate-700 md:text-[0.9375rem]">{isVietnamese ? 'Mã OTP khôi phục' : 'Recovery OTP'}</span>
-            <span className="text-[clamp(1.5rem,2.5vw,2rem)] tabular-nums tracking-[0.2em] text-brand">{recoveryCode}</span>
-          </div>
-          <PrimaryButton
-            type="button"
-            label={isVietnamese ? 'Tiếp tục đặt lại mật khẩu' : 'Proceed to reset password'}
-            onClick={() =>
-              navigate(`/reset-password?email=${encodeURIComponent(currentEmail)}&code=${encodeURIComponent(recoveryCode)}`)
-            }
-          />
-          <button type="button" onClick={() => setRecoveryCode(null)} className="text-base text-slate-600 underline underline-offset-4 hover:text-ink">
+          {resetToken && (
+            <PrimaryButton
+              type="button"
+              label={isVietnamese ? 'Mở trang đặt lại (chế độ dev)' : 'Open reset page (dev mode)'}
+              onClick={() => navigate(`/reset-password?token=${encodeURIComponent(resetToken)}&email=${encodeURIComponent(currentEmail)}`)}
+            />
+          )}
+          <button type="button" onClick={() => setResetToken(null)} className="text-base text-slate-600 underline underline-offset-4 hover:text-ink">
             {isVietnamese ? 'Nhập email khác' : 'Try a different email'}
           </button>
         </div>
@@ -873,8 +869,8 @@ export function ForgotPasswordPage() {
 
           <PrimaryButton
             loading={isSubmitting}
-            loadingLabel={isVietnamese ? 'Đang gửi mã…' : 'Sending code…'}
-            label={isVietnamese ? 'Gửi mã khôi phục' : 'Send recovery code'}
+            loadingLabel={isVietnamese ? 'Đang gửi…' : 'Sending…'}
+            label={isVietnamese ? 'Gửi link đặt lại mật khẩu' : 'Send reset link'}
           />
         </form>
       )}
@@ -903,8 +899,7 @@ export function ForgotPasswordPage() {
 
 const resetPasswordSchema = z
   .object({
-    otp: z.string().min(6, 'Mã khôi phục gồm 6 chữ số'),
-    newPassword: z.string().min(8, 'Mật khẩu mới tối thiểu 8 ký tự'),
+    newPassword: z.string().min(10, 'Mật khẩu mới tối thiểu 10 ký tự'),
     confirmNewPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu mới'),
   })
   .refine((data) => data.newPassword === data.confirmNewPassword, {
@@ -920,8 +915,8 @@ export function ResetPasswordPage() {
   const resetPasswordAction = useAuthStore((s) => s.resetPassword);
   const { t, isVietnamese } = useTranslation();
 
-  const emailParam = searchParams.get('email') || 'candidate@example.com';
-  const codeParam = searchParams.get('code') || '';
+  const emailParam = searchParams.get('email') || '';
+  const token = searchParams.get('token') || '';
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -935,7 +930,6 @@ export function ResetPasswordPage() {
   } = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      otp: codeParam,
       newPassword: '',
       confirmNewPassword: '',
     },
@@ -975,7 +969,7 @@ export function ResetPasswordPage() {
   const submit = async (data: ResetPasswordForm) => {
     setError('');
     try {
-      await resetPasswordAction(emailParam, data.otp, data.newPassword);
+      await resetPasswordAction(token, data.newPassword);
       setIsSuccess(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Đặt lại mật khẩu thất bại.');
@@ -990,8 +984,8 @@ export function ResetPasswordPage() {
         accent={isVietnamese ? 'An toàn hơn.' : 'Kept safe.'}
         description={
           isVietnamese
-            ? `Nhập mã xác minh và thiết lập mật khẩu mới cho tài khoản ${emailParam}.`
-            : `Enter your recovery code and set a new password for ${emailParam}.`
+            ? `Thiết lập mật khẩu mới${emailParam ? ` cho tài khoản ${emailParam}` : ''}.`
+            : `Set a new password${emailParam ? ` for ${emailParam}` : ''}.`
         }
       />
 
@@ -1009,25 +1003,25 @@ export function ResetPasswordPage() {
             onClick={() => navigate(`/login?email=${encodeURIComponent(emailParam)}&reset=success`)}
           />
         </div>
+      ) : !token ? (
+        <div className="space-y-6">
+          <ErrorAlert
+            message={
+              isVietnamese
+                ? 'Link đặt lại mật khẩu thiếu mã xác thực. Hãy mở đúng link trong email hoặc yêu cầu link mới.'
+                : 'This reset link has no token. Open the link from your email or request a new one.'
+            }
+          />
+          <PrimaryButton type="button" label={isVietnamese ? 'Yêu cầu link mới' : 'Request a new link'} onClick={() => navigate('/forgot-password')} />
+        </div>
       ) : (
         <form onSubmit={handleSubmit(submit)} className="space-y-6">
-          <Field label={t('auth.recoveryCodeLabel', 'Mã khôi phục (OTP)')} htmlFor="reset-otp" error={errors.otp?.message}>
-            <input
-              id="reset-otp"
-              maxLength={6}
-              inputMode="numeric"
-              placeholder={isVietnamese ? '6 chữ số OTP' : '6-digit OTP'}
-              className={`${inputClass} tabular-nums tracking-[0.2em]`}
-              {...register('otp')}
-            />
-          </Field>
-
           <div>
             <Field label={t('auth.newPasswordLabel', 'Mật khẩu mới')} htmlFor="new-pass" error={errors.newPassword?.message}>
               <input
                 id="new-pass"
                 type={showPassword ? 'text' : 'password'}
-                placeholder={isVietnamese ? 'Tối thiểu 8 ký tự' : 'Minimum 8 characters'}
+                placeholder={isVietnamese ? 'Tối thiểu 10 ký tự' : 'Minimum 10 characters'}
                 autoComplete="new-password"
                 className={`${inputClass} pr-14`}
                 {...register('newPassword')}

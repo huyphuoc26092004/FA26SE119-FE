@@ -4,7 +4,7 @@ import { demoResumes, type DemoCvData } from './guestTrialData';
 import { useTranslation } from '../../i18n';
 
 interface GuestCvDemoTabProps {
-  onSelectTemplateForBuilder?: (template: 'modern' | 'tech' | 'classic', cv: DemoCvData) => void;
+  onSelectTemplateForBuilder?: (cv: DemoCvData) => void;
 }
 
 function SectionLabel({ children }: { children: string }) {
@@ -222,15 +222,15 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
             </h4>
             <p className="mt-2 text-base leading-relaxed text-white/70">
               {isVietnamese
-                ? 'Mở Resume Builder với mẫu này và thay thông tin của bạn vào, mất khoảng 2 phút.'
-                : 'Open the Resume Builder with this template and fill in your details in about 2 minutes.'}
+                ? 'Mở Resume Builder với nội dung này và thay thông tin của bạn vào, mất khoảng 2 phút. Bản dùng thử có 1 mẫu miễn phí.'
+                : 'Open the Resume Builder with this content and fill in your details in about 2 minutes. The trial includes 1 free template.'}
             </p>
             <button
               type="button"
               className="mt-6 inline-flex min-h-12 w-full items-center justify-between gap-4 rounded-full bg-mint px-6 text-base font-medium text-night transition-colors hover:bg-white cursor-pointer"
-              onClick={() => onSelectTemplateForBuilder?.(currentCv.template, currentCv)}
+              onClick={() => onSelectTemplateForBuilder?.(currentCv)}
             >
-              {isVietnamese ? 'Tạo CV với mẫu này' : 'Build a CV with this template'}
+              {isVietnamese ? 'Tạo CV từ nội dung này' : 'Build a CV from this content'}
               <ArrowRight size={18} aria-hidden="true" />
             </button>
           </section>

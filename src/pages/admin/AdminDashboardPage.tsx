@@ -30,7 +30,7 @@ import {
   toggleUserStatus,
 } from '../../services/adminService';
 import { getManagedUsers } from '../../services/userService';
-import { getConsultationRequests } from '../../services/consultationService';
+import { assignConsultant, getConsultationRequests } from '../../services/consultationService';
 import { getAdminPaymentTransactions } from '../../services/paymentManagementService';
 import type { AdminDashboardData } from '../../types/admin';
 import type { UserRole } from '../../types/domain';
@@ -539,7 +539,16 @@ export default function AdminDashboardPage() {
   const isMaintenance = systemHealth.overallStatus === 'MAINTENANCE';
 
   if (view === 'consultations') {
-    return <ConsultationsView c={c} lang={lang} consultations={consultations} onBack={() => setSearchParams({})} />;
+    return (
+      <ConsultationsView
+        c={c}
+        lang={lang}
+        consultations={consultations}
+        consultants={managedUsers.filter((u) => u.role === 'CAREER_CONSULTANT' && u.status === 'ACTIVE')}
+        onAssigned={() => void queryClient.invalidateQueries({ queryKey: ['admin-consultations'] })}
+        onBack={() => setSearchParams({})}
+      />
+    );
   }
 
   // Filtered users
@@ -1349,14 +1358,27 @@ function ConsultationsView({
   c,
   lang,
   consultations,
+  consultants,
+  onAssigned,
   onBack,
 }: {
   c: Copy;
   lang: Lang;
   consultations: ConsultationRequest[];
+  consultants: { id: string; name: string }[];
+  onAssigned: () => void;
   onBack: () => void;
 }) {
   const [status, setStatus] = useState<ConsultationStatus | 'ALL'>('ALL');
+  const [assignError, setAssignError] = useState('');
+  const assignMutation = useMutation({
+    mutationFn: ({ id, consultantId }: { id: string; consultantId: string }) => assignConsultant(id, consultantId),
+    onSuccess: () => {
+      setAssignError('');
+      onAssigned();
+    },
+    onError: (err: Error) => setAssignError(err.message),
+  });
   const [query, setQuery] = useState('');
   const locale = lang === 'vi' ? 'vi-VN' : 'en-US';
 
@@ -1440,6 +1462,7 @@ function ConsultationsView({
         <span>{c.consult.cols.meeting}</span>
         <span>{c.consult.cols.status}</span>
       </div>
+      {assignError && <p role="alert" className="mt-4 text-[15px] text-danger">{assignError}</p>}
       {rows.length === 0 ? (
         <EmptyRow>{c.consult.empty}</EmptyRow>
       ) : (
@@ -1463,7 +1486,26 @@ function ConsultationsView({
                   )}
                 </p>
               </div>
-              <span className="text-sm text-ink">{r.consultantName}</span>
+              {r.status === 'COMPLETED' ? (
+                <span className="text-sm text-ink">{r.consultantName || '—'}</span>
+              ) : (
+                <label className="block">
+                  <span className="sr-only">{lang === 'vi' ? 'Phân công cố vấn' : 'Assign consultant'}</span>
+                  <select
+                    value={r.consultantId}
+                    disabled={assignMutation.isPending}
+                    onChange={(e) => e.target.value && assignMutation.mutate({ id: r.id, consultantId: e.target.value })}
+                    className={underlineSelect}
+                  >
+                    <option value="">{lang === 'vi' ? 'Chọn cố vấn…' : 'Pick a consultant…'}</option>
+                    {consultants.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <span className="text-sm tabular-nums text-slate-600">{fmt(r.meeting.scheduledAt)}</span>
               <span className={`text-sm ${statusTone(r.status)}`}>{c.consult.status[r.status]}</span>
             </li>

@@ -6,10 +6,12 @@ import type {
   AiUsageRecord,
   RecommendationFeedback,
   UsageSummaryMetrics,
+  UserSubscriptionStatus,
 } from '../../types/domain';
 import { getAiUsageHistory, getUsageSummaryMetrics } from '../../services/usageService';
 import { getRecommendationFeedbackList } from '../../services/feedbackService';
 import { getUserSubscription } from '../../services/subscriptionService';
+import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
 
 // Features no longer offered in the candidate area. Their old records are hidden here
@@ -84,7 +86,7 @@ const copy = {
       mock_interview: 'Luyện phỏng vấn',
       learning_roadmap: 'Lộ trình học',
     } as Record<AiFeatureType, string>,
-    planNames: { free: 'Miễn phí', pro: 'Pro', executive: 'Premium' } as Record<string, string>,
+    planNames: { free: 'Miễn phí', basic: 'Basic', pro: 'Pro' } as Record<string, string>,
   },
   en: {
     eyebrow: 'AI usage',
@@ -143,7 +145,7 @@ const copy = {
       mock_interview: 'Interview practice',
       learning_roadmap: 'Learning roadmap',
     } as Record<AiFeatureType, string>,
-    planNames: { free: 'Free', pro: 'Pro', executive: 'Premium' } as Record<string, string>,
+    planNames: { free: 'Free', basic: 'Basic', pro: 'Pro' } as Record<string, string>,
   },
 };
 
@@ -228,7 +230,21 @@ export const UsagePage: React.FC = () => {
   const [usageHistory, setUsageHistory] = useState<AiUsageRecord[]>([]);
   const [metrics, setMetrics] = useState<UsageSummaryMetrics | null>(null);
   const [feedbackList, setFeedbackList] = useState<RecommendationFeedback[]>([]);
-  const [subscription, setSubscription] = useState(() => getUserSubscription());
+  const [subscription, setSubscription] = useState<UserSubscriptionStatus>({
+    planId: 'free',
+    planName: '',
+    billingCycle: 'monthly',
+    startDate: '',
+    expiresDate: '',
+    autoRenew: false,
+    tokensUsed: 0,
+    tokenLimit: 0,
+    cvParsedCount: 0,
+    cvJobFitCount: 0,
+    coverLettersGeneratedCount: 0,
+    aiQueriesCount: 0,
+  });
+  const [loadError, setLoadError] = useState('');
 
   const [selectedFeature, setSelectedFeature] = useState<AiFeatureType | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -236,10 +252,18 @@ export const UsagePage: React.FC = () => {
   const [ratingFilter, setRatingFilter] = useState<'all' | 'like' | 'dislike'>('all');
 
   useEffect(() => {
-    setUsageHistory(getAiUsageHistory());
-    setMetrics(getUsageSummaryMetrics());
     setFeedbackList(getRecommendationFeedbackList());
-    setSubscription(getUserSubscription());
+    void (async () => {
+      try {
+        const history = await getAiUsageHistory();
+        setUsageHistory(history);
+        const [summary, sub] = await Promise.all([getUsageSummaryMetrics(history), getUserSubscription()]);
+        setMetrics(summary);
+        setSubscription(sub);
+      } catch (err) {
+        setLoadError(authErrorMessage(err, 'Không tải được lịch sử dùng AI.'));
+      }
+    })();
   }, []);
 
   const activeHistory = useMemo(
@@ -343,6 +367,7 @@ export const UsagePage: React.FC = () => {
 
   return (
     <div className="animate-fade-in pb-20">
+      {loadError && <p role="alert" className="mb-6 text-[15px] text-danger">{loadError}</p>}
       {/* Headline + quota */}
       <header className="grid gap-x-[clamp(2rem,5vw,5rem)] gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)] lg:items-end">
         <div className="min-w-0">

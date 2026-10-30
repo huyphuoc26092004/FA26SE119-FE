@@ -1,11 +1,12 @@
 import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, ChevronDown, Plus, X } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createResume,
   getResumeById,
   getResumeTemplates,
+  getLocalResumeTemplates,
   updateResume,
   type CvTemplate,
 } from '../../services/candidateService';
@@ -49,6 +50,9 @@ const copy = {
     next: (label: string) => `Tiếp: ${label}`,
     prev: 'Quay lại',
     finish: 'Hoàn tất & lưu CV',
+    guestSave: 'Đăng ký để lưu và tải PDF',
+    guestNote: 'Bản dùng thử chỉ xem trước, không tải về được.',
+    guestTemplate: 'Đăng ký để dùng thêm mẫu',
     loadError: 'Không tải được CV hoặc mẫu CV.',
     saveError: 'Không lưu được CV.',
     noTemplates: 'Chưa có mẫu CV nào đang bật. Hãy nhờ quản trị viên bật ít nhất một mẫu.',
@@ -147,6 +151,9 @@ const copy = {
     next: (label: string) => `Next: ${label}`,
     prev: 'Back',
     finish: 'Finish & save CV',
+    guestSave: 'Sign up to save & get PDF',
+    guestNote: 'The trial is preview only; downloads need an account.',
+    guestTemplate: 'Sign up for more templates',
     loadError: 'Could not load the CV or templates.',
     saveError: 'Could not save the CV.',
     noTemplates: 'No CV templates are enabled. Ask an admin to enable at least one.',
@@ -461,23 +468,46 @@ function SkillInput({ skills, onChange, placeholder, addLabel }: { skills: strin
 
 // ---- Page ----
 
+/** Chế độ dùng thử của khách: 1 mẫu, không lưu, không tải về, không gợi ý AI. */
+export interface GuestBuilderOptions {
+  initialCv?: Partial<Resume>;
+  onRequireSignup: () => void;
+}
+
 export default function ResumeBuilderPage() {
-  const { templateId: routeTemplateId, resumeId } = useParams<{ templateId?: string; resumeId?: string }>();
+  return <ResumeBuilder />;
+}
+
+export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
+  const params = useParams<{ templateId?: string; resumeId?: string }>();
+  const routeTemplateId = guest ? undefined : params.templateId;
+  const resumeId = guest ? undefined : params.resumeId;
   const isEdit = Boolean(resumeId);
   const { isVietnamese } = useTranslation();
   const uiLang = isVietnamese ? 'vi' : 'en';
   const c = copy[uiLang];
   const navigate = useNavigate();
+  // Mở từ trang Độ phù hợp CV: lưu xong quay lại đó để chấm lại.
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
+  const backTo = returnTo?.startsWith('/candidate/') ? returnTo : null;
   const queryClient = useQueryClient();
 
-  const templatesQuery = useQuery({ queryKey: ['resume-templates'], queryFn: getResumeTemplates, staleTime: 5 * 60_000 });
+  // Khách dùng thử: lỗi mạng thì vẫn có mẫu trong FE để thử.
+  const templatesQuery = useQuery({
+    queryKey: guest ? ['resume-templates', 'guest'] : ['resume-templates'],
+    queryFn: guest ? () => getResumeTemplates().catch(getLocalResumeTemplates) : getResumeTemplates,
+    staleTime: 5 * 60_000,
+  });
   const resumeQuery = useQuery({
     queryKey: ['resume', resumeId],
     queryFn: () => getResumeById(resumeId!),
     enabled: isEdit,
   });
 
-  const [cv, setCv] = useState<Partial<Resume> | null>(isEdit ? null : blankCv(isVietnamese ? 'Vietnamese' : 'English'));
+  const [cv, setCv] = useState<Partial<Resume> | null>(
+    isEdit ? null : { ...blankCv(isVietnamese ? 'Vietnamese' : 'English'), ...guest?.initialCv },
+  );
   const [templateId, setTemplateId] = useState<string | undefined>(routeTemplateId);
   const [step, setStep] = useState(0);
   const [openItem, setOpenItem] = useState<string | null>(null);
@@ -502,7 +532,7 @@ export default function ResumeBuilderPage() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
-  const templates = useMemo(() => templatesQuery.data ?? [], [templatesQuery.data]);
+  const templates = useMemo(() => (guest ? (templatesQuery.data ?? []).slice(0, 1) : templatesQuery.data ?? []), [templatesQuery.data, guest]);
   const template: CvTemplate | undefined = templates.find((t) => t.id === templateId) ?? templates[0];
 
   const deferredCv = useDeferredValue(cv);
@@ -554,6 +584,7 @@ export default function ResumeBuilderPage() {
   const toggle = (id: string) => setOpenItem((prev) => (prev === id ? null : id));
 
   const save = async (asDraft: boolean) => {
+    if (guest) return guest.onRequireSignup();
     const cleaned = cleanCv(cv);
     const name =
       cleaned.name?.trim() ||
@@ -577,7 +608,8 @@ export default function ResumeBuilderPage() {
         setNotice({ tone: 'ok', text: c.saved });
         if (!isEdit) navigate(`/candidate/resumes/${saved.id}/edit`, { replace: true });
       } else {
-        navigate(`/candidate/resumes/${saved.id}`);
+        if (backTo) queryClient.invalidateQueries({ queryKey: ['cvJobFit'] });
+        navigate(backTo ?? `/candidate/resumes/${saved.id}`);
       }
     } catch (error) {
       setNotice({ tone: 'error', text: authErrorMessage(error, c.saveError) });
@@ -616,7 +648,7 @@ export default function ResumeBuilderPage() {
             onChange={(v) => update({ summary: v })}
             footer={f.chars(cv.summary?.length ?? 0)}
           />
-          <AiSuggest
+          {!guest && <AiSuggest
             lang={uiLang}
             onApply={(text) => update({ summary: text })}
             params={() => ({
@@ -630,7 +662,7 @@ export default function ResumeBuilderPage() {
                 .map((e) => [e.role, e.company, [e.startDate, e.isCurrent ? c.present : e.endDate].filter(Boolean).join('–')].filter(Boolean).join(', '))
                 .join('; '),
             })}
-          />
+          />}
           </>
         );
       case 'experience':
@@ -680,7 +712,7 @@ export default function ResumeBuilderPage() {
                       value={(e.highlights ?? []).join('\n')}
                       onChange={(v) => experience.change(e.id, { highlights: v.split('\n') })}
                     />
-                    <AiSuggest
+                    {!guest && <AiSuggest
                       lang={uiLang}
                       onApply={(text) => experience.change(e.id, { highlights: text.split('\n') })}
                       params={() => ({
@@ -692,7 +724,7 @@ export default function ResumeBuilderPage() {
                         subtitle: [e.company, e.location].filter(Boolean).join(', '),
                         current: [e.description, ...(e.highlights ?? [])].filter(Boolean).join('\n'),
                       })}
-                    />
+                    />}
                   </div>
                 </ItemRow>
               ))}
@@ -775,7 +807,7 @@ export default function ResumeBuilderPage() {
                   <Field className="sm:col-span-2" label={f.link} value={p.link} onChange={(v) => projects.change(p.id, { link: v })} />
                   <div className="sm:col-span-2">
                     <TextArea label={f.description} rows={4} value={p.description} onChange={(v) => projects.change(p.id, { description: v })} />
-                    <AiSuggest
+                    {!guest && <AiSuggest
                       lang={uiLang}
                       onApply={(text) => projects.change(p.id, { description: text })}
                       params={() => ({
@@ -785,7 +817,7 @@ export default function ResumeBuilderPage() {
                         subtitle: [p.role, (p.techStack ?? []).filter(Boolean).join(', ')].filter(Boolean).join(' · '),
                         current: p.description,
                       })}
-                    />
+                    />}
                   </div>
                 </ItemRow>
               ))}
@@ -855,10 +887,19 @@ export default function ResumeBuilderPage() {
     <div className="w-full pb-[clamp(2rem,5vw,4rem)]">
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link to="/candidate/resumes" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-brand">
-          <ArrowLeft size={15} aria-hidden="true" />
-          {c.back}
-        </Link>
+        {guest ? (
+          <span className="text-sm text-slate-600">{c.guestNote}</span>
+        ) : (
+          <Link to="/candidate/resumes" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-brand">
+            <ArrowLeft size={15} aria-hidden="true" />
+            {c.back}
+          </Link>
+        )}
+        {guest ? (
+          <button type="button" onClick={guest.onRequireSignup} className={primaryButton}>
+            {c.guestSave}
+          </button>
+        ) : (
         <div className="flex items-center gap-6">
           {notice ? (
             <span role="status" className={`max-w-[22rem] whitespace-pre-line text-sm ${notice.tone === 'error' ? 'text-danger' : 'text-brand'}`}>
@@ -874,6 +915,7 @@ export default function ResumeBuilderPage() {
             {saving ? c.saving : c.save}
           </button>
         </div>
+        )}
       </div>
 
       {/* Mobile switch */}
@@ -973,7 +1015,7 @@ export default function ResumeBuilderPage() {
             )}
             {isLast ? (
               <button type="button" onClick={() => save(false)} disabled={saving} className={primaryButton}>
-                {saving ? c.saving : c.finish}
+                {guest ? c.guestSave : saving ? c.saving : c.finish}
               </button>
             ) : (
               <button type="button" onClick={() => goTo(step + 1)} className={primaryButton}>
@@ -990,6 +1032,14 @@ export default function ResumeBuilderPage() {
             <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-3">
               <label className="block min-w-0">
                 <span className="text-[13px] text-slate-500">{c.template}</span>
+                {guest ? (
+                  <span className="mt-1 block text-[15px] text-ink">
+                    {template.name}
+                    <button type="button" onClick={guest.onRequireSignup} className="ml-3 cursor-pointer border-b border-brand text-[13px] text-brand">
+                      {c.guestTemplate}
+                    </button>
+                  </span>
+                ) : (
                 <select
                   value={template.id}
                   onChange={(e) => {
@@ -1005,11 +1055,15 @@ export default function ResumeBuilderPage() {
                     </option>
                   ))}
                 </select>
+                )}
               </label>
               <span className="text-sm tabular-nums text-slate-500">{c.pages(pageCount)}</span>
             </div>
             <div className="mt-5 max-h-none overflow-y-auto border border-border bg-slate-100 p-[clamp(0.75rem,1.5vw,1.25rem)] lg:max-h-[calc(100dvh-9rem)]">
-              <div className="mx-auto max-w-[794px] shadow-[0_1px_2px_rgba(23,32,28,0.08)]">
+              <div
+                className={`mx-auto max-w-[794px] shadow-[0_1px_2px_rgba(23,32,28,0.08)] ${guest ? 'select-none print:hidden [&_iframe]:pointer-events-none' : ''}`}
+                onContextMenu={guest ? (e) => e.preventDefault() : undefined}
+              >
                 <ResumePaper html={previewHtml} title={c.preview} showPageBreaks onPageCount={setPageCount} />
               </div>
             </div>

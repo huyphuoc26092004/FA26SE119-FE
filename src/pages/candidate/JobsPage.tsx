@@ -74,12 +74,9 @@ export default function JobsPage() {
 
   const applyMutation = useMutation({
     mutationFn: (jobId: string) => markJobApplied(jobId),
-    onSuccess: (res) => {
-      queryClient.setQueryData(['appliedJobs'], res.ids);
+    onSuccess: () => {
       refreshJobActivity(queryClient);
       setRedirectJob(null);
-      setToastMessage(t('jobs.appliedSuccess'));
-      setTimeout(() => setToastMessage(null), 4000);
     },
   });
 

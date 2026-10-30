@@ -102,12 +102,9 @@ export default function JobDetailsPage() {
 
   const applyMutation = useMutation({
     mutationFn: () => markJobApplied(jobId),
-    onSuccess: (res) => {
-      queryClient.setQueryData(['appliedJobs'], res.ids);
+    onSuccess: () => {
       refreshJobActivity(queryClient);
       setRedirectModalOpen(false);
-      setToastMessage(t('jobs.appliedSuccess'));
-      setTimeout(() => setToastMessage(null), 4000);
     },
   });
 
@@ -165,6 +162,7 @@ export default function JobDetailsPage() {
       }
     >
       {/* Toast */}
+
       {toastMessage && (
         <div
           role="status"
