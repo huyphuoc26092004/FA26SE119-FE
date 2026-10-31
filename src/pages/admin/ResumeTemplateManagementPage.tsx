@@ -1,28 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LayoutGrid, List, Plus, Search } from 'lucide-react';
 import {
-  Plus,
-  Upload,
-  Search,
-  LayoutGrid,
-  List,
-  Eye,
-  Edit3,
-  Copy,
-  Download,
-  Check,
-  Globe,
-  Tag,
-  RotateCcw,
-} from 'lucide-react';
-import {
-  Headline,
-  StatRow,
   UnderlineTabs,
   Toast,
-  EmptyRow,
   primaryButton,
-  outlineButton,
+  textLink,
   underlineInput,
   underlineSelect,
   RowMenu,
@@ -49,6 +32,36 @@ import { TemplateEditorModal } from './template/TemplateEditorModal';
 import { TemplateImportModal } from './template/TemplateImportModal';
 import { TemplatePreviewModal } from './template/TemplatePreviewModal';
 import { TemplateDeleteModal } from './template/TemplateDeleteModal';
+
+const PAPER_WIDTH = 794; // A4 ở 96dpi
+
+/** Ảnh thu nhỏ của mẫu: iframe khổ A4 thu theo bề rộng ô, chỉ hiện phần đầu trang. */
+function TemplateThumb({ html, title }: { html: string; title: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.3);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setScale(el.clientWidth / PAPER_WIDTH);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="pointer-events-none relative aspect-[4/5] w-full select-none overflow-hidden bg-white">
+      <iframe
+        title={title}
+        srcDoc={html}
+        tabIndex={-1}
+        aria-hidden="true"
+        sandbox="allow-same-origin"
+        className="absolute left-0 top-0 origin-top-left border-0 bg-white"
+        style={{ width: PAPER_WIDTH, height: Math.round(PAPER_WIDTH * 1.414), transform: `scale(${scale})` }}
+      />
+    </div>
+  );
+}
 
 export default function ResumeTemplateManagementPage() {
   const queryClient = useQueryClient();
@@ -240,147 +253,102 @@ export default function ResumeTemplateManagementPage() {
     }
   };
 
+  const restoreSeeds = () => {
+    if (
+      window.confirm(
+        'Khôi phục danh mục mẫu CV về 5 mẫu chuẩn mặc định? (Harvard ATS, 2 Cột Hiện Đại, Sinh Viên Năng Động, Kỹ Sư Silicon Valley, Lãnh Đạo Cấp Cao)'
+      )
+    ) {
+      resetTemplatesToSeed();
+      queryClient.invalidateQueries({ queryKey: ['admin-resume-templates'] });
+      showToast('Đã khôi phục 5 mẫu CV chuẩn.');
+    }
+  };
+
+  const menuItems = (item: ResumeTemplateAdmin) => [
+    { label: item.is_active ? 'Tạm tắt mẫu' : 'Bật mẫu', onClick: () => statusMutation.mutate({ id: item.id, active: !item.is_active }) },
+    { label: 'Nhân bản', onClick: () => duplicateMutation.mutate(item.id) },
+    { label: 'Tải tệp HTML', onClick: () => exportResumeTemplateHtml(item) },
+    { label: 'Xoá mẫu', tone: 'danger' as const, onClick: () => setSelectedTemplateForDelete(item) },
+  ];
+
+  const metaLine = (item: ResumeTemplateAdmin) =>
+    [item.language === 'vi' ? 'Tiếng Việt' : 'English', item.is_trial_enabled ? 'Cho dùng thử' : '', item.career_path || '']
+      .filter(Boolean)
+      .join(' · ');
+
   return (
-    <div className="space-y-8 pb-16">
-      {/* Toast feedback */}
+    <div className="pb-16">
       <Toast message={toastMessage} />
 
       {/* Header */}
-      <Headline
-        eyebrow="Quản trị nội dung & nền tảng"
-        line1="Quản lý Mẫu CV."
-        line2={`${counts.all} mẫu thiết kế trong hệ thống.`}
-        intro="Quản lý toàn bộ thư viện mẫu CV dạng HTML/CSS tự chứa. Hỗ trợ tạo mới, biên tập mã nguồn trực tiếp, nhập bản nháp từ file PDF/Word/HTML, phân quyền dùng thử và xem trước dữ liệu động chuẩn ATS."
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={handleOpenCreate}
-            className={`${primaryButton} flex items-center gap-2`}
-          >
-            <Plus size={16} />
-            <span>Tạo mẫu mới</span>
+      <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <p className="text-[13px] text-slate-500">Nội dung</p>
+          <h1 className="mt-2 text-[clamp(2rem,3.4vw,2.875rem)] font-normal leading-[1.12] tracking-[-0.03em] text-ink">
+            Mẫu CV <span className="text-slate-400">· {counts.all}</span>
+          </h1>
+          <p className="mt-3 max-w-[32rem] text-[15px] leading-7 text-slate-600">
+            Mẫu HTML mà ứng viên chọn khi tạo CV. {counts.active} mẫu đang bật, {counts.trial} mẫu cho khách dùng thử.
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 lg:flex-nowrap">
+          <button type="button" onClick={restoreSeeds} className={`${textLink} text-slate-600`}>
+            Khôi phục mẫu chuẩn
           </button>
-          <button
-            type="button"
-            onClick={() => setIsImportOpen(true)}
-            className={`${outlineButton} flex items-center gap-2`}
-          >
-            <Upload size={16} />
-            <span>Nhập từ tài liệu (PDF/Word/HTML)</span>
+          <button type="button" onClick={() => setIsImportOpen(true)} className={`${textLink} text-ink`}>
+            Nhập từ tài liệu
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (
-                window.confirm(
-                  'Khôi phục danh mục mẫu CV về 5 mẫu thiết kế chuẩn quốc tế mặc định? (Harvard ATS, 2 Cột Hiện Đại, Sinh Viên Năng Động, Kỹ Sư Silicon Valley, Lãnh Đạo Cấp Cao)'
-                )
-              ) {
-                resetTemplatesToSeed();
-                queryClient.invalidateQueries({ queryKey: ['admin-resume-templates'] });
-                showToast('Đã khôi phục thành công 5 mẫu CV chuẩn quốc tế.');
-              }
-            }}
-            className={`${outlineButton} flex items-center gap-2 text-slate-600 hover:text-ink`}
-            title="Khôi phục lại toàn bộ mẫu chuẩn thiết kế mặc định"
-          >
-            <RotateCcw size={15} />
-            <span>Khôi phục mẫu chuẩn</span>
+          <button type="button" onClick={handleOpenCreate} className={primaryButton}>
+            <Plus size={16} aria-hidden="true" />
+            Tạo mẫu mới
           </button>
         </div>
-      </Headline>
+      </header>
 
-      {/* Overview StatRow */}
-      <StatRow
-        items={[
-          {
-            label: 'Tổng số mẫu CV',
-            value: counts.all,
-            detail: `${counts.active} mẫu đang hiển thị`,
-            valueTone: 'ink',
-          },
-          {
-            label: 'Đang hoạt động',
-            value: counts.active,
-            detail: `${((counts.active / (counts.all || 1)) * 100).toFixed(0)}% tổng số`,
-            valueTone: 'brand',
-          },
-          {
-            label: 'Hỗ trợ dùng thử (Trial)',
-            value: counts.trial,
-            detail: 'Dành cho khách chưa đăng nhập',
-            valueTone: 'ink',
-          },
-          {
-            label: 'Mẫu Tiếng Việt',
-            value: counts.vi,
-            detail: 'Tối ưu phông chữ Unicode',
-            valueTone: 'ink',
-          },
-          {
-            label: 'Mẫu Tiếng Anh',
-            value: counts.en,
-            detail: 'Chuẩn định dạng ATS toàn cầu',
-            valueTone: 'ink',
-          },
-        ]}
-      />
-
-      {/* Filter Tabs */}
-      <div className="space-y-4">
+      {/* Tabs + bộ lọc */}
+      <div className="mt-[clamp(2rem,4vw,2.75rem)]">
         <UnderlineTabs
           tabs={[
-            { value: 'all', label: 'Tất cả mẫu', count: counts.all },
-            { value: 'active', label: 'Đang hoạt động', count: counts.active },
-            { value: 'inactive', label: 'Đã tạm tắt', count: counts.inactive },
-            { value: 'trial', label: 'Dùng thử miễn phí', count: counts.trial },
+            { value: 'all', label: 'Tất cả', count: counts.all },
+            { value: 'active', label: 'Đang bật', count: counts.active },
+            { value: 'inactive', label: 'Đã tắt', count: counts.inactive },
+            { value: 'trial', label: 'Dùng thử', count: counts.trial },
           ]}
           value={activeTab}
           onChange={setActiveTab}
         />
-
-        {/* Filter and Search Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-          <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[220px] max-w-md">
-              <Search
-                size={16}
-                className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-slate-400"
-              />
+        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 pt-4">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+            <label className="relative w-full sm:w-72">
+              <span className="sr-only">Tìm mẫu</span>
+              <Search size={14} aria-hidden="true" className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo tên mẫu, ngành nghề, mô tả..."
-                className={`${underlineInput} pl-6`}
+                placeholder="Tìm theo tên, ngành nghề"
+                className={`${underlineInput} py-1.5 pl-5 text-sm`}
               />
-            </div>
-
-            {/* Language filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500">Ngôn ngữ:</span>
+            </label>
+            <div className="w-40">
               <select
+                aria-label="Ngôn ngữ"
                 value={languageFilter}
-                onChange={(e) =>
-                  setLanguageFilter(e.target.value as 'all' | TemplateLanguage)
-                }
-                className={underlineSelect}
+                onChange={(e) => setLanguageFilter(e.target.value as 'all' | TemplateLanguage)}
+                className={`${underlineSelect} py-1.5 text-sm`}
               >
-                <option value="all">Tất cả ({counts.all})</option>
+                <option value="all">Mọi ngôn ngữ</option>
                 <option value="vi">Tiếng Việt ({counts.vi})</option>
                 <option value="en">English ({counts.en})</option>
               </select>
             </div>
-
-            {/* Sort */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500">Sắp xếp:</span>
+            <div className="w-36">
               <select
+                aria-label="Sắp xếp"
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value as TemplateSortOption)}
-                className={underlineSelect}
+                className={`${underlineSelect} py-1.5 text-sm`}
               >
                 <option value="newest">Mới nhất</option>
                 <option value="oldest">Cũ nhất</option>
@@ -389,28 +357,22 @@ export default function ResumeTemplateManagementPage() {
               </select>
             </div>
           </div>
-
-          {/* View mode toggle */}
-          <div className="flex items-center rounded-lg border border-border bg-slate-50 p-1">
+          <div className="flex items-center gap-1 text-slate-400">
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              aria-label="Dạng thẻ lưới"
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${viewMode === 'grid'
-                ? 'bg-white text-ink shadow-sm'
-                : 'text-slate-400 hover:text-ink'
-                }`}
+              aria-label="Dạng lưới"
+              aria-pressed={viewMode === 'grid'}
+              className={`grid h-8 w-8 cursor-pointer place-items-center transition-colors hover:text-ink ${viewMode === 'grid' ? 'text-ink' : ''}`}
             >
               <LayoutGrid size={16} />
             </button>
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              aria-label="Dạng danh sách bảng"
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${viewMode === 'table'
-                ? 'bg-white text-ink shadow-sm'
-                : 'text-slate-400 hover:text-ink'
-                }`}
+              aria-label="Dạng danh sách"
+              aria-pressed={viewMode === 'table'}
+              className={`grid h-8 w-8 cursor-pointer place-items-center transition-colors hover:text-ink ${viewMode === 'table' ? 'text-ink' : ''}`}
             >
               <List size={16} />
             </button>
@@ -418,14 +380,12 @@ export default function ResumeTemplateManagementPage() {
         </div>
       </div>
 
-      {/* Template Listing */}
+      {/* Danh sách mẫu */}
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-slate-500">
-          Đang nạp danh sách mẫu CV…
-        </div>
+        <p className="py-20 text-center text-sm text-slate-500">Đang tải danh sách mẫu CV…</p>
       ) : filteredTemplates.length === 0 ? (
-        <EmptyRow>
-          Không tìm thấy mẫu CV nào phù hợp với điều kiện tìm kiếm.
+        <div className="py-16 text-center text-sm text-slate-600">
+          Không có mẫu CV nào khớp bộ lọc.
           <div className="mt-3">
             <button
               type="button"
@@ -434,268 +394,85 @@ export default function ResumeTemplateManagementPage() {
                 setActiveTab('all');
                 setLanguageFilter('all');
               }}
-              className="text-xs text-brand hover:underline cursor-pointer"
+              className={`${textLink} text-[13px] text-brand`}
             >
-              Xoá bộ lọc và hiển thị tất cả
+              Xoá bộ lọc
             </button>
           </div>
-        </EmptyRow>
+        </div>
       ) : viewMode === 'grid' ? (
-        /* Grid Cards View */
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul className="mt-10 grid gap-x-[clamp(1.5rem,3vw,2.5rem)] gap-y-12 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filteredTemplates.map((item) => (
-            <div
-              key={item.id}
-              className="group relative flex flex-col rounded-2xl border border-border bg-white transition-all hover:border-slate-400 hover:shadow-md"
-            >
-              {/* Card Thumbnail Sandbox Preview */}
-              <div
+            <li key={item.id} className={`min-w-0 ${item.is_active ? '' : 'opacity-60 transition-opacity hover:opacity-100'}`}>
+              <button
+                type="button"
                 onClick={() => setSelectedTemplateForPreview(item)}
-                className="relative h-60 w-full cursor-pointer overflow-hidden rounded-t-2xl border-b border-border bg-slate-100"
+                aria-label={`Xem trước ${item.name}`}
+                className="block w-full cursor-pointer border border-border bg-white transition-colors hover:border-ink"
               >
-                <div className="pointer-events-none h-full w-full select-none overflow-hidden scale-[0.38] origin-top-left w-[263%] h-[263%]">
-                  <iframe
-                    title={item.name}
-                    srcDoc={renderTemplateWithSampleData(item.html_content, item.language)}
-                    tabIndex={-1}
-                    sandbox="allow-same-origin"
-                    className="h-full w-full border-0 bg-white"
-                  />
-                </div>
-                {/* Hover overlay button */}
-                <div className="absolute inset-0 flex items-center justify-center bg-ink/30 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-xs font-medium text-ink shadow-lg">
-                    <Eye size={13} /> Xem trước đầy đủ
-                  </span>
-                </div>
-
-                {/* Status Badges top bar */}
-                <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-                  <span
-                    className={`rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${item.language === 'vi'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-emerald-600 text-white'
-                      }`}
-                  >
-                    {item.language}
-                  </span>
-                  {item.is_trial_enabled && (
-                    <span className="rounded-md bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
-                      Trial
-                    </span>
-                  )}
-                </div>
-
-                {/* Active switch top right */}
-                <div
-                  className="absolute right-3 top-3"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      statusMutation.mutate({ id: item.id, active: !item.is_active })
-                    }
-                    title={item.is_active ? 'Nhấp để tạm tắt' : 'Nhấp để kích hoạt'}
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium shadow-sm transition-colors cursor-pointer ${item.is_active
-                      ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                      }`}
-                  >
-                    {item.is_active ? <Check size={11} /> : null}
-                    {item.is_active ? 'Đang bật' : 'Đã tắt'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Card Meta Body */}
-              <div className="flex flex-1 flex-col p-4">
-                <div className="flex-1">
-                  <h3
-                    onClick={() => setSelectedTemplateForPreview(item)}
-                    className="font-medium text-[15px] text-ink hover:text-brand cursor-pointer truncate"
-                    title={item.name}
-                  >
+                <TemplateThumb html={renderTemplateWithSampleData(item.html_content, item.language)} title={item.name} />
+              </button>
+              <div className="mt-4 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="truncate text-[15px] text-ink" title={item.name}>
                     {item.name}
                   </h3>
-                  {item.career_path && (
-                    <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
-                      <Tag size={12} className="shrink-0 text-slate-400" />
-                      <span className="truncate">{item.career_path}</span>
-                    </div>
-                  )}
-                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">
-                    {item.description || 'Chưa có mô tả cho mẫu này.'}
+                  <p className="mt-0.5 truncate text-[13px] text-slate-500" title={metaLine(item)}>
+                    {metaLine(item)}
                   </p>
                 </div>
-
-                {/* Card Action Footer */}
-                <div
-                  className="mt-4 flex items-center justify-between border-t border-border pt-3"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplateForPreview(item)}
-                      title="Xem trước mẫu"
-                      className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink cursor-pointer"
-                    >
-                      <Eye size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEdit(item)}
-                      title="Chỉnh sửa mã HTML & thông tin"
-                      className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink cursor-pointer"
-                    >
-                      <Edit3 size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => duplicateMutation.mutate(item.id)}
-                      title="Nhân bản mẫu"
-                      className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink cursor-pointer"
-                    >
-                      <Copy size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => exportResumeTemplateHtml(item)}
-                      title="Tải mã HTML về máy"
-                      className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink cursor-pointer"
-                    >
-                      <Download size={15} />
-                    </button>
-                  </div>
-
-                  <RowMenu
-                    label="Tuỳ chọn mẫu"
-                    placement="top"
-                    items={[
-                      {
-                        label: 'Chỉnh sửa mẫu',
-                        onClick: () => handleOpenEdit(item),
-                      },
-                      {
-                        label: item.is_active ? 'Tạm tắt hiển thị' : 'Kích hoạt mẫu',
-                        onClick: () =>
-                          statusMutation.mutate({ id: item.id, active: !item.is_active }),
-                      },
-                      {
-                        label: 'Nhân bản mẫu này',
-                        onClick: () => duplicateMutation.mutate(item.id),
-                      },
-                      {
-                        label: 'Tải tệp HTML (.html)',
-                        onClick: () => exportResumeTemplateHtml(item),
-                      },
-                      {
-                        label: 'Xoá mẫu CV',
-                        tone: 'danger',
-                        onClick: () => setSelectedTemplateForDelete(item),
-                      },
-                    ]}
-                  />
-                </div>
+                <span className={`shrink-0 pt-0.5 text-[13px] ${item.is_active ? 'text-brand' : 'text-slate-500'}`}>
+                  {item.is_active ? 'Đang bật' : 'Đã tắt'}
+                </span>
               </div>
-            </div>
+              <div className="mt-3 flex items-center justify-between gap-4">
+                <div className="flex flex-wrap gap-x-4">
+                  <button type="button" onClick={() => setSelectedTemplateForPreview(item)} className={`${textLink} text-[13px] text-ink`}>
+                    Xem
+                  </button>
+                  <button type="button" onClick={() => handleOpenEdit(item)} className={`${textLink} text-[13px] text-ink`}>
+                    Sửa
+                  </button>
+                </div>
+                <RowMenu label="Thao tác khác" placement="top" items={menuItems(item)} />
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
-        /* Table View */
-        <div className="overflow-x-auto rounded-xl border border-border bg-white">
+        <div className="mt-6 overflow-x-auto border-t border-border">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-border bg-slate-50/70 text-xs font-semibold text-slate-600">
-                <th className="px-5 py-3">Tên mẫu CV & Định hướng</th>
-                <th className="px-4 py-3">Ngôn ngữ</th>
-                <th className="px-4 py-3">Dùng thử (Trial)</th>
-                <th className="px-4 py-3">Trạng thái</th>
-                <th className="px-4 py-3">Dung lượng HTML</th>
-                <th className="px-5 py-3 text-right">Thao tác</th>
+              <tr className="border-b border-border text-[13px] text-slate-500">
+                <th className="py-3 pr-4 font-normal">Tên mẫu</th>
+                <th className="px-4 py-3 font-normal">Ngôn ngữ</th>
+                <th className="px-4 py-3 font-normal">Dùng thử</th>
+                <th className="px-4 py-3 font-normal">Trạng thái</th>
+                <th className="px-4 py-3 font-normal">Dung lượng</th>
+                <th className="py-3 pl-4 text-right font-normal">
+                  <span className="sr-only">Thao tác</span>
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {filteredTemplates.map((item) => (
-                <tr key={item.id} className="transition-colors hover:bg-slate-50/50">
-                  <td className="px-5 py-3.5">
-                    <div className="font-medium text-ink hover:text-brand cursor-pointer" onClick={() => setSelectedTemplateForPreview(item)}>
+                <tr key={item.id} className="border-b border-border">
+                  <td className="py-3.5 pr-4">
+                    <button type="button" onClick={() => setSelectedTemplateForPreview(item)} className="cursor-pointer text-left text-[15px] text-ink hover:text-brand">
                       {item.name}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
-                      {item.career_path ? <span>{item.career_path}</span> : <span>Chung</span>}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-xs font-medium uppercase text-slate-700">
-                      <Globe size={11} /> {item.language}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    {item.is_trial_enabled ? (
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs text-emerald-700">
-                        Cho phép
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-400">Không</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        statusMutation.mutate({ id: item.id, active: !item.is_active })
-                      }
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${item.is_active
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-slate-100 text-slate-600'
-                        }`}
-                    >
-                      {item.is_active && <Check size={12} />}
-                      {item.is_active ? 'Đang bật' : 'Tạm tắt'}
                     </button>
+                    <p className="mt-0.5 text-[13px] text-slate-500">{item.career_path || 'Chung'}</p>
                   </td>
-                  <td className="px-4 py-3.5 font-mono text-xs text-slate-500">
-                    {(item.html_content.length / 1024).toFixed(1)} KB
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <div className="inline-flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTemplateForPreview(item)}
-                        className="text-xs text-slate-600 hover:text-ink cursor-pointer"
-                      >
-                        Xem
-                      </button>
-                      <span className="text-slate-300">|</span>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(item)}
-                        className="text-xs text-brand hover:underline cursor-pointer"
-                      >
+                  <td className="px-4 py-3.5 text-slate-700">{item.language === 'vi' ? 'Tiếng Việt' : 'English'}</td>
+                  <td className="px-4 py-3.5 text-slate-700">{item.is_trial_enabled ? 'Có' : <span className="text-slate-400">Không</span>}</td>
+                  <td className={`px-4 py-3.5 ${item.is_active ? 'text-brand' : 'text-slate-500'}`}>{item.is_active ? 'Đang bật' : 'Đã tắt'}</td>
+                  <td className="px-4 py-3.5 tabular-nums text-slate-500">{(item.html_content.length / 1024).toFixed(1)} KB</td>
+                  <td className="py-3.5 pl-4">
+                    <div className="flex items-center justify-end gap-x-4">
+                      <button type="button" onClick={() => handleOpenEdit(item)} className={`${textLink} text-[13px] text-ink`}>
                         Sửa
                       </button>
-                      <span className="text-slate-300">|</span>
-                      <RowMenu
-                        label="Thao tác khác"
-                        placement="top"
-                        items={[
-                          {
-                            label: 'Nhân bản mẫu',
-                            onClick: () => duplicateMutation.mutate(item.id),
-                          },
-                          {
-                            label: 'Tải HTML về máy',
-                            onClick: () => exportResumeTemplateHtml(item),
-                          },
-                          {
-                            label: 'Xoá mẫu CV',
-                            tone: 'danger',
-                            onClick: () => setSelectedTemplateForDelete(item),
-                          },
-                        ]}
-                      />
+                      <RowMenu label="Thao tác khác" placement="top" items={menuItems(item)} />
                     </div>
                   </td>
                 </tr>
