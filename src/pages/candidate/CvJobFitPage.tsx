@@ -526,7 +526,7 @@ export default function CvJobFitPage() {
   const editCvHref = `/candidate/resumes/${selectedCvId}/edit?returnTo=${encodeURIComponent(
     `/candidate/cv-job-fit?cvId=${selectedCvId}&jobId=${selectedJobId}`,
   )}`;
-  const assessHref = skillAssessmentHref(selectedJobId);
+  const assessHref = skillAssessmentHref(selectedJobId, selectedCvId);
   const hasTailoring = !!fitResult && (fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0);
 
   const jobMeta: { label: string; value?: string }[] = currentJob

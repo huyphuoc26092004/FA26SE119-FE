@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, Loader2 } from 'lucide-react';
 import {
   SKILL_PASS_SCORE,
   createLearningPath,
@@ -18,17 +18,23 @@ import {
 } from '../../services/skillPathService';
 import type { LearningResource } from '../../types/assessment';
 import { authErrorMessage } from '../../services/authService';
-import { getJobById, getJobs } from '../../services/candidateService';
+import { getJobById, getJobs, getResumes } from '../../services/candidateService';
 import { JOB_ACTIVITY_QUERY_KEY, getJobActivity } from '../../services/jobActivityService';
 import { Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
-import { JobPicker, jobPickerCopy } from './cv-job-fit/JobPicker';
+import { JobPicker, jobPickerCopy, lineField } from './cv-job-fit/JobPicker';
 
 const copy = {
   vi: {
     title: 'Đánh giá kỹ năng.',
-    titleLine: 'Theo JD, không cần CV.',
-    intro: 'Chọn công việc bạn nhắm tới. Hệ thống đọc JD, ra 10 câu hỏi về đúng các kỹ năng đó, chấm điểm từng kỹ năng rồi lập lộ trình học cho phần còn yếu.',
+    titleLine: 'Theo JD, CV không bắt buộc.',
+    intro: 'Chọn công việc bạn nhắm tới, và CV nếu bạn có. Hệ thống đối chiếu JD với CV, ra 10 câu hỏi về đúng các kỹ năng đó, chấm điểm từng kỹ năng rồi lập lộ trình học cho phần còn yếu.',
+    cvLabel: 'CV dùng để đánh giá',
+    cvNone: 'Không dùng CV, chỉ theo JD',
+    cvWith: 'Câu hỏi và lộ trình dựa trên CV này đối chiếu với JD.',
+    cvWithout: 'Câu hỏi và lộ trình chỉ dựa trên JD và hồ sơ nghề nghiệp.',
+    withCv: (name: string) => `CV: ${name}`,
+    pathNeedsTest: 'Khi dùng CV, cần làm xong bài đánh giá rồi mới lập lộ trình.',
     steps: ['Công việc mục tiêu', 'Bài đánh giá', 'Lộ trình học'],
     stepNone: 'Chưa có',
     jobTitle: 'Công việc mục tiêu',
@@ -72,7 +78,7 @@ const copy = {
     testDone: (score: number) => `${score}%`,
     testOpen: 'Đang làm dở',
     pathTitle: 'Lộ trình học',
-    pathNote: 'Chỉ gồm kỹ năng bắt buộc của JD mà hồ sơ chưa có, hoặc bài đánh giá dưới 70 điểm.',
+    pathNote: 'Chỉ gồm kỹ năng bắt buộc của JD mà CV và hồ sơ chưa có, hoặc bài đánh giá dưới 70 điểm.',
     pathLocked: 'Làm xong bài đánh giá để lộ trình biết bạn yếu kỹ năng nào.',
     pathWithoutTest: 'Lập lộ trình không cần làm bài',
     pathWeak: (names: string) => `Kỹ năng cần cải thiện: ${names}.`,
@@ -89,7 +95,7 @@ const copy = {
     totalTime: 'Thời gian ước tính',
     skillsCount: 'Kỹ năng cần học',
     status: { not_started: 'Chưa học', in_progress: 'Đang học', completed: 'Đã xong' } as Record<LearningPathNode['status'], string>,
-    reason: { NEEDS_PRACTICE: 'Bài đánh giá dưới 70 điểm', MISSING_EVIDENCE: 'Hồ sơ chưa có' },
+    reason: { NEEDS_PRACTICE: 'Bài đánh giá dưới 70 điểm', MISSING_EVIDENCE: 'CV và hồ sơ chưa có' },
     startNode: 'Bắt đầu học',
     finishNode: 'Đánh dấu đã xong',
     resetNode: 'Bỏ đánh dấu',
@@ -101,12 +107,18 @@ const copy = {
     loadError: 'Không tải được dữ liệu.',
     timeout: 'Quá 16 phút chờ AI trả kết quả. Ollama đang quá chậm hoặc bị treo, kiểm tra rồi thử lại.',
     network: 'Mất kết nối tới backend trong lúc xử lý. Kiểm tra backend và Ollama rồi thử lại.',
-    fitLink: 'Có CV rồi? So khớp CV với công việc này',
+    fitLink: 'Xem độ phù hợp của CV với công việc này',
   },
   en: {
     title: 'Skill assessment.',
-    titleLine: 'From the JD, no CV needed.',
-    intro: 'Pick the job you are aiming for. We read the JD, write 10 questions on exactly those skills, score each skill and build a learning path for the weak ones.',
+    titleLine: 'From the JD, CV optional.',
+    intro: 'Pick the job you are aiming for, and your CV if you have one. We compare the JD with the CV, write 10 questions on exactly those skills, score each skill and build a learning path for the weak ones.',
+    cvLabel: 'CV to assess with',
+    cvNone: 'No CV, JD only',
+    cvWith: 'Questions and the path use this CV against the JD.',
+    cvWithout: 'Questions and the path use only the JD and your career profile.',
+    withCv: (name: string) => `CV: ${name}`,
+    pathNeedsTest: 'With a CV, finish the assessment before building the path.',
     steps: ['Target job', 'Assessment', 'Learning path'],
     stepNone: 'Not yet',
     jobTitle: 'Target job',
@@ -150,7 +162,7 @@ const copy = {
     testDone: (score: number) => `${score}%`,
     testOpen: 'In progress',
     pathTitle: 'Learning path',
-    pathNote: 'Only the required JD skills missing from your profile, or scored under 70 in the assessment.',
+    pathNote: 'Only the required JD skills missing from your CV and profile, or scored under 70 in the assessment.',
     pathLocked: 'Finish the assessment so the path knows which skills are weak.',
     pathWithoutTest: 'Build a path without the test',
     pathWeak: (names: string) => `Skills to improve: ${names}.`,
@@ -167,7 +179,7 @@ const copy = {
     totalTime: 'Estimated time',
     skillsCount: 'Skills to learn',
     status: { not_started: 'Not started', in_progress: 'Learning', completed: 'Done' } as Record<LearningPathNode['status'], string>,
-    reason: { NEEDS_PRACTICE: 'Assessment under 70', MISSING_EVIDENCE: 'Not in profile' },
+    reason: { NEEDS_PRACTICE: 'Assessment under 70', MISSING_EVIDENCE: 'Not in CV or profile' },
     startNode: 'Start learning',
     finishNode: 'Mark as done',
     resetNode: 'Undo',
@@ -179,7 +191,7 @@ const copy = {
     loadError: 'Could not load data.',
     timeout: 'Waited over 16 minutes for the AI. Ollama is too slow or stuck; check it and try again.',
     network: 'Lost the connection to the backend while working. Check the backend and Ollama, then try again.',
-    fitLink: 'Have a CV? Check it against this job',
+    fitLink: 'See how your CV fits this job',
   },
 };
 
@@ -518,7 +530,7 @@ function JdList({ title, items }: { title: string; items?: string[] }) {
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
-/** Đánh giá kỹ năng theo JD của một công việc (không cần CV), rồi lập lộ trình học cho kỹ năng còn yếu. */
+/** Đánh giá kỹ năng theo JD của một công việc (kèm CV nếu có), rồi lập lộ trình học cho kỹ năng còn yếu. */
 export default function SkillAssessmentPage() {
   const { isVietnamese } = useTranslation();
   const c = isVietnamese ? copy.vi : copy.en;
@@ -526,57 +538,78 @@ export default function SkillAssessmentPage() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const jobId = searchParams.get('jobId') ?? '';
+  const cvParam = searchParams.get('cvId') ?? '';
   const [jdOpen, setJdOpen] = useState(false);
+
+  // Chỉ CV đã xác nhận (READY) mới dùng được cho bài đánh giá; không có CV thì ẩn ô chọn CV.
+  const resumesQuery = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
+  const readyCvs = (resumesQuery.data ?? []).filter((r) => r.status === 'Ready');
+  const cvsLoaded = !resumesQuery.isPending;
+  const defaultCv = readyCvs.find((r) => r.isDefault) ?? readyCvs[0];
+  const cvId = cvParam === 'none' ? '' : readyCvs.some((r) => r.id === cvParam) ? cvParam : (defaultCv?.id ?? '');
+  const currentCv = readyCvs.find((r) => r.id === cvId);
 
   const jobsQuery = useQuery({ queryKey: ['jobs'], queryFn: () => getJobs() });
   const { data: activity } = useQuery({ queryKey: JOB_ACTIVITY_QUERY_KEY, queryFn: getJobActivity });
   const recentQuery = useQuery({ queryKey: ['jdAssessments'], queryFn: listJdAssessments });
   const { data: job } = useQuery({ queryKey: ['job', jobId], queryFn: () => getJobById(jobId), enabled: !!jobId });
 
-  const testQuery = useQuery({ queryKey: ['jdAssessment', jobId], queryFn: () => getLatestJdAssessment(jobId), enabled: !!jobId });
-  const pathQuery = useQuery({ queryKey: ['learningPath', jobId], queryFn: () => getLatestLearningPath(jobId), enabled: !!jobId });
+  const testKey = ['jdAssessment', jobId, cvId];
+  const pathKey = ['learningPath', jobId, cvId];
+  const testQuery = useQuery({ queryKey: testKey, queryFn: () => getLatestJdAssessment(jobId, cvId), enabled: !!jobId && cvsLoaded });
+  const pathQuery = useQuery({ queryKey: pathKey, queryFn: () => getLatestLearningPath(jobId, cvId), enabled: !!jobId && cvsLoaded });
   const session = testQuery.data ?? null;
   const path = pathQuery.data ?? null;
   const completedTest = session?.status === 'completed' ? session : null;
 
-  const selectJob = (id: string) => {
+  const selectJob = (id: string, resumeId?: string) => {
     const next = new URLSearchParams(searchParams);
     next.set('jobId', id);
+    if (resumeId !== undefined) next.set('cvId', resumeId || 'none');
     setSearchParams(next, { replace: true });
     setJdOpen(false);
   };
 
+  const selectCv = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('cvId', id || 'none');
+    setSearchParams(next, { replace: true });
+  };
+
   const startTest = useMutation({
-    mutationFn: () => startJdAssessment(jobId),
+    mutationFn: () => startJdAssessment(jobId, cvId || undefined),
     onSuccess: (data) => {
-      queryClient.setQueryData(['jdAssessment', jobId], data);
+      queryClient.setQueryData(testKey, data);
       queryClient.invalidateQueries({ queryKey: ['jdAssessments'] });
     },
   });
   const submitTest = useMutation({
     mutationFn: (answers: Record<string, string>) => submitJdAssessment(session!.id, answers),
     onSuccess: (data) => {
-      queryClient.setQueryData(['jdAssessment', jobId], data);
+      queryClient.setQueryData(testKey, data);
       queryClient.invalidateQueries({ queryKey: ['jdAssessments'] });
       // Nộp bài làm lộ trình cũ hết hiệu lực ở backend.
-      queryClient.invalidateQueries({ queryKey: ['learningPath', jobId] });
+      queryClient.invalidateQueries({ queryKey: pathKey });
     },
   });
   const buildPath = useMutation({
+    // CV đi theo bài đánh giá; không có bài thì chỉ lập theo JD.
     mutationFn: () => createLearningPath({ jobId, assessmentId: completedTest?.id }),
-    onSuccess: (data) => queryClient.setQueryData(['learningPath', jobId], data),
+    onSuccess: (data) => queryClient.setQueryData(pathKey, data),
   });
   const nodeStatus = useMutation({
     mutationFn: ({ nodeId, status }: { nodeId: string; status: LearningPathNode['status'] }) => setLearningNodeStatus(path!.id, nodeId, status),
-    onSuccess: (data) => queryClient.setQueryData(['learningPath', jobId], data),
+    onSuccess: (data) => queryClient.setQueryData(pathKey, data),
   });
 
   const weakSkills = completedTest?.skillScores.filter((s) => s.score < SKILL_PASS_SCORE).map((s) => s.skill) ?? [];
   const pathBeforeTest = !!path && !!completedTest?.submittedAt && new Date(path.createdAt) < new Date(completedTest.submittedAt);
   const busyAi = startTest.isPending || buildPath.isPending;
+  // Lộ trình theo CV cần bài đánh giá dùng đúng CV đó (backend trả 409 nếu thiếu).
+  const canBuildPath = !!completedTest || !cvId;
 
   const stepStatus = [
-    job ? job.title : c.stepNone,
+    job ? (currentCv ? `${job.title} · ${currentCv.name}` : job.title) : c.stepNone,
     !session ? c.stepNone : completedTest ? c.testDone(completedTest.score) : c.testOpen,
     path ? c.pathDone(path.nodes.length, path.progress) : c.stepNone,
   ];
@@ -649,6 +682,26 @@ export default function SkillAssessmentPage() {
             ) : (
               <p className="mt-3 text-[13px] text-slate-500">{c.pickFirst}</p>
             )}
+
+            {readyCvs.length > 0 && (
+              <div className="mt-7">
+                <label htmlFor="assess-cv" className="block text-[13px] text-slate-600">
+                  {c.cvLabel}
+                </label>
+                <div className="relative mt-1.5">
+                  <select id="assess-cv" value={cvId} onChange={(e) => selectCv(e.target.value)} disabled={busyAi} className={`${lineField} appearance-none pr-7`}>
+                    {readyCvs.map((cv) => (
+                      <option key={cv.id} value={cv.id}>
+                        {cv.name}
+                      </option>
+                    ))}
+                    <option value="">{c.cvNone}</option>
+                  </select>
+                  <ChevronDown size={15} aria-hidden="true" className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-500" />
+                </div>
+                <p className="mt-3 text-[13px] leading-6 text-slate-600">{currentCv ? c.cvWith : c.cvWithout}</p>
+              </div>
+            )}
           </div>
 
           <div className="min-w-0">
@@ -663,12 +716,19 @@ export default function SkillAssessmentPage() {
                   <li key={r.id}>
                     <button
                       type="button"
-                      onClick={() => selectJob(r.jobId)}
-                      aria-current={r.jobId === jobId ? 'true' : undefined}
+                      onClick={() => selectJob(r.jobId, r.resumeId)}
+                      aria-current={r.jobId === jobId && r.resumeId === cvId ? 'true' : undefined}
                       className="group flex w-full items-baseline justify-between gap-4 border-b border-border py-2.5 text-left cursor-pointer"
                     >
-                      <span className={`min-w-0 truncate text-sm transition-colors group-hover:text-brand ${r.jobId === jobId ? 'text-brand' : 'text-ink'}`}>
-                        {r.jobTitle || '—'}
+                      <span className="min-w-0">
+                        <span className={`block truncate text-sm transition-colors group-hover:text-brand ${r.jobId === jobId && r.resumeId === cvId ? 'text-brand' : 'text-ink'}`}>
+                          {r.jobTitle || '—'}
+                        </span>
+                        {r.resumeId && (
+                          <span className="block truncate text-[12px] text-slate-500">
+                            {c.withCv((resumesQuery.data ?? []).find((cv) => cv.id === r.resumeId)?.name ?? '…')}
+                          </span>
+                        )}
                       </span>
                       <span className={`shrink-0 text-[13px] tabular-nums ${r.score === undefined ? 'text-slate-500' : r.score >= SKILL_PASS_SCORE ? 'text-brand' : 'text-danger'}`}>
                         {r.score === undefined ? c.testOpen : `${r.score}%`}
@@ -743,7 +803,7 @@ export default function SkillAssessmentPage() {
         title={c.pathTitle}
         note={c.pathNote}
         action={
-          path && !busyAi ? (
+          path && !busyAi && canBuildPath ? (
             <button type="button" onClick={() => buildPath.mutate()} className={`${textLink} text-[13px] text-ink`}>
               {c.pathRebuild}
             </button>
@@ -761,7 +821,7 @@ export default function SkillAssessmentPage() {
         ) : !path ? (
           <div className="flex flex-col gap-4 border-b border-border py-6 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-xl text-[15px] leading-7 text-ink">
-              {completedTest ? (weakSkills.length ? c.pathWeak(weakSkills.join(', ')) : c.pathAllPass) : c.pathLocked}
+              {completedTest ? (weakSkills.length ? c.pathWeak(weakSkills.join(', ')) : c.pathAllPass) : cvId ? c.pathNeedsTest : c.pathLocked}
             </p>
             {completedTest ? (
               <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${primaryButton} shrink-0`}>
@@ -769,9 +829,11 @@ export default function SkillAssessmentPage() {
                 <ArrowRight size={15} aria-hidden="true" />
               </button>
             ) : (
-              <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${textLink} shrink-0 text-[13px] text-slate-600`}>
-                {c.pathWithoutTest}
-              </button>
+              canBuildPath && (
+                <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${textLink} shrink-0 text-[13px] text-slate-600`}>
+                  {c.pathWithoutTest}
+                </button>
+              )
             )}
           </div>
         ) : (
@@ -779,9 +841,11 @@ export default function SkillAssessmentPage() {
             {(path.outdated || pathBeforeTest) && (
               <p className="mt-4 border-l-2 border-warning pl-4 text-sm leading-6 text-ink">
                 {path.outdated ? c.outdated : c.pathStale}{' '}
-                <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${textLink} text-[13px] text-ink`}>
-                  {c.pathRebuild}
-                </button>
+                {canBuildPath && (
+                  <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${textLink} text-[13px] text-ink`}>
+                    {c.pathRebuild}
+                  </button>
+                )}
               </p>
             )}
             <PathView path={path} c={c} busy={nodeStatus.isPending} onStatus={(nodeId, status) => nodeStatus.mutate({ nodeId, status })} />
@@ -792,7 +856,7 @@ export default function SkillAssessmentPage() {
 
       {job && (
         <p className="mt-[clamp(3rem,6vw,4.5rem)] border-t border-ink pt-5">
-          <Link to={`/candidate/cv-job-fit?jobId=${job.id}`} className={`${textLink} text-ink`}>
+          <Link to={`/candidate/cv-job-fit?jobId=${job.id}${cvId ? `&cvId=${cvId}` : ''}`} className={`${textLink} text-ink`}>
             {c.fitLink}
             <ArrowRight size={14} aria-hidden="true" />
           </Link>
