@@ -19,6 +19,7 @@ import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 import { skillAssessmentHref } from '../../services/skillPathService';
 import { JobPicker, jobPickerCopy, lineField } from './cv-job-fit/JobPicker';
+import { JobDescription } from '../../components/jobs/JobContent';
 
 const copy = {
   vi: {
@@ -69,6 +70,8 @@ const copy = {
     viewJob: 'Chi tiết công việc',
     readJd: 'Đọc mô tả đầy đủ',
     hideJd: 'Thu gọn mô tả',
+    moreJd: 'Xem thêm',
+    lessJd: 'Thu gọn',
     jdTitle: 'Mô tả công việc',
     company: 'Công ty',
     department: 'Bộ phận',
@@ -180,6 +183,8 @@ const copy = {
     viewJob: 'Job details',
     readJd: 'Read full description',
     hideJd: 'Hide description',
+    moreJd: 'Show more',
+    lessJd: 'Show less',
     jdTitle: 'Job description',
     company: 'Company',
     department: 'Department',
@@ -318,23 +323,6 @@ function SectionHead({
         {action}
       </div>
       {note && <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600">{note}</p>}
-    </div>
-  );
-}
-
-function JdList({ title, items }: { title: string; items?: string[] }) {
-  if (!items?.length) return null;
-  return (
-    <div>
-      <p className="text-[13px] text-brand">{title}</p>
-      <ul className="mt-2 border-t border-border">
-        {items.map((item, idx) => (
-          <li key={idx} className="flex gap-3 border-b border-border py-2.5 text-sm leading-6 text-ink">
-            <span className="shrink-0 pt-px text-xs tabular-nums text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
@@ -681,15 +669,9 @@ export default function CvJobFitPage() {
               ))}
             </p>
           )}
-          {currentJob.responsibilities?.length || currentJob.requirements?.length || currentJob.benefits?.length ? (
-            <div className="mt-6 grid gap-x-[clamp(2rem,4vw,3rem)] gap-y-8 lg:grid-cols-3">
-              <JdList title={c.responsibilities} items={currentJob.responsibilities} />
-              <JdList title={c.requirements} items={currentJob.requirements} />
-              <JdList title={c.benefits} items={currentJob.benefits} />
-            </div>
-          ) : (
-            <p className="mt-5 max-w-[48rem] whitespace-pre-line text-sm leading-7 text-slate-700">{currentJob.description}</p>
-          )}
+          <div className="mt-2 max-w-[52rem]">
+            <JobDescription job={currentJob} moreLabel={c.moreJd} lessLabel={c.lessJd} />
+          </div>
         </section>
       )}
 

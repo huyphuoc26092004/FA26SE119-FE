@@ -23,6 +23,7 @@ import { JOB_ACTIVITY_QUERY_KEY, getJobActivity } from '../../services/jobActivi
 import { Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { JobPicker, jobPickerCopy, lineField } from './cv-job-fit/JobPicker';
+import { JobDescription } from '../../components/jobs/JobContent';
 
 const copy = {
   vi: {
@@ -46,6 +47,8 @@ const copy = {
     skills: 'Kỹ năng trong JD',
     readJd: 'Đọc JD',
     hideJd: 'Thu gọn JD',
+    moreJd: 'Xem thêm',
+    lessJd: 'Thu gọn',
     viewJob: 'Chi tiết công việc',
     responsibilities: 'Bạn sẽ làm gì',
     requirements: 'Yêu cầu',
@@ -130,6 +133,8 @@ const copy = {
     skills: 'Skills in the JD',
     readJd: 'Read the JD',
     hideJd: 'Hide the JD',
+    moreJd: 'Show more',
+    lessJd: 'Show less',
     viewJob: 'Job details',
     responsibilities: 'What you will do',
     requirements: 'Requirements',
@@ -511,23 +516,6 @@ function PathView({ path, c, busy, onStatus }: { path: LearningPath; c: Copy; bu
   );
 }
 
-function JdList({ title, items }: { title: string; items?: string[] }) {
-  if (!items?.length) return null;
-  return (
-    <div>
-      <p className="text-[13px] text-brand">{title}</p>
-      <ul className="mt-2 border-t border-border">
-        {items.map((item, idx) => (
-          <li key={idx} className="flex gap-3 border-b border-border py-2.5 text-sm leading-6 text-ink">
-            <span className="shrink-0 pt-px text-xs tabular-nums text-slate-500">{pad2(idx + 1)}</span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 /** Đánh giá kỹ năng theo JD của một công việc (kèm CV nếu có), rồi lập lộ trình học cho kỹ năng còn yếu. */
@@ -742,15 +730,8 @@ export default function SkillAssessmentPage() {
         </div>
 
         {jdOpen && job && (
-          <div className="mt-6 grid gap-x-[clamp(2rem,4vw,3rem)] gap-y-8 border-t border-border pt-5 lg:grid-cols-2">
-            {job.responsibilities?.length || job.requirements?.length ? (
-              <>
-                <JdList title={c.responsibilities} items={job.responsibilities} />
-                <JdList title={c.requirements} items={job.requirements} />
-              </>
-            ) : (
-              <p className="whitespace-pre-line text-sm leading-7 text-slate-700 lg:col-span-2">{job.description}</p>
-            )}
+          <div className="mt-6 border-t border-border pt-1">
+            <JobDescription job={job} moreLabel={c.moreJd} lessLabel={c.lessJd} />
           </div>
         )}
       </Section>
