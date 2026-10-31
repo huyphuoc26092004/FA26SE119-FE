@@ -8,7 +8,6 @@ import {
   createLearningPath,
   getLatestJdAssessment,
   getLatestLearningPath,
-  listJdAssessments,
   setLearningNodeStatus,
   startJdAssessment,
   submitJdAssessment,
@@ -27,6 +26,25 @@ import { JobDescription } from '../../components/jobs/JobContent';
 
 const copy = {
   vi: {
+    crumbGroup: 'Phát triển',
+    crumbPage: 'Đánh giá kỹ năng',
+    heroA: 'Kiểm tra kỹ năng theo JD.',
+    heroB: 'CV không bắt buộc.',
+    introShort: 'Chọn công việc bạn nhắm tới. Hệ thống ra 10 câu hỏi về đúng các kỹ năng trong JD, chấm điểm từng kỹ năng và lập lộ trình cho phần còn yếu.',
+    sumNotPassed: `Chưa đạt mức ${SKILL_PASS_SCORE}`,
+    sumPassed: `Đạt mức ${SKILL_PASS_SCORE}`,
+    sumSkills: (d: number, n: number) => `${d} / ${n} kỹ năng`,
+    hoursLeft: (h: number) => `${h} giờ còn lại`,
+    newTest: 'Làm bài mới',
+    resultTitle: 'Kết quả bài đánh giá',
+    missingPoints: (n: number) => `Chưa đạt, còn thiếu ${n} điểm`,
+    passedLine: 'Đã đạt mức yêu cầu',
+    pathSummary: (n: number, h: number, d: number) => `${n} kỹ năng · ${h} giờ còn lại · Đã xong ${d}/${n}.`,
+    noResShort: 'Chưa có tài liệu trong thư viện',
+    afterShort: (names: string) => `Nên học sau: ${names}`,
+    reasonScore: (s: number) => `Điểm bài đánh giá ${s}/100`,
+    fitTitle: 'Xem độ phù hợp của CV với công việc này',
+    fitSub: (t: string) => `So khớp CV với JD ${t} và nhận gợi ý sửa CV.`,
     title: 'Đánh giá kỹ năng.',
     titleLine: 'Theo JD, CV không bắt buộc.',
     intro: 'Chọn công việc bạn nhắm tới, và CV nếu bạn có. Hệ thống đối chiếu JD với CV, ra 10 câu hỏi về đúng các kỹ năng đó, chấm điểm từng kỹ năng rồi lập lộ trình học cho phần còn yếu.',
@@ -113,6 +131,25 @@ const copy = {
     fitLink: 'Xem độ phù hợp của CV với công việc này',
   },
   en: {
+    crumbGroup: 'Growth',
+    crumbPage: 'Skill assessment',
+    heroA: 'Test your skills against the JD.',
+    heroB: 'CV optional.',
+    introShort: 'Pick the job you are aiming for. We write 10 questions on exactly the skills in the JD, score each skill and build a path for the weak ones.',
+    sumNotPassed: `Below the ${SKILL_PASS_SCORE} pass mark`,
+    sumPassed: `Passed the ${SKILL_PASS_SCORE} mark`,
+    sumSkills: (d: number, n: number) => `${d} / ${n} skills`,
+    hoursLeft: (h: number) => `${h} h left`,
+    newTest: 'New assessment',
+    resultTitle: 'Assessment result',
+    missingPoints: (n: number) => `Not passed, ${n} points short`,
+    passedLine: 'Pass mark reached',
+    pathSummary: (n: number, h: number, d: number) => `${n} skills · ${h} h left · ${d}/${n} done.`,
+    noResShort: 'No library resources yet',
+    afterShort: (names: string) => `Learn after: ${names}`,
+    reasonScore: (s: number) => `Assessment score ${s}/100`,
+    fitTitle: 'See how your CV fits this job',
+    fitSub: (t: string) => `Match your CV with the ${t} JD and get CV fixes.`,
     title: 'Skill assessment.',
     titleLine: 'From the JD, CV optional.',
     intro: 'Pick the job you are aiming for, and your CV if you have one. We compare the JD with the CV, write 10 questions on exactly those skills, score each skill and build a learning path for the weak ones.',
@@ -344,52 +381,44 @@ function Quiz({ session, c, onSubmit, submitting }: { session: JdAssessment; c: 
   );
 }
 
-function AssessmentResult({ session, c, vi }: { session: JdAssessment; c: Copy; vi: boolean }) {
-  const [reviewOpen, setReviewOpen] = useState(false);
+function AssessmentResult({ session, c, vi, reviewOpen }: { session: JdAssessment; c: Copy; vi: boolean; reviewOpen: boolean }) {
   const passed = session.score >= SKILL_PASS_SCORE;
+  const skills = [...session.skillScores].sort((a, b) => a.score - b.score);
   return (
-    <div className="py-6">
-      <div className="grid gap-x-[clamp(2rem,5vw,4rem)] gap-y-6 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
+    <div className="pt-6">
+      <div className="grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-6 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]">
         <div>
-          <p className="text-[13px] text-slate-600">{c.resultLabel}</p>
-          <p className={`mt-2 flex items-baseline gap-1 leading-none ${passed ? 'text-brand' : 'text-danger'}`}>
-            <span className="text-[clamp(3rem,6vw,4.5rem)] font-normal tracking-[-0.04em] tabular-nums">{session.score}</span>
-            <span className="text-[clamp(1.25rem,2vw,1.75rem)]">%</span>
+          <p className={`text-[clamp(3.5rem,7vw,5.25rem)] font-normal leading-none tracking-[-0.04em] tabular-nums ${passed ? 'text-brand' : 'text-danger'}`}>
+            {session.score}%
           </p>
-          <p className="mt-3 text-[13px] text-slate-600">
+          <p className="mt-4 text-[13px] text-slate-700">
             {c.resultLine(session.correct, session.total)} · {c.passMark}
+          </p>
+          <p className={`mt-1 text-[13px] ${passed ? 'text-brand' : 'text-danger'}`}>
+            {passed ? c.passedLine : c.missingPoints(SKILL_PASS_SCORE - session.score)}
           </p>
           {session.submittedAt && <p className="mt-1 text-[12px] text-slate-500">{c.doneAt(formatDay(session.submittedAt, vi))}</p>}
         </div>
-        <div>
-          <p className="text-[13px] text-slate-600">{c.bySkill}</p>
-          <ul className="mt-2">
-            {session.skillScores.map((s) => {
-              const ok = s.score >= SKILL_PASS_SCORE;
-              return (
-                <li key={s.skill} className="border-b border-border py-3">
-                  <div className="flex items-baseline justify-between gap-4 text-sm">
-                    <span className="text-ink">{s.skill}</span>
-                    <span className={`tabular-nums ${ok ? 'text-brand' : 'text-danger'}`}>
-                      {s.score}% · {ok ? c.passed : c.needPractice}
-                    </span>
-                  </div>
-                  <div className="relative mt-2 h-[2px] w-full bg-slate-200">
-                    <div className={`h-full ${ok ? 'bg-brand' : 'bg-danger'}`} style={{ width: `${s.score}%` }} />
-                    <span aria-hidden="true" className="absolute -top-1.5 h-[14px] w-px bg-ink" style={{ left: `${SKILL_PASS_SCORE}%` }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <ul className="border-t border-border md:border-t-0">
+          {skills.map((s) => {
+            const ok = s.score >= SKILL_PASS_SCORE;
+            return (
+              <li key={s.skill} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2 border-b border-border py-3 sm:grid-cols-[minmax(7rem,9rem)_minmax(0,1fr)_minmax(8rem,auto)]">
+                <span className="truncate text-[15px] text-ink">{s.skill}</span>
+                <span className="order-3 col-span-2 h-[2px] w-full bg-slate-200 sm:order-none sm:col-span-1">
+                  <span className={`block h-full ${ok ? 'bg-brand' : 'bg-danger'}`} style={{ width: `${Math.max(s.score, 1)}%` }} />
+                </span>
+                <span className={`text-right text-[13px] tabular-nums ${ok ? 'text-brand' : 'text-danger'}`}>
+                  {s.score}% · {ok ? c.passed : c.needPractice}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
-      <button type="button" onClick={() => setReviewOpen((o) => !o)} aria-expanded={reviewOpen} className={`${textLink} mt-6 text-[13px] text-ink`}>
-        {reviewOpen ? c.hideReview : c.review}
-      </button>
       {reviewOpen && (
-        <ol className="mt-3 border-t border-border">
+        <ol className="mt-8 border-t border-border">
           {session.questions.map((q, i) => {
             const picked = session.answers[q.id];
             const right = picked === q.correctOptionId;
@@ -444,70 +473,73 @@ function ResourceList({ resources, c }: { resources: LearningResource[]; c: Copy
 }
 
 function NodeRow({ node, index, path, c, onStatus, busy }: { node: LearningPathNode; index: number; path: LearningPath; c: Copy; onStatus: (status: LearningPathNode['status']) => void; busy: boolean }) {
-  const [open, setOpen] = useState(index === 0);
+  const [open, setOpen] = useState(false);
   const gap = path.missing.find((m) => m.skill.toLowerCase() === node.skill.toLowerCase());
   const after = node.prerequisiteIds.map((id) => path.nodes.find((n) => n.id === id)?.skill).filter(Boolean).join(', ');
   const done = node.status === 'completed';
+  const reason = gap
+    ? gap.status === 'NEEDS_PRACTICE' && gap.score !== undefined
+      ? c.reasonScore(gap.score)
+      : c.reason[gap.status]
+    : '';
+  const action = `${textLink} whitespace-nowrap text-[13px]`;
   return (
-    <li className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-3 border-b border-border py-5 md:grid-cols-[3rem_minmax(0,1fr)_auto]">
-      <span className={`pt-1 text-xs tabular-nums ${done ? 'text-brand' : 'text-slate-500'}`}>{pad2(index + 1)}</span>
+    <li className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-3 border-b border-border py-6 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto]">
+      <span className={`pt-1.5 text-xs tabular-nums ${done ? 'text-brand' : 'text-slate-500'}`}>{done ? <Check size={13} aria-label={c.status.completed} /> : pad2(index + 1)}</span>
       <div className="min-w-0">
-        <p className="flex flex-wrap gap-x-2 text-[12px] text-slate-500">
-          <span className={done ? 'text-brand' : node.status === 'in_progress' ? 'text-ink' : ''}>{c.status[node.status]}</span>
-          {node.hours > 0 && <span>· {c.hours(node.hours)}</span>}
-          {gap && <span>· {gap.score !== undefined ? `${c.reason[gap.status]} (${gap.score})` : c.reason[gap.status]}</span>}
+        <h3 className={`text-[clamp(1.0625rem,1.5vw,1.25rem)] font-normal ${done ? 'text-brand' : 'text-ink'}`}>{node.skill}</h3>
+        {node.description && <p className="mt-1.5 max-w-[42rem] text-[15px] leading-7 text-slate-700">{node.description}</p>}
+        {after && <p className="mt-1.5 text-[13px] text-slate-500">{c.afterShort(after)}</p>}
+        <p className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-2">
+          {node.status === 'not_started' && (
+            <button type="button" disabled={busy} onClick={() => onStatus('in_progress')} className={`${action} text-brand`}>
+              {c.startNode}
+            </button>
+          )}
+          {node.status === 'in_progress' && <span className="text-[13px] text-ink">{c.status.in_progress}</span>}
+          {node.resources.length > 0 ? (
+            <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`${action} text-ink`}>
+              {c.resources(node.resources.length)}
+            </button>
+          ) : (
+            <span className="text-[13px] text-slate-500">{c.noResShort}</span>
+          )}
+          {!done ? (
+            <button type="button" disabled={busy} onClick={() => onStatus('completed')} className={`${action} text-ink`}>
+              {c.finishNode}
+            </button>
+          ) : (
+            <button type="button" disabled={busy} onClick={() => onStatus('not_started')} className={`${action} text-slate-600`}>
+              {c.resetNode}
+            </button>
+          )}
         </p>
-        <h3 className={`mt-1 text-[clamp(1.0625rem,1.5vw,1.25rem)] font-normal ${done ? 'text-brand' : 'text-ink'}`}>{node.skill}</h3>
-        {node.description && <p className="mt-1.5 max-w-[44rem] text-[15px] leading-7 text-slate-700">{node.description}</p>}
-        {after && <p className="mt-1.5 text-[13px] text-slate-500">{c.after(after)}</p>}
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`${textLink} mt-3 text-[13px] text-ink`}>
-          {c.resources(node.resources.length)}
-        </button>
         {open && <ResourceList resources={node.resources} c={c} />}
       </div>
-      <div className="col-start-2 mt-3 flex flex-wrap gap-x-5 gap-y-2 md:col-start-3 md:mt-0 md:flex-col md:items-end">
-        {node.status === 'not_started' && (
-          <button type="button" disabled={busy} onClick={() => onStatus('in_progress')} className={`${textLink} whitespace-nowrap text-[13px] text-ink`}>
-            {c.startNode}
-          </button>
+      <p className="col-start-2 mt-2 text-[13px] text-slate-500 sm:col-start-3 sm:mt-1 sm:text-right">
+        {[node.hours > 0 ? c.hours(node.hours) : '', ''].filter(Boolean).join('')}
+        {reason && (
+          <span className={gap?.status === 'NEEDS_PRACTICE' ? 'text-danger' : ''}>
+            {node.hours > 0 ? ' · ' : ''}
+            {reason}
+          </span>
         )}
-        {!done && (
-          <button type="button" disabled={busy} onClick={() => onStatus('completed')} className={`${textLink} whitespace-nowrap text-[13px] text-ink`}>
-            <Check size={13} aria-hidden="true" />
-            {c.finishNode}
-          </button>
-        )}
-        {node.status !== 'not_started' && (
-          <button type="button" disabled={busy} onClick={() => onStatus('not_started')} className={`${textLink} whitespace-nowrap text-[13px] text-slate-600`}>
-            {c.resetNode}
-          </button>
-        )}
-      </div>
+      </p>
     </li>
   );
 }
+
+const hoursLeftOf = (path: LearningPath) => path.nodes.filter((n) => n.status !== 'completed').reduce((sum, n) => sum + n.hours, 0);
 
 function PathView({ path, c, busy, onStatus }: { path: LearningPath; c: Copy; busy: boolean; onStatus: (nodeId: string, status: LearningPathNode['status']) => void }) {
   if (path.nodes.length === 0) return <p className="border-b border-border py-6 text-[15px] leading-7 text-slate-700">{c.pathEmpty}</p>;
   const doneNodes = path.nodes.filter((n) => n.status === 'completed').length;
   return (
     <>
-      <dl className="grid border-b border-border sm:grid-cols-3">
-        {[
-          { label: c.skillsCount, value: String(path.nodes.length) },
-          { label: c.totalTime, value: c.hours(path.totalHours) },
-          { label: c.progress, value: `${doneNodes}/${path.nodes.length} · ${path.progress}%` },
-        ].map((row, i) => (
-          <div key={row.label} className={`flex items-baseline justify-between gap-4 py-3 text-sm sm:block ${i > 0 ? 'sm:border-l sm:border-border sm:pl-5' : ''}`}>
-            <dt className="text-slate-600">{row.label}</dt>
-            <dd className="tabular-nums text-ink sm:mt-1 sm:text-[clamp(1.25rem,2vw,1.5rem)]">{row.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <div className="h-[2px] w-full bg-slate-200">
-        <div className="h-full bg-brand transition-[width] duration-500" style={{ width: `${path.progress}%` }} />
-      </div>
-      <ol>
+      <p className="pt-4 text-[13px] leading-6 text-slate-600">
+        <span className="text-ink">{c.pathSummary(path.nodes.length, hoursLeftOf(path), doneNodes)}</span> {c.pathNote}
+      </p>
+      <ol className="mt-2">
         {path.nodes.map((node, i) => (
           <NodeRow key={node.id} node={node} index={i} path={path} c={c} busy={busy} onStatus={(status) => onStatus(node.id, status)} />
         ))}
@@ -528,6 +560,7 @@ export default function SkillAssessmentPage() {
   const jobId = searchParams.get('jobId') ?? '';
   const cvParam = searchParams.get('cvId') ?? '';
   const [jdOpen, setJdOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   // Chỉ CV đã xác nhận (READY) mới dùng được cho bài đánh giá; không có CV thì ẩn ô chọn CV.
   const resumesQuery = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
@@ -535,11 +568,9 @@ export default function SkillAssessmentPage() {
   const cvsLoaded = !resumesQuery.isPending;
   const defaultCv = readyCvs.find((r) => r.isDefault) ?? readyCvs[0];
   const cvId = cvParam === 'none' ? '' : readyCvs.some((r) => r.id === cvParam) ? cvParam : (defaultCv?.id ?? '');
-  const currentCv = readyCvs.find((r) => r.id === cvId);
 
   const jobsQuery = useQuery({ queryKey: ['jobs'], queryFn: () => getJobs() });
   const { data: activity } = useQuery({ queryKey: JOB_ACTIVITY_QUERY_KEY, queryFn: getJobActivity });
-  const recentQuery = useQuery({ queryKey: ['jdAssessments'], queryFn: listJdAssessments });
   const { data: job } = useQuery({ queryKey: ['job', jobId], queryFn: () => getJobById(jobId), enabled: !!jobId });
 
   const testKey = ['jdAssessment', jobId, cvId];
@@ -550,18 +581,19 @@ export default function SkillAssessmentPage() {
   const path = pathQuery.data ?? null;
   const completedTest = session?.status === 'completed' ? session : null;
 
-  const selectJob = (id: string, resumeId?: string) => {
+  const updateParams = (patch: Record<string, string>) => {
     const next = new URLSearchParams(searchParams);
-    next.set('jobId', id);
-    if (resumeId !== undefined) next.set('cvId', resumeId || 'none');
+    Object.entries(patch).forEach(([k, v]) => next.set(k, v));
     setSearchParams(next, { replace: true });
-    setJdOpen(false);
   };
-
+  const selectJob = (id: string) => {
+    updateParams({ jobId: id });
+    setJdOpen(false);
+    setReviewOpen(false);
+  };
   const selectCv = (id: string) => {
-    const next = new URLSearchParams(searchParams);
-    next.set('cvId', id || 'none');
-    setSearchParams(next, { replace: true });
+    updateParams({ cvId: id || 'none' });
+    setReviewOpen(false);
   };
 
   const startTest = useMutation({
@@ -569,6 +601,7 @@ export default function SkillAssessmentPage() {
     onSuccess: (data) => {
       queryClient.setQueryData(testKey, data);
       queryClient.invalidateQueries({ queryKey: ['jdAssessments'] });
+      setReviewOpen(false);
     },
   });
   const submitTest = useMutation({
@@ -595,157 +628,138 @@ export default function SkillAssessmentPage() {
   const busyAi = startTest.isPending || buildPath.isPending;
   // Lộ trình theo CV cần bài đánh giá dùng đúng CV đó (backend trả 409 nếu thiếu).
   const canBuildPath = !!completedTest || !cvId;
+  const doneNodes = path?.nodes.filter((n) => n.status === 'completed').length ?? 0;
+  const testPassed = !!completedTest && completedTest.score >= SKILL_PASS_SCORE;
 
-  const stepStatus = [
-    job ? (currentCv ? `${job.title} · ${currentCv.name}` : job.title) : c.stepNone,
-    !session ? c.stepNone : completedTest ? c.testDone(completedTest.score) : c.testOpen,
-    path ? c.pathDone(path.nodes.length, path.progress) : c.stepNone,
+  const summary = [
+    { label: c.jobTitle, value: job?.title ?? c.stepNone, sub: job?.company ?? '', tone: '' },
+    {
+      label: c.testTitle,
+      value: completedTest ? `${completedTest.score}%` : session ? c.testOpen : c.stepNone,
+      sub: completedTest ? (testPassed ? c.sumPassed : c.sumNotPassed) : '',
+      tone: completedTest ? (testPassed ? 'text-brand' : 'text-danger') : '',
+    },
+    {
+      label: c.pathTitle,
+      value: path ? c.sumSkills(doneNodes, path.nodes.length) : c.stepNone,
+      sub: path && path.nodes.length > 0 ? c.hoursLeft(hoursLeftOf(path)) : '',
+      tone: '',
+    },
   ];
-  const stepDone = [!!job, !!completedTest, !!path];
 
-  const recent = (recentQuery.data ?? []).slice(0, 5);
+  const headAction =
+    !job || busyAi || testQuery.isPending ? null : !session ? (
+      <button type="button" onClick={() => startTest.mutate()} className={`${primaryButton} shrink-0`}>
+        {c.testStart}
+      </button>
+    ) : completedTest ? (
+      <button type="button" onClick={() => startTest.mutate()} className={`${primaryButton} shrink-0`}>
+        {c.newTest}
+      </button>
+    ) : null;
 
   return (
     <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
-      <header>
-        <h1 className="text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
-          {c.title}
-          <span className="block text-brand">{c.titleLine}</span>
+      <nav className="flex flex-wrap items-baseline gap-1.5 text-[13px] text-slate-600">
+        <span>{c.crumbGroup}</span>
+        <span>/</span>
+        <span className="text-brand">{c.crumbPage}</span>
+      </nav>
+
+      <header className="mt-3">
+        <h1 className="text-[clamp(2rem,3.2vw,2.875rem)] font-normal leading-[1.15] tracking-[-0.03em] text-ink">
+          {c.heroA} <span className="text-brand">{c.heroB}</span>
         </h1>
-        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[36rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">{c.intro}</p>
+        <p className="mt-3 max-w-[40rem] text-[15px] leading-7 text-slate-600">{c.introShort}</p>
       </header>
 
-      {/* Ba bước, mỗi bước nhảy tới mục tương ứng */}
-      <ol className="mt-[clamp(2rem,4vw,2.75rem)] grid border-t border-slate-400 sm:grid-cols-3">
-        {c.steps.map((label, i) => (
-          <li key={label} className={`border-b border-border ${i > 0 ? 'sm:border-l sm:pl-5' : ''}`}>
-            <a href={`#step-${i + 1}`} className="group block py-4 pr-3">
-              <span className={`flex items-center gap-1.5 text-xs tabular-nums ${stepDone[i] ? 'text-brand' : 'text-slate-500'}`}>
-                {stepDone[i] ? <Check size={12} aria-hidden="true" /> : pad2(i + 1)}
-                <span className="text-slate-500">{label}</span>
-              </span>
-              <span className="mt-1 block truncate text-[15px] text-ink transition-colors group-hover:text-brand">{stepStatus[i]}</span>
-            </a>
-          </li>
+      {/* Tóm tắt: công việc, điểm bài đánh giá, lộ trình */}
+      <dl className="mt-[clamp(2rem,4vw,3rem)] grid border-y border-border border-t-ink sm:grid-cols-3">
+        {summary.map((item, i) => (
+          <div key={item.label} className={`min-w-0 py-4 ${i > 0 ? 'border-t border-border sm:border-t-0 sm:pl-6' : ''} sm:pr-4`}>
+            <dt className="text-[12px] text-slate-500">{item.label}</dt>
+            <dd className="mt-1.5 truncate text-[clamp(1.125rem,1.7vw,1.375rem)] text-ink tabular-nums">{item.value}</dd>
+            {item.sub && <dd className={`mt-0.5 truncate text-[12px] ${item.tone || 'text-slate-500'}`}>{item.sub}</dd>}
+          </div>
         ))}
-      </ol>
+      </dl>
 
       {/* 01 Công việc mục tiêu */}
-      <Section id="step-1" index="01" title={c.jobTitle} note={c.jobNote}>
-        <div className="grid gap-x-[clamp(2rem,4vw,3.5rem)] gap-y-8 pt-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <Section id="step-1" index="01" title={c.jobTitle}>
+        <div className="grid items-end gap-x-[clamp(1.5rem,3vw,2.5rem)] gap-y-6 pt-5 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.75fr)_auto]">
           <div className="min-w-0">
-            <p className="text-[13px] text-slate-600">{c.jobLabel}</p>
-            <div className="mt-1.5">
+            <p className="text-[12px] text-slate-500">{c.jobLabel}</p>
+            <div className="mt-1">
               {jobsQuery.isPending ? (
                 <p className="py-2 text-sm text-slate-500">…</p>
               ) : (
                 <JobPicker jobs={jobsQuery.data ?? []} selectedId={jobId} activity={activity} onSelect={selectJob} c={pickerCopy} label={c.jobLabel} />
               )}
             </div>
-            {job ? (
-              <div className="mt-3">
-                <p className="text-[13px] leading-6 text-slate-600">
-                  {[job.company, job.location, job.salary, job.experienceLevel].filter(Boolean).join(' · ')}
-                </p>
-                {job.skills.length > 0 && (
-                  <p className="mt-3 text-sm leading-7">
-                    <span className="text-slate-600">{c.skills}: </span>
-                    {job.skills.map((s, i) => (
-                      <span key={s}>
-                        <span className="text-ink">{s}</span>
-                        {i < job.skills.length - 1 && <span className="text-slate-400"> · </span>}
-                      </span>
-                    ))}
-                  </p>
-                )}
-                <p className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-                  <button type="button" onClick={() => setJdOpen((o) => !o)} aria-expanded={jdOpen} className={`${textLink} text-[13px] text-ink`}>
-                    {jdOpen ? c.hideJd : c.readJd}
-                  </button>
-                  <Link to={`/candidate/jobs/${job.id}`} className={`${textLink} text-[13px] text-ink`}>
-                    {c.viewJob}
-                  </Link>
-                </p>
-              </div>
-            ) : (
-              <p className="mt-3 text-[13px] text-slate-500">{c.pickFirst}</p>
-            )}
-
-            {readyCvs.length > 0 && (
-              <div className="mt-7">
-                <label htmlFor="assess-cv" className="block text-[13px] text-slate-600">
-                  {c.cvLabel}
-                </label>
-                <div className="relative mt-1.5">
-                  <select id="assess-cv" value={cvId} onChange={(e) => selectCv(e.target.value)} disabled={busyAi} className={`${lineField} appearance-none pr-7`}>
-                    {readyCvs.map((cv) => (
-                      <option key={cv.id} value={cv.id}>
-                        {cv.name}
-                      </option>
-                    ))}
-                    <option value="">{c.cvNone}</option>
-                  </select>
-                  <ChevronDown size={15} aria-hidden="true" className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-500" />
-                </div>
-                <p className="mt-3 text-[13px] leading-6 text-slate-600">{currentCv ? c.cvWith : c.cvWithout}</p>
-              </div>
-            )}
           </div>
-
-          <div className="min-w-0">
-            <p className="text-[13px] text-slate-600">{c.recent}</p>
-            {recentQuery.isPending ? (
-              <p className="mt-2 text-sm text-slate-500">…</p>
-            ) : recent.length === 0 ? (
-              <p className="mt-2 text-[13px] text-slate-500">{c.recentEmpty}</p>
-            ) : (
-              <ul className="mt-1.5 border-t border-border">
-                {recent.map((r) => (
-                  <li key={r.id}>
-                    <button
-                      type="button"
-                      onClick={() => selectJob(r.jobId, r.resumeId)}
-                      aria-current={r.jobId === jobId && r.resumeId === cvId ? 'true' : undefined}
-                      className="group flex w-full items-baseline justify-between gap-4 border-b border-border py-2.5 text-left cursor-pointer"
-                    >
-                      <span className="min-w-0">
-                        <span className={`block truncate text-sm transition-colors group-hover:text-brand ${r.jobId === jobId && r.resumeId === cvId ? 'text-brand' : 'text-ink'}`}>
-                          {r.jobTitle || '—'}
-                        </span>
-                        {r.resumeId && (
-                          <span className="block truncate text-[12px] text-slate-500">
-                            {c.withCv((resumesQuery.data ?? []).find((cv) => cv.id === r.resumeId)?.name ?? '…')}
-                          </span>
-                        )}
-                      </span>
-                      <span className={`shrink-0 text-[13px] tabular-nums ${r.score === undefined ? 'text-slate-500' : r.score >= SKILL_PASS_SCORE ? 'text-brand' : 'text-danger'}`}>
-                        {r.score === undefined ? c.testOpen : `${r.score}%`}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {readyCvs.length > 0 ? (
+            <div className="min-w-0">
+              <label htmlFor="assess-cv" className="block text-[12px] text-slate-500">
+                {c.cvLabel}
+              </label>
+              <div className="relative mt-1">
+                <select id="assess-cv" value={cvId} onChange={(e) => selectCv(e.target.value)} disabled={busyAi} className={`${lineField} appearance-none pr-7`}>
+                  {readyCvs.map((cv) => (
+                    <option key={cv.id} value={cv.id}>
+                      {cv.name}
+                    </option>
+                  ))}
+                  <option value="">{c.cvNone}</option>
+                </select>
+                <ChevronDown size={15} aria-hidden="true" className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-500" />
+              </div>
+            </div>
+          ) : (
+            <span className="hidden md:block" />
+          )}
+          <div className="md:pb-0.5">{headAction}</div>
         </div>
 
+        {job ? (
+          <div className="mt-4 space-y-1 text-[13px] leading-6 text-slate-600">
+            <p className="flex flex-wrap items-baseline gap-x-2">
+              <span>{[job.company, job.location].filter(Boolean).join(' · ')}</span>
+              <span>·</span>
+              <button type="button" onClick={() => setJdOpen((o) => !o)} aria-expanded={jdOpen} className={`${textLink} text-[13px] text-ink`}>
+                {jdOpen ? c.hideJd : c.readJd}
+              </button>
+              <Link to={`/candidate/jobs/${job.id}`} className={`${textLink} text-[13px] text-ink`}>
+                {c.viewJob}
+              </Link>
+            </p>
+            {job.skills.length > 0 && (
+              <p>
+                {c.skills}: <span className="text-ink">{job.skills.join(', ')}</span>
+              </p>
+            )}
+            {readyCvs.length > 0 && <p>{cvId ? c.cvWith : c.cvWithout}</p>}
+          </div>
+        ) : (
+          <p className="mt-4 text-[13px] text-slate-500">{c.pickFirst}</p>
+        )}
+
         {jdOpen && job && (
-          <div className="mt-6 border-t border-border pt-1">
+          <div className="mt-5 border-t border-border">
             <JobDescription job={job} moreLabel={c.moreJd} lessLabel={c.lessJd} />
           </div>
         )}
       </Section>
 
-      {/* 02 Bài đánh giá */}
+      {/* 02 Bài đánh giá / kết quả */}
       <Section
         id="step-2"
         index="02"
-        title={c.testTitle}
-        note={c.testNote}
+        title={completedTest && !busyAi ? c.resultTitle : c.testTitle}
+        note={completedTest && !busyAi ? undefined : c.testNote}
         action={
           completedTest && !busyAi ? (
-            <button type="button" onClick={() => startTest.mutate()} className={`${textLink} text-[13px] text-ink`}>
-              {c.retake}
+            <button type="button" onClick={() => setReviewOpen((o) => !o)} aria-expanded={reviewOpen} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+              {reviewOpen ? c.hideReview : c.review}
             </button>
           ) : undefined
         }
@@ -759,20 +773,14 @@ export default function SkillAssessmentPage() {
         ) : startTest.isPending ? (
           <Working text={c.testCreating} />
         ) : !session ? (
-          <div className="flex flex-col gap-4 border-b border-border py-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="max-w-xl text-[15px] leading-7 text-ink">{c.testIntro}</p>
-              <p className="mt-1 text-[13px] text-slate-500">{c.testCost}</p>
-            </div>
-            <button type="button" onClick={() => startTest.mutate()} disabled={busyAi} className={`${primaryButton} shrink-0`}>
-              {c.testStart}
-              <ArrowRight size={15} aria-hidden="true" />
-            </button>
+          <div className="border-b border-border py-6">
+            <p className="max-w-xl text-[15px] leading-7 text-ink">{c.testIntro}</p>
+            <p className="mt-1 text-[13px] text-slate-500">{c.testCost}</p>
           </div>
         ) : session.status === 'in_progress' ? (
           <Quiz key={session.id} session={session} c={c} onSubmit={(answers) => submitTest.mutate(answers)} submitting={submitTest.isPending} />
         ) : (
-          <AssessmentResult key={session.id} session={session} c={c} vi={isVietnamese} />
+          <AssessmentResult key={session.id} session={session} c={c} vi={isVietnamese} reviewOpen={reviewOpen} />
         )}
         <ErrorLine error={startTest.error ?? submitTest.error} c={c} />
       </Section>
@@ -782,10 +790,9 @@ export default function SkillAssessmentPage() {
         id="step-3"
         index="03"
         title={c.pathTitle}
-        note={c.pathNote}
         action={
           path && !busyAi && canBuildPath ? (
-            <button type="button" onClick={() => buildPath.mutate()} className={`${textLink} text-[13px] text-ink`}>
+            <button type="button" onClick={() => buildPath.mutate()} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
               {c.pathRebuild}
             </button>
           ) : undefined
@@ -801,9 +808,12 @@ export default function SkillAssessmentPage() {
           <Working text={c.pathCreating} />
         ) : !path ? (
           <div className="flex flex-col gap-4 border-b border-border py-6 sm:flex-row sm:items-center sm:justify-between">
-            <p className="max-w-xl text-[15px] leading-7 text-ink">
-              {completedTest ? (weakSkills.length ? c.pathWeak(weakSkills.join(', ')) : c.pathAllPass) : cvId ? c.pathNeedsTest : c.pathLocked}
-            </p>
+            <div>
+              <p className="max-w-xl text-[15px] leading-7 text-ink">
+                {completedTest ? (weakSkills.length ? c.pathWeak(weakSkills.join(', ')) : c.pathAllPass) : cvId ? c.pathNeedsTest : c.pathLocked}
+              </p>
+              <p className="mt-1 text-[13px] text-slate-500">{c.pathNote}</p>
+            </div>
             {completedTest ? (
               <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${primaryButton} shrink-0`}>
                 {c.pathCreate}
@@ -821,12 +831,7 @@ export default function SkillAssessmentPage() {
           <div>
             {(path.outdated || pathBeforeTest) && (
               <p className="mt-4 border-l-2 border-warning pl-4 text-sm leading-6 text-ink">
-                {path.outdated ? c.outdated : c.pathStale}{' '}
-                {canBuildPath && (
-                  <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${textLink} text-[13px] text-ink`}>
-                    {c.pathRebuild}
-                  </button>
-                )}
+                {path.outdated ? c.outdated : c.pathStale}
               </p>
             )}
             <PathView path={path} c={c} busy={nodeStatus.isPending} onStatus={(nodeId, status) => nodeStatus.mutate({ nodeId, status })} />
@@ -836,12 +841,16 @@ export default function SkillAssessmentPage() {
       </Section>
 
       {job && (
-        <p className="mt-[clamp(3rem,6vw,4.5rem)] border-t border-ink pt-5">
-          <Link to={`/candidate/cv-job-fit?jobId=${job.id}${cvId ? `&cvId=${cvId}` : ''}`} className={`${textLink} text-ink`}>
-            {c.fitLink}
-            <ArrowRight size={14} aria-hidden="true" />
-          </Link>
-        </p>
+        <Link
+          to={`/candidate/cv-job-fit?jobId=${job.id}${cvId ? `&cvId=${cvId}` : ''}`}
+          className="group mt-[clamp(3rem,6vw,4.5rem)] flex items-center justify-between gap-6 border-t border-ink pt-6"
+        >
+          <span className="min-w-0">
+            <span className="block text-[clamp(1.0625rem,1.5vw,1.25rem)] text-ink transition-colors group-hover:text-brand">{c.fitTitle}</span>
+            <span className="mt-1 block text-[13px] text-slate-600">{c.fitSub(job.title)}</span>
+          </span>
+          <ArrowRight size={18} aria-hidden="true" className="shrink-0 text-ink transition-colors group-hover:text-brand" />
+        </Link>
       )}
     </div>
   );

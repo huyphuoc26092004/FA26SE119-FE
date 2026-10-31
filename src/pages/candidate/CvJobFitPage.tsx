@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, Link} from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Bookmark, Check, ChevronDown, Loader2, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Bookmark, Check, ChevronDown, Loader2, X } from 'lucide-react';
 import { getResumes, getJobs, getCvJobFitAnalysis, getJobSemanticMatch } from '../../services/candidateService';
 import {
   JOB_ACTIVITY_QUERY_KEY,
@@ -25,6 +25,19 @@ const copy = {
   vi: {
     crumbResumes: 'CV của tôi',
     crumbPage: 'Độ phù hợp CV',
+    fitHead: (score: number) => `CV phù hợp ${score}% với công việc.`,
+    introResult: (cv: string, job: string) =>
+      `So khớp ${/^cv\b/i.test(cv) ? '' : 'CV '}${cv} với JD ${job}. Bên dưới là điểm từng tiêu chí, những gì cần sửa trước và bước tiếp theo.`,
+    scoreTitle: 'Điểm phù hợp',
+    grade: (g: string) => `Hạng ${g}`,
+    missingPoints: (n: number) => `Còn thiếu ${n} điểm`,
+    reachedTarget: 'Đã đạt mức nên có',
+    missingKeywords: 'Thiếu từ khoá JD:',
+    gapsNoteA: 'Sửa CV với những gì bạn đã có. Kỹ năng chưa có thì đánh giá và học ở trang',
+    noGaps: 'Không có mục nào cần sửa gấp.',
+    skillGapRequired: 'JD yêu cầu bắt buộc, CV chưa nhắc đến',
+    skillGapPreferred: 'JD ưu tiên, CV chưa nhắc đến',
+    skillFix: 'nếu đã dùng, ghi vào kinh nghiệm hoặc dự án. Nếu chưa, học theo lộ trình.',
     noData:
       'Chưa đủ dữ liệu để so khớp: Bạn cần có ít nhất một bản CV và danh sách việc làm để thực hiện phân tích độ phù hợp.',
     fitLine: (score: number) => `Phù hợp ${score}%.`,
@@ -43,7 +56,7 @@ const copy = {
     rematch: 'So khớp lại',
     matching: 'Đang so khớp',
     runNote: 'Chỉ chạy khi bạn bấm. Mỗi lần so khớp dùng một lượt AI.',
-    lastRun: (d: string) => `Kết quả lần so khớp ${d}. Bấm So khớp lại nếu bạn vừa sửa CV.`,
+    lastRun: (d: string) => `Kết quả lúc ${d}. Bấm So khớp lại nếu bạn vừa sửa CV.`,
     idleBody: 'Chưa so khớp cặp CV và công việc này.',
     idleSteps: ['Điểm phù hợp theo từng tiêu chí', 'Điểm mạnh và điểm cần cải thiện', 'Kỹ năng JD có và chưa có trong CV', 'Gợi ý viết lại CV'],
     workingBody: 'Đang đọc CV và JD để chấm điểm. Việc này có thể mất một lúc.',
@@ -96,9 +109,9 @@ const copy = {
     dimEducation: 'Học vấn & chuyên ngành',
     dimCulture: 'Văn hoá & lĩnh vực',
     dimSalary: 'Mức lương mong muốn',
-    strengths: 'Vì sao bạn phù hợp',
+    strengths: 'Điểm mạnh của CV',
     advice: 'Lời khuyên',
-    gaps: 'Điểm cần cải thiện',
+    gaps: 'Cần sửa trong CV',
     gapsNote: 'Sửa CV với những gì bạn đã có. Kỹ năng chưa có thì đánh giá và học ở trang Đánh giá kỹ năng.',
     learnSkill: 'Học kỹ năng này',
     fixCv: 'Sửa CV',
@@ -143,6 +156,19 @@ const copy = {
   en: {
     crumbResumes: 'My CVs',
     crumbPage: 'CV fit',
+    fitHead: (score: number) => `Your CV is a ${score}% fit.`,
+    introResult: (cv: string, job: string) =>
+      `Matching ${/^cv\b/i.test(cv) ? '' : 'CV '}${cv} against the ${job} JD. Below: score per criterion, what to fix first, and the next step.`,
+    scoreTitle: 'Fit score',
+    grade: (g: string) => `Grade ${g}`,
+    missingPoints: (n: number) => `${n} points short`,
+    reachedTarget: 'Target reached',
+    missingKeywords: 'Missing JD keywords:',
+    gapsNoteA: 'Fix your CV with what you already have. Assess and learn missing skills on',
+    noGaps: 'Nothing urgent to fix.',
+    skillGapRequired: 'Required by the JD, not in your CV',
+    skillGapPreferred: 'Preferred by the JD, not in your CV',
+    skillFix: 'if you have used it, add it to experience or projects. If not, follow the learning path.',
     noData: 'Not enough data to compare: you need at least one CV and a list of jobs to run a fit analysis.',
     fitLine: (score: number) => `${score}% fit.`,
     verdictLine: (score: number): string =>
@@ -209,9 +235,9 @@ const copy = {
     dimEducation: 'Education & major',
     dimCulture: 'Culture & domain',
     dimSalary: 'Expected salary',
-    strengths: 'Why you fit',
+    strengths: 'CV strengths',
     advice: 'Advice',
-    gaps: 'What to improve',
+    gaps: 'What to fix in your CV',
     gapsNote: 'Fix your CV with what you already have. Assess and learn missing skills on the Skill assessment page.',
     learnSkill: 'Learn this skill',
     fixCv: 'Edit CV',
@@ -293,6 +319,10 @@ function writeStoredFits(all: Record<string, StoredFit>) {
     // Bộ nhớ trình duyệt đầy: vẫn hiện kết quả trong phiên này.
   }
 }
+
+const sectionGap = 'mt-[clamp(2.5rem,5vw,3.5rem)]';
+const scoreText = (n: number) => (n < 50 ? 'text-danger' : n < 75 ? 'text-warning' : 'text-brand');
+const scoreBar = (n: number) => (n < 50 ? 'bg-danger' : n < 75 ? 'bg-warning' : 'bg-brand');
 
 function formatStamp(iso: string, vi: boolean) {
   const d = new Date(iso);
@@ -515,6 +545,10 @@ export default function CvJobFitPage() {
     `/candidate/cv-job-fit?cvId=${selectedCvId}&jobId=${selectedJobId}`,
   )}`;
   const assessHref = skillAssessmentHref(selectedJobId, selectedCvId);
+  const missingNames = fitResult?.skillsAnalysis.filter((s) => s.status === 'missing').map((s) => s.name) ?? [];
+  const strengthList = fitResult
+    ? [...fitResult.strengths, ...(semantic?.reasons ?? []).filter((r) => !fitResult.strengths.includes(r))]
+    : [];
   const hasTailoring = !!fitResult && (fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0);
 
   const jobMeta: { label: string; value?: string }[] = currentJob
@@ -559,98 +593,141 @@ export default function CvJobFitPage() {
       </nav>
 
       {/* Headline: chưa so khớp / đang so khớp / kết quả */}
-      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
-        <h1 className="text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
-          {runningThisPair ? c.loadingTitle : fitResult ? c.fitLine(fitResult.overallScore) : c.idleTitle}
-          <span className="block text-brand">
+      <header className="mt-3">
+        <h1 className="text-[clamp(2rem,3.6vw,3.25rem)] font-normal leading-[1.12] tracking-[-0.03em] text-ink">
+          {runningThisPair ? c.loadingTitle : fitResult ? c.fitHead(fitResult.overallScore) : c.idleTitle}
+          <span className={`block ${fitResult && !runningThisPair ? scoreText(fitResult.overallScore) : 'text-brand'}`}>
             {runningThisPair ? c.loadingLine : fitResult ? c.verdictLine(fitResult.overallScore) : c.idleLine}
           </span>
         </h1>
-        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[34rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
-          {c.intro}
+        <p className="mt-4 max-w-[36rem] text-[15px] leading-7 text-slate-600">
+          {fitResult && currentCv && currentJob ? c.introResult(currentCv.name, currentJob.title) : c.intro}
         </p>
       </header>
 
-      {/* Selectors */}
-      <section className="mt-[clamp(2rem,4vw,2.75rem)] grid gap-x-[clamp(2rem,4vw,3.5rem)] gap-y-8 border-t border-slate-400 pt-6 md:grid-cols-2">
-        <div className="min-w-0">
-          <label htmlFor="fit-cv" className="block text-[13px] text-slate-600">
-            {c.cvLabel}
-          </label>
-          <div className="relative mt-1.5">
-            <select
-              id="fit-cv"
-              value={selectedCvId}
-              onChange={(e) => handleSelectCv(e.target.value)}
-              className={`${lineField} appearance-none pr-7`}
-            >
-              {resumes.map((cv) => (
-                <option key={cv.id} value={cv.id}>
-                  {cv.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={15}
-              aria-hidden="true"
-              className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-500"
-            />
-          </div>
-          {currentCv ? (
-            <p className="mt-3 flex flex-wrap gap-x-2 text-[13px] leading-6 text-slate-600">
-              <span className="text-ink">{currentCv.position}</span>
-              <span>· {c.ats(currentCv.atsScore)}</span>
-              <span>· {c.updated(currentCv.updatedAt)}</span>
+      {/* Chọn CV + việc làm + nút so khớp */}
+      <section className="mt-[clamp(2rem,4vw,2.75rem)] border-t border-ink pt-5">
+        <div className="grid items-start gap-x-[clamp(1.5rem,3vw,2.5rem)] gap-y-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
+          <div className="min-w-0">
+            <label htmlFor="fit-cv" className="block text-[13px] text-slate-600">
+              {c.cvLabel}
+            </label>
+            <div className="relative mt-1">
+              <select
+                id="fit-cv"
+                value={selectedCvId}
+                onChange={(e) => handleSelectCv(e.target.value)}
+                className={`${lineField} appearance-none pr-7`}
+              >
+                {resumes.map((cv) => (
+                  <option key={cv.id} value={cv.id}>
+                    {cv.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={15} aria-hidden="true" className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-500" />
+            </div>
+            <p className="mt-2 text-[13px] leading-6 text-slate-600">
+              {currentCv ? `${c.ats(currentCv.atsScore)} · ${c.updated(formatStamp(currentCv.updatedAt, isVietnamese) || currentCv.updatedAt)}` : c.cvHint}
             </p>
-          ) : (
-            <p className="mt-3 text-[13px] text-slate-500">{c.cvHint}</p>
-          )}
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-[13px] text-slate-600">{c.jobLabel}</p>
+            <div className="mt-1">
+              <JobPicker jobs={jobs} selectedId={selectedJobId} activity={activity} onSelect={handleSelectJob} c={pickerCopy} label={c.jobLabel} />
+            </div>
+            {currentJob ? (
+              <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-[13px] leading-6 text-slate-600">
+                {currentTracked && (
+                  <span className="inline-flex items-center gap-1 text-brand">
+                    {currentTracked.status === 'applied' ? (
+                      <Check size={12} aria-hidden="true" />
+                    ) : (
+                      <Bookmark size={12} aria-hidden="true" className="fill-brand" />
+                    )}
+                    {currentTracked.status === 'applied'
+                      ? c.statusApplied(formatActivityDate(currentTracked.appliedAt, isVietnamese))
+                      : c.statusSaved(formatActivityDate(currentTracked.savedAt, isVietnamese))}
+                  </span>
+                )}
+                {currentJob.location && <span>{currentJob.location} ·</span>}
+                <button type="button" onClick={() => setJdOpen((o) => !o)} aria-expanded={jdOpen} className={`${textLink} text-[13px] text-ink`}>
+                  {jdOpen ? c.hideJd : c.readJd}
+                </button>
+              </p>
+            ) : (
+              <p className="mt-2 text-[13px] text-slate-500">{c.jobHint}</p>
+            )}
+          </div>
+
+          <div className="md:pt-5">
+            <button
+              type="button"
+              onClick={startMatch}
+              disabled={!selectedCvId || !selectedJobId || matchMutation.isPending}
+              className={`${primaryButton} w-full shrink-0 md:w-auto`}
+            >
+              {runningThisPair && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+              {runningThisPair ? c.matching : fitResult ? c.rematch : c.startMatch}
+            </button>
+          </div>
         </div>
 
-        <div className="min-w-0">
-          <p className="text-[13px] text-slate-600">{c.jobLabel}</p>
-          <div className="mt-1.5">
-            <JobPicker jobs={jobs} selectedId={selectedJobId} activity={activity} onSelect={handleSelectJob} c={pickerCopy} label={c.jobLabel} />
-          </div>
-          {currentJob ? (
-            <div className="mt-3">
-              {currentTracked && (
-                <p className="mb-1 flex items-center gap-1.5 text-[13px] leading-6 text-brand">
-                  {currentTracked.status === 'applied' ? (
-                    <Check size={13} aria-hidden="true" />
-                  ) : (
-                    <Bookmark size={13} aria-hidden="true" className="fill-brand" />
-                  )}
-                  {currentTracked.status === 'applied'
-                    ? c.statusApplied(formatActivityDate(currentTracked.appliedAt, isVietnamese))
-                    : c.statusSaved(formatActivityDate(currentTracked.savedAt, isVietnamese))}
-                </p>
-              )}
-              <p className="text-[13px] leading-6 text-slate-600">
-                {[currentJob.company, currentJob.location, currentJob.salary, currentJob.experienceLevel].filter(Boolean).join(' · ')}
-              </p>
+        <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-baseline lg:justify-between">
+          <p className="text-[13px] leading-6 text-slate-500">
+            {stored && !runningThisPair ? c.lastRun(formatStamp(stored.savedAt, isVietnamese)) : c.runNote}
+          </p>
+          <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+            {currentCv && (
+              <Link to={`/candidate/resumes/${currentCv.id}`} className={`${textLink} text-[13px] text-ink`}>
+                {c.viewCv}
+              </Link>
+            )}
+            {currentJob && (
+              <Link to={`/candidate/jobs/${currentJob.id}`} className={`${textLink} text-[13px] text-ink`}>
+                {c.viewJob}
+              </Link>
+            )}
+            {currentJob && !isApplied && (
               <button
                 type="button"
-                onClick={() => setJdOpen((o) => !o)}
-                aria-expanded={jdOpen}
-                className={`${textLink} mt-2 text-[13px] text-ink`}
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending}
+                aria-pressed={isSaved}
+                className={`${textLink} text-[13px] ${isSaved ? 'text-brand' : 'text-ink'} disabled:opacity-50`}
               >
-                {jdOpen ? c.hideJd : c.readJd}
+                {isSaved ? pickerCopy.saved : c.save}
               </button>
-            </div>
-          ) : (
-            <p className="mt-3 text-[13px] text-slate-500">{c.jobHint}</p>
-          )}
+            )}
+            {currentJob &&
+              (isApplied ? (
+                <span className="inline-flex items-center gap-1 text-[13px] text-brand">
+                  <Check size={13} aria-hidden="true" />
+                  {c.appliedBtn}
+                </span>
+              ) : (
+                <button type="button" onClick={() => setRedirectModalOpen(true)} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                  {c.applyAt(currentJob.externalSource?.sourceName || c.sourceFallback)}
+                  <ArrowUpRight size={13} aria-hidden="true" />
+                </button>
+              ))}
+          </div>
         </div>
+        {failedThisPair && (
+          <p role="alert" className="mt-3 text-[13px] leading-6 text-danger">
+            {authErrorMessage(matchMutation.error, c.fitError)}
+          </p>
+        )}
       </section>
 
-      {/* Full job description */}
+      {/* Mô tả công việc đầy đủ */}
       {jdOpen && currentJob && (
-        <section className="mt-8 border-t border-border pt-5" aria-label={c.jdTitle}>
+        <section className="mt-6 border-t border-border pt-5" aria-label={c.jdTitle}>
           <h2 className="text-[clamp(1.125rem,1.6vw,1.375rem)] font-normal text-ink">
             {c.jdTitle}: {currentJob.title}
           </h2>
-          <dl className="mt-4 grid border-t border-border sm:grid-cols-2 lg:grid-cols-3 sm:gap-x-8">
+          <dl className="mt-4 grid border-t border-border sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-3">
             {jobMeta.map((m) => (
               <div key={m.label} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 text-sm">
                 <dt className="shrink-0 text-slate-600">{m.label}</dt>
@@ -675,66 +752,7 @@ export default function CvJobFitPage() {
         </section>
       )}
 
-      {/* Run + quick links */}
-      <div className="mt-8 flex flex-col gap-5 border-t border-border pt-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-          <button
-            type="button"
-            onClick={startMatch}
-            disabled={!selectedCvId || !selectedJobId || matchMutation.isPending}
-            className={`${primaryButton} shrink-0`}
-          >
-            {runningThisPair ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : null}
-            {runningThisPair ? c.matching : fitResult ? c.rematch : c.startMatch}
-            {!runningThisPair && <ArrowRight size={15} aria-hidden="true" />}
-          </button>
-          <p className="max-w-sm text-[13px] leading-6 text-slate-500">
-            {stored && !runningThisPair ? c.lastRun(formatStamp(stored.savedAt, isVietnamese)) : c.runNote}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-3">
-          {currentCv && (
-            <Link to={`/candidate/resumes/${currentCv.id}`} className={`${textLink} text-ink`}>
-              {c.viewCv}
-            </Link>
-          )}
-          {currentJob && (
-            <Link to={`/candidate/jobs/${currentJob.id}`} className={`${textLink} text-ink`}>
-              {c.viewJob}
-            </Link>
-          )}
-          {currentJob && !isApplied && (
-            <button
-              type="button"
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
-              aria-pressed={isSaved}
-              className={`${textLink} ${isSaved ? 'text-brand' : 'text-ink'} disabled:opacity-50`}
-            >
-              <Bookmark size={13} aria-hidden="true" className={isSaved ? 'fill-brand' : ''} />
-              {isSaved ? pickerCopy.saved : c.save}
-            </button>
-          )}
-          {currentJob &&
-            (isApplied ? (
-              <span className="inline-flex items-center gap-1 text-sm text-brand">
-                <Check size={13} aria-hidden="true" />
-                {c.appliedBtn}
-              </span>
-            ) : (
-              <button type="button" onClick={() => setRedirectModalOpen(true)} className={`${textLink} text-ink`}>
-                {c.applyAt(currentJob.externalSource?.sourceName || c.sourceFallback)}
-              </button>
-            ))}
-        </div>
-      </div>
-      {failedThisPair && (
-        <p role="alert" className="mt-4 text-[13px] leading-6 text-danger">
-          {authErrorMessage(matchMutation.error, c.fitError)}
-        </p>
-      )}
-
-      {/* Result / idle / working */}
+      {/* Kết quả / chưa chạy / đang chạy */}
       {runningThisPair && !fitResult ? (
         <p role="status" className="mt-10 flex items-center gap-2 border-y border-border py-8 text-[15px] text-ink">
           <Loader2 size={15} className="animate-spin text-brand" aria-hidden="true" />
@@ -754,105 +772,173 @@ export default function CvJobFitPage() {
         </section>
       ) : (
         <div className={`transition-opacity ${runningThisPair ? 'opacity-50' : ''}`}>
-          {/* Score + dimensions */}
-          <section id="fit-score" className="mt-[clamp(2.5rem,5vw,3.5rem)] grid scroll-mt-6 gap-x-[clamp(2rem,5vw,4rem)] gap-y-6 border-t border-slate-400 pt-6 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-            <div>
-              <p className="text-[13px] text-slate-600">{c.scoreLabel(fitResult.fitGrade)}</p>
-              <p className="mt-2 flex items-baseline gap-1 leading-none text-brand">
-                <span className="text-[clamp(3.5rem,7vw,5.5rem)] font-normal tracking-[-0.04em] tabular-nums">{fitResult.overallScore}</span>
-                <span className="text-[clamp(1.5rem,2.4vw,2rem)]">%</span>
-              </p>
-              {fitResult.targetScore && <p className="mt-3 text-[13px] text-slate-600">{c.target(fitResult.targetScore)}</p>}
+          {/* 01 Điểm phù hợp */}
+          <section id="fit-score" className={sectionGap}>
+            <SectionHead index="01" title={c.scoreTitle} />
+            <div className="grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-6 pt-4 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
+              <div className="pt-2">
+                <p className={`text-[clamp(3.5rem,6.5vw,5.25rem)] font-normal leading-none tracking-[-0.04em] tabular-nums ${scoreText(fitResult.overallScore)}`}>
+                  {fitResult.overallScore}%
+                </p>
+                <p className="mt-3 text-[13px] text-slate-600">
+                  {c.grade(fitResult.fitGrade)}
+                  {fitResult.targetScore ? ` · ${c.target(fitResult.targetScore)}` : ''}
+                </p>
+                {fitResult.targetScore && fitResult.overallScore < fitResult.targetScore ? (
+                  <p className="text-[13px] text-danger">{c.missingPoints(fitResult.targetScore - fitResult.overallScore)}</p>
+                ) : fitResult.targetScore ? (
+                  <p className="text-[13px] text-brand">{c.reachedTarget}</p>
+                ) : null}
+              </div>
+              <ul>
+                {dims.map((dim) => (
+                  <li key={dim.label} className="grid grid-cols-[minmax(0,1fr)_minmax(4rem,0.9fr)_3rem] items-center gap-x-5 border-b border-border py-2.5 text-sm">
+                    <span className="truncate text-ink">{dim.label}</span>
+                    <span className="h-[2px] w-full bg-slate-200">
+                      <span className={`block h-full transition-[width] duration-500 ${scoreBar(dim.value)}`} style={{ width: `${Math.max(dim.value, 1)}%` }} />
+                    </span>
+                    <span className={`text-right tabular-nums ${scoreText(dim.value)}`}>{dim.value}%</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="space-y-4">
-              {dims.map((dim) => (
-                <li key={dim.label}>
-                  <div className="flex items-baseline justify-between gap-4 text-sm">
-                    <span className="text-ink">{dim.label}</span>
-                    <span className="tabular-nums text-slate-600">{dim.value}%</span>
-                  </div>
-                  <div className="mt-2 h-[2px] w-full bg-slate-200">
-                    <div
-                      className={`h-full transition-[width] duration-500 ${dim.value < 70 ? 'bg-danger' : 'bg-brand'}`}
-                      style={{ width: `${dim.value}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-6 max-w-[48rem] space-y-2 text-[13px] leading-6 text-slate-700">
+              {missingNames.length > 0 && (
+                <p>
+                  <span className="text-ink">{c.missingKeywords}</span> {missingNames.join(', ')}.
+                </p>
+              )}
+              {fitResult.verdict && <p>{fitResult.verdict}</p>}
+              {semantic?.recommendation && (
+                <p>
+                  <span className="text-brand">{c.advice}:</span> {semantic.recommendation}
+                </p>
+              )}
+            </div>
           </section>
 
-          {fitResult.verdict && <p className="mt-8 max-w-[44rem] text-[15px] leading-7 text-slate-700">{fitResult.verdict}</p>}
-          {semantic?.recommendation && (
-            <p className="mt-4 max-w-[44rem] border-l-2 border-brand pl-4 text-[15px] leading-7 text-ink">
-              <span className="text-brand">{c.advice}: </span>
-              {semantic.recommendation}
-            </p>
+          {/* 02 Điểm mạnh */}
+          {strengthList.length > 0 && (
+            <section className={sectionGap}>
+              <SectionHead index="02" title={c.strengths} />
+              <ul>
+                {strengthList.map((str, idx) => (
+                  <li key={idx} className="border-b border-border py-3 text-[15px] leading-7 text-ink">
+                    {str}
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
-          {/* 01 Strengths */}
-          <section className="mt-[clamp(3rem,6vw,4.5rem)]">
-            <SectionHead index="01" title={c.strengths} />
-            <ul>
-              {[...fitResult.strengths, ...(semantic?.reasons ?? []).filter((r) => !fitResult.strengths.includes(r))].map((str, idx) => (
-                <li key={idx} className="border-b border-border py-4 text-[15px] leading-7 text-ink">
-                  {str}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* 02 Gaps */}
-          <section id="improve" className="mt-[clamp(3rem,6vw,4.5rem)] scroll-mt-6">
-            <SectionHead index="02" title={c.gaps} note={c.gapsNote} />
-            <ul>
-              {fitResult.gaps.map((gap, idx) => (
-                <li key={idx} className="border-b border-border py-6">
-                  <p className={`text-[13px] ${impactTone[gap.impact]}`}>{c.impact[gap.impact]}</p>
-                  <h3 className="mt-1.5 text-[clamp(1rem,1.3vw,1.1875rem)] font-normal leading-7 text-ink">{gap.title}</h3>
-                  <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">{gap.description}</p>
-                  {gap.recommendation && (
-                    <p className="mt-3 max-w-3xl text-sm leading-6 text-ink">
-                      <span className="text-brand">{c.fix}</span> {gap.recommendation}
-                    </p>
-                  )}
-                  <p className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-                    <Link to={editCvHref} className={`${textLink} text-[13px] text-ink`}>
-                      {c.fixCv}
-                    </Link>
-                    {gap.skill && (
-                      <Link to={assessHref} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
-                        {c.learnSkill}
-                      </Link>
-                    )}
+          {/* 03 Cần sửa trong CV */}
+          <section id="improve" className={`${sectionGap} scroll-mt-6`}>
+            <SectionHead index={strengthList.length > 0 ? '03' : '02'} title={c.gaps} />
+            <p className="mt-3 text-[13px] leading-6 text-slate-600">
+              {c.gapsNoteA}{' '}
+              <Link to={assessHref} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                {c.nextLink}
+              </Link>
+              .
+            </p>
+            {fitResult.gaps.length === 0 && !hasTailoring && <p className="mt-4 text-[15px] text-ink">{c.noGaps}</p>}
+            {(['critical', 'moderate', 'minor'] as const).map((level) => {
+              const items = fitResult.gaps.filter((g) => g.impact === level);
+              if (items.length === 0) return null;
+              const skillItems = items.filter((g) => g.skill);
+              const otherItems = items.filter((g) => !g.skill);
+              return (
+                <div key={level} className="mt-6 border-b border-border pb-2">
+                  <p className={`text-[13px] font-medium ${impactTone[level]}`}>
+                    {c.impact[level]} ({items.length})
                   </p>
-                </li>
-              ))}
-            </ul>
+                  {skillItems.length > 0 && (
+                    <div className="mt-2">
+                      <h3 className="text-[15px] font-normal text-ink">{level === 'critical' ? c.skillGapRequired : c.skillGapPreferred}</h3>
+                      <p className="mt-1 text-[13px] leading-6 text-slate-600">
+                        <span className="text-brand">{c.fix}</span> {c.skillFix}
+                      </p>
+                      <ul className="mt-2 border-t border-border">
+                        {skillItems.map((g) => (
+                          <li key={g.title} className="flex items-baseline justify-between gap-4 border-b border-border py-2 text-sm last:border-b-0">
+                            <span className="text-ink">{g.skill}</span>
+                            <span className="flex shrink-0 gap-x-5">
+                              <Link to={editCvHref} className={`${textLink} text-[13px] text-ink`}>
+                                {c.fixCv}
+                              </Link>
+                              <Link to={assessHref} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                                {c.learnSkill}
+                              </Link>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {otherItems.map((g, idx) => (
+                    <div key={`${g.title}-${idx}`} className={`flex items-start justify-between gap-6 py-3 ${skillItems.length > 0 || idx > 0 ? 'border-t border-border' : ''}`}>
+                      <div className="min-w-0">
+                        <h3 className="text-[15px] font-normal text-ink">{g.title}</h3>
+                        <p className="mt-0.5 text-[13px] leading-6 text-slate-600">{g.description}</p>
+                        {g.recommendation && (
+                          <p className="text-[13px] leading-6 text-slate-700">
+                            <span className="text-brand">{c.fix}</span> {g.recommendation}
+                          </p>
+                        )}
+                      </div>
+                      <Link to={editCvHref} className={`${textLink} shrink-0 text-[13px] text-ink`}>
+                        {c.fixCv}
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+
+            {hasTailoring && (
+              <div className="mt-6">
+                <p className="text-[13px] font-medium text-slate-600">{c.tailorTitle}</p>
+                <ul className="mt-1">
+                  {fitResult.tailoringTips.map((tip, idx) => (
+                    <li key={idx} className="flex items-start justify-between gap-6 border-b border-border py-3 text-sm leading-6 text-ink">
+                      <span>{tip}</span>
+                      <Link to={editCvHref} className={`${textLink} shrink-0 text-[13px] text-ink`}>
+                        {c.fixCv}
+                      </Link>
+                    </li>
+                  ))}
+                  {fitResult.suggestedBulletPoints.map((bp, idx) => (
+                    <li key={`bp-${idx}`} className="border-b border-border py-3">
+                      <p className="text-[13px] text-slate-600">{c.insertAt(bp.section)}</p>
+                      <p className="mt-1 max-w-4xl text-sm leading-6 text-ink">“{bp.text}”</p>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(bp.text, idx)}
+                        className={`${textLink} mt-1.5 text-[13px] ${copiedIndex === idx ? 'text-brand' : 'text-ink'}`}
+                      >
+                        {copiedIndex === idx ? c.copied : c.copy}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
 
-          {/* 03 Skills matrix */}
-          <section className="mt-[clamp(3rem,6vw,4.5rem)]">
-            <SectionHead
-              index="03"
-              title={c.skillsTitle}
-              note={c.skillsNote(missingRequired, missingPreferred)}
-              action={
-                fitResult.skillsAnalysis.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSkillsOpen((o) => !o)}
-                    aria-expanded={skillsOpen}
-                    className={`${textLink} text-[13px] text-ink`}
-                  >
-                    {skillsOpen ? c.hideSkills : c.showSkills(fitResult.skillsAnalysis.length)}
-                  </button>
-                )
-              }
-            />
+          {/* 04 Bước tiếp theo */}
+          <section className={sectionGap}>
+            <SectionHead index={strengthList.length > 0 ? '04' : '03'} title={c.nextTitle} />
+            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-border py-3">
+              <p className="text-[13px] leading-6 text-slate-700">{c.skillsNote(missingRequired, missingPreferred)}</p>
+              {fitResult.skillsAnalysis.length > 0 && (
+                <button type="button" onClick={() => setSkillsOpen((o) => !o)} aria-expanded={skillsOpen} className={`${textLink} text-[13px] text-ink`}>
+                  {skillsOpen ? c.hideSkills : c.showSkills(fitResult.skillsAnalysis.length)}
+                </button>
+              )}
+            </div>
             {skillsOpen && (
               <div>
-                <div className="hidden grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,2fr)] gap-6 border-b border-border py-3 text-[13px] text-slate-500 md:grid">
+                <div className="hidden grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,2fr)] gap-6 border-b border-border py-2.5 text-[13px] text-slate-500 md:grid">
                   <span>{c.colSkill}</span>
                   <span>{c.colPriority}</span>
                   <span>{c.colStatus}</span>
@@ -862,96 +948,43 @@ export default function CvJobFitPage() {
                   {fitResult.skillsAnalysis.map((sk) => (
                     <li
                       key={sk.name}
-                      className="grid grid-cols-2 gap-x-6 gap-y-1 border-b border-border py-3.5 text-sm md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,2fr)]"
+                      className="grid grid-cols-2 gap-x-6 gap-y-1 border-b border-border py-3 text-sm md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,2fr)]"
                     >
                       <span className="text-ink">{sk.name}</span>
-                      <span
-                        className={`text-right md:text-left ${
-                          sk.status === 'matched' ? 'text-brand' : sk.status === 'partial' ? 'text-warning' : 'text-danger'
-                        } md:order-3`}
-                      >
+                      <span className={`text-right md:order-3 md:text-left ${sk.status === 'matched' ? 'text-brand' : sk.status === 'partial' ? 'text-warning' : 'text-danger'}`}>
                         {sk.status === 'matched' ? c.matched : sk.status === 'partial' ? c.partial : c.missing}
                       </span>
-                      <span className="text-[13px] text-slate-600 md:order-2 md:text-sm">
-                        {sk.category === 'required' ? c.required : c.preferred}
-                      </span>
-                      <span className="col-span-2 text-[13px] leading-6 text-slate-600 md:order-4 md:col-span-1 md:text-sm">
-                        {sk.cvMention || '—'}
-                      </span>
+                      <span className="text-[13px] text-slate-600 md:order-2 md:text-sm">{sk.category === 'required' ? c.required : c.preferred}</span>
+                      <span className="col-span-2 text-[13px] leading-6 text-slate-600 md:order-4 md:col-span-1 md:text-sm">{sk.cvMention || '—'}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-          </section>
-
-          {/* 04 Tailoring + STAR bullets */}
-          {hasTailoring && (
-            <section className="mt-[clamp(3rem,6vw,4.5rem)]">
-              <SectionHead
-                index="04"
-                title={c.tailorTitle}
-                action={
-                  <Link to={editCvHref} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
-                    {c.editCv}
-                  </Link>
-                }
-              />
-              <ol>
-                {fitResult.tailoringTips.map((tip, idx) => (
-                  <li key={idx} className="flex gap-4 border-b border-border py-4 text-[15px] leading-7 text-ink">
-                    <span className="shrink-0 pt-1 text-xs tabular-nums text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ol>
-              <ul>
-                {fitResult.suggestedBulletPoints.map((bp, idx) => (
-                  <li key={idx} className="border-b border-border py-5">
-                    <p className="text-[13px] text-slate-600">{c.insertAt(bp.section)}</p>
-                    <p className="mt-1.5 max-w-4xl text-[15px] leading-7 text-ink">“{bp.text}”</p>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(bp.text, idx)}
-                      className={`${textLink} mt-2 text-[13px] ${copiedIndex === idx ? 'text-brand' : 'text-ink'}`}
-                    >
-                      {copiedIndex === idx ? c.copied : c.copy}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {/* Bước tiếp theo: đánh giá kỹ năng ở trang riêng */}
-          <section className="mt-[clamp(3rem,6vw,4.5rem)]">
-            <SectionHead index={hasTailoring ? '05' : '04'} title={c.nextTitle} />
-            <Link to={assessHref} className="group flex items-center justify-between gap-6 border-b border-border py-5">
+            <Link to={assessHref} className="group flex items-center justify-between gap-6 border-b border-border py-4">
               <span className="min-w-0">
-                <span className="block text-[clamp(1.0625rem,1.5vw,1.25rem)] text-ink transition-colors group-hover:text-brand">{c.nextLink}</span>
-                <span className="mt-1.5 block max-w-xl text-sm leading-6 text-slate-600">{c.nextBody}</span>
+                <span className="block text-[15px] text-ink transition-colors group-hover:text-brand">{c.nextLink}</span>
+                <span className="mt-0.5 block text-[13px] leading-6 text-slate-600">{c.nextBody}</span>
               </span>
-              <ArrowRight size={18} aria-hidden="true" className="shrink-0 text-slate-400 transition-colors group-hover:text-brand" />
+              <ArrowRight size={17} aria-hidden="true" className="shrink-0 text-ink transition-colors group-hover:text-brand" />
             </Link>
           </section>
 
-          {/* Closing CTA */}
-          <section className="mt-[clamp(3rem,6vw,4.5rem)] border-t border-ink pt-6">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-md text-[clamp(1rem,1.3vw,1.125rem)] leading-7 text-ink">{c.ctaQuestion}</p>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-                <Link to={`/candidate/assistant?cvId=${currentCv?.id}&jobId=${currentJob?.id}`} className={`${textLink} text-ink`}>
-                  {c.askAssistant}
-                </Link>
-                <Link to={`/candidate/applications?cvId=${currentCv?.id}&jobId=${currentJob?.id}`} className={primaryButton}>
-                  {c.writeLetter}
-                  <ArrowRight size={15} aria-hidden="true" />
-                </Link>
-              </div>
+          {/* Kết bài */}
+          <section className={`${sectionGap} border-t border-ink pt-6`}>
+            <p className="text-[clamp(1.0625rem,1.4vw,1.25rem)] leading-7 text-ink">{c.ctaQuestion}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
+              <Link to={`/candidate/applications?cvId=${currentCv?.id}&jobId=${currentJob?.id}`} className={primaryButton}>
+                {c.writeLetter}
+                <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+              <Link to={`/candidate/assistant?cvId=${currentCv?.id}&jobId=${currentJob?.id}`} className={`${textLink} text-ink`}>
+                {c.askAssistant}
+              </Link>
             </div>
 
             {currentJob && currentCv && (
-              <div className="mt-6">
+              <div className="mt-5">
                 {!feedbackOpen ? (
                   <p className="flex flex-wrap items-baseline gap-x-4 gap-y-2 text-[13px] text-slate-600">
                     <span>{c.feedbackQ}</span>
