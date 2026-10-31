@@ -24,7 +24,7 @@ import ResumeDetailsPage from '../pages/candidate/ResumeDetailsPage';
 import ResumeAnalysisPage from '../pages/candidate/ResumeAnalysisPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
-import { LearningPathPage, SkillTestPage } from '../pages/candidate/cv-job-fit/SkillPathPages';
+import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
 import CvJobFitPage from '../pages/candidate/CvJobFitPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
 import ApplicationAssistancePage from '../pages/candidate/ApplicationAssistancePage';
@@ -59,12 +59,11 @@ function JobMatchRedirect() {
   return <Navigate to={`/candidate/cv-job-fit${jobId ? `?jobId=${jobId}` : ''}`} replace />;
 }
 
-/** Old skill assessment / learning pages open the per-job pages; keep ?jobId= links working. */
-function SkillPathRedirect({ to }: { to: 'skill-test' | 'learning-path' }) {
+/** Old skill test / learning path / assessment links open the skill assessment page; keep ?jobId=. */
+function SkillAssessmentRedirect() {
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('jobId');
-  // Without a job, both pages need one picked on the CV fit page first.
-  return <Navigate to={jobId ? `/candidate/${to}?jobId=${jobId}` : '/candidate/cv-job-fit'} replace />;
+  return <Navigate to={`/candidate/skill-assessment${jobId ? `?jobId=${encodeURIComponent(jobId)}` : ''}`} replace />;
 }
 
 export function ProtectedRoute() { const authenticated = useAuthStore(s => s.isAuthenticated); return authenticated ? <Outlet /> : <Navigate to="/login" replace />; }
@@ -118,8 +117,8 @@ export const router = createBrowserRouter([
               { path: 'jobs/:jobId/fit-analysis', element: <CvJobFitPage /> },
               { path: 'cv-job-fit', element: <CvJobFitPage /> },
               { path: 'resumes/:resumeId/job-fit', element: <CvJobFitPage /> },
-              { path: 'salary-estimation', element: <SkillPathRedirect to="learning-path" /> },
-              { path: 'career-intelligence', element: <SkillPathRedirect to="learning-path" /> },
+              { path: 'salary-estimation', element: <SkillAssessmentRedirect /> },
+              { path: 'career-intelligence', element: <SkillAssessmentRedirect /> },
               { path: 'assistant', element: <AssistantPage /> },
               { path: 'applications', element: <ApplicationAssistancePage /> },
               { path: 'application-assistance', element: <ApplicationAssistancePage /> },
@@ -128,14 +127,15 @@ export const router = createBrowserRouter([
               { path: 'payment', element: <SubscriptionPage /> },
               { path: 'usage', element: <UsagePage /> },
               { path: 'support', element: <SupportPage /> },
-              // Skill assessment and learning path for one job, opened from the CV fit page.
-              { path: 'skill-test', element: <SkillTestPage /> },
-              { path: 'learning-path', element: <LearningPathPage /> },
-              { path: 'assessment', element: <SkillPathRedirect to="skill-test" /> },
-              { path: 'assessment/*', element: <SkillPathRedirect to="skill-test" /> },
-              { path: 'skill-gap', element: <SkillPathRedirect to="learning-path" /> },
-              { path: 'learning', element: <SkillPathRedirect to="learning-path" /> },
-              { path: 'learning/roadmap', element: <SkillPathRedirect to="learning-path" /> },
+              // Skill assessment by JD (no CV needed) with its learning path, on one page.
+              { path: 'skill-assessment', element: <SkillAssessmentPage /> },
+              { path: 'skill-test', element: <SkillAssessmentRedirect /> },
+              { path: 'learning-path', element: <SkillAssessmentRedirect /> },
+              { path: 'assessment', element: <SkillAssessmentRedirect /> },
+              { path: 'assessment/*', element: <SkillAssessmentRedirect /> },
+              { path: 'skill-gap', element: <SkillAssessmentRedirect /> },
+              { path: 'learning', element: <SkillAssessmentRedirect /> },
+              { path: 'learning/roadmap', element: <SkillAssessmentRedirect /> },
               { path: 'consultations', element: <ConsultationsPage /> },
               { path: 'consultations/new', element: <ConsultationsPage /> },
               { path: 'consultations/:consultationId', element: <ConsultationsPage /> },
