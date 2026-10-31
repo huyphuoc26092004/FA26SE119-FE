@@ -128,6 +128,7 @@ const copy = {
     loadError: 'Không tải được dữ liệu.',
     timeout: 'Quá 16 phút chờ AI trả kết quả. Ollama đang quá chậm hoặc bị treo, kiểm tra rồi thử lại.',
     network: 'Mất kết nối tới backend trong lúc xử lý. Kiểm tra backend và Ollama rồi thử lại.',
+    aiInvalid: 'AI trả về kết quả chưa hợp lệ (ví dụ câu hỏi bị trùng) dù đã thử lại. Chưa có gì được lưu, bạn bấm lại để thử lần nữa.',
     fitLink: 'Xem độ phù hợp của CV với công việc này',
   },
   en: {
@@ -233,6 +234,7 @@ const copy = {
     loadError: 'Could not load data.',
     timeout: 'Waited over 16 minutes for the AI. Ollama is too slow or stuck; check it and try again.',
     network: 'Lost the connection to the backend while working. Check the backend and Ollama, then try again.',
+    aiInvalid: 'The AI returned an invalid result (for example, repeated questions) even after retrying. Nothing was saved; press the button to try again.',
     fitLink: 'See how your CV fits this job',
   },
 };
@@ -283,8 +285,16 @@ function Working({ text }: { text: string }) {
 function ErrorLine({ error, c }: { error: unknown; c: Copy }) {
   if (!error) return null;
   // Bước gọi AI dài: tách lỗi hết giờ chờ và lỗi mất kết nối giữa chừng cho dễ tìm nguyên nhân.
-  const message =
-    isAxiosError(error) && !error.response ? (error.code === 'ECONNABORTED' ? c.timeout : c.network) : authErrorMessage(error, c.loadError);
+  // 502 = AI trả kết quả không hợp lệ (câu hỏi trùng, thiếu trích dẫn JD…), câu chữ gốc của BE là tiếng Anh kỹ thuật.
+  const message = !isAxiosError(error)
+    ? authErrorMessage(error, c.loadError)
+    : !error.response
+      ? error.code === 'ECONNABORTED'
+        ? c.timeout
+        : c.network
+      : error.response.status === 502
+        ? c.aiInvalid
+        : authErrorMessage(error, c.loadError);
   return <p className="mt-3 text-[13px] leading-6 text-danger">{message}</p>;
 }
 
