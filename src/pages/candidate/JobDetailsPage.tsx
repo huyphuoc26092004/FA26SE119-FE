@@ -17,7 +17,8 @@ import {
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
-import { parseJobContent, sectionLength, type JobContentSection } from '../../utils/jobContent';
+import { parseJobContent, sectionLength } from '../../utils/jobContent';
+import { JobContent } from '../../components/jobs/JobContent';
 
 const textLink =
   'inline-flex items-center gap-1.5 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
@@ -51,39 +52,6 @@ function NumberedList({ items }: { items: string[] }) {
         </li>
       ))}
     </ol>
-  );
-}
-
-/** Nội dung tin đã tách mục: tiêu đề nhỏ, đoạn văn và gạch đầu dòng. */
-function JobContent({ sections }: { sections: JobContentSection[] }) {
-  return (
-    <div className="space-y-8 pt-5">
-      {sections.map((section, i) => (
-        <div key={i}>
-          {section.title && <h3 className="mb-3 text-[17px] font-medium text-ink">{section.title}</h3>}
-          <div className="space-y-3 text-[15px] leading-7 text-ink">
-            {section.blocks.map((block, j) =>
-              block.type === 'h' ? (
-                <p key={j} className="pt-1 font-medium">
-                  {block.text}
-                </p>
-              ) : block.type === 'p' ? (
-                <p key={j}>{block.text}</p>
-              ) : (
-                <ul key={j} className="space-y-2">
-                  {block.items.map((item, k) => (
-                    <li key={k} className="flex gap-3">
-                      <span aria-hidden="true" className="mt-[11px] h-1 w-1 shrink-0 rounded-full bg-slate-500" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              ),
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }
 

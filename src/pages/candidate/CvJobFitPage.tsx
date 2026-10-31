@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, Link} from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Bookmark, Check, ChevronDown, Search, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Bookmark, Check, ChevronDown, Loader2, X } from 'lucide-react';
 import { getResumes, getJobs, getCvJobFitAnalysis, getJobSemanticMatch } from '../../services/candidateService';
 import {
   JOB_ACTIVITY_QUERY_KEY,
@@ -11,20 +11,33 @@ import {
   openApplySource,
   refreshJobActivity,
   toggleSavedJob,
-  type JobActivity,
 } from '../../services/jobActivityService';
-import type { Job } from '../../types/domain';
-import { EmptyState, ErrorState, Loading } from '../../components/ui';
+import type { CvJobFitResult, SemanticMatchingDetail } from '../../types/domain';
+import { Loading } from '../../components/ui';
 import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
-import { NextStepLinks } from './cv-job-fit/SkillPathPages';
-import { skillPathHref } from '../../services/skillPathService';
+import { skillAssessmentHref } from '../../services/skillPathService';
+import { JobPicker, jobPickerCopy, lineField } from './cv-job-fit/JobPicker';
+import { JobDescription } from '../../components/jobs/JobContent';
 
 const copy = {
   vi: {
     crumbResumes: 'CV của tôi',
     crumbPage: 'Độ phù hợp CV',
+    fitHead: (score: number) => `CV phù hợp ${score}% với công việc.`,
+    introResult: (cv: string, job: string) =>
+      `So khớp ${/^cv\b/i.test(cv) ? '' : 'CV '}${cv} với JD ${job}. Bên dưới là điểm từng tiêu chí, những gì cần sửa trước và bước tiếp theo.`,
+    scoreTitle: 'Điểm phù hợp',
+    grade: (g: string) => `Hạng ${g}`,
+    missingPoints: (n: number) => `Còn thiếu ${n} điểm`,
+    reachedTarget: 'Đã đạt mức nên có',
+    missingKeywords: 'Thiếu từ khoá JD:',
+    gapsNoteA: 'Sửa CV với những gì bạn đã có. Kỹ năng chưa có thì đánh giá và học ở trang',
+    noGaps: 'Không có mục nào cần sửa gấp.',
+    skillGapRequired: 'JD yêu cầu bắt buộc, CV chưa nhắc đến',
+    skillGapPreferred: 'JD ưu tiên, CV chưa nhắc đến',
+    skillFix: 'nếu đã dùng, ghi vào kinh nghiệm hoặc dự án. Nếu chưa, học theo lộ trình.',
     noData:
       'Chưa đủ dữ liệu để so khớp: Bạn cần có ít nhất một bản CV và danh sách việc làm để thực hiện phân tích độ phù hợp.',
     fitLine: (score: number) => `Phù hợp ${score}%.`,
@@ -34,38 +47,44 @@ const copy = {
         : score >= 70
           ? 'Cần bổ sung vài kỹ năng.'
           : 'Còn khá nhiều khoảng trống.',
+    idleTitle: 'So khớp CV',
+    idleLine: 'với công việc bạn nhắm tới.',
     loadingTitle: 'Đang so khớp',
     loadingLine: 'CV với công việc.',
-    intro: 'So CV với tin tuyển dụng, xem những điểm cần cải thiện, làm bài đánh giá kỹ năng rồi nhận Learning path cho phần còn thiếu.',
-    flow: ['% phù hợp', 'Cần cải thiện', 'Đánh giá kỹ năng', 'Learning path'],
-    flowLabel: 'Các bước',
+    intro: 'Chọn CV và tin tuyển dụng, rồi bấm Bắt đầu so khớp để xem điểm phù hợp, điểm cần cải thiện và gợi ý sửa CV.',
+    startMatch: 'Bắt đầu so khớp',
+    rematch: 'So khớp lại',
+    matching: 'Đang so khớp',
+    runNote: 'Chỉ chạy khi bạn bấm. Mỗi lần so khớp dùng một lượt AI.',
+    lastRun: (d: string) => `Kết quả lúc ${d}. Bấm So khớp lại nếu bạn vừa sửa CV.`,
+    idleBody: 'Chưa so khớp cặp CV và công việc này.',
+    idleSteps: ['Điểm phù hợp theo từng tiêu chí', 'Điểm mạnh và điểm cần cải thiện', 'Kỹ năng JD có và chưa có trong CV', 'Gợi ý viết lại CV'],
+    workingBody: 'Đang đọc CV và JD để chấm điểm. Việc này có thể mất một lúc.',
+    fitError: 'Không so khớp được CV với việc làm này.',
+    noCv: 'Bạn chưa có CV nào để so khớp.',
+    uploadCv: 'Tải CV lên',
+    noCvSkill: 'Chưa có CV? Vẫn có thể đánh giá kỹ năng theo JD',
+    noJobsYet: 'Chưa có tin tuyển dụng nào để so khớp.',
+    nextTitle: 'Bước tiếp theo',
+    nextBody: 'Làm bài 10 câu theo JD để biết kỹ năng nào còn yếu, rồi nhận lộ trình học cho phần đó.',
+    nextLink: 'Đánh giá kỹ năng',
     cvLabel: 'Bản CV dùng để so sánh',
     cvHint: 'Chọn bản CV bạn định nộp cho vị trí này.',
     jobLabel: 'Vị trí bạn muốn ứng tuyển',
     jobHint: 'Chọn tin tuyển dụng để hệ thống đối chiếu với CV.',
     ats: (n: number) => `ATS ${n}/100`,
     updated: (d: string) => `Cập nhật ${d}`,
-    searchJobs: 'Tìm theo vị trí, công ty, địa điểm…',
-    noJobs: 'Không có công việc nào khớp từ khoá.',
-    matchShort: (n: number) => `${n}% khớp`,
-    applied: 'Đã ứng tuyển',
-    saved: 'Đã lưu',
-    groupApplied: 'Đã ứng tuyển',
-    groupSaved: 'Đã lưu',
-    groupOthers: 'Việc làm khác',
-    shortlist: 'Việc của bạn',
-    shortlistEmpty: 'Lưu hoặc ứng tuyển ở trang Khám phá việc làm, việc đó sẽ hiện ở đây.',
-    goJobs: 'Khám phá việc làm',
     statusApplied: (d: string) => (d ? `Bạn đã ứng tuyển ${d}.` : 'Bạn đã ứng tuyển việc này.'),
     statusSaved: (d: string) => (d ? `Bạn đã lưu ${d}.` : 'Bạn đã lưu việc này.'),
     save: 'Lưu việc này',
     savedToast: 'Đã lưu. Việc này sẽ nằm ở nhóm Đã lưu và được Trợ lý dùng để tư vấn.',
     unsavedToast: 'Đã bỏ lưu việc này.',
-    rerun: 'Phân tích lại',
     viewCv: 'Xem CV',
     viewJob: 'Chi tiết công việc',
     readJd: 'Đọc mô tả đầy đủ',
     hideJd: 'Thu gọn mô tả',
+    moreJd: 'Xem thêm',
+    lessJd: 'Thu gọn',
     jdTitle: 'Mô tả công việc',
     company: 'Công ty',
     department: 'Bộ phận',
@@ -90,10 +109,10 @@ const copy = {
     dimEducation: 'Học vấn & chuyên ngành',
     dimCulture: 'Văn hoá & lĩnh vực',
     dimSalary: 'Mức lương mong muốn',
-    strengths: 'Vì sao bạn phù hợp',
+    strengths: 'Điểm mạnh của CV',
     advice: 'Lời khuyên',
-    gaps: 'Điểm cần cải thiện',
-    gapsNote: 'Sửa CV với những gì bạn đã có. Kỹ năng chưa có thì học theo Learning path bên dưới.',
+    gaps: 'Cần sửa trong CV',
+    gapsNote: 'Sửa CV với những gì bạn đã có. Kỹ năng chưa có thì đánh giá và học ở trang Đánh giá kỹ năng.',
     learnSkill: 'Học kỹ năng này',
     fixCv: 'Sửa CV',
     target: (n: number) => `Nên đạt từ ${n}`,
@@ -137,42 +156,61 @@ const copy = {
   en: {
     crumbResumes: 'My CVs',
     crumbPage: 'CV fit',
+    fitHead: (score: number) => `Your CV is a ${score}% fit.`,
+    introResult: (cv: string, job: string) =>
+      `Matching ${/^cv\b/i.test(cv) ? '' : 'CV '}${cv} against the ${job} JD. Below: score per criterion, what to fix first, and the next step.`,
+    scoreTitle: 'Fit score',
+    grade: (g: string) => `Grade ${g}`,
+    missingPoints: (n: number) => `${n} points short`,
+    reachedTarget: 'Target reached',
+    missingKeywords: 'Missing JD keywords:',
+    gapsNoteA: 'Fix your CV with what you already have. Assess and learn missing skills on',
+    noGaps: 'Nothing urgent to fix.',
+    skillGapRequired: 'Required by the JD, not in your CV',
+    skillGapPreferred: 'Preferred by the JD, not in your CV',
+    skillFix: 'if you have used it, add it to experience or projects. If not, follow the learning path.',
     noData: 'Not enough data to compare: you need at least one CV and a list of jobs to run a fit analysis.',
     fitLine: (score: number) => `${score}% fit.`,
     verdictLine: (score: number): string =>
       score >= 85 ? 'Ready to apply.' : score >= 70 ? 'A few skills to add.' : 'Several gaps to close.',
+    idleTitle: 'Match your CV',
+    idleLine: 'to the job you want.',
     loadingTitle: 'Matching your',
     loadingLine: 'CV to the job.',
-    intro: 'Compare your CV with the job posting, see what to improve, take a skill assessment and get a learning path for what is missing.',
-    flow: ['Fit score', 'What to improve', 'Skill assessment', 'Learning path'],
-    flowLabel: 'Steps',
+    intro: 'Pick a CV and a job posting, then press Start matching to see the fit score, what to improve and CV rewrite tips.',
+    startMatch: 'Start matching',
+    rematch: 'Match again',
+    matching: 'Matching',
+    runNote: 'Runs only when you press it. Each match uses one AI request.',
+    lastRun: (d: string) => `Result from ${d}. Match again if you just edited the CV.`,
+    idleBody: 'This CV and job have not been matched yet.',
+    idleSteps: ['Fit score per criterion', 'Strengths and what to improve', 'JD skills found and missing in the CV', 'CV rewrite tips'],
+    workingBody: 'Reading the CV and JD to score them. This can take a while.',
+    fitError: 'Could not match this CV with the job.',
+    noCv: 'You have no CV to match yet.',
+    uploadCv: 'Upload a CV',
+    noCvSkill: 'No CV? You can still assess your skills from the JD',
+    noJobsYet: 'There are no job postings to match yet.',
+    nextTitle: 'Next step',
+    nextBody: 'Take a 10-question test built from the JD to find weak skills, then get a learning path for them.',
+    nextLink: 'Skill assessment',
     cvLabel: 'CV to compare',
     cvHint: 'Pick the CV you plan to send for this role.',
     jobLabel: 'Role you want to apply for',
     jobHint: 'Pick a job posting to check your CV against.',
     ats: (n: number) => `ATS ${n}/100`,
     updated: (d: string) => `Updated ${d}`,
-    searchJobs: 'Search by role, company, location…',
-    noJobs: 'No jobs match that search.',
-    matchShort: (n: number) => `${n}% match`,
-    applied: 'Applied',
-    saved: 'Saved',
-    groupApplied: 'Applied',
-    groupSaved: 'Saved',
-    groupOthers: 'Other jobs',
-    shortlist: 'Your jobs',
-    shortlistEmpty: 'Save or apply for a job in Job discovery and it will show up here.',
-    goJobs: 'Job discovery',
     statusApplied: (d: string) => (d ? `You applied ${d}.` : 'You applied for this job.'),
     statusSaved: (d: string) => (d ? `You saved this ${d}.` : 'You saved this job.'),
     save: 'Save this job',
     savedToast: 'Saved. It now sits in your Saved group and the assistant will use it.',
     unsavedToast: 'Removed from saved jobs.',
-    rerun: 'Re-run matching',
     viewCv: 'View CV',
     viewJob: 'Job details',
     readJd: 'Read full description',
     hideJd: 'Hide description',
+    moreJd: 'Show more',
+    lessJd: 'Show less',
     jdTitle: 'Job description',
     company: 'Company',
     department: 'Department',
@@ -197,10 +235,10 @@ const copy = {
     dimEducation: 'Education & major',
     dimCulture: 'Culture & domain',
     dimSalary: 'Expected salary',
-    strengths: 'Why you fit',
+    strengths: 'CV strengths',
     advice: 'Advice',
-    gaps: 'What to improve',
-    gapsNote: 'Fix your CV with what you already have. Learn the missing skills with the learning path below.',
+    gaps: 'What to fix in your CV',
+    gapsNote: 'Fix your CV with what you already have. Assess and learn missing skills on the Skill assessment page.',
     learnSkill: 'Learn this skill',
     fixCv: 'Edit CV',
     target: (n: number) => `Aim for ${n}+`,
@@ -243,7 +281,6 @@ const copy = {
   },
 };
 
-type Copy = typeof copy.vi;
 
 const textLink =
   'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
@@ -251,8 +288,48 @@ const textLink =
 const primaryButton =
   'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
 
-const lineField =
-  'flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-3 border-0 border-b border-slate-400 bg-transparent py-2 text-left text-[15px] text-ink outline-none transition-colors hover:border-ink focus-visible:border-ink';
+// Kết quả so khớp được lưu lại theo cặp CV + job, để mở lại trang không phải chạy AI lần nữa.
+const FIT_STORE_KEY = 'careerpilot-cv-fit-results';
+const FIT_STORE_LIMIT = 30;
+
+interface StoredFit {
+  fit: CvJobFitResult;
+  semantic?: SemanticMatchingDetail;
+  savedAt: string;
+}
+
+const fitKey = (cvId: string, jobId: string) => `${cvId}:${jobId}`;
+
+function readStoredFits(): Record<string, StoredFit> {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FIT_STORE_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredFits(all: Record<string, StoredFit>) {
+  const latest = Object.entries(all)
+    .sort((a, b) => b[1].savedAt.localeCompare(a[1].savedAt))
+    .slice(0, FIT_STORE_LIMIT);
+  try {
+    localStorage.setItem(FIT_STORE_KEY, JSON.stringify(Object.fromEntries(latest)));
+  } catch {
+    // Bộ nhớ trình duyệt đầy: vẫn hiện kết quả trong phiên này.
+  }
+}
+
+const sectionGap = 'mt-[clamp(2.5rem,5vw,3.5rem)]';
+const scoreText = (n: number) => (n < 50 ? 'text-danger' : n < 75 ? 'text-warning' : 'text-brand');
+const scoreBar = (n: number) => (n < 50 ? 'bg-danger' : n < 75 ? 'bg-warning' : 'bg-brand');
+
+function formatStamp(iso: string, vi: boolean) {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ''
+    : d.toLocaleString(vi ? 'vi-VN' : 'en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
 /** Numbered section heading with a dark rule underneath. */
 function SectionHead({
@@ -280,217 +357,19 @@ function SectionHead({
   );
 }
 
-/** Searchable target-job picker styled as an underlined field. */
-function JobPicker({
-  jobs,
-  selectedId,
-  activity,
-  onSelect,
-  c,
-  label,
-}: {
-  jobs: Job[];
-  selectedId: string;
-  activity?: JobActivity;
-  onSelect: (id: string) => void;
-  c: Copy;
-  label: string;
-}) {
-  const appliedIds = activity?.appliedIds ?? [];
-  const savedIds = activity?.savedIds ?? [];
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const selected = jobs.find((j) => j.id === selectedId);
-
-  // Applied first, then saved, then everything else; keyboard order follows the same list.
-  const groups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const matches = (j: Job) =>
-      !q ||
-      [j.title, j.company, j.location, j.department, ...(j.skills || [])]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q));
-    const applied = (activity?.applied ?? []).map((t) => t.job).filter(matches);
-    const saved = (activity?.saved ?? []).map((t) => t.job).filter(matches);
-    const tracked = new Set([...applied, ...saved].map((j) => j.id));
-    const others = jobs.filter((j) => !tracked.has(j.id) && !appliedIds.includes(j.id) && !savedIds.includes(j.id) && matches(j));
-    return [
-      { key: 'applied', title: c.groupApplied, jobs: applied },
-      { key: 'saved', title: c.groupSaved, jobs: saved },
-      { key: 'others', title: c.groupOthers, jobs: others },
-    ].filter((g) => g.jobs.length > 0);
-  }, [jobs, query, activity, appliedIds, savedIds, c]);
-
-  const filtered = useMemo(() => groups.flatMap((g) => g.jobs), [groups]);
-  const hasTracked = groups.some((g) => g.key !== 'others');
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    const idx = filtered.findIndex((j) => j.id === selectedId);
-    setActive(idx >= 0 ? idx : 0);
-    setTimeout(() => inputRef.current?.focus(), 0);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [open]);
-
-  const choose = (id: string) => {
-    onSelect(id);
-    setOpen(false);
-    setQuery('');
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActive((i) => Math.min(i + 1, filtered.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (filtered[active]) choose(filtered[active].id);
-    } else if (e.key === 'Escape') {
-      setOpen(false);
-    }
-  };
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={label}
-        onClick={() => setOpen((o) => !o)}
-        className={lineField}
-      >
-        <span className="truncate">
-          {selected ? `${selected.title} – ${selected.company}` : label}
-        </span>
-        <ChevronDown
-          size={15}
-          aria-hidden="true"
-          className={`shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      {open && (
-        <div className="absolute inset-x-0 top-full z-30 mt-2 border border-ink bg-surface sm:min-w-[26rem]">
-          <label className="flex items-center gap-2 border-b border-border px-4 py-3">
-            <Search size={14} aria-hidden="true" className="shrink-0 text-slate-500" />
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActive(0);
-              }}
-              onKeyDown={onKeyDown}
-              placeholder={c.searchJobs}
-              className="w-full min-w-0 bg-transparent text-sm text-ink outline-none placeholder:text-slate-400"
-            />
-          </label>
-          <ul role="listbox" aria-label={label} className="max-h-[22rem] overflow-y-auto">
-            {filtered.length === 0 && <li className="px-4 py-5 text-sm text-slate-600">{c.noJobs}</li>}
-            {groups.map((group) => [
-              hasTracked && (
-                <li
-                  key={`head-${group.key}`}
-                  role="presentation"
-                  className="flex items-baseline justify-between gap-4 border-b border-border bg-canvas px-4 pb-1.5 pt-3 text-xs text-slate-500"
-                >
-                  <span className={group.key === 'others' ? '' : 'text-brand'}>{group.title}</span>
-                  <span className="tabular-nums">{group.jobs.length}</span>
-                </li>
-              ),
-              ...group.jobs.map((job) => {
-              const idx = filtered.indexOf(job);
-              const isSelected = job.id === selectedId;
-              return (
-                <li
-                  key={job.id}
-                  role="option"
-                  aria-selected={isSelected}
-                  onMouseEnter={() => setActive(idx)}
-                  onClick={() => choose(job.id)}
-                  className={`cursor-pointer border-b border-border px-4 py-3.5 last:border-b-0 transition-colors ${
-                    idx === active ? 'bg-slate-100' : ''
-                  }`}
-                >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <p className={`min-w-0 truncate text-[15px] ${isSelected ? 'text-brand' : 'text-ink'}`}>
-                      {job.title}
-                    </p>
-                    <span className="shrink-0 text-[13px] tabular-nums text-brand">{c.matchShort(job.match)}</span>
-                  </div>
-                  <p className="mt-1 text-[13px] leading-5 text-slate-600">
-                    {job.company} · {job.location}
-                  </p>
-                  <p className="mt-0.5 flex flex-wrap gap-x-2 text-[13px] leading-5 text-slate-500">
-                    <span>{job.salary}</span>
-                    {job.experienceLevel && <span>· {job.experienceLevel}</span>}
-                    {appliedIds.includes(job.id) ? (
-                      <span className="text-brand">· {c.applied}</span>
-                    ) : (
-                      savedIds.includes(job.id) && <span className="text-brand">· {c.saved}</span>
-                    )}
-                  </p>
-                </li>
-              );
-            }),
-            ])}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function JdList({ title, items }: { title: string; items?: string[] }) {
-  if (!items?.length) return null;
-  return (
-    <div>
-      <p className="text-[13px] text-brand">{title}</p>
-      <ul className="mt-2 border-t border-border">
-        {items.map((item, idx) => (
-          <li key={idx} className="flex gap-3 border-b border-border py-2.5 text-sm leading-6 text-ink">
-            <span className="shrink-0 pt-px text-xs tabular-nums text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export default function CvJobFitPage() {
   const { t, isVietnamese } = useTranslation();
   const c = isVietnamese ? copy.vi : copy.en;
+  const pickerCopy = isVietnamese ? jobPickerCopy.vi : jobPickerCopy.en;
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
   const queryCvId = searchParams.get('cvId') || searchParams.get('resumeId');
   const queryJobId = searchParams.get('jobId');
 
-  // Load candidate's CVs
-  const { data: resumes, isPending: isResumesPending } = useQuery({
-    queryKey: ['resumes'],
-    queryFn: getResumes,
-  });
+  const { data: resumes, isPending: isResumesPending } = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
+  const { data: jobs, isPending: isJobsPending } = useQuery({ queryKey: ['jobs'], queryFn: () => getJobs() });
 
-  // Load jobs list
-  const { data: jobs, isPending: isJobsPending } = useQuery({
-    queryKey: ['jobs'],
-    queryFn: () => getJobs(),
-  });
-
-  // Selected state
   const [selectedCvId, setSelectedCvId] = useState<string>('');
   const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -499,8 +378,8 @@ export default function CvJobFitPage() {
   const [jdOpen, setJdOpen] = useState(false);
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [storedFits, setStoredFits] = useState<Record<string, StoredFit>>(readStoredFits);
 
-  // Sync with initial URL params or defaults
   useEffect(() => {
     if (resumes && resumes.length > 0) {
       if (queryCvId && resumes.some((r) => r.id === queryCvId)) {
@@ -511,13 +390,14 @@ export default function CvJobFitPage() {
     }
   }, [resumes, queryCvId]);
 
-  // Saved and applied jobs from Job discovery (shared with the assistant and skill journey)
+  // Saved and applied jobs from Job discovery (shared with the assistant)
   const { data: activity, isFetched: isActivityFetched } = useQuery({
     queryKey: JOB_ACTIVITY_QUERY_KEY,
     queryFn: getJobActivity,
   });
 
   // Default target: the URL job, else the latest applied job, else the latest saved one.
+  // Chọn job chỉ đổi lựa chọn; không gọi AI cho tới khi bấm "Bắt đầu so khớp".
   useEffect(() => {
     if (jobs && jobs.length > 0) {
       if (queryJobId && jobs.some((j) => j.id === queryJobId)) {
@@ -533,37 +413,43 @@ export default function CvJobFitPage() {
   const tracked = [...(activity?.applied ?? []), ...(activity?.saved ?? [])];
   const currentTracked = tracked.find((t) => t.job.id === selectedJobId);
 
-  // Load CV-Job Fit Analysis
-  const {
-    data: fitResult,
-    isPending: isFitPending,
-    isError: isFitError,
-    error: fitError,
-    refetch: refetchFit,
-    isFetching: isFitFetching,
-  } = useQuery({
-    queryKey: ['cvJobFit', selectedCvId, selectedJobId],
-    queryFn: () => getCvJobFitAnalysis(selectedCvId, selectedJobId),
-    enabled: !!selectedCvId && !!selectedJobId,
+  // So khớp chỉ chạy khi người dùng bấm nút (ATS theo JD + điểm khớp phía việc làm).
+  const matchMutation = useMutation({
+    mutationFn: async ({ cvId, jobId }: { cvId: string; jobId: string }): Promise<StoredFit> => {
+      const [fit, semantic] = await Promise.allSettled([getCvJobFitAnalysis(cvId, jobId), getJobSemanticMatch(jobId, cvId)]);
+      if (fit.status === 'rejected') throw fit.reason;
+      return {
+        fit: fit.value,
+        semantic: semantic.status === 'fulfilled' ? semantic.value : undefined,
+        savedAt: new Date().toISOString(),
+      };
+    },
+    onSuccess: (result, { cvId, jobId }) => {
+      setStoredFits((prev) => {
+        const next = { ...prev, [fitKey(cvId, jobId)]: result };
+        writeStoredFits(next);
+        return next;
+      });
+    },
   });
 
-  // Job-side match (salary fit, reasons, advice) from the former "Khớp nối AI" page
-  const { data: semantic } = useQuery({
-    queryKey: ['jobSemanticMatch', selectedJobId, selectedCvId],
-    queryFn: () => getJobSemanticMatch(selectedJobId, selectedCvId),
-    enabled: !!selectedCvId && !!selectedJobId,
-  });
+  const pairKey = fitKey(selectedCvId, selectedJobId);
+  const runningThisPair =
+    matchMutation.isPending && !!matchMutation.variables && fitKey(matchMutation.variables.cvId, matchMutation.variables.jobId) === pairKey;
+  const failedThisPair =
+    matchMutation.isError && !!matchMutation.variables && fitKey(matchMutation.variables.cvId, matchMutation.variables.jobId) === pairKey;
+  const stored = storedFits[pairKey];
+  const fitResult = stored?.fit;
+  const semantic = stored?.semantic;
 
-  // Current selected entities
-  const currentCv = useMemo(() => {
-    return resumes?.find((r) => r.id === selectedCvId);
-  }, [resumes, selectedCvId]);
+  const startMatch = () => {
+    if (!selectedCvId || !selectedJobId || matchMutation.isPending) return;
+    matchMutation.mutate({ cvId: selectedCvId, jobId: selectedJobId });
+  };
 
-  const currentJob = useMemo(() => {
-    return jobs?.find((j) => j.id === selectedJobId);
-  }, [jobs, selectedJobId]);
+  const currentCv = useMemo(() => resumes?.find((r) => r.id === selectedCvId), [resumes, selectedCvId]);
+  const currentJob = useMemo(() => jobs?.find((j) => j.id === selectedJobId), [jobs, selectedJobId]);
 
-  // Handle URL change on select
   const handleSelectCv = (id: string) => {
     setSelectedCvId(id);
     const newParams = new URLSearchParams(searchParams);
@@ -573,12 +459,12 @@ export default function CvJobFitPage() {
 
   const handleSelectJob = (id: string) => {
     setSelectedJobId(id);
+    setJdOpen(false);
     const newParams = new URLSearchParams(searchParams);
     newParams.set('jobId', id);
     setSearchParams(newParams, { replace: true });
   };
 
-  // External application mutation
   const applyMutation = useMutation({
     mutationFn: () => markJobApplied(selectedJobId),
     onSuccess: () => {
@@ -608,7 +494,27 @@ export default function CvJobFitPage() {
 
   if (isResumesPending || isJobsPending) return <Loading />;
   if (!resumes?.length || !jobs?.length) {
-    return <EmptyState message={c.noData} />;
+    return (
+      <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+        <h1 className="text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
+          {c.idleTitle}
+          <span className="block text-brand">{c.idleLine}</span>
+        </h1>
+        <div className="mt-[clamp(2rem,4vw,2.75rem)] border-t border-slate-400 py-6">
+          <p className="text-[15px] leading-7 text-ink">{!resumes?.length ? c.noCv : c.noJobsYet}</p>
+          <p className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+            {!resumes?.length && (
+              <Link to="/candidate/resumes/upload" className={`${textLink} text-ink`}>
+                {c.uploadCv}
+              </Link>
+            )}
+            <Link to={skillAssessmentHref()} className={`${textLink} text-ink`}>
+              {c.noCvSkill}
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const impactTone = {
@@ -638,8 +544,12 @@ export default function CvJobFitPage() {
   const editCvHref = `/candidate/resumes/${selectedCvId}/edit?returnTo=${encodeURIComponent(
     `/candidate/cv-job-fit?cvId=${selectedCvId}&jobId=${selectedJobId}`,
   )}`;
-  // Hai bước đầu nằm trên trang này; đánh giá kỹ năng và Learning path mở trang riêng.
-  const flowLinks = ['#fit-score', '#improve', skillPathHref('skill-test', selectedJobId, selectedCvId), skillPathHref('learning-path', selectedJobId, selectedCvId)];
+  const assessHref = skillAssessmentHref(selectedJobId, selectedCvId);
+  const missingNames = fitResult?.skillsAnalysis.filter((s) => s.status === 'missing').map((s) => s.name) ?? [];
+  const strengthList = fitResult
+    ? [...fitResult.strengths, ...(semantic?.reasons ?? []).filter((r) => !fitResult.strengths.includes(r))]
+    : [];
+  const hasTailoring = !!fitResult && (fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0);
 
   const jobMeta: { label: string; value?: string }[] = currentJob
     ? [
@@ -657,8 +567,6 @@ export default function CvJobFitPage() {
 
   return (
     <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
-      {/* Toast Notification */}
-
       {toastMessage && (
         <div
           role="status"
@@ -676,7 +584,6 @@ export default function CvJobFitPage() {
         </div>
       )}
 
-      {/* Breadcrumb */}
       <nav className="flex flex-wrap items-baseline gap-1.5 text-[13px] text-slate-600">
         <Link to="/candidate/resumes" className="border-b border-current pb-px transition-colors hover:text-ink">
           {c.crumbResumes}
@@ -685,159 +592,142 @@ export default function CvJobFitPage() {
         <span className="text-brand">{c.crumbPage}</span>
       </nav>
 
-      {/* Headline */}
-      <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
-        <h1 className="text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
-          {fitResult && !isFitPending ? c.fitLine(fitResult.overallScore) : c.loadingTitle}
-          <span className="block text-brand">
-            {fitResult && !isFitPending ? c.verdictLine(fitResult.overallScore) : c.loadingLine}
+      {/* Headline: chưa so khớp / đang so khớp / kết quả */}
+      <header className="mt-3">
+        <h1 className="text-[clamp(2rem,3.6vw,3.25rem)] font-normal leading-[1.12] tracking-[-0.03em] text-ink">
+          {runningThisPair ? c.loadingTitle : fitResult ? c.fitHead(fitResult.overallScore) : c.idleTitle}
+          <span className={`block ${fitResult && !runningThisPair ? scoreText(fitResult.overallScore) : 'text-brand'}`}>
+            {runningThisPair ? c.loadingLine : fitResult ? c.verdictLine(fitResult.overallScore) : c.idleLine}
           </span>
         </h1>
-        <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[34rem] text-[clamp(1rem,1.3vw,1.125rem)] leading-8 text-slate-600">
-          {c.intro}
+        <p className="mt-4 max-w-[36rem] text-[15px] leading-7 text-slate-600">
+          {fitResult && currentCv && currentJob ? c.introResult(currentCv.name, currentJob.title) : c.intro}
         </p>
       </header>
 
-      {/* Selectors */}
-      <section className="mt-[clamp(2rem,4vw,2.75rem)] grid gap-x-[clamp(2rem,4vw,3.5rem)] gap-y-8 md:grid-cols-2">
-        <div className="min-w-0">
-          <label htmlFor="fit-cv" className="block text-[13px] text-slate-600">
-            {c.cvLabel}
-          </label>
-          <div className="relative mt-1.5">
-            <select
-              id="fit-cv"
-              value={selectedCvId}
-              onChange={(e) => handleSelectCv(e.target.value)}
-              className={`${lineField} appearance-none pr-7`}
-            >
-              {resumes.map((cv) => (
-                <option key={cv.id} value={cv.id}>
-                  {cv.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={15}
-              aria-hidden="true"
-              className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-500"
-            />
-          </div>
-          {currentCv ? (
-            <p className="mt-3 flex flex-wrap gap-x-2 text-[13px] leading-6 text-slate-600">
-              <span className="text-ink">{currentCv.position}</span>
-              <span>· {c.ats(currentCv.atsScore)}</span>
-              <span>· {c.updated(currentCv.updatedAt)}</span>
+      {/* Chọn CV + việc làm + nút so khớp */}
+      <section className="mt-[clamp(2rem,4vw,2.75rem)] border-t border-ink pt-5">
+        <div className="grid items-start gap-x-[clamp(1.5rem,3vw,2.5rem)] gap-y-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
+          <div className="min-w-0">
+            <label htmlFor="fit-cv" className="block text-[13px] text-slate-600">
+              {c.cvLabel}
+            </label>
+            <div className="relative mt-1">
+              <select
+                id="fit-cv"
+                value={selectedCvId}
+                onChange={(e) => handleSelectCv(e.target.value)}
+                className={`${lineField} appearance-none pr-7`}
+              >
+                {resumes.map((cv) => (
+                  <option key={cv.id} value={cv.id}>
+                    {cv.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={15} aria-hidden="true" className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-500" />
+            </div>
+            <p className="mt-2 text-[13px] leading-6 text-slate-600">
+              {currentCv ? `${c.ats(currentCv.atsScore)} · ${c.updated(formatStamp(currentCv.updatedAt, isVietnamese) || currentCv.updatedAt)}` : c.cvHint}
             </p>
-          ) : (
-            <p className="mt-3 text-[13px] text-slate-500">{c.cvHint}</p>
-          )}
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-[13px] text-slate-600">{c.jobLabel}</p>
+            <div className="mt-1">
+              <JobPicker jobs={jobs} selectedId={selectedJobId} activity={activity} onSelect={handleSelectJob} c={pickerCopy} label={c.jobLabel} />
+            </div>
+            {currentJob ? (
+              <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-[13px] leading-6 text-slate-600">
+                {currentTracked && (
+                  <span className="inline-flex items-center gap-1 text-brand">
+                    {currentTracked.status === 'applied' ? (
+                      <Check size={12} aria-hidden="true" />
+                    ) : (
+                      <Bookmark size={12} aria-hidden="true" className="fill-brand" />
+                    )}
+                    {currentTracked.status === 'applied'
+                      ? c.statusApplied(formatActivityDate(currentTracked.appliedAt, isVietnamese))
+                      : c.statusSaved(formatActivityDate(currentTracked.savedAt, isVietnamese))}
+                  </span>
+                )}
+                {currentJob.location && <span>{currentJob.location} ·</span>}
+                <button type="button" onClick={() => setJdOpen((o) => !o)} aria-expanded={jdOpen} className={`${textLink} text-[13px] text-ink`}>
+                  {jdOpen ? c.hideJd : c.readJd}
+                </button>
+              </p>
+            ) : (
+              <p className="mt-2 text-[13px] text-slate-500">{c.jobHint}</p>
+            )}
+          </div>
+
+          <div className="md:pt-5">
+            <button
+              type="button"
+              onClick={startMatch}
+              disabled={!selectedCvId || !selectedJobId || matchMutation.isPending}
+              className={`${primaryButton} w-full shrink-0 md:w-auto`}
+            >
+              {runningThisPair && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+              {runningThisPair ? c.matching : fitResult ? c.rematch : c.startMatch}
+            </button>
+          </div>
         </div>
 
-        <div className="min-w-0">
-          <p className="text-[13px] text-slate-600">{c.jobLabel}</p>
-          <div className="mt-1.5">
-            <JobPicker
-              jobs={jobs}
-              selectedId={selectedJobId}
-              activity={activity}
-              onSelect={handleSelectJob}
-              c={c}
-              label={c.jobLabel}
-            />
-          </div>
-          {currentJob ? (
-            <div className="mt-3">
-              {currentTracked && (
-                <p className="mb-1 flex items-center gap-1.5 text-[13px] leading-6 text-brand">
-                  {currentTracked.status === 'applied' ? (
-                    <Check size={13} aria-hidden="true" />
-                  ) : (
-                    <Bookmark size={13} aria-hidden="true" className="fill-brand" />
-                  )}
-                  {currentTracked.status === 'applied'
-                    ? c.statusApplied(formatActivityDate(currentTracked.appliedAt, isVietnamese))
-                    : c.statusSaved(formatActivityDate(currentTracked.savedAt, isVietnamese))}
-                </p>
-              )}
-              <p className="flex flex-wrap gap-x-2 text-[13px] leading-6 text-slate-600">
-                <span className="text-ink">{currentJob.company}</span>
-                <span>· {currentJob.location}</span>
-                <span>· {currentJob.salary}</span>
-                {currentJob.experienceLevel && <span>· {currentJob.experienceLevel}</span>}
-              </p>
-              <p className={`mt-2 text-sm leading-6 text-slate-700 ${jdOpen ? '' : 'line-clamp-3'}`}>
-                {currentJob.description}
-              </p>
+        <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-baseline lg:justify-between">
+          <p className="text-[13px] leading-6 text-slate-500">
+            {stored && !runningThisPair ? c.lastRun(formatStamp(stored.savedAt, isVietnamese)) : c.runNote}
+          </p>
+          <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+            {currentCv && (
+              <Link to={`/candidate/resumes/${currentCv.id}`} className={`${textLink} text-[13px] text-ink`}>
+                {c.viewCv}
+              </Link>
+            )}
+            {currentJob && (
+              <Link to={`/candidate/jobs/${currentJob.id}`} className={`${textLink} text-[13px] text-ink`}>
+                {c.viewJob}
+              </Link>
+            )}
+            {currentJob && !isApplied && (
               <button
                 type="button"
-                onClick={() => setJdOpen((o) => !o)}
-                aria-expanded={jdOpen}
-                className={`${textLink} mt-2 text-[13px] text-ink`}
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending}
+                aria-pressed={isSaved}
+                className={`${textLink} text-[13px] ${isSaved ? 'text-brand' : 'text-ink'} disabled:opacity-50`}
               >
-                {jdOpen ? c.hideJd : c.readJd}
+                {isSaved ? pickerCopy.saved : c.save}
               </button>
-            </div>
-          ) : (
-            <p className="mt-3 text-[13px] text-slate-500">{c.jobHint}</p>
-          )}
+            )}
+            {currentJob &&
+              (isApplied ? (
+                <span className="inline-flex items-center gap-1 text-[13px] text-brand">
+                  <Check size={13} aria-hidden="true" />
+                  {c.appliedBtn}
+                </span>
+              ) : (
+                <button type="button" onClick={() => setRedirectModalOpen(true)} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                  {c.applyAt(currentJob.externalSource?.sourceName || c.sourceFallback)}
+                  <ArrowUpRight size={13} aria-hidden="true" />
+                </button>
+              ))}
+          </div>
         </div>
-      </section>
-
-      {/* Saved / applied shortlist from Job discovery */}
-      <section aria-label={c.shortlist} className="mt-8 border-t border-border pt-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-          <p className="text-[13px] text-slate-600">
-            {c.shortlist}
-            {tracked.length > 0 && <span className="ml-2 tabular-nums text-slate-500">{tracked.length}</span>}
+        {failedThisPair && (
+          <p role="alert" className="mt-3 text-[13px] leading-6 text-danger">
+            {authErrorMessage(matchMutation.error, c.fitError)}
           </p>
-          <Link to="/candidate/jobs" className={`${textLink} text-[13px] text-ink`}>
-            {c.goJobs}
-          </Link>
-        </div>
-        {tracked.length === 0 ? (
-          <p className="mt-2 text-[13px] leading-6 text-slate-500">{c.shortlistEmpty}</p>
-        ) : (
-          <ul className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-            {tracked.map((item) => {
-              const active = item.job.id === selectedJobId;
-              return (
-                <li key={item.job.id} className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectJob(item.job.id)}
-                    aria-pressed={active}
-                    className={`flex max-w-[20rem] flex-col rounded-2xl border px-3.5 py-2 text-left transition-colors cursor-pointer ${
-                      active ? 'border-ink bg-surface' : 'border-border hover:border-ink'
-                    }`}
-                  >
-                    <span className="truncate text-sm text-ink">{item.job.title}</span>
-                    <span className="mt-0.5 truncate text-xs text-slate-500">
-                      <span className="text-brand">{item.status === 'applied' ? c.applied : c.saved}</span>
-                      {' · '}
-                      {item.job.company} · {c.matchShort(item.job.match)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
         )}
       </section>
 
-      {/* Full job description */}
+      {/* Mô tả công việc đầy đủ */}
       {jdOpen && currentJob && (
-        <section className="mt-8 border-t border-ink pt-5" aria-label={c.jdTitle}>
-          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-            <h2 className="text-[clamp(1.125rem,1.6vw,1.375rem)] font-normal text-ink">
-              {c.jdTitle}: {currentJob.title}
-            </h2>
-            <Link to={`/candidate/jobs/${currentJob.id}`} className={`${textLink} text-[13px] text-ink`}>
-              {c.viewJob}
-            </Link>
-          </div>
-
-          <dl className="mt-4 grid border-t border-border sm:grid-cols-2 lg:grid-cols-3 sm:gap-x-8">
+        <section className="mt-6 border-t border-border pt-5" aria-label={c.jdTitle}>
+          <h2 className="text-[clamp(1.125rem,1.6vw,1.375rem)] font-normal text-ink">
+            {c.jdTitle}: {currentJob.title}
+          </h2>
+          <dl className="mt-4 grid border-t border-border sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-3">
             {jobMeta.map((m) => (
               <div key={m.label} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 text-sm">
                 <dt className="shrink-0 text-slate-600">{m.label}</dt>
@@ -845,7 +735,6 @@ export default function CvJobFitPage() {
               </div>
             ))}
           </dl>
-
           {currentJob.skills?.length > 0 && (
             <p className="mt-5 text-sm leading-7">
               <span className="text-slate-600">{c.skills}: </span>
@@ -857,204 +746,199 @@ export default function CvJobFitPage() {
               ))}
             </p>
           )}
-
-          <div className="mt-6 grid gap-x-[clamp(2rem,4vw,3rem)] gap-y-8 lg:grid-cols-3">
-            <JdList title={c.responsibilities} items={currentJob.responsibilities} />
-            <JdList title={c.requirements} items={currentJob.requirements} />
-            <JdList title={c.benefits} items={currentJob.benefits} />
+          <div className="mt-2 max-w-[52rem]">
+            <JobDescription job={currentJob} moreLabel={c.moreJd} lessLabel={c.lessJd} />
           </div>
         </section>
       )}
 
-      {/* Actions */}
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-7 gap-y-4">
-        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-3">
-          <button
-            type="button"
-            onClick={() => refetchFit()}
-            disabled={isFitFetching}
-            className={`${textLink} text-ink disabled:opacity-50`}
-          >
-            {c.rerun}
-          </button>
-          {currentCv && (
-            <Link to={`/candidate/resumes/${currentCv.id}`} className={`${textLink} text-ink`}>
-              {c.viewCv}
-            </Link>
-          )}
-          {currentJob && (
-            <Link to={`/candidate/jobs/${currentJob.id}`} className={`${textLink} text-ink`}>
-              {c.viewJob}
-            </Link>
-          )}
-          {currentJob && !isApplied && (
-            <button
-              type="button"
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
-              aria-pressed={isSaved}
-              className={`${textLink} ${isSaved ? 'text-brand' : 'text-ink'} disabled:opacity-50`}
-            >
-              <Bookmark size={13} aria-hidden="true" className={isSaved ? 'fill-brand' : ''} />
-              {isSaved ? c.saved : c.save}
-            </button>
-          )}
-        </div>
-        {currentJob &&
-          (isApplied ? (
-            <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand px-6 py-2.5 text-sm font-medium text-brand">
-              <Check size={15} aria-hidden="true" />
-              {c.appliedBtn}
-            </span>
-          ) : (
-            <button type="button" onClick={() => setRedirectModalOpen(true)} className={primaryButton}>
-              {c.applyAt(currentJob.externalSource?.sourceName || c.sourceFallback)}
-            </button>
-          ))}
-      </div>
-
-      {/* Flow: fit → improve → assessment → learning path */}
-      {fitResult && !isFitPending && (
-        <nav aria-label={c.flowLabel} className="mt-10">
-          <ol className="grid grid-cols-2 border-t border-slate-400 sm:grid-cols-4">
-            {c.flow.map((label, i) => (
-              <li key={label} className={`border-b border-border sm:border-b-0 ${i % 2 === 1 ? 'border-l pl-4' : ''} ${i === 2 ? 'sm:border-l sm:pl-4' : ''}`}>
-                {i < 2 ? (
-                  <a href={flowLinks[i]} className="group block py-4 pr-3">
-                    <span className="text-xs tabular-nums text-slate-500">{String(i + 1).padStart(2, '0')}</span>
-                    <span className="mt-1 block text-[15px] text-ink transition-colors group-hover:text-brand">{label}</span>
-                  </a>
-                ) : (
-                  <Link to={flowLinks[i]} className="group block py-4 pr-3">
-                    <span className="flex items-center gap-1.5 text-xs tabular-nums text-slate-500">
-                      {String(i + 1).padStart(2, '0')}
-                      <ArrowRight size={12} aria-hidden="true" />
-                    </span>
-                    <span className="mt-1 block text-[15px] text-ink transition-colors group-hover:text-brand">{label}</span>
-                  </Link>
-                )}
+      {/* Kết quả / chưa chạy / đang chạy */}
+      {runningThisPair && !fitResult ? (
+        <p role="status" className="mt-10 flex items-center gap-2 border-y border-border py-8 text-[15px] text-ink">
+          <Loader2 size={15} className="animate-spin text-brand" aria-hidden="true" />
+          {c.workingBody}
+        </p>
+      ) : !fitResult ? (
+        <section className="mt-10 border-t border-slate-400 pt-6">
+          <p className="text-[15px] leading-7 text-ink">{c.idleBody}</p>
+          <ol className="mt-4 grid sm:grid-cols-2 lg:grid-cols-4">
+            {c.idleSteps.map((step, i) => (
+              <li key={step} className={`border-b border-border py-4 pr-4 ${i > 0 ? 'lg:border-l lg:pl-5' : ''} ${i % 2 === 1 ? 'sm:border-l sm:pl-5 lg:pl-5' : ''}`}>
+                <span className="text-xs tabular-nums text-slate-500">{String(i + 1).padStart(2, '0')}</span>
+                <span className="mt-1 block text-[15px] text-slate-700">{step}</span>
               </li>
             ))}
           </ol>
-        </nav>
-      )}
-
-      {/* Main Analysis Result View */}
-      {isFitPending ? (
-        <div className="mt-10 border-t border-slate-400">
-          <Loading />
-        </div>
-      ) : isFitError || !fitResult ? (
-        <div className="mt-10">
-          <ErrorState message={fitError ? authErrorMessage(fitError, 'Không đánh giá được CV với việc làm này.') : undefined} />
-        </div>
+        </section>
       ) : (
-        <div className={`transition-opacity ${isFitFetching ? 'opacity-60' : ''}`}>
-          {/* Score + dimensions */}
-          <section id="fit-score" className="mt-[clamp(2.5rem,5vw,3.5rem)] grid scroll-mt-6 gap-x-[clamp(2rem,5vw,4rem)] gap-y-6 border-t border-slate-400 pt-6 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-            <div>
-              <p className="text-[13px] text-slate-600">{c.scoreLabel(fitResult.fitGrade)}</p>
-              <p className="mt-2 flex items-baseline gap-1 leading-none text-brand">
-                <span className="text-[clamp(3.5rem,7vw,5.5rem)] font-normal tracking-[-0.04em] tabular-nums">
-                  {fitResult.overallScore}
-                </span>
-                <span className="text-[clamp(1.5rem,2.4vw,2rem)]">%</span>
-              </p>
-              {fitResult.targetScore && <p className="mt-3 text-[13px] text-slate-600">{c.target(fitResult.targetScore)}</p>}
-              <p className="mt-1 text-[13px] text-slate-600">{c.updatedAt(fitResult.analyzedAt)}</p>
+        <div className={`transition-opacity ${runningThisPair ? 'opacity-50' : ''}`}>
+          {/* 01 Điểm phù hợp */}
+          <section id="fit-score" className={sectionGap}>
+            <SectionHead index="01" title={c.scoreTitle} />
+            <div className="grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-6 pt-4 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
+              <div className="pt-2">
+                <p className={`text-[clamp(3.5rem,6.5vw,5.25rem)] font-normal leading-none tracking-[-0.04em] tabular-nums ${scoreText(fitResult.overallScore)}`}>
+                  {fitResult.overallScore}%
+                </p>
+                <p className="mt-3 text-[13px] text-slate-600">
+                  {c.grade(fitResult.fitGrade)}
+                  {fitResult.targetScore ? ` · ${c.target(fitResult.targetScore)}` : ''}
+                </p>
+                {fitResult.targetScore && fitResult.overallScore < fitResult.targetScore ? (
+                  <p className="text-[13px] text-danger">{c.missingPoints(fitResult.targetScore - fitResult.overallScore)}</p>
+                ) : fitResult.targetScore ? (
+                  <p className="text-[13px] text-brand">{c.reachedTarget}</p>
+                ) : null}
+              </div>
+              <ul>
+                {dims.map((dim) => (
+                  <li key={dim.label} className="grid grid-cols-[minmax(0,1fr)_minmax(4rem,0.9fr)_3rem] items-center gap-x-5 border-b border-border py-2.5 text-sm">
+                    <span className="truncate text-ink">{dim.label}</span>
+                    <span className="h-[2px] w-full bg-slate-200">
+                      <span className={`block h-full transition-[width] duration-500 ${scoreBar(dim.value)}`} style={{ width: `${Math.max(dim.value, 1)}%` }} />
+                    </span>
+                    <span className={`text-right tabular-nums ${scoreText(dim.value)}`}>{dim.value}%</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="space-y-4">
-              {dims.map((dim) => (
-                <li key={dim.label}>
-                  <div className="flex items-baseline justify-between gap-4 text-sm">
-                    <span className="text-ink">{dim.label}</span>
-                    <span className="tabular-nums text-slate-600">{dim.value}%</span>
-                  </div>
-                  <div className="mt-2 h-[2px] w-full bg-slate-200">
-                    <div
-                      className={`h-full transition-[width] duration-500 ${dim.value < 70 ? 'bg-danger' : 'bg-brand'}`}
-                      style={{ width: `${dim.value}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-6 max-w-[48rem] space-y-2 text-[13px] leading-6 text-slate-700">
+              {missingNames.length > 0 && (
+                <p>
+                  <span className="text-ink">{c.missingKeywords}</span> {missingNames.join(', ')}.
+                </p>
+              )}
+              {fitResult.verdict && <p>{fitResult.verdict}</p>}
+              {semantic?.recommendation && (
+                <p>
+                  <span className="text-brand">{c.advice}:</span> {semantic.recommendation}
+                </p>
+              )}
+            </div>
           </section>
 
-          {fitResult.verdict && <p className="mt-8 max-w-[44rem] text-[15px] leading-7 text-slate-700">{fitResult.verdict}</p>}
-          {semantic?.recommendation && (
-            <p className="mt-4 max-w-[44rem] border-l-2 border-brand pl-4 text-[15px] leading-7 text-ink">
-              <span className="text-brand">{c.advice}: </span>
-              {semantic.recommendation}
-            </p>
+          {/* 02 Điểm mạnh */}
+          {strengthList.length > 0 && (
+            <section className={sectionGap}>
+              <SectionHead index="02" title={c.strengths} />
+              <ul>
+                {strengthList.map((str, idx) => (
+                  <li key={idx} className="border-b border-border py-3 text-[15px] leading-7 text-ink">
+                    {str}
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
-          {/* 01 Strengths */}
-          <section className="mt-[clamp(3rem,6vw,4.5rem)]">
-            <SectionHead index="01" title={c.strengths} />
-            <ul>
-              {[
-                ...fitResult.strengths,
-                ...(semantic?.reasons ?? []).filter((r) => !fitResult.strengths.includes(r)),
-              ].map((str, idx) => (
-                <li key={idx} className="border-b border-border py-4 text-[15px] leading-7 text-ink">
-                  {str}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* 02 Gaps */}
-          <section id="improve" className="mt-[clamp(3rem,6vw,4.5rem)] scroll-mt-6">
-            <SectionHead index="02" title={c.gaps} note={c.gapsNote} />
-            <ul>
-              {fitResult.gaps.map((gap, idx) => (
-                <li key={idx} className="border-b border-border py-6">
-                  <p className={`text-[13px] ${impactTone[gap.impact]}`}>{c.impact[gap.impact]}</p>
-                  <h3 className="mt-1.5 text-[clamp(1rem,1.3vw,1.1875rem)] font-normal leading-7 text-ink">{gap.title}</h3>
-                  <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">{gap.description}</p>
-                  {gap.recommendation && (
-                    <p className="mt-3 max-w-3xl text-sm leading-6 text-ink">
-                      <span className="text-brand">{c.fix}</span> {gap.recommendation}
-                    </p>
-                  )}
-                  <p className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-                    <Link to={editCvHref} className={`${textLink} text-[13px] text-ink`}>
-                      {c.fixCv}
-                    </Link>
-                    {gap.skill && (
-                      <Link to={skillPathHref('learning-path', selectedJobId, selectedCvId)} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
-                        {c.learnSkill}
-                      </Link>
-                    )}
+          {/* 03 Cần sửa trong CV */}
+          <section id="improve" className={`${sectionGap} scroll-mt-6`}>
+            <SectionHead index={strengthList.length > 0 ? '03' : '02'} title={c.gaps} />
+            <p className="mt-3 text-[13px] leading-6 text-slate-600">
+              {c.gapsNoteA}{' '}
+              <Link to={assessHref} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                {c.nextLink}
+              </Link>
+              .
+            </p>
+            {fitResult.gaps.length === 0 && !hasTailoring && <p className="mt-4 text-[15px] text-ink">{c.noGaps}</p>}
+            {(['critical', 'moderate', 'minor'] as const).map((level) => {
+              const items = fitResult.gaps.filter((g) => g.impact === level);
+              if (items.length === 0) return null;
+              const skillItems = items.filter((g) => g.skill);
+              const otherItems = items.filter((g) => !g.skill);
+              return (
+                <div key={level} className="mt-6 border-b border-border pb-2">
+                  <p className={`text-[13px] font-medium ${impactTone[level]}`}>
+                    {c.impact[level]} ({items.length})
                   </p>
-                </li>
-              ))}
-            </ul>
+                  {skillItems.length > 0 && (
+                    <div className="mt-2">
+                      <h3 className="text-[15px] font-normal text-ink">{level === 'critical' ? c.skillGapRequired : c.skillGapPreferred}</h3>
+                      <p className="mt-1 text-[13px] leading-6 text-slate-600">
+                        <span className="text-brand">{c.fix}</span> {c.skillFix}
+                      </p>
+                      <ul className="mt-2 border-t border-border">
+                        {skillItems.map((g) => (
+                          <li key={g.title} className="flex items-baseline justify-between gap-4 border-b border-border py-2 text-sm last:border-b-0">
+                            <span className="text-ink">{g.skill}</span>
+                            <span className="flex shrink-0 gap-x-5">
+                              <Link to={editCvHref} className={`${textLink} text-[13px] text-ink`}>
+                                {c.fixCv}
+                              </Link>
+                              <Link to={assessHref} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+                                {c.learnSkill}
+                              </Link>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {otherItems.map((g, idx) => (
+                    <div key={`${g.title}-${idx}`} className={`flex items-start justify-between gap-6 py-3 ${skillItems.length > 0 || idx > 0 ? 'border-t border-border' : ''}`}>
+                      <div className="min-w-0">
+                        <h3 className="text-[15px] font-normal text-ink">{g.title}</h3>
+                        <p className="mt-0.5 text-[13px] leading-6 text-slate-600">{g.description}</p>
+                        {g.recommendation && (
+                          <p className="text-[13px] leading-6 text-slate-700">
+                            <span className="text-brand">{c.fix}</span> {g.recommendation}
+                          </p>
+                        )}
+                      </div>
+                      <Link to={editCvHref} className={`${textLink} shrink-0 text-[13px] text-ink`}>
+                        {c.fixCv}
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+
+            {hasTailoring && (
+              <div className="mt-6">
+                <p className="text-[13px] font-medium text-slate-600">{c.tailorTitle}</p>
+                <ul className="mt-1">
+                  {fitResult.tailoringTips.map((tip, idx) => (
+                    <li key={idx} className="flex items-start justify-between gap-6 border-b border-border py-3 text-sm leading-6 text-ink">
+                      <span>{tip}</span>
+                      <Link to={editCvHref} className={`${textLink} shrink-0 text-[13px] text-ink`}>
+                        {c.fixCv}
+                      </Link>
+                    </li>
+                  ))}
+                  {fitResult.suggestedBulletPoints.map((bp, idx) => (
+                    <li key={`bp-${idx}`} className="border-b border-border py-3">
+                      <p className="text-[13px] text-slate-600">{c.insertAt(bp.section)}</p>
+                      <p className="mt-1 max-w-4xl text-sm leading-6 text-ink">“{bp.text}”</p>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(bp.text, idx)}
+                        className={`${textLink} mt-1.5 text-[13px] ${copiedIndex === idx ? 'text-brand' : 'text-ink'}`}
+                      >
+                        {copiedIndex === idx ? c.copied : c.copy}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
 
-          {/* 03 Skills matrix */}
-          <section className="mt-[clamp(3rem,6vw,4.5rem)]">
-            <SectionHead
-              index="03"
-              title={c.skillsTitle}
-              note={c.skillsNote(missingRequired, missingPreferred)}
-              action={
-                fitResult.skillsAnalysis.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSkillsOpen((o) => !o)}
-                    aria-expanded={skillsOpen}
-                    className={`${textLink} text-[13px] text-ink`}
-                  >
-                    {skillsOpen ? c.hideSkills : c.showSkills(fitResult.skillsAnalysis.length)}
-                  </button>
-                )
-              }
-            />
+          {/* 04 Bước tiếp theo */}
+          <section className={sectionGap}>
+            <SectionHead index={strengthList.length > 0 ? '04' : '03'} title={c.nextTitle} />
+            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-border py-3">
+              <p className="text-[13px] leading-6 text-slate-700">{c.skillsNote(missingRequired, missingPreferred)}</p>
+              {fitResult.skillsAnalysis.length > 0 && (
+                <button type="button" onClick={() => setSkillsOpen((o) => !o)} aria-expanded={skillsOpen} className={`${textLink} text-[13px] text-ink`}>
+                  {skillsOpen ? c.hideSkills : c.showSkills(fitResult.skillsAnalysis.length)}
+                </button>
+              )}
+            </div>
             {skillsOpen && (
               <div>
-                <div className="hidden grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,2fr)] gap-6 border-b border-border py-3 text-[13px] text-slate-500 md:grid">
+                <div className="hidden grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,2fr)] gap-6 border-b border-border py-2.5 text-[13px] text-slate-500 md:grid">
                   <span>{c.colSkill}</span>
                   <span>{c.colPriority}</span>
                   <span>{c.colStatus}</span>
@@ -1064,95 +948,43 @@ export default function CvJobFitPage() {
                   {fitResult.skillsAnalysis.map((sk) => (
                     <li
                       key={sk.name}
-                      className="grid grid-cols-2 gap-x-6 gap-y-1 border-b border-border py-3.5 text-sm md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,2fr)]"
+                      className="grid grid-cols-2 gap-x-6 gap-y-1 border-b border-border py-3 text-sm md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,2fr)]"
                     >
                       <span className="text-ink">{sk.name}</span>
-                      <span
-                        className={`text-right md:text-left ${
-                          sk.status === 'matched' ? 'text-brand' : sk.status === 'partial' ? 'text-warning' : 'text-danger'
-                        } md:order-3`}
-                      >
+                      <span className={`text-right md:order-3 md:text-left ${sk.status === 'matched' ? 'text-brand' : sk.status === 'partial' ? 'text-warning' : 'text-danger'}`}>
                         {sk.status === 'matched' ? c.matched : sk.status === 'partial' ? c.partial : c.missing}
                       </span>
-                      <span className="text-[13px] text-slate-600 md:order-2 md:text-sm">
-                        {sk.category === 'required' ? c.required : c.preferred}
-                      </span>
-                      <span className="col-span-2 text-[13px] leading-6 text-slate-600 md:order-4 md:col-span-1 md:text-sm">
-                        {sk.cvMention || '—'}
-                      </span>
+                      <span className="text-[13px] text-slate-600 md:order-2 md:text-sm">{sk.category === 'required' ? c.required : c.preferred}</span>
+                      <span className="col-span-2 text-[13px] leading-6 text-slate-600 md:order-4 md:col-span-1 md:text-sm">{sk.cvMention || '—'}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
+            <Link to={assessHref} className="group flex items-center justify-between gap-6 border-b border-border py-4">
+              <span className="min-w-0">
+                <span className="block text-[15px] text-ink transition-colors group-hover:text-brand">{c.nextLink}</span>
+                <span className="mt-0.5 block text-[13px] leading-6 text-slate-600">{c.nextBody}</span>
+              </span>
+              <ArrowRight size={17} aria-hidden="true" className="shrink-0 text-ink transition-colors group-hover:text-brand" />
+            </Link>
           </section>
 
-          {/* 04 Tailoring + STAR bullets */}
-          {(fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0) && (
-          <section className="mt-[clamp(3rem,6vw,4.5rem)]">
-            <SectionHead
-              index="04"
-              title={c.tailorTitle}
-              action={
-                <Link to={editCvHref} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
-                  {c.editCv}
-                </Link>
-              }
-            />
-            <ol>
-              {fitResult.tailoringTips.map((tip, idx) => (
-                <li key={idx} className="flex gap-4 border-b border-border py-4 text-[15px] leading-7 text-ink">
-                  <span className="shrink-0 pt-1 text-xs tabular-nums text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ol>
-            <ul>
-              {fitResult.suggestedBulletPoints.map((bp, idx) => (
-                <li key={idx} className="border-b border-border py-5">
-                  <p className="text-[13px] text-slate-600">{c.insertAt(bp.section)}</p>
-                  <p className="mt-1.5 max-w-4xl text-[15px] leading-7 text-ink">“{bp.text}”</p>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(bp.text, idx)}
-                    className={`${textLink} mt-2 text-[13px] ${copiedIndex === idx ? 'text-brand' : 'text-ink'}`}
-                  >
-                    {copiedIndex === idx ? c.copied : c.copy}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-          )}
-
-          {/* Bước tiếp theo: đánh giá kỹ năng và Learning path ở trang riêng */}
-          <NextStepLinks
-            key={selectedJobId}
-            jobId={selectedJobId}
-            cvId={selectedCvId}
-            index={fitResult.tailoringTips.length > 0 || fitResult.suggestedBulletPoints.length > 0 ? '05' : '04'}
-          />
-
-          {/* Closing CTA */}
-          <section className="mt-[clamp(3rem,6vw,4.5rem)] border-t border-ink pt-6">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-md text-[clamp(1rem,1.3vw,1.125rem)] leading-7 text-ink">{c.ctaQuestion}</p>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-                <Link
-                  to={`/candidate/assistant?cvId=${currentCv?.id}&jobId=${currentJob?.id}`}
-                  className={`${textLink} text-ink`}
-                >
-                  {c.askAssistant}
-                </Link>
-                <Link to={`/candidate/applications?cvId=${currentCv?.id}&jobId=${currentJob?.id}`} className={primaryButton}>
-                  {c.writeLetter}
-                  <ArrowRight size={15} aria-hidden="true" />
-                </Link>
-              </div>
+          {/* Kết bài */}
+          <section className={`${sectionGap} border-t border-ink pt-6`}>
+            <p className="text-[clamp(1.0625rem,1.4vw,1.25rem)] leading-7 text-ink">{c.ctaQuestion}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
+              <Link to={`/candidate/applications?cvId=${currentCv?.id}&jobId=${currentJob?.id}`} className={primaryButton}>
+                {c.writeLetter}
+                <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+              <Link to={`/candidate/assistant?cvId=${currentCv?.id}&jobId=${currentJob?.id}`} className={`${textLink} text-ink`}>
+                {c.askAssistant}
+              </Link>
             </div>
 
             {currentJob && currentCv && (
-              <div className="mt-6">
+              <div className="mt-5">
                 {!feedbackOpen ? (
                   <p className="flex flex-wrap items-baseline gap-x-4 gap-y-2 text-[13px] text-slate-600">
                     <span>{c.feedbackQ}</span>

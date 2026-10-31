@@ -29,7 +29,7 @@ const copy = {
     copied: 'Đã sao chép',
     download: 'Tải .txt',
     remove: 'Xoá',
-    create: 'Tạo thư ứng tuyển mới',
+    create: 'Viết thư mới',
     score: 'điểm',
     previewTitle: 'Xem trước',
     pickHint: 'Chọn một thư bên trái để xem toàn bộ nội dung.',
@@ -45,7 +45,7 @@ const copy = {
     showMore: 'Xem toàn bộ thư',
     showLess: 'Thu gọn',
     relevance: 'Độ khớp JD',
-    persuasion: 'Thuyết phục',
+    persuasion: 'Bố cục',
     clarity: 'Rõ ràng',
     toneScore: 'Văn phong',
     types: {
@@ -95,7 +95,7 @@ const copy = {
     showMore: 'Read full letter',
     showLess: 'Show less',
     relevance: 'JD match',
-    persuasion: 'Persuasion',
+    persuasion: 'Structure',
     clarity: 'Clarity',
     toneScore: 'Tone',
     types: {
@@ -168,17 +168,14 @@ function DraftPreview({
   const meta = [
     { label: c.to, value: draft.recipientName },
     { label: c.cv, value: draft.cvName },
-    { label: c.tone, value: c.tones[draft.tone] },
-    { label: c.language, value: c.languages[draft.language] },
-    { label: c.focus, value: c.focuses[draft.focus] },
     { label: c.created, value: draft.createdAt },
     { label: c.updated, value: draft.updatedAt },
   ].filter((m) => !!m.value);
 
-  const bars = score
+  const bars = score?.overallScore
     ? [
         { label: c.relevance, value: score.relevanceScore },
-        { label: c.persuasion, value: score.persuasivenessScore },
+        { label: c.persuasion, value: score.structureScore ?? score.persuasivenessScore },
         { label: c.clarity, value: score.clarityScore },
         { label: c.toneScore, value: score.toneScore },
       ]
@@ -206,7 +203,7 @@ function DraftPreview({
       )}
 
       {/* Score */}
-      {score && (
+      {score?.overallScore > 0 && (
         <div className={`${compact ? '' : 'mt-5'} flex flex-wrap items-end gap-x-8 gap-y-4 border-y border-border py-4`}>
           <p className="flex items-baseline text-ink">
             <span className="text-[2.5rem] font-normal leading-none tracking-[-0.03em] tabular-nums">
@@ -370,8 +367,6 @@ export function SavedApplicationsList({
     { id: 'all', label: c.all },
     { id: 'cover_letter', label: c.types.cover_letter },
     { id: 'application_email', label: c.types.application_email },
-    { id: 'linkedin_inmail', label: c.types.linkedin_inmail },
-    { id: 'follow_up_email', label: c.types.follow_up_email },
   ];
 
   if (drafts.length === 0) {
@@ -533,7 +528,7 @@ export function SavedApplicationsList({
                     </span>
                     <span className="text-right">
                       <span className="block text-[1.625rem] font-normal leading-none tracking-[-0.02em] tabular-nums text-ink">
-                        {draft.reviewScore?.overallScore || 92}
+                        {draft.reviewScore?.overallScore || '—'}
                       </span>
                       <span className="mt-1 block text-[11px] text-slate-500">{c.score}</span>
                     </span>

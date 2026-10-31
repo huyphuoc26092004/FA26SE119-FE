@@ -3,8 +3,9 @@ import { apiClient } from './apiClient';
 import { toQuestion, toResource } from './candidateService';
 import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
 
-// Bài đánh giá và lộ trình học theo một JD (trang /candidate/skill-test và /candidate/learning-path).
-// Backend: POST /assessments sinh 10 câu theo JD; POST /roadmaps lập lộ trình cho kỹ năng bắt buộc còn thiếu.
+// Bài đánh giá kỹ năng và lộ trình học theo JD của một công việc (trang /candidate/skill-assessment).
+// CV không bắt buộc: POST /assessments { jobId, resumeId? } sinh 10 câu theo JD (và CV nếu có);
+// POST /roadmaps { jobId, assessmentId } lập lộ trình cho kỹ năng bắt buộc còn thiếu, dùng đúng CV của bài đánh giá.
 
 // Backend chờ Ollama tối đa AI_REQUEST_TIMEOUT (mặc định 15 phút), nên phía FE phải chờ lâu hơn thế.
 const AI_TIMEOUT = 16 * 60_000;
@@ -115,14 +116,18 @@ function toLearningPath(roadmap: ApiRow): LearningPath {
 }
 
 /** Bài đánh giá gần nhất của ứng viên cho JD này, kể cả bài đang làm dở. */
-export async function getLatestJdAssessment(jobId: string): Promise<JdAssessment | null> {
-  const latest = (await get<ApiRow[]>('/assessments')).find((s) => str(s.market_job_id) === jobId);
+export async function getLatestJdAssessment(jobId: string, resumeId = ''): Promise<JdAssessment | null> {
+  // Bài làm theo CV và bài chỉ theo JD là hai bối cảnh khác nhau ở backend, nên tách riêng.
+  const latest = (await get<ApiRow[]>('/assessments')).find(
+    (s) => str(s.market_job_id) === jobId && str(s.resume_id) === resumeId,
+  );
   return latest ? toAssessment(await get(`/assessments/${str(latest.id)}`)) : null;
 }
 
-/** Sinh bài mới gồm 10 câu theo JD (gọi AI, có thể mất vài phút). */
-export async function startJdAssessment(jobId: string): Promise<JdAssessment> {
-  const session = await apiClient.post<ApiRow>('/assessments', { jobId }, { timeout: AI_TIMEOUT }).then((res) => res.data);
+/** Sinh bài mới gồm 10 câu theo JD, kèm CV nếu có (gọi AI, có thể mất vài phút). */
+export async function startJdAssessment(jobId: string, resumeId?: string): Promise<JdAssessment> {
+  const body = resumeId ? { jobId, resumeId } : { jobId };
+  const session = await apiClient.post<ApiRow>('/assessments', body, { timeout: AI_TIMEOUT }).then((res) => res.data);
   return toAssessment(session);
 }
 
@@ -134,8 +139,10 @@ export async function submitJdAssessment(sessionId: string, answers: Record<stri
   return toAssessment(await apiClient.post<ApiRow>(`/assessments/${sessionId}/submit`).then((res) => res.data));
 }
 
-export async function getLatestLearningPath(jobId: string): Promise<LearningPath | null> {
-  const latest = (await get<ApiRow[]>('/roadmaps')).find((r) => str(r.market_job_id) === jobId);
+export async function getLatestLearningPath(jobId: string, resumeId = ''): Promise<LearningPath | null> {
+  const latest = (await get<ApiRow[]>('/roadmaps')).find(
+    (r) => str(r.market_job_id) === jobId && str(obj(r.input_context).resume_id) === resumeId,
+  );
   return latest ? toLearningPath(await get(`/roadmaps/${str(latest.id)}`)) : null;
 }
 
@@ -163,10 +170,50 @@ export async function getJdSkillResources(jobId: string): Promise<Record<string,
   );
 }
 
-/** Link tới trang Đánh giá kỹ năng / Learning path của một job (giữ CV đang chọn). */
-export function skillPathHref(page: 'skill-test' | 'learning-path', jobId: string, cvId?: string, extra?: Record<string, string>) {
-  const params = new URLSearchParams({ jobId });
+export interface JdAssessmentSummary {
+  id: string;
+  jobId: string;
+  /** CV dùng khi tạo bài; rỗng nếu bài chỉ theo JD. */
+  resumeId: string;
+  jobTitle: string;
+  status: JdAssessment['status'];
+  score?: number;
+  createdAt: string;
+}
+
+/** Các bài đánh giá theo JD gần đây (mới nhất trước), mỗi công việc giữ một bài. */
+export async function listJdAssessments(): Promise<JdAssessmentSummary[]> {
+  const seen = new Set<string>();
+  return (await get<ApiRow[]>('/assessments'))
+    .filter((s) => {
+      const jobId = str(s.market_job_id);
+      const key = `${jobId}:${str(s.resume_id)}`;
+      if (!jobId || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map((s) => {
+      const scores = rows(s.skill_scores);
+      const total = scores.reduce((sum, x) => sum + num(x.total), 0);
+      const correct = scores.reduce((sum, x) => sum + num(x.correct), 0);
+      const completed = str(s.status) === 'completed';
+      return {
+        id: str(s.id),
+        jobId: str(s.market_job_id),
+        resumeId: str(s.resume_id),
+        jobTitle: str(s.target_job_title),
+        status: completed ? 'completed' : 'in_progress',
+        score: completed && total ? Math.round((correct / total) * 100) : undefined,
+        createdAt: str(s.created_at),
+      };
+    });
+}
+
+/** Link tới trang Đánh giá kỹ năng của một công việc. */
+export function skillAssessmentHref(jobId?: string, cvId?: string) {
+  const params = new URLSearchParams();
+  if (jobId) params.set('jobId', jobId);
   if (cvId) params.set('cvId', cvId);
-  Object.entries(extra ?? {}).forEach(([key, value]) => params.set(key, value));
-  return `/candidate/${page}?${params.toString()}`;
+  const query = params.toString();
+  return `/candidate/skill-assessment${query ? `?${query}` : ''}`;
 }
