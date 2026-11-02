@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Check, ExternalLink } from 'lucide-react';
 import { useTranslation } from '../../i18n';
@@ -20,6 +20,7 @@ import type {
   ConsultationStatus,
   ConsultationTopic,
 } from '../../types/consultation';
+import CandidateChat from './consultation/CandidateChat';
 
 const copy = {
   vi: {
@@ -27,8 +28,13 @@ const copy = {
     line1: 'Trò chuyện với cố vấn thật.',
     line2: 'Một người, đồng hành cùng bạn.',
     intro:
-      'Sau khi AI phân tích, bạn có thể đặt lịch với cố vấn của hệ thống để được góp ý trực tiếp về CV, định hướng và phỏng vấn.',
+      'Nhắn trực tiếp cho cố vấn của hệ thống, hoặc gửi yêu cầu đặt lịch để được góp ý kỹ về CV, định hướng và phỏng vấn.',
     quickMessage: 'Nhắn nhanh với cố vấn',
+    modeLabel: 'Bạn muốn bắt đầu thế nào?',
+    modes: {
+      chat: { title: 'Chat trực tiếp', desc: 'Nhắn ngay cho cố vấn. Hợp với câu hỏi nhanh, cần trao đổi qua lại.' },
+      request: { title: 'Gửi yêu cầu tư vấn', desc: 'Chọn chủ đề, CV và khung giờ để cố vấn chuẩn bị một buổi tư vấn đầy đủ.' },
+    },
     seeGap: 'Xem khoảng trống kỹ năng trước',
     formTitle: 'Yêu cầu tư vấn',
     topic: 'Chủ đề cần tư vấn',
@@ -97,8 +103,13 @@ const copy = {
     line1: 'Talk to a real advisor.',
     line2: 'One person, by your side.',
     intro:
-      'After the AI analysis, book a session with one of our consultants for direct feedback on your CV, direction and interviews.',
+      'Message one of our advisors directly, or request a session for in-depth feedback on your CV, direction and interviews.',
     quickMessage: 'Message your advisor',
+    modeLabel: 'How would you like to start?',
+    modes: {
+      chat: { title: 'Direct chat', desc: 'Message an advisor now. Best for quick questions and back-and-forth.' },
+      request: { title: 'Request a session', desc: 'Pick a topic, CV and time so the advisor can prepare a full session.' },
+    },
     seeGap: 'Check your skill gap first',
     formTitle: 'Request a session',
     topic: 'Topic',
@@ -289,6 +300,7 @@ export default function ConsultationsPage() {
 
   const { consultationId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const candidateId = useAuthStore((s) => s.user?.id) || '1';
 
@@ -298,7 +310,35 @@ export default function ConsultationsPage() {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: listKey,
     queryFn: () => getMyConsultations(candidateId),
+    refetchInterval: 30_000,
   });
+
+  // Hai cách bắt đầu: chat trực tiếp (?mode=chat&c=id) hoặc gửi yêu cầu tư vấn.
+  const linked = requests.find((r) => r.id === consultationId);
+  const mode: 'chat' | 'request' =
+    searchParams.get('mode') === 'chat' || searchParams.get('mode') === 'request'
+      ? (searchParams.get('mode') as 'chat' | 'request')
+      : linked?.channel === 'CHAT' || (!consultationId && requests.some((r) => r.channel === 'CHAT' && r.status !== 'COMPLETED'))
+        ? 'chat'
+        : 'request';
+  // Không có ?c= thì mở cuộc chat gần nhất; ?c= rỗng là màn hình bắt đầu cuộc trò chuyện mới.
+  const latestChat = [...requests]
+    .filter((r) => r.channel === 'CHAT' && r.status !== 'COMPLETED' && r.status !== 'CANCELLED')
+    .sort((a, b) => new Date(b.messages.at(-1)?.timestamp ?? b.requestedAt).getTime() - new Date(a.messages.at(-1)?.timestamp ?? a.requestedAt).getTime())[0];
+  const chatId = searchParams.has('c')
+    ? (searchParams.get('c') ?? '')
+    : linked && (linked.channel === 'CHAT' || searchParams.get('mode') === 'chat')
+      ? linked.id
+      : (latestChat?.id ?? '');
+  const setMode = (next: 'chat' | 'request', id?: string) => {
+    const params = new URLSearchParams();
+    params.set('mode', next);
+    if (next === 'chat' && id !== undefined) params.set('c', id);
+    else if (next === 'chat' && chatId) params.set('c', chatId);
+    setSearchParams(params, { replace: true });
+    if (consultationId) navigate(`/candidate/consultations?${params.toString()}`, { replace: true });
+  };
+  const formalRequests = requests.filter((r) => r.channel !== 'CHAT');
 
   const slots = useMemo(() => buildSlots(c, locale), [c, locale]);
 
@@ -313,6 +353,7 @@ export default function ConsultationsPage() {
   const formRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLElement>(null);
   const goalRef = useRef<HTMLTextAreaElement>(null);
+  const modeRef = useRef<HTMLDivElement>(null);
 
   // Default to the user's default CV once CVs load.
   useEffect(() => {
@@ -350,8 +391,9 @@ export default function ConsultationsPage() {
   });
 
   const activeRequests = requests.filter((r) => r.status !== 'CANCELLED' && r.status !== 'COMPLETED');
+  const activeFormal = activeRequests.filter((r) => r.channel !== 'CHAT');
   const focusRequest =
-    requests.find((r) => r.id === openId && r.status !== 'CANCELLED') ?? activeRequests[0] ?? null;
+    formalRequests.find((r) => r.id === openId && r.status !== 'CANCELLED') ?? activeFormal[0] ?? null;
 
   // Which process step the candidate is on.
   const currentStep = !focusRequest
@@ -363,18 +405,13 @@ export default function ConsultationsPage() {
         : 2;
 
   const quickMessage = () => {
-    const target = activeRequests[0];
-    if (!target) {
-      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      goalRef.current?.focus({ preventScroll: true });
-      return;
-    }
-    setOpenId(target.id);
-    requestAnimationFrame(() => {
-      const box = document.getElementById(`message-${target.id}`);
-      box?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      (box as HTMLTextAreaElement | null)?.focus({ preventScroll: true });
-    });
+    const target = [...activeRequests].sort(
+      (a, b) =>
+        new Date(b.messages[b.messages.length - 1]?.timestamp ?? b.requestedAt).getTime() -
+        new Date(a.messages[a.messages.length - 1]?.timestamp ?? a.requestedAt).getTime(),
+    )[0];
+    setMode('chat', target?.id ?? '');
+    requestAnimationFrame(() => modeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
 
   const toggleOpen = (id: string) => {
@@ -407,6 +444,53 @@ export default function ConsultationsPage() {
         </div>
       </header>
 
+      {/* Chọn cách bắt đầu */}
+      <div ref={modeRef} className="mt-[clamp(2.25rem,4.5vw,3.5rem)] scroll-mt-6">
+        <p className="text-[13px] text-slate-600">{c.modeLabel}</p>
+        <div role="tablist" className="mt-3 grid border-t border-border sm:grid-cols-2">
+          {(['chat', 'request'] as const).map((m, idx) => {
+            const on = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => setMode(m)}
+                className={`group -mt-px flex gap-4 border-t-2 py-5 text-left transition-colors sm:pr-8 ${
+                  on ? 'border-ink' : 'border-transparent hover:border-slate-300'
+                } ${idx === 1 ? 'border-b border-b-border sm:border-b-0 sm:pl-8' : 'border-b border-b-border sm:border-b-0'}`}
+              >
+                <span className={`pt-1 text-xs tabular-nums ${on ? 'text-brand' : 'text-slate-400'}`}>{pad2(idx + 1)}</span>
+                <span className="min-w-0">
+                  <span
+                    className={`block text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] transition-colors ${
+                      on ? 'text-ink' : 'text-slate-500 group-hover:text-ink'
+                    }`}
+                  >
+                    {c.modes[m].title}
+                  </span>
+                  <span className={`mt-1 block text-[14px] leading-6 ${on ? 'text-slate-600' : 'text-slate-500'}`}>
+                    {c.modes[m].desc}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {mode === 'chat' ? (
+        <div className="mt-8">
+          <CandidateChat
+            threads={requests}
+            listKey={listKey}
+            selectedId={chatId}
+            onSelect={(id) => setMode('chat', id)}
+            vi={isVietnamese}
+          />
+        </div>
+      ) : (
       <div className="mt-[clamp(2.5rem,5vw,4rem)] grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)]">
         <div className="min-w-0">
           {/* 01 — Request form */}
@@ -506,21 +590,21 @@ export default function ConsultationsPage() {
               index="02"
               title={c.listTitle}
               action={
-                requests.length > 0 ? (
+                formalRequests.length > 0 ? (
                   <p className="text-[13px] text-slate-600">
-                    {c.stats.total} {requests.length} · {c.stats.active} {activeRequests.length} · {c.stats.done}{' '}
-                    {requests.filter((r) => r.status === 'COMPLETED').length}
+                    {c.stats.total} {formalRequests.length} · {c.stats.active} {activeFormal.length} · {c.stats.done}{' '}
+                    {formalRequests.filter((r) => r.status === 'COMPLETED').length}
                   </p>
                 ) : undefined
               }
             />
             {isLoading ? (
               <p className="py-6 text-sm text-slate-500">{c.loading}</p>
-            ) : requests.length === 0 ? (
+            ) : formalRequests.length === 0 ? (
               <p className="py-6 text-sm text-slate-600">{c.listEmpty}</p>
             ) : (
               <ul>
-                {requests.map((r) => (
+                {formalRequests.map((r) => (
                   <RequestRow
                     key={r.id}
                     request={r}
@@ -581,6 +665,7 @@ export default function ConsultationsPage() {
           </div>
         </aside>
       </div>
+      )}
     </div>
   );
 }
