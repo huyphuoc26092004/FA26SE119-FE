@@ -1,7 +1,7 @@
 import type { CandidateProfile, Resume } from '../types/domain';
 import type { ConsultationPriority, ConsultationRequest, ConsultationTopic } from '../types/consultation';
 import { apiClient } from './apiClient';
-import { notConnected, pending } from './apiPending';
+import { notConnected } from './apiPending';
 import { type ApiRow } from './candidateMappers';
 import { DIRECT_CHAT_SUBJECT, DIRECT_CHAT_TYPE, TOPIC_LABELS, buildDescription, toConsultationRequest } from './consultationMappers';
 
@@ -19,7 +19,7 @@ export const CONSULTATION_TOPIC_LABELS = TOPIC_LABELS;
 const MESSAGE_PAGE = 100;
 
 async function loadThread(row: ApiRow): Promise<ConsultationRequest> {
-  const { data: messages } = await apiClient.get<ApiRow[]>(`/consultations/${row.id}/messages`, { params: { limit: MESSAGE_PAGE, offset: 0 } });
+  const { data: messages } = await apiClient.get<ApiRow[]>(`/consultations/${row.id}/messages`, { params: { limit: MESSAGE_PAGE, latest: true } });
   return toConsultationRequest(row, { messages });
 }
 
@@ -79,16 +79,17 @@ export async function getMyConsultation(id: string): Promise<ConsultationRequest
 }
 
 /**
- * Chat trực tiếp: backend chưa có kênh chat riêng, nên tạo một cuộc tư vấn loại DIRECT_CHAT
- * với tin nhắn đầu tiên làm mô tả, rồi gửi chính tin đó vào cuộc trò chuyện.
- * Cuộc chat vẫn cần quản trị viên phân công cố vấn như yêu cầu thường.
+ * Chat trực tiếp: tạo một cuộc tư vấn loại DIRECT_CHAT với tin nhắn đầu tiên làm mô tả,
+ * rồi gửi chính tin đó vào cuộc trò chuyện. Có `consultantId` thì cố vấn nhận ngay,
+ * không có thì chờ quản trị viên phân công như yêu cầu thường.
  */
-export async function startDirectChat(firstMessage: string, topic?: ConsultationTopic): Promise<ConsultationRequest> {
+export async function startDirectChat(firstMessage: string, topic?: ConsultationTopic, consultantId?: string): Promise<ConsultationRequest> {
   const content = firstMessage.trim().slice(0, 10000);
   const { data } = await apiClient.post<ApiRow>('/consultations', {
     subject: topic ? `${DIRECT_CHAT_SUBJECT.vi} · ${TOPIC_LABELS[topic].vi}` : DIRECT_CHAT_SUBJECT.vi,
     requestType: DIRECT_CHAT_TYPE,
     description: content,
+    ...(consultantId ? { consultantId } : {}),
   });
   await apiClient.post(`/consultations/${data.id}/messages`, { content });
   return loadThread(data);
@@ -97,11 +98,20 @@ export async function startDirectChat(firstMessage: string, topic?: Consultation
 export interface AvailableConsultant {
   id: string;
   name: string;
-  title: string;
-  online: boolean;
+  avatarUrl: string;
+  /** Số cuộc tư vấn đang mở cố vấn đang phụ trách. */
+  openThreads: number;
+  lastLoginAt: string;
 }
 
-// TODO(api): GET /api/v1/consultants (BE chưa có API cho ứng viên xem danh sách cố vấn đang trực)
-export function getAvailableConsultants(): Promise<AvailableConsultant[]> {
-  return Promise.resolve(pending<AvailableConsultant[]>([], 'BE chưa có API'));
+/** Cố vấn đang hoạt động, ít việc nhất trước (GET /consultations/consultants). */
+export async function getAvailableConsultants(): Promise<AvailableConsultant[]> {
+  const { data } = await apiClient.get<ApiRow[]>('/consultations/consultants');
+  return data.map((row) => ({
+    id: String(row.id ?? ''),
+    name: String(row.full_name ?? ''),
+    avatarUrl: String(row.avatar_url ?? ''),
+    openThreads: Number(row.open_threads ?? 0),
+    lastLoginAt: String(row.last_login_at ?? ''),
+  }));
 }

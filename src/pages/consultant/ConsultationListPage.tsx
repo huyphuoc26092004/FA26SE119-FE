@@ -13,8 +13,12 @@ import {
   InfoSection,
   MessageStream,
   SearchField,
+  lastActivity,
+  lastOf,
   relativeTime,
+  unreadOf as unreadFor,
 } from '../../components/consultation/chat/ChatKit';
+import { useConsultationEvents } from '../../components/consultation/chat/useConsultationEvents';
 import {
   getConsultantInbox,
   getConsultationRequestById,
@@ -139,8 +143,7 @@ type Copy = typeof copy.vi;
 
 const ME = 'CAREER_CONSULTANT' as const;
 const isClosed = (r: ConsultationRequest) => r.status === 'COMPLETED' || r.status === 'CANCELLED';
-const unreadOf = (r: ConsultationRequest) => r.messages.filter((m) => m.senderRole !== ME && !m.readAt).length;
-const lastActivity = (r: ConsultationRequest) => r.messages[r.messages.length - 1]?.timestamp ?? r.requestedAt;
+const unreadOf = (r: ConsultationRequest) => unreadFor(r, ME);
 const nameOf = (r: ConsultationRequest, c: Copy) => r.candidate.name || `${c.candidate} #${r.id.slice(0, 6)}`;
 
 export default function ConsultationListPage() {
@@ -162,12 +165,16 @@ export default function ConsultationListPage() {
     [inbox.data],
   );
 
-  // Khung chat đang mở được làm mới mỗi 5 giây (backend có SSE nhưng EventSource không gửi được header Authorization).
+  // Tin mới đến qua SSE; polling chỉ là dự phòng khi mất kết nối.
+  const live = useConsultationEvents(selectedId, () => {
+    void queryClient.invalidateQueries({ queryKey: ['consultant-thread', selectedId] });
+    void queryClient.invalidateQueries({ queryKey: ['consultant-inbox'] });
+  });
   const active = useQuery({
     queryKey: ['consultant-thread', selectedId],
     queryFn: () => getConsultationRequestById(selectedId),
     enabled: !!selectedId,
-    refetchInterval: 5_000,
+    refetchInterval: live ? 30_000 : 5_000,
     placeholderData: () => threads.find((t) => t.id === selectedId),
   });
   const thread = active.data ?? null;
@@ -176,7 +183,7 @@ export default function ConsultationListPage() {
   const unreadInThread = thread ? unreadOf(thread) : 0;
   useEffect(() => {
     if (!thread || unreadInThread === 0) return;
-    void markThreadRead(thread, ME).then((n) => {
+    void markThreadRead(thread.id).then((n) => {
       if (n) void queryClient.invalidateQueries({ queryKey: ['consultant-inbox'] });
     });
   }, [thread?.id, unreadInThread]);
@@ -223,7 +230,7 @@ export default function ConsultationListPage() {
     .filter(
       (t) =>
         !q ||
-        [t.candidate.name, t.topicLabel, t.candidate.targetRole, t.messages[t.messages.length - 1]?.content ?? ''].some((v) =>
+        [t.candidate.name, t.topicLabel, t.candidate.targetRole, lastOf(t)?.content ?? ''].some((v) =>
           v.toLowerCase().includes(q),
         ),
     );
@@ -274,7 +281,7 @@ export default function ConsultationListPage() {
           ) : (
             <ul>
               {visible.map((t) => {
-                const last = t.messages[t.messages.length - 1];
+                const last = lastOf(t);
                 const preview = last ? `${last.senderRole === ME ? `${c.you}: ` : ''}${last.content}` : c.noMessage;
                 return (
                   <ConversationItem

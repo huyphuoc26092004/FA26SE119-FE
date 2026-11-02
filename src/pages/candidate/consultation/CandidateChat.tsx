@@ -13,11 +13,16 @@ import {
   FilterTabs,
   MessageStream,
   SearchField,
+  lastActivity,
+  lastOf,
   relativeTime,
+  unreadOf as unreadFor,
 } from '../../../components/consultation/chat/ChatKit';
+import { useConsultationEvents } from '../../../components/consultation/chat/useConsultationEvents';
 import {
   CONSULTATION_TOPIC_LABELS,
   DEFAULT_CONSULTANT,
+  getAvailableConsultants,
   getMyConsultation,
   sendCandidateMessage,
   startDirectChat,
@@ -40,7 +45,11 @@ const copy = {
     startTitle: 'Nhắn cho cố vấn.',
     startLine: 'Hỏi ngắn, trả lời thật.',
     startDesc:
-      'Viết điều bạn đang băn khoăn. Quản trị viên sẽ ghép bạn với một cố vấn phù hợp, cố vấn trả lời ngay trong khung chat này.',
+      'Chọn một cố vấn để nhắn ngay, hoặc để hệ thống ghép cố vấn phù hợp. Cố vấn trả lời ngay trong khung chat này.',
+    advisor: 'Nhắn cho ai?',
+    autoAdvisor: 'Để hệ thống ghép',
+    busy: (n: number) => (n ? `đang tư vấn ${n} người` : 'đang rảnh'),
+    noAdvisors: 'Chưa có cố vấn nào đang hoạt động, hệ thống sẽ ghép khi có.',
     topic: 'Chủ đề (không bắt buộc)',
     anyTopic: 'Chưa rõ',
     firstPlaceholder: 'VD: Em học năm cuối, nên apply Frontend hay Fullstack ạ?',
@@ -67,7 +76,11 @@ const copy = {
     waitingName: 'Waiting for an advisor',
     startTitle: 'Message an advisor.',
     startLine: 'Short questions, real answers.',
-    startDesc: 'Write what is on your mind. An admin pairs you with a fitting advisor, who replies right here.',
+    startDesc: 'Pick an advisor to message now, or let us match you with one. They reply right here.',
+    advisor: 'Who do you want to message?',
+    autoAdvisor: 'Let us match you',
+    busy: (n: number) => (n ? `with ${n} candidates` : 'available'),
+    noAdvisors: 'No advisors are active right now. We will match you when one is.',
     topic: 'Topic (optional)',
     anyTopic: 'Not sure',
     firstPlaceholder: 'e.g. I am in my final year. Should I apply for Frontend or Fullstack?',
@@ -87,8 +100,7 @@ type Filter = keyof typeof copy.vi.filters;
 const ME = 'CANDIDATE' as const;
 const TOPICS = Object.keys(CONSULTATION_TOPIC_LABELS) as ConsultationTopic[];
 const isClosed = (r: ConsultationRequest) => r.status === 'COMPLETED' || r.status === 'CANCELLED';
-const unreadOf = (r: ConsultationRequest) => r.messages.filter((m) => m.senderRole !== ME && !m.readAt).length;
-const lastActivity = (r: ConsultationRequest) => r.messages[r.messages.length - 1]?.timestamp ?? r.requestedAt;
+const unreadOf = (r: ConsultationRequest) => unreadFor(r, ME);
 
 export default function CandidateChat({
   threads,
@@ -111,15 +123,20 @@ export default function CandidateChat({
   const [filter, setFilter] = useState<Filter>('ALL');
   const [topic, setTopic] = useState<ConsultationTopic | ''>('');
   const [first, setFirst] = useState('');
+  const [advisorId, setAdvisorId] = useState('');
+  const advisors = useQuery({ queryKey: ['available-consultants'], queryFn: getAvailableConsultants, staleTime: 60_000 });
   const [mobileList, setMobileList] = useState(!selectedId);
 
   const sorted = [...threads].sort((a, b) => new Date(lastActivity(b)).getTime() - new Date(lastActivity(a)).getTime());
 
+  const live = useConsultationEvents(selectedId, () => {
+    void queryClient.invalidateQueries({ queryKey: ['my-consultation', selectedId] });
+  });
   const active = useQuery({
     queryKey: ['my-consultation', selectedId],
     queryFn: () => getMyConsultation(selectedId),
     enabled: !!selectedId,
-    refetchInterval: 5_000,
+    refetchInterval: live ? 30_000 : 5_000,
     placeholderData: () => threads.find((t) => t.id === selectedId),
   });
   const thread = selectedId ? (active.data ?? null) : null;
@@ -134,17 +151,19 @@ export default function CandidateChat({
   const unreadInThread = thread ? unreadOf(thread) : 0;
   useEffect(() => {
     if (!thread || unreadInThread === 0) return;
-    void markThreadRead(thread, ME).then((n) => {
+    void markThreadRead(thread.id).then((n) => {
       if (n) void queryClient.invalidateQueries({ queryKey: listKey });
     });
   }, [thread?.id, unreadInThread]);
 
   const startMutation = useMutation({
-    mutationFn: () => startDirectChat(first, topic || undefined),
+    mutationFn: () => startDirectChat(first, topic || undefined, advisorId || undefined),
     onSuccess: (created) => {
       sync(created);
       setFirst('');
       setTopic('');
+      setAdvisorId('');
+      void queryClient.invalidateQueries({ queryKey: ['available-consultants'] });
       void queryClient.invalidateQueries({ queryKey: ['consultations'] });
       onSelect(created.id);
     },
@@ -157,7 +176,7 @@ export default function CandidateChat({
   const q = search.trim().toLowerCase();
   const visible = sorted
     .filter((t) => (filter === 'UNREAD' ? unreadOf(t) > 0 : filter === 'OPEN' ? !isClosed(t) : filter === 'CLOSED' ? isClosed(t) : true))
-    .filter((t) => !q || [t.topicLabel, t.consultantName, t.messages[t.messages.length - 1]?.content ?? ''].some((v) => v.toLowerCase().includes(q)));
+    .filter((t) => !q || [t.topicLabel, t.consultantName, lastOf(t)?.content ?? ''].some((v) => v.toLowerCase().includes(q)));
 
   const advisorName = (t: ConsultationRequest) => (t.status === 'PENDING' ? c.waitingName : t.consultantName || DEFAULT_CONSULTANT.name);
   const titleOf = (t: ConsultationRequest) => (t.channel === 'CHAT' ? c.chat : t.topicLabel);
@@ -206,7 +225,7 @@ export default function CandidateChat({
           ) : (
             <ul>
               {visible.map((t) => {
-                const last = t.messages[t.messages.length - 1];
+                const last = lastOf(t);
                 return (
                   <ConversationItem
                     key={t.id}
@@ -250,6 +269,34 @@ export default function CandidateChat({
                 <span className="block text-brand">{c.startLine}</span>
               </p>
               <p className="mt-4 text-[15px] leading-7 text-slate-600">{c.startDesc}</p>
+
+              <p className="mt-7 text-[13px] text-slate-600">{c.advisor}</p>
+              <ul className="mt-2 border-t border-border">
+                {[{ id: '', name: c.autoAdvisor, openThreads: -1 }, ...(advisors.data ?? [])].map((a) => {
+                  const on = advisorId === a.id;
+                  return (
+                    <li key={a.id || 'auto'}>
+                      <button
+                        type="button"
+                        onClick={() => setAdvisorId(a.id)}
+                        aria-pressed={on}
+                        className="flex w-full items-center gap-3 border-b border-border py-2.5 text-left"
+                      >
+                        <span
+                          className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${on ? 'border-ink' : 'border-slate-300'}`}
+                          aria-hidden="true"
+                        >
+                          {on && <span className="h-2 w-2 rounded-full bg-ink" />}
+                        </span>
+                        {a.id ? <Initials name={a.name} size="sm" /> : null}
+                        <span className={`min-w-0 flex-1 truncate text-[15px] ${on ? 'text-ink' : 'text-slate-700'}`}>{a.name}</span>
+                        {a.openThreads >= 0 && <span className="shrink-0 text-[12px] text-slate-500">{c.busy(a.openThreads)}</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {advisors.isSuccess && advisors.data.length === 0 && <p className="mt-2 text-[12px] text-slate-500">{c.noAdvisors}</p>}
 
               <p className="mt-7 text-[13px] text-slate-600">{c.topic}</p>
               <div className="mt-2 flex flex-wrap gap-2">
