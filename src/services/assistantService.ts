@@ -1,7 +1,6 @@
 import type { AiChatMessage, AiChatSession, CandidateProfile, Job, Resume } from '../types/domain';
 import { apiClient } from './apiClient';
 import { pending } from './apiPending';
-import { askGuestAssistant } from './guestService';
 
 interface ConversationResponse {
   id: string;
@@ -22,6 +21,7 @@ interface MessageResponse {
   message_text: string;
   created_at: string;
   sources?: SourceResponse[];
+  feedback?: 'like' | 'dislike' | null;
 }
 
 interface SourceResponse {
@@ -38,13 +38,23 @@ const time = (iso: string) => {
 /** Nguồn học có link được nối vào cuối câu trả lời dạng danh sách markdown. */
 function toMessage(message: MessageResponse, sources: SourceResponse[] = []): AiChatMessage {
   const links = sources
-    .filter((s) => s.source_url)
-    .map((s) => `- [${s.source_label || s.source_url}](${s.source_url})`);
+    .flatMap((source) => {
+      try {
+        const url = new URL(source.source_url ?? '');
+        if (!['http:', 'https:'].includes(url.protocol)) return [];
+        const label = (source.source_label || url.href).replace(/[[\]\\\r\n]/g, ' ');
+        const href = url.href.replace(/\(/g, '%28').replace(/\)/g, '%29');
+        return [`- [${label}](${href})`];
+      } catch {
+        return [];
+      }
+    });
   return {
     id: message.id,
     role: message.sender_type === 'USER' ? 'user' : message.sender_type === 'SYSTEM' ? 'system' : 'assistant',
     content: links.length ? `${message.message_text}\n\n**Nguồn tham khảo**\n${links.join('\n')}` : message.message_text,
     timestamp: time(message.created_at),
+    feedback: message.feedback ?? null,
   };
 }
 
@@ -57,7 +67,7 @@ function toSession(row: ConversationResponse): AiChatSession {
     updatedAt: row.last_message_at ?? row.updated_at,
     activeCvId: row.related_resume_id ?? undefined,
     activeJobId: row.related_job_id ?? undefined,
-    messages: (row.messages ?? []).map((m) => toMessage(m, sources.filter((s) => s.message_id === m.id))),
+    messages: (row.messages ?? []).map((m) => toMessage(m, m.sources ?? sources.filter((s) => s.message_id === m.id))),
   };
 }
 
@@ -72,7 +82,7 @@ export async function getChatSessionById(sessionId: string): Promise<AiChatSessi
   return toSession(data);
 }
 
-/** CV và job gắn lúc tạo là ngữ cảnh backend nạp cho AI trong suốt cuộc trò chuyện. */
+/** CV và job đã gắn được backend nạp làm ngữ cảnh cho AI. */
 export async function createChatSession(params?: {
   title?: string;
   activeCvId?: string;
@@ -87,9 +97,23 @@ export async function createChatSession(params?: {
   return toSession(data);
 }
 
-// TODO(api): BE chưa có API
-export function renameChatSession(sessionId: string, newTitle: string): void {
-  pending(undefined, 'BE chưa có API', sessionId, newTitle);
+export async function renameChatSession(sessionId: string, newTitle: string): Promise<AiChatSession> {
+  const { data } = await apiClient.patch<ConversationResponse>(`/assistant/conversations/${sessionId}`, {
+    title: newTitle.trim().slice(0, 255),
+  });
+  return toSession(data);
+}
+
+/** Omitted fields stay attached; an explicitly undefined field detaches that context. */
+export async function updateChatSessionContext(sessionId: string, context: {
+  activeCvId?: string;
+  activeJobId?: string;
+}): Promise<AiChatSession> {
+  const body: { related_resume_id?: string | null; related_job_id?: string | null } = {};
+  if (Object.hasOwn(context, 'activeCvId')) body.related_resume_id = context.activeCvId ?? null;
+  if (Object.hasOwn(context, 'activeJobId')) body.related_job_id = context.activeJobId ?? null;
+  const { data } = await apiClient.patch<ConversationResponse>(`/assistant/conversations/${sessionId}`, body);
+  return toSession(data);
 }
 
 /** Backend lưu trữ (archive) cuộc trò chuyện, không xoá hẳn lịch sử. */
@@ -97,14 +121,16 @@ export async function deleteChatSession(sessionId: string): Promise<void> {
   await apiClient.delete(`/assistant/conversations/${sessionId}`);
 }
 
-// TODO(api): BE chưa có API
-export function clearSessionMessages(sessionId: string): void {
-  pending(undefined, 'BE chưa có API', sessionId);
+export async function clearSessionMessages(sessionId: string): Promise<void> {
+  await apiClient.delete(`/assistant/conversations/${sessionId}/messages`);
 }
 
-/** Chỉ gửi được đánh giá cho tin trả lời của trợ lý; bỏ đánh giá thì không có API. */
+/** Gửi hoặc bỏ đánh giá cho một tin trả lời đã được lưu của trợ lý. */
 export async function updateMessageFeedback(messageId: string, feedback: 'like' | 'dislike' | null): Promise<void> {
-  if (!feedback) return;
+  if (!feedback) {
+    await apiClient.delete(`/assistant/messages/${messageId}/feedback`);
+    return;
+  }
   await apiClient.post(`/assistant/messages/${messageId}/feedback`, {
     is_helpful: feedback === 'like',
     rating: feedback === 'like' ? 5 : 1,
@@ -118,6 +144,8 @@ export interface AiResponseEngineParams {
   selectedCv?: Resume;
   selectedJob?: Job;
   isVietnamese?: boolean;
+  /** Persisted messages before this send, used if the reply succeeds but reloading fails. */
+  currentSession?: AiChatSession;
   /** Jobs the candidate saved or applied for in Job discovery (newest first). */
   jobActivity?: AssistantJobActivity;
 }
@@ -141,18 +169,33 @@ export async function sendUserMessageAndGetAiReply(params: AiResponseEngineParam
   const { data } = await apiClient.post<MessageResponse>(
     `/assistant/conversations/${params.sessionId}/messages`,
     // Truy xuất RAG cần embedding; chỉ bật khi người dùng hỏi về việc học.
-    { message: params.userText, retrieve: LEARNING_QUESTION.test(params.userText) },
+    {
+      message: params.userText,
+      retrieve: LEARNING_QUESTION.test(params.userText),
+      language: params.isVietnamese === false ? 'en' : 'vi',
+    },
     { timeout: 600_000 },
   );
   const assistantMessage = toMessage(data, data.sources);
-  const updatedSession = await getChatSessionById(params.sessionId);
-  if (!updatedSession) throw new Error('Không đọc lại được cuộc trò chuyện.');
-  const userMessage = [...updatedSession.messages].reverse().find((m) => m.role === 'user') ?? {
-    id: `user-${Date.now()}`,
+  const now = new Date().toISOString();
+  const fallbackUserMessage: AiChatMessage = {
+    id: `user-${crypto.randomUUID()}`,
     role: 'user' as const,
     content: params.userText,
-    timestamp: time(new Date().toISOString()),
+    timestamp: time(now),
   };
+  // A successful POST has already saved both messages. A failed refresh must not
+  // turn that reply into a send error and encourage an accidental duplicate send.
+  const updatedSession = await getChatSessionById(params.sessionId).catch(() => undefined) ?? {
+    id: params.sessionId,
+    title: params.currentSession?.title ?? params.userText.slice(0, 80),
+    createdAt: params.currentSession?.createdAt ?? now,
+    activeCvId: params.currentSession?.activeCvId ?? params.selectedCv?.id,
+    activeJobId: params.currentSession?.activeJobId ?? params.selectedJob?.id,
+    updatedAt: data.created_at || now,
+    messages: [...(params.currentSession?.messages ?? []), fallbackUserMessage, assistantMessage],
+  };
+  const userMessage = [...updatedSession.messages].reverse().find((m) => m.role === 'user') ?? fallbackUserMessage;
   return { userMessage, assistantMessage, updatedSession };
 }
 
@@ -236,7 +279,7 @@ export async function suggestCvText(params: CvSuggestParams, options?: { guest?:
   try {
     const { data } = await apiClient.post<MessageResponse>(
       `/assistant/conversations/${session.id}/messages`,
-      { message: prompt, retrieve: false },
+      { message: lines.join('\n').slice(0, 7900), retrieve: false },
       { timeout: 600_000 },
     );
     const text = cleanSuggestion(data.message_text ?? '', params.field);

@@ -1,4 +1,4 @@
-import type { CrawlSource, CrawlSourceSite } from '../../../types/jobCrawl';
+import type { CrawlSource } from '../../../types/jobCrawl';
 
 export const SITE_LABEL: Record<string, string> = { ITVIEC: 'ITviec', TOPCV: 'TopCV' };
 
@@ -80,12 +80,37 @@ export const ITEM_STATUS: Record<string, { label: string; tone: string }> = {
   DUPLICATE: { label: 'Trùng, đã cập nhật', tone: 'text-slate-600' },
   SEARCH_FETCHED: { label: 'Trang tìm kiếm', tone: 'text-slate-500' },
   SEARCH_FETCH_FAILED: { label: 'Lỗi trang tìm kiếm', tone: 'text-danger' },
+  SEARCH_BLOCKED: { label: 'Nguồn chặn truy cập', tone: 'text-orange-600' },
+  SEARCH_DEFERRED: { label: 'Hoãn tìm kiếm', tone: 'text-slate-500' },
   EXPIRED: { label: 'Hết hạn', tone: 'text-slate-500' },
   WRONG_REGION: { label: 'Sai khu vực', tone: 'text-orange-600' },
   FETCH_FAILED: { label: 'Không tải được', tone: 'text-danger' },
+  SOURCE_BLOCKED: { label: 'Nguồn chặn truy cập', tone: 'text-orange-600' },
+  DEFERRED: { label: 'Tạm hoãn, chưa tải', tone: 'text-slate-500' },
   REJECTED: { label: 'Bị loại', tone: 'text-orange-600' },
   IMPORT_FAILED: { label: 'Lỗi khi nhập', tone: 'text-danger' },
 };
+
+/** Older runs saved rate limits and source challenges under generic fetch failures. */
+export function isSourceBlocked(item: CrawlItem) {
+  return item.status === 'SOURCE_BLOCKED' || item.status === 'SEARCH_BLOCKED'
+    || ((item.status === 'FETCH_FAILED' || item.status === 'SEARCH_FETCH_FAILED')
+      && (item.httpStatus === 429 || /Cloudflare verification|Source access blocked|Source rate limit reached/i.test(item.message ?? '')));
+}
+
+export function crawlItemStatus(item: CrawlItem) {
+  return isSourceBlocked(item)
+    ? ITEM_STATUS.SOURCE_BLOCKED
+    : ITEM_STATUS[item.status] ?? { label: item.status, tone: 'text-slate-600' };
+}
+
+export function crawlItemTitle(item: CrawlItem) {
+  if (item.jobTitle) return item.jobTitle;
+  if (item.status === 'DEFERRED') return 'Chưa tải tin';
+  if (isSourceBlocked(item)) return 'Nguồn chặn truy cập';
+  if (item.status === 'EXPIRED') return 'Tin đã hết hạn';
+  return 'Chưa đọc được tiêu đề';
+}
 
 export function RunStatus({ status }: { status: string }) {
   const s = RUN_STATUS[status] ?? { label: status, tone: 'text-slate-600' };

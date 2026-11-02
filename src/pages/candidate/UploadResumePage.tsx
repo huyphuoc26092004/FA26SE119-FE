@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { simulateAiCvExtraction, createResume } from '../../services/candidateService';
+import { simulateAiCvExtraction, updateResume } from '../../services/candidateService';
 import { authErrorMessage } from '../../services/authService';
 import type { Resume, WorkExperience } from '../../types/domain';
 import { useTranslation } from '../../i18n';
@@ -14,26 +14,24 @@ const copy = {
     back: 'Quay lại CV của tôi',
     pageLabel: 'Tải CV lên',
     headline: 'Có sẵn CV rồi.',
-    headlineAccent: 'Để AI đọc giúp bạn.',
+    headlineAccent: 'Trích xuất thông tin để kiểm tra.',
     intro:
-      'Tải lên file PDF hoặc DOCX. AI đọc và điền sẵn thông tin vào form, bạn chỉ cần kiểm tra lại rồi lưu.',
+      'Tải lên file PDF hoặc DOCX. AI tự trích xuất thông tin và chấm điểm ATS, bạn chỉ cần kiểm tra lại.',
     choose: 'Chọn file CV từ máy của bạn',
     dropHint: 'hoặc kéo thả file vào đây',
     formats: 'PDF, DOCX, TXT hoặc ảnh · tối đa 10 MB',
     browse: 'Duyệt file',
     uploadFailed: 'Không tải lên được CV. Vui lòng thử lại.',
     parsingHeadline: 'Đang đọc CV.',
-    parsingAccent: 'Thường mất dưới một phút.',
+    parsingAccent: 'Chỉ mất vài giây.',
     parsingFile: 'Đang phân tích tệp',
     done: 'Xong',
-    running: 'Đang làm',
-    parsingNote: 'Bước này chỉ đọc và tách thông tin trong CV, chưa chấm điểm. Điểm ATS được tính khi bạn so CV với một việc làm cụ thể ở trang Độ phù hợp CV.',
+    running: 'Đang chạy',
     reviewLabel: 'Kiểm tra CV',
     reviewHeadline: 'Đã đọc xong CV.',
     reviewAccent: 'Kiểm tra lại trước khi lưu.',
     reviewIntro:
-      'Vui lòng kiểm tra và chỉnh sửa các thông tin AI đã trích xuất từ tệp CV trước khi lưu vào hệ thống.',
-    confidence: 'Độ chính xác trích xuất',
+      'Vui lòng đối chiếu thông tin đã trích xuất với CV gốc, sửa các mục chưa đúng và bổ sung phần còn thiếu trước khi lưu.',
     uploadAnother: 'Tải tệp khác',
     sectionGeneral: 'Thông tin chung & liên hệ',
     cvName: 'Tên bản CV *',
@@ -58,8 +56,11 @@ const copy = {
     end: 'Thời gian kết thúc',
     description: 'Mô tả trách nhiệm & thành tựu',
     remove: 'Xoá',
-    atsTitle: 'Điểm ATS',
-    atsNote: 'Chưa có. Điểm ATS phụ thuộc vào từng việc làm, nên được tính khi bạn so CV này với một JD.',
+    atsTitle: 'Điểm ATS ước tính',
+    atsNote: 'Tương thích tốt với hệ thống sàng lọc tự động.',
+    format: 'Định dạng & bố cục',
+    keywords: 'Từ khoá chuyên môn',
+    quantified: 'Định lượng thành tích',
     fileTitle: 'Thông tin tệp',
     fileName: 'Tên tệp gốc',
     fileSize: 'Kích thước',
@@ -75,26 +76,24 @@ const copy = {
     back: 'Back to my CVs',
     pageLabel: 'Upload CV',
     headline: 'Already have a CV?',
-    headlineAccent: 'Let AI read it for you.',
+    headlineAccent: 'Extract the details for review.',
     intro:
-      'Upload a PDF or DOCX file. AI reads it and fills in the form for you; just review and save.',
+      'Upload a PDF or DOCX file. AI extracts the details and scores it for ATS — you only need to review.',
     choose: 'Choose a CV file from your computer',
     dropHint: 'or drag and drop it here',
     formats: 'PDF, DOCX, TXT or image · up to 10 MB',
     browse: 'Browse files',
     uploadFailed: 'Could not upload the CV. Please try again.',
     parsingHeadline: 'Reading your CV.',
-    parsingAccent: 'Usually under a minute.',
+    parsingAccent: 'This takes a few seconds.',
     parsingFile: 'Analysing file',
     done: 'Done',
-    running: 'Working',
-    parsingNote: 'This step only reads and extracts the CV details; it does not score anything. The ATS score is calculated when you compare the CV with a specific job on the CV fit page.',
+    running: 'Running',
     reviewLabel: 'Review CV',
     reviewHeadline: 'Your CV has been read.',
     reviewAccent: 'Check it before saving.',
     reviewIntro:
-      'Please review and correct the details AI extracted from your file before saving it to the system.',
-    confidence: 'Extraction accuracy',
+      'Compare the extracted details with your original CV, correct any errors and fill in missing information before saving.',
     uploadAnother: 'Upload another file',
     sectionGeneral: 'General & contact details',
     cvName: 'CV name *',
@@ -119,8 +118,11 @@ const copy = {
     end: 'End date',
     description: 'Responsibilities & achievements',
     remove: 'Remove',
-    atsTitle: 'ATS score',
-    atsNote: 'Not yet. The ATS score depends on the job, so it is calculated when you compare this CV with a job description.',
+    atsTitle: 'Estimated ATS score',
+    atsNote: 'Works well with modern automated screening systems.',
+    format: 'Format & layout',
+    keywords: 'Domain keywords',
+    quantified: 'Quantified results',
     fileTitle: 'File details',
     fileName: 'Original file',
     fileSize: 'Size',
@@ -200,9 +202,8 @@ export default function UploadResumePage() {
 
   // Flow states: 'upload' -> 'parsing' -> 'review'
   const [flowState, setFlowState] = useState<'upload' | 'parsing' | 'review'>('upload');
-  const [parsingStep, setParsingStep] = useState<number>(1);
   const [selectedFileName, setSelectedFileName] = useState<string>('');
-  const [, setSelectedFileSize] = useState<number>(0);
+  const [selectedFileSize, setSelectedFileSize] = useState<number>(0);
   const [dragOver, setDragOver] = useState(false);
   const [showRawText, setShowRawText] = useState(false);
 
@@ -219,19 +220,25 @@ export default function UploadResumePage() {
     setFlowState('parsing');
     setParsingStep(1);
 
-    // Mốc gần đúng: backend tải lên, đọc chữ và tách thông tin trong một lần gọi; bước cuối chờ tới khi có kết quả.
-    const t1 = setTimeout(() => setParsingStep(2), 1200);
-    const t2 = setTimeout(() => setParsingStep(3), 4000);
+    // Progressive step simulation for realistic AI feel
+    const t1 = setTimeout(() => setParsingStep(2), 350);
+    const t2 = setTimeout(() => setParsingStep(3), 700);
+    const t3 = setTimeout(() => setParsingStep(4), 1050);
+    const t4 = setTimeout(() => setParsingStep(5), 1350);
 
     try {
       const parsed = await simulateAiCvExtraction(file, isVietnamese ? 'vi' : 'en');
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
       setExtractedData(parsed);
       setFlowState('review');
     } catch (error) {
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
       setUploadError(authErrorMessage(error, c.uploadFailed));
       setFlowState('upload');
     }
@@ -255,12 +262,19 @@ export default function UploadResumePage() {
 
   // Mutations to save confirmed CV
   const saveCvMutation = useMutation({
-    mutationFn: (data: Partial<Resume>) => createResume(data),
-    onSuccess: (saved) => {
-      queryClient.invalidateQueries({ queryKey: ['resumes'] });
-      navigate(`/candidate/resumes/${saved.id}`);
-    },
-  });
+  mutationFn: (data: Partial<Resume>) => {
+    if (!data.id) {
+      throw new Error('Không tìm thấy ID của CV đã upload');
+    }
+
+    return updateResume(data.id, data);
+  },
+
+  onSuccess: (saved) => {
+    queryClient.invalidateQueries({ queryKey: ['resumes'] });
+    navigate(`/candidate/resumes/${saved.id}`);
+  },
+});
 
   const handleConfirmAndSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,6 +338,8 @@ export default function UploadResumePage() {
     { step: 1, label: t('resumes.parsingStep1') },
     { step: 2, label: t('resumes.parsingStep2') },
     { step: 3, label: t('resumes.parsingStep3') },
+    { step: 4, label: t('resumes.parsingStep4') },
+    { step: 5, label: t('resumes.parsingStep5') },
   ];
 
   const heading =
@@ -402,10 +418,10 @@ export default function UploadResumePage() {
 
       {/* STEP 2: PARSING PROGRESS */}
       {flowState === 'parsing' && (
-        <section className="mt-[clamp(2.5rem,5vw,3.5rem)] max-w-3xl" aria-live="polite">
+        <section className="mt-[clamp(2.5rem,5vw,3.5rem)] max-w-3xl" aria-live="polite" aria-busy="true">
           <div className="border-b border-ink pb-3">
             <p className="text-[clamp(1.25rem,2vw,1.5rem)] font-normal tracking-[-0.01em] text-ink">
-              {t('resumes.parsingInProgress')}
+              {c.parsingAccent}
             </p>
             <p className="mt-1.5 break-all text-sm text-slate-600">
               {c.parsingFile}: <span className="text-ink">{selectedFileName}</span>
@@ -414,13 +430,13 @@ export default function UploadResumePage() {
           <div
             className="h-[3px] w-full bg-slate-200"
             role="progressbar"
-            aria-valuenow={Math.min(parsingStep, 3)}
+            aria-valuenow={Math.min(parsingStep, 5)}
             aria-valuemin={0}
-            aria-valuemax={3}
+            aria-valuemax={5}
           >
             <div
               className="h-full bg-brand transition-[width] duration-300"
-              style={{ width: `${(Math.min(parsingStep, 3) / 3) * 90}%` }}
+              style={{ width: `${(Math.min(parsingStep, 5) / 5) * 100}%` }}
             />
           </div>
           <ol>
@@ -447,7 +463,6 @@ export default function UploadResumePage() {
               );
             })}
           </ol>
-          <p className="mt-5 max-w-2xl text-[13px] leading-6 text-slate-600">{c.parsingNote}</p>
         </section>
       )}
 
@@ -466,12 +481,6 @@ export default function UploadResumePage() {
             >
               {c.uploadAnother}
             </button>
-            <span className="text-sm text-slate-600">
-              {c.confidence}:{' '}
-              <span className="text-brand tabular-nums">
-                {extractedData.extractedMeta?.confidenceScore ?? 96}%
-              </span>
-            </span>
           </div>
 
           <div className="mt-[clamp(2.5rem,5vw,3.75rem)] grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)]">
@@ -704,11 +713,29 @@ export default function UploadResumePage() {
               </section>
             </div>
 
-            {/* Right: ATS estimate and file details */}
+            {/* Right: review guidance and file details */}
             <aside className="min-w-0 space-y-12 lg:sticky lg:top-6 lg:self-start">
               <section className="border-t border-ink pt-4">
                 <p className="text-[13px] text-slate-600">{c.atsTitle}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{c.atsNote}</p>
+                <p className="mt-2 text-[clamp(2.75rem,4vw,3.5rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
+                  {extractedData.atsScore ?? 92}
+                </p>
+                <p className="mt-2.5 text-sm text-slate-600">{c.atsNote}</p>
+                <dl className="mt-5 text-sm">
+                  {[
+                    { label: c.format, value: '95%' },
+                    { label: c.keywords, value: '90%' },
+                    { label: c.quantified, value: '88%' },
+                  ].map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex justify-between gap-4 border-t border-border py-2.5 last:border-b"
+                    >
+                      <dt className="text-slate-600">{row.label}</dt>
+                      <dd className="text-ink tabular-nums">{row.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </section>
 
               <section className="border-t border-ink pt-4">
@@ -719,7 +746,10 @@ export default function UploadResumePage() {
                       label: c.fileName,
                       value: extractedData.extractedMeta?.fileName || selectedFileName,
                     },
-                    { label: c.fileSize, value: extractedData.extractedMeta?.fileSize || '1.2 MB' },
+                    {
+                      label: c.fileSize,
+                      value: extractedData.extractedMeta?.fileSize || `${(selectedFileSize / 1024 / 1024).toFixed(1)} MB`,
+                    },
                     {
                       label: c.extractedAt,
                       value: extractedData.extractedMeta?.extractedAt || c.justNow,

@@ -8,6 +8,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import type { CandidateProfile, Job, Resume } from '../../../types/domain';
 import { Badge, Button } from '../../../components/ui';
 import { useTranslation } from '../../../i18n';
@@ -28,6 +29,23 @@ export function ContextInspectorModal({
   selectedJob,
 }: ContextInspectorModalProps) {
   const { isVietnamese } = useTranslation();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const missing = isVietnamese ? 'Chưa có thông tin' : 'Not provided';
+  const noScore = isVietnamese ? 'Chưa được đánh giá' : 'Not assessed';
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -37,6 +55,7 @@ export function ContextInspectorModal({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
+      aria-label={isVietnamese ? 'Ngữ cảnh trợ lý nghề nghiệp' : 'Career assistant context'}
     >
       <div
         className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl bg-surface p-6 shadow-sm border border-slate-200"
@@ -50,19 +69,21 @@ export function ContextInspectorModal({
             </div>
             <div>
               <h3 className="text-lg font-medium text-slate-900">
-                {isVietnamese ? 'Dữ liệu ngữ cảnh thời gian thực của AI' : 'Active AI Context Inspector'}
+                {isVietnamese ? 'Ngữ cảnh trợ lý nghề nghiệp' : 'Career assistant context'}
               </h3>
               <p className="text-xs text-slate-500">
                 {isVietnamese
-                  ? 'Toàn bộ thông tin được cung cấp cho mô hình AI để cá nhân hóa câu trả lời'
-                  : 'Contextual snapshot provided to the LLM for hyper-personalized advisory'}
+                  ? 'Hồ sơ đã lưu và CV, việc làm đang gắn với cuộc trò chuyện'
+                  : 'Your saved profile and the resume and job attached to this conversation'}
               </p>
             </div>
           </div>
           <button
+            ref={closeRef}
+            type="button"
             onClick={onClose}
             className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
-            aria-label="Close"
+            aria-label={isVietnamese ? 'Đóng' : 'Close'}
           >
             <X size={20} />
           </button>
@@ -77,23 +98,25 @@ export function ContextInspectorModal({
               <h4 className="text-sm font-medium text-slate-800">
                 {isVietnamese ? '1. Hồ sơ ứng viên cơ bản' : '1. Candidate Profile Context'}
               </h4>
-              <Badge tone="blue">
-                {profile?.completion ? `${profile.completion}% Hoàn thiện` : 'Verified'}
-              </Badge>
+              {profile && (
+                <Badge tone="blue">
+                  {profile.completion}% {isVietnamese ? 'hoàn thiện' : 'complete'}
+                </Badge>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
                 <span className="text-slate-500 block">
                   {isVietnamese ? 'Họ và tên:' : 'Full Name:'}
                 </span>
-                <span className="font-semibold text-slate-800">{profile?.name || 'Alex Morgan'}</span>
+                <span className="font-semibold text-slate-800">{profile?.name || missing}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">
                   {isVietnamese ? 'Vị trí mục tiêu:' : 'Target Position:'}
                 </span>
                 <span className="font-semibold text-slate-800">
-                  {profile?.targetPosition || 'Senior Frontend Engineer'}
+                  {profile?.targetPosition || missing}
                 </span>
               </div>
               <div>
@@ -101,7 +124,7 @@ export function ContextInspectorModal({
                   {isVietnamese ? 'Cấp bậc & Kinh nghiệm:' : 'Seniority Level:'}
                 </span>
                 <span className="font-semibold text-slate-800">
-                  {profile?.experienceLevel || 'Senior (4+ năm)'}
+                  {profile?.experienceLevel || missing}
                 </span>
               </div>
               <div>
@@ -109,7 +132,7 @@ export function ContextInspectorModal({
                   {isVietnamese ? 'Mức lương kỳ vọng:' : 'Salary Expectation:'}
                 </span>
                 <span className="font-semibold text-emerald-700">
-                  {profile?.expectedSalary || '$2,200 – $3,200 / month'}
+                  {profile?.expectedSalary || missing}
                 </span>
               </div>
             </div>
@@ -125,7 +148,7 @@ export function ContextInspectorModal({
                       key={s}
                       className="rounded-md bg-surface px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200 shadow-2xs"
                     >
-                      {s}
+                        {s}
                     </span>
                   ))}
                 </div>
@@ -163,32 +186,34 @@ export function ContextInspectorModal({
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] uppercase font-medium text-slate-400 block">ATS Score</span>
-                    <span className="text-lg font-semibold text-brand-600">{selectedCv.atsScore}/100</span>
+                    <span className="text-sm font-semibold text-brand-600">
+                      {selectedCv.atsBreakdown || selectedCv.atsScore > 0 ? `${selectedCv.atsScore}/100` : noScore}
+                    </span>
                   </div>
                 </div>
 
                 {selectedCv.atsBreakdown && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                     <div className="rounded-lg bg-surface p-2 border border-slate-200">
-                      <span className="text-[10px] text-slate-400 block">Định dạng</span>
+                      <span className="text-[10px] text-slate-400 block">{isVietnamese ? 'Định dạng' : 'Formatting'}</span>
                       <span className="font-medium text-slate-800">
                         {selectedCv.atsBreakdown.formatting}%
                       </span>
                     </div>
                     <div className="rounded-lg bg-surface p-2 border border-slate-200">
-                      <span className="text-[10px] text-slate-400 block">Từ khóa</span>
+                      <span className="text-[10px] text-slate-400 block">{isVietnamese ? 'Từ khóa' : 'Keywords'}</span>
                       <span className="font-medium text-slate-800">
                         {selectedCv.atsBreakdown.keywords}%
                       </span>
                     </div>
                     <div className="rounded-lg bg-surface p-2 border border-slate-200">
-                      <span className="text-[10px] text-slate-400 block">Định lượng</span>
+                      <span className="text-[10px] text-slate-400 block">{isVietnamese ? 'Định lượng' : 'Impact'}</span>
                       <span className="font-medium text-slate-800">
                         {selectedCv.atsBreakdown.impactMetrics}%
                       </span>
                     </div>
                     <div className="rounded-lg bg-surface p-2 border border-slate-200">
-                      <span className="text-[10px] text-slate-400 block">Cấu trúc</span>
+                      <span className="text-[10px] text-slate-400 block">{isVietnamese ? 'Cấu trúc' : 'Structure'}</span>
                       <span className="font-medium text-slate-800">
                         {selectedCv.atsBreakdown.structure}%
                       </span>
@@ -206,9 +231,10 @@ export function ContextInspectorModal({
                         key={s}
                         className="rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700 border border-brand-100"
                       >
-                        {s}
+                      {s}
                       </span>
                     ))}
+                    {!selectedCv.skills?.length && <span className="text-slate-500">{missing}</span>}
                   </div>
                 </div>
               </div>
@@ -254,9 +280,11 @@ export function ContextInspectorModal({
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="font-medium text-emerald-600 block">{selectedJob.salary}</span>
+                    <span className="font-medium text-emerald-600 block">{selectedJob.salary || missing}</span>
                     <span className="text-[10px] text-brand-600 font-semibold mt-1 inline-block bg-brand-50 px-2 py-0.5 rounded-full">
-                      Match: {selectedJob.match}%
+                      {selectedJob.semanticMatch
+                        ? `${isVietnamese ? 'Phù hợp' : 'Match'}: ${selectedJob.semanticMatch.overallScore}%`
+                        : noScore}
                     </span>
                   </div>
                 </div>
@@ -274,6 +302,7 @@ export function ContextInspectorModal({
                         {s}
                       </span>
                     ))}
+                    {!selectedJob.skills.length && <span className="text-slate-500">{missing}</span>}
                   </div>
                 </div>
               </div>
@@ -282,8 +311,8 @@ export function ContextInspectorModal({
                 <AlertCircle size={15} className="text-slate-400 shrink-0" />
                 <span>
                   {isVietnamese
-                    ? 'Chưa gắn công việc mục tiêu. Gắn việc làm sẽ giúp AI dự đoán câu hỏi phỏng vấn và tính điểm tương thích CV–Job Fit.'
-                    : 'No target job attached. Attaching one enables customized interview questions and CV–Job fit calculation.'}
+                    ? 'Chưa gắn công việc mục tiêu. Gắn việc làm để nhận tư vấn dựa trên yêu cầu tuyển dụng.'
+                    : 'No target job attached. Attach one for advice based on its requirements.'}
                 </span>
               </div>
             )}

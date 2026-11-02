@@ -2,7 +2,16 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Bookmark, Check, ChevronDown, RotateCcw, Search, X } from 'lucide-react';
-import { getJobs, getSavedJobIds, getAppliedJobIds } from '../../services/candidateService';
+import {
+  getJobs,
+  getSavedJobIds,
+  getAppliedJobIds,
+  getResumes,
+  getCandidateProfile,
+  getRecommendationResult,
+} from '../../services/candidateService';
+import { authErrorMessage } from '../../services/authService';
+import { useAuthStore } from '../../stores/authStore';
 import {
   markJobApplied,
   openApplySource,
@@ -24,10 +33,14 @@ export default function JobsPage() {
   const locationState = useLocation();
   const queryClient = useQueryClient();
   const isCandidate = locationState.pathname.startsWith('/candidate');
+  const userId = useAuthStore((state) => state.user?.id);
+  const signedIn = useAuthStore((state) => !!state.accessToken);
+  const canRecommend = isCandidate && signedIn;
   const getJobDetailUrl = (id: string) => (isCandidate ? `/candidate/jobs/${id}` : `/jobs/${id}`);
 
   // Tabs: 'all' | 'recommended' | 'saved' | 'applied'
   const [activeTab, setActiveTab] = useState<'all' | 'recommended' | 'saved' | 'applied'>('all');
+  const [chosenRecommendationSource, setChosenRecommendationSource] = useState<string | null>(null);
 
   // Multi-criteria filters
   const [search, setSearch] = useState('');
@@ -50,6 +63,63 @@ export default function JobsPage() {
     queryKey: ['jobs'],
     queryFn: () => getJobs(),
   });
+
+  const { data: resumes = [], isFetched: resumesFetched } = useQuery({
+    queryKey: ['resumes'], queryFn: getResumes, enabled: canRecommend,
+  });
+  const { data: profile, isFetched: profileFetched } = useQuery({
+    queryKey: ['profile'], queryFn: getCandidateProfile, enabled: canRecommend,
+  });
+  const readyResumes = resumes.filter((resume) => resume.status === 'Ready');
+  const primaryResume = readyResumes.find((resume) => resume.isDefault);
+  const defaultRecommendationSource = primaryResume ? `cv:${primaryResume.id}` : 'CAREER_PROFILE';
+  const chosenSourceAvailable = chosenRecommendationSource === 'CAREER_PROFILE'
+    || readyResumes.some((resume) => chosenRecommendationSource === `cv:${resume.id}`);
+  const recommendationSource = chosenSourceAvailable && chosenRecommendationSource
+    ? chosenRecommendationSource : defaultRecommendationSource;
+  const sourceVersion = JSON.stringify({
+    resumes: resumes.map((resume) => [resume.id, resume.updatedAt, resume.status, resume.isDefault]),
+    profile,
+  });
+  const selectedResumeId = recommendationSource.startsWith('cv:') ? recommendationSource.slice(3) : undefined;
+  const selectedResumeName = resumes.find((resume) => resume.id === selectedResumeId)?.name;
+  const {
+    data: recommendationResult,
+    isPending: recommendationsPending,
+    isFetching: recommendationsFetching,
+    isError: recommendationsFailed,
+    error: recommendationError,
+    refetch: refreshRecommendations,
+  } = useQuery({
+    queryKey: ['jobRecommendations', userId, recommendationSource, 'QUICK', sourceVersion],
+    queryFn: () => getRecommendationResult({
+      basis: selectedResumeId ? 'SELECTED_CV' : 'CAREER_PROFILE',
+      resumeId: selectedResumeId,
+    }),
+    enabled: canRecommend && resumesFetched && profileFetched,
+    retry: false,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const recommendationsLoading = canRecommend && (!resumesFetched || !profileFetched || recommendationsPending);
+  const recommendationStatus = (recommendationError as { response?: { status?: number } } | null)?.response?.status;
+  const needsRecommendationData = recommendationStatus !== undefined && [400, 404, 409].includes(recommendationStatus);
+  const recommendationSourceNote = recommendationResult?.basis === 'CAREER_PROFILE'
+    ? 'Dựa trên hồ sơ cá nhân'
+    : recommendationResult?.basis === 'SELECTED_CV'
+      ? `Dựa trên CV${selectedResumeName ? `: ${selectedResumeName}` : ''}`
+      : 'Dựa trên CV';
+  const rankedJobs = useMemo(() => {
+    const catalog = new Map((allJobs ?? []).map((job) => [job.id, job]));
+    return (recommendationResult?.jobs ?? []).map((job) => {
+      const original = catalog.get(job.id);
+      return original ? { ...original, match: job.match, semanticMatch: job.semanticMatch } : job;
+    });
+  }, [allJobs, recommendationResult]);
+  const scoredCatalog = useMemo(() => {
+    const ranked = new Map(rankedJobs.map((job) => [job.id, job]));
+    return (allJobs ?? []).map((job) => ranked.get(job.id) ?? job);
+  }, [allJobs, rankedJobs]);
 
   const { data: savedIds = [] } = useQuery({
     queryKey: ['savedJobs'],
@@ -105,9 +175,8 @@ export default function JobsPage() {
 
   // Filtered and sorted jobs list
   const filteredJobs = useMemo(() => {
-    if (!allJobs) return [];
-
-    let list = allJobs.filter((job) => {
+    const source = activeTab === 'recommended' ? rankedJobs : scoredCatalog;
+    let list = source.filter((job) => {
       // Search
       const searchMatch =
         !search ||
@@ -130,9 +199,7 @@ export default function JobsPage() {
 
       // Active tab
       let tabMatch = true;
-      if (activeTab === 'recommended') {
-        tabMatch = job.match >= 85;
-      } else if (activeTab === 'saved') {
+      if (activeTab === 'saved') {
         tabMatch = savedIds.includes(job.id);
       } else if (activeTab === 'applied') {
         tabMatch = appliedIds.includes(job.id);
@@ -149,15 +216,14 @@ export default function JobsPage() {
     }
 
     return list;
-  }, [allJobs, search, location, experienceLevel, jobType, salaryMin, activeTab, savedIds, appliedIds, sortBy]);
+  }, [rankedJobs, scoredCatalog, search, location, experienceLevel, jobType, salaryMin, activeTab, savedIds, appliedIds, sortBy]);
 
-  const recommendedCount = useMemo(() => {
-    return allJobs?.filter((j) => j.match >= 85).length || 0;
-  }, [allJobs]);
+  const recommendedCount = rankedJobs.length;
+  const recommendedCountLabel = recommendationsLoading ? '…' : recommendationsFailed ? '!' : String(recommendedCount);
 
   const tabs: { key: 'all' | 'recommended' | 'saved' | 'applied'; label: string }[] = [
     { key: 'all', label: `${t('jobs.allJobsTab')} (${allJobs?.length || 0})` },
-    { key: 'recommended', label: `${t('jobs.aiRecommendedTab')} (${recommendedCount})` },
+    { key: 'recommended', label: `${t('jobs.aiRecommendedTab')} (${recommendedCountLabel})` },
     { key: 'saved', label: `${t('jobs.savedJobsTab')} (${savedIds.length})` },
     { key: 'applied', label: `Đã ứng tuyển (${appliedIds.length})` },
   ];
@@ -302,7 +368,7 @@ export default function JobsPage() {
         <header className="mb-[clamp(2rem,4vh,3.5rem)] grid gap-6 border-b border-ink/15 pb-[clamp(1.75rem,3.5vh,3rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-end lg:gap-16">
           <div>
             <p className="mb-3 text-sm font-medium text-brand md:text-[0.9375rem]">
-              AI Matching Engine Active
+              {canRecommend ? 'Việc làm dành cho bạn' : 'Khám phá cơ hội nghề nghiệp'}
             </p>
             <h1 className="text-[clamp(2.5rem,3.8vw,4.25rem)] font-light leading-[1.05] tracking-[-0.03em] text-ink">
               {t('jobs.title')}
@@ -324,23 +390,22 @@ export default function JobsPage() {
           {/* AI recommendation summary */}
           <div className="border-t border-ink/15 pt-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
             <p className="text-base text-ink md:text-[1.0625rem]">
-              Đề xuất việc làm cá nhân hóa bởi AI Agent
+              Đề xuất việc làm dành cho bạn
             </p>
             <p className="mt-1 text-[clamp(2rem,2.6vw,2.75rem)] font-light leading-tight text-brand">
-              {recommendedCount}{' '}
-              <span className="text-base text-slate-600">việc làm phù hợp cao</span>
+              {canRecommend ? recommendedCountLabel : '—'}{' '}
+              <span className="text-base text-slate-600">việc làm được xếp hạng</span>
             </p>
             <p className="mt-2 text-sm leading-6 text-slate-600 md:text-[0.9375rem]">
-              Hệ thống so khớp ngữ nghĩa giữa hồ sơ kỹ năng của bạn và mô tả công việc (JD), ưu tiên
-              các vị trí có tỷ lệ phỏng vấn cao nhất.
+              Những cơ hội phù hợp với kinh nghiệm, kỹ năng và mục tiêu nghề nghiệp của bạn.
             </p>
             <button
               onClick={() => setActiveTab('recommended')}
               className={`${textLink} mt-3 ${activeTab === 'recommended' ? 'text-brand' : ''}`}
             >
               {activeTab === 'recommended'
-                ? 'Đang xem đề xuất AI ✓'
-                : 'Xem các việc làm AI đề xuất →'}
+                ? 'Đang xem đề xuất ✓'
+                : 'Xem việc làm được đề xuất →'}
             </button>
           </div>
         </header>
@@ -355,12 +420,49 @@ export default function JobsPage() {
           </aside>
 
           <section className="@container min-w-0">
+            {canRecommend && (
+              <div className="mb-6 border-b border-ink/15 pb-5">
+                <div className="flex flex-wrap items-end gap-4">
+                  <label className="min-w-0 flex-1 text-sm text-slate-600">
+                    Đề xuất theo
+                    <select
+                      aria-label="Nguồn đề xuất việc làm"
+                      value={recommendationSource}
+                      disabled={!resumesFetched}
+                      onChange={(event) => setChosenRecommendationSource(event.target.value)}
+                      className={fieldBase}
+                    >
+                      {readyResumes.map((resume) => (
+                        <option key={resume.id} value={`cv:${resume.id}`}>CV: {resume.name}</option>
+                      ))}
+                      <option value="CAREER_PROFILE">Hồ sơ cá nhân</option>
+                    </select>
+                  </label>
+                  <button type="button" disabled={recommendationsFetching || !resumesFetched || !profileFetched}
+                    onClick={() => void refreshRecommendations()}
+                    className={`${textLink} inline-flex items-center gap-1.5 pb-3 disabled:opacity-50`}>
+                    <RotateCcw size={14} /> Cập nhật đề xuất
+                  </button>
+                </div>
+                {(recommendationsLoading || recommendationsFetching) && (
+                  <p role="status" className="mt-2 text-sm leading-6 text-slate-600">Đang tìm việc làm phù hợp…</p>
+                )}
+                {recommendationsFailed && activeTab !== 'recommended' && (
+                  <p role="alert" className="mt-2 text-sm text-danger">
+                    Chưa tải được đề xuất. Mở tab Được đề xuất để xem lỗi và thử lại.
+                  </p>
+                )}
+              </div>
+            )}
             {/* Tabs & Sort */}
             <div className="flex flex-col justify-between gap-3 border-b border-ink/40 @4xl:flex-row @4xl:items-end">
-              <div className="flex items-center gap-8 overflow-x-auto">
+              <div role="tablist" aria-label="Danh sách việc làm" className="flex items-center gap-8 overflow-x-auto">
                 {tabs.map((tab) => (
                   <button
                     key={tab.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === tab.key}
                     onClick={() => setActiveTab(tab.key)}
                     className={`-mb-px whitespace-nowrap border-b-2 pb-3.5 text-base transition cursor-pointer md:text-[1.0625rem] ${
                       activeTab === tab.key
@@ -396,10 +498,48 @@ export default function JobsPage() {
             </div>
 
             {/* Main Jobs Listing */}
-            {isPending ? (
+            {activeTab === 'recommended' && !canRecommend ? (
+              <div className="py-20 text-center">
+                <p className="text-lg text-ink">Đăng nhập bằng tài khoản ứng viên để nhận đề xuất theo CV hoặc hồ sơ.</p>
+                <Link to="/login" className={`${textLink} mt-5 inline-block`}>Đăng nhập</Link>
+              </div>
+            ) : activeTab === 'recommended' && recommendationsLoading ? (
+              <div role="status" className="py-20 text-center text-slate-600">
+                Đang tìm việc làm phù hợp…
+              </div>
+            ) : activeTab === 'recommended' && recommendationsFailed ? (
+              <div className="py-10">
+                <ErrorState message={authErrorMessage(recommendationError, 'Không tải được đề xuất việc làm. Vui lòng thử lại.')} />
+                {needsRecommendationData && (
+                  <p className="mt-4 text-sm leading-6 text-slate-600">
+                    Hãy kiểm tra CV đã xác nhận và cập nhật kỹ năng, mức lương kỳ vọng trong hồ sơ cá nhân.
+                  </p>
+                )}
+                <div className="mt-4 flex flex-wrap gap-5">
+                  <button type="button" disabled={recommendationsFetching} onClick={() => void refreshRecommendations()} className={textLink}>
+                    Thử lại
+                  </button>
+                  <Link to="/candidate/resumes" className={textLink}>Kiểm tra CV</Link>
+                  <Link to="/candidate/profile/edit" className={textLink}>Cập nhật hồ sơ cá nhân</Link>
+                </div>
+              </div>
+            ) : activeTab !== 'recommended' && isPending ? (
               <Loading />
-            ) : isError ? (
+            ) : activeTab !== 'recommended' && isError ? (
               <ErrorState />
+            ) : activeTab === 'recommended' && !rankedJobs.length ? (
+              <div className="py-20 text-center">
+                <h3 className="text-2xl font-light text-ink">Chưa có đề xuất từ nguồn dữ liệu đã chọn.</h3>
+                <p className="mx-auto mt-3 max-w-lg text-base leading-7 text-slate-600">
+                  {recommendationResult?.salaryFilter?.active && recommendationResult.salaryFilter.eligibleJobs === 0
+                    ? 'Các việc làm hiện tại chưa đáp ứng điều kiện lương kỳ vọng trong hồ sơ. Bạn có thể cập nhật mức lương hoặc xem tất cả cơ hội.'
+                    : 'Thử chọn CV khác hoặc hồ sơ cá nhân. Kiểm tra dữ liệu đã xác nhận và mức lương kỳ vọng của bạn.'}
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-5">
+                  <button type="button" onClick={() => setActiveTab('all')} className={textLink}>Xem tất cả cơ hội</button>
+                  <Link to="/candidate/profile/edit" className={textLink}>Cập nhật hồ sơ cá nhân</Link>
+                </div>
+              </div>
             ) : !filteredJobs.length ? (
               <div className="py-24 text-center">
                 <h3 className="text-2xl font-light text-ink">{t('jobs.noJobsMatch')}</h3>
@@ -421,6 +561,8 @@ export default function JobsPage() {
                 {filteredJobs.map((job) => {
                   const isSaved = savedIds.includes(job.id);
                   const isApplied = appliedIds.includes(job.id);
+                  const quickMatch = job.semanticMatch?.method === 'SKILL_OVERLAP_QUICK';
+                  const displayedScore = quickMatch ? job.semanticMatch?.skillCoverageScore ?? job.match : job.match;
                   const externalSource = job.externalSource || {
                     sourceName: 'ITviec',
                     sourceUrl: 'https://itviec.com',
@@ -464,16 +606,26 @@ export default function JobsPage() {
 
                         {/* Match */}
                         <div>
-                          <p className="text-[clamp(2rem,2.4vw,2.75rem)] font-light leading-none text-brand">
-                            {job.match}%
-                          </p>
-                          <div className="mt-3 h-0.5 w-full bg-ink/10">
-                            <div className="h-full bg-brand" style={{ width: `${job.match}%` }} />
-                          </div>
-                          <p className="mt-2 text-sm text-slate-600">
-                            Độ phù hợp ·{' '}
-                            {job.match >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng cao'}
-                          </p>
+                          {job.semanticMatch ? (
+                            <>
+                              <p className="text-[clamp(2rem,2.4vw,2.75rem)] font-light leading-none text-brand">{displayedScore}%</p>
+                              <div className="mt-3 h-0.5 w-full bg-ink/10">
+                                <div className="h-full bg-brand" style={{ width: `${displayedScore}%` }} />
+                              </div>
+                              <p className="mt-2 text-sm text-slate-600">
+                                {quickMatch ? 'Khớp kỹ năng' : <>Độ phù hợp · {job.match >= 85 ? 'Rất phù hợp'
+                                  : job.match >= 70 ? 'Phù hợp tốt' : job.match >= 50 ? 'Phù hợp một phần' : 'Cần bổ sung kỹ năng'}</>}
+                              </p>
+                              {quickMatch && job.semanticMatch.recommendation && (
+                                <p className="mt-2 text-xs leading-5 text-slate-500">{job.semanticMatch.recommendation}</p>
+                              )}
+                              {quickMatch && job.semanticMatch.experienceStatus === 'UNVERIFIED' && (
+                                <p className="mt-2 text-xs leading-5 text-slate-500">Chưa đủ thông tin để đánh giá kinh nghiệm.</p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-sm text-slate-500">Chưa đánh giá</p>
+                          )}
                         </div>
                       </div>
 
@@ -520,6 +672,9 @@ export default function JobsPage() {
                           </button>
                         )}
                       </div>
+                      {activeTab === 'recommended' && job.semanticMatch && (
+                        <p className="mt-4 text-xs text-slate-500">{recommendationSourceNote}</p>
+                      )}
                     </li>
                   );
                 })}
@@ -554,16 +709,16 @@ export default function JobsPage() {
                   <span className="text-ink">
                     {redirectJob.externalSource?.sourceName || 'ITviec'}
                   </span>
-                  <span className="mx-2">·</span>
-                  <span className="text-brand">{redirectJob.match}% AI Match</span>
+                  {redirectJob.semanticMatch && <>
+                    <span className="mx-2">·</span>
+                    <span className="text-brand">{redirectJob.match}% phù hợp</span>
+                  </>}
                 </p>
               </div>
 
               <p className="mt-5 text-sm leading-6 text-slate-600">
-                <span className="text-brand">Mẹo ứng tuyển từ AI:</span> Hồ sơ của bạn đạt{' '}
-                <strong className="font-medium text-ink">{redirectJob.match}%</strong> độ tương
-                thích với vị trí này. Hãy chuẩn bị sẵn bản CV vừa tối ưu ATS để nộp kèm trực tiếp
-                trên website của doanh nghiệp!
+                Hãy kiểm tra yêu cầu tuyển dụng và chuẩn bị bản CV phù hợp để nộp trực tiếp
+                trên website của doanh nghiệp.
               </p>
 
               <div className="mt-7 flex items-center justify-end gap-6">

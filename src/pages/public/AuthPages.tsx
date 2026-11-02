@@ -7,6 +7,7 @@ import { CheckCircle2, ArrowRight, RefreshCw, AlertCircle, Check } from 'lucide-
 import { useAuthStore } from '../../stores/authStore';
 import { useTranslation } from '../../i18n';
 import { CcvLogo } from '../../components/brand/CcvLogo';
+import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 
 // ==========================================
 // SHARED AUTH PRESENTATIONAL COMPONENTS
@@ -205,18 +206,6 @@ function PrimaryButton({
   );
 }
 
-function OutlineButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="btn btn-o btn-m min-h-[3.25rem] w-full md:min-h-14 md:text-[1.0625rem]!"
-    >
-      {label}
-    </button>
-  );
-}
-
 function OrDivider({ label }: { label: string }) {
   return (
     <div className="my-[clamp(1.25rem,3vh,2rem)] flex items-center gap-4 text-sm text-slate-500">
@@ -254,6 +243,44 @@ function FooterLinks({ children }: { children: React.ReactNode }) {
 
 const footerLinkClass = 'text-ink underline underline-offset-4 transition-colors hover:text-brand';
 
+function useGoogleAuth(setError: (message: string) => void) {
+  const navigate = useNavigate();
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const inFlight = useRef(false);
+
+  const handleCredential = async (idToken: string) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setIsSigningIn(true);
+    setError('');
+    try {
+      const result = await loginWithGoogle(idToken);
+      if (result.status === 'verification-required') {
+        const params = new URLSearchParams({
+          email: result.email,
+          provider: 'google',
+          sent: result.verificationCodeSent ? '1' : '0',
+        });
+        if (result.developmentCode) params.set('code', result.developmentCode);
+        navigate(`/verify-otp?${params}`, { replace: true });
+        return;
+      }
+      const role = useAuthStore.getState().role;
+      navigate(role === 'ADMIN' ? '/admin' : role === 'CAREER_CONSULTANT' ? '/consultant' : '/candidate', {
+        replace: true,
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Đăng nhập Google không thành công.');
+    } finally {
+      inFlight.current = false;
+      setIsSigningIn(false);
+    }
+  };
+
+  return { handleCredential, isSigningIn };
+}
+
 // ==========================================
 // 1. LOGIN PAGE
 // ==========================================
@@ -273,9 +300,11 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { t, isVietnamese } = useTranslation();
+  const google = useGoogleAuth(setError);
 
   const registeredEmail = searchParams.get('registered') || searchParams.get('email');
   const resetSuccess = searchParams.get('reset') === 'success';
+  const googleVerified = searchParams.get('verified') === 'google';
 
   const {
     register,
@@ -291,6 +320,7 @@ export function LoginPage() {
   });
 
   const submit = async (data: LoginForm) => {
+    if (google.isSigningIn) return;
     setError('');
     try {
       await login(data.email, data.password);
@@ -302,11 +332,6 @@ export function LoginPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : t('auth.loginFailed', 'Đăng nhập không thành công'));
     }
-  };
-
-  // TODO(api): POST /api/v1/auth/google cần Google ID token (chưa có Google SDK).
-  const handleGoogleLogin = () => {
-    setError(isVietnamese ? 'Đăng nhập Google chưa được nối với backend.' : 'Google sign-in is not connected to the backend yet.');
   };
 
   return (
@@ -330,7 +355,20 @@ export function LoginPage() {
         </div>
       )}
 
-      <OutlineButton label={isVietnamese ? 'Đăng nhập bằng Google' : 'Sign in with Google'} onClick={handleGoogleLogin} />
+      {googleVerified && (
+        <div className="mb-6">
+          <SuccessNote title={isVietnamese ? 'Email đã được xác minh.' : 'Email verified.'}>
+            {isVietnamese ? 'Bấm đăng nhập bằng Google để tiếp tục.' : 'Sign in with Google to continue.'}
+          </SuccessNote>
+        </div>
+      )}
+      <GoogleSignInButton
+        variant="signin"
+        language={isVietnamese ? 'vi' : 'en'}
+        disabled={isSubmitting || google.isSigningIn}
+        onCredential={google.handleCredential}
+        onError={setError}
+      />
       <OrDivider label={isVietnamese ? 'hoặc dùng email' : 'or use email'} />
 
       <form onSubmit={handleSubmit(submit)} className="space-y-6">
@@ -372,6 +410,7 @@ export function LoginPage() {
 
         <PrimaryButton
           loading={isSubmitting}
+          disabled={isSubmitting || google.isSigningIn}
           loadingLabel={isVietnamese ? 'Đang đăng nhập…' : 'Signing in…'}
           label={isVietnamese ? 'Đăng nhập' : 'Sign in'}
         />
@@ -418,6 +457,8 @@ export function RegisterPage() {
   const [registrationRole, setRegistrationRole] = useState<'CANDIDATE' | 'CAREER_CONSULTANT'>('CANDIDATE');
   const { isVietnamese } = useTranslation();
 
+  const google = useGoogleAuth(setError);
+
   const {
     register,
     handleSubmit,
@@ -434,6 +475,7 @@ export function RegisterPage() {
   });
 
   const submit = async (data: RegisterForm) => {
+    if (google.isSigningIn) return;
     setError('');
     try {
       const res = await registerAction(data.name, data.email, data.password, registrationRole);
@@ -441,11 +483,6 @@ export function RegisterPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Đăng ký thất bại. Vui lòng thử lại.');
     }
-  };
-
-  // TODO(api): POST /api/v1/auth/google cần Google ID token (chưa có Google SDK).
-  const handleGoogleSignup = () => {
-    setError(isVietnamese ? 'Đăng ký bằng Google chưa được nối với backend.' : 'Google sign-up is not connected to the backend yet.');
   };
 
   return (
@@ -457,7 +494,16 @@ export function RegisterPage() {
         description={isVietnamese ? 'Chọn vai trò của bạn và bắt đầu trong vài phút.' : 'Choose your role and get started in minutes.'}
       />
 
-      <OutlineButton label={isVietnamese ? 'Đăng ký bằng Google' : 'Sign up with Google'} onClick={handleGoogleSignup} />
+      <GoogleSignInButton
+        variant="signup"
+        language={isVietnamese ? 'vi' : 'en'}
+        disabled={isSubmitting || google.isSigningIn}
+        onCredential={google.handleCredential}
+        onError={setError}
+      />
+      <p className="mt-2 text-sm text-slate-600">
+        {isVietnamese ? 'Đăng ký bằng Google tạo tài khoản ứng viên.' : 'Google sign-up creates a candidate account.'}
+      </p>
       <OrDivider label={isVietnamese ? 'hoặc dùng email' : 'or use email'} />
 
       <div className="mb-6 border-b border-[#aeb7b0]">
@@ -536,6 +582,7 @@ export function RegisterPage() {
 
         <PrimaryButton
           loading={isSubmitting}
+          disabled={isSubmitting || google.isSigningIn}
           loadingLabel={isVietnamese ? 'Đang xử lý…' : 'Creating account…'}
           label={isVietnamese ? 'Tạo tài khoản' : 'Create account'}
         />
@@ -564,6 +611,8 @@ export function VerifyOtpPage() {
   const resendOtpAction = useAuthStore((s) => s.resendOtp);
   const { t, isVietnamese } = useTranslation();
 
+  const isGoogleVerification = searchParams.get('provider') === 'google';
+  const initiallySent = !isGoogleVerification || searchParams.get('sent') !== '0';
   const emailParam = searchParams.get('email') || useAuthStore.getState().pendingVerificationEmail || 'alex@example.com';
 
   const [email, setEmail] = useState(emailParam);
@@ -578,8 +627,10 @@ export function VerifyOtpPage() {
   );
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const [countdown, setCountdown] = useState(60);
-  const [canResend, setCanResend] = useState(false);
+  const [countdown, setCountdown] = useState(initiallySent ? 60 : 0);
+  const [canResend, setCanResend] = useState(!initiallySent);
+  const [codeSent, setCodeSent] = useState(initiallySent);
+  const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState('');
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -650,7 +701,10 @@ export function VerifyOtpPage() {
         const { isAuthenticated, role } = useAuthStore.getState();
         if (!isAuthenticated) {
           // Real backend: verification does not sign in, so continue at the login form.
-          navigate(`/login?registered=${encodeURIComponent(email)}`, { replace: true });
+          const params = isGoogleVerification
+            ? new URLSearchParams({ email, verified: 'google' })
+            : new URLSearchParams({ registered: email });
+          navigate(`/login?${params}`, { replace: true });
           return;
         }
         navigate(
@@ -667,16 +721,21 @@ export function VerifyOtpPage() {
 
   // Resend OTP
   const handleResend = async () => {
-    if (!canResend) return;
+    if (!canResend || isResending) return;
+    setError('');
+    setIsResending(true);
     try {
       const code = await resendOtpAction(email);
       if (/^[0-9]{6}$/.test(code)) setOtpDigits(code.split(''));
       setCountdown(60);
       setCanResend(false);
+      setCodeSent(true);
       setResendStatus(t('auth.otpResentNotice', 'Mã OTP mới đã được gửi thành công!'));
       setTimeout(() => setResendStatus(''), 4000);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -686,11 +745,17 @@ export function VerifyOtpPage() {
         eyebrow={isVietnamese ? 'Xác thực email' : 'Verify email'}
         title={t('auth.otpTitle', 'Xác thực tài khoản (OTP)')}
         accent={isVietnamese ? 'Chỉ còn một bước.' : 'One step left.'}
-        description={t('auth.otpSubtitle', 'Nhập mã xác thực 6 chữ số vừa được gửi đến email của bạn để kích hoạt tài khoản.')}
+        description={codeSent
+          ? t('auth.otpSubtitle', 'Nhập mã xác thực 6 chữ số vừa được gửi đến email của bạn để kích hoạt tài khoản.')
+          : isVietnamese
+            ? 'Email này cần được xác minh trước khi đăng nhập bằng Google. Bấm gửi mã để tiếp tục.'
+            : 'Verify this email before signing in with Google. Send a verification code to continue.'}
       />
 
       <div className="mb-8 border-y border-border py-4 text-base">
-        <p className="text-sm text-slate-600 md:text-[0.9375rem]">{t('auth.otpSentTo', 'Mã xác thực đã được gửi tới:')}</p>
+        <p className="text-sm text-slate-600 md:text-[0.9375rem]">
+          {codeSent ? t('auth.otpSentTo', 'Mã xác thực đã được gửi tới:') : isVietnamese ? 'Email cần xác minh:' : 'Email to verify:'}
+        </p>
         {isEditingEmail ? (
           <div className="mt-2 flex items-end gap-4">
             <input type="email" value={newEmailInput} onChange={(e) => setNewEmailInput(e.target.value)} className={inputClass} />
@@ -708,9 +773,11 @@ export function VerifyOtpPage() {
         ) : (
           <div className="mt-1 flex flex-wrap items-baseline gap-x-3">
             <span className="break-all text-lg text-ink">{email}</span>
-            <button type="button" onClick={() => setIsEditingEmail(true)} className="text-base text-ink underline underline-offset-4 hover:text-brand">
-              {t('auth.otpChangeEmail', 'Đổi')}
-            </button>
+            {!isGoogleVerification && (
+              <button type="button" onClick={() => setIsEditingEmail(true)} className="text-base text-ink underline underline-offset-4 hover:text-brand">
+                {t('auth.otpChangeEmail', 'Đổi')}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -745,9 +812,11 @@ export function VerifyOtpPage() {
 
       <div className="mb-6 text-base">
         {canResend ? (
-          <button type="button" onClick={handleResend} className="inline-flex items-center gap-2 text-ink underline underline-offset-4 hover:text-brand">
+          <button type="button" onClick={handleResend} disabled={isResending || isSuccess} className="inline-flex items-center gap-2 text-ink underline underline-offset-4 hover:text-brand disabled:opacity-60">
             <RefreshCw className="h-4 w-4" />
-            {t('auth.otpResendNow', 'Gửi lại mã OTP')}
+            {isResending
+              ? isVietnamese ? 'Đang gửi…' : 'Sending…'
+              : codeSent ? t('auth.otpResendNow', 'Gửi lại mã OTP') : isVietnamese ? 'Gửi mã xác minh' : 'Send verification code'}
           </button>
         ) : (
           <p className="text-slate-600">

@@ -225,6 +225,11 @@ export interface ResumeAnalysisResult {
 export interface SemanticMatchingDetail {
   /** ID dòng `job_match_results` ở backend, dùng để gửi phản hồi. */
   matchResultId?: string;
+  method?: string;
+  skillCoverageScore?: number;
+  experienceStatus?: 'MATCHED' | 'INSUFFICIENT' | 'UNVERIFIED' | 'NOT_SPECIFIED';
+  candidateYears?: number;
+  requiredYears?: number;
   overallScore: number;
   skillsScore: number;
   experienceScore: number;

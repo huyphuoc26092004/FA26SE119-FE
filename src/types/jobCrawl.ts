@@ -5,11 +5,15 @@ export type CrawlRunStatus = 'RUNNING' | 'COMPLETED' | 'PARTIAL' | 'FAILED';
 export type CrawlItemStatus =
   | 'SEARCH_FETCHED'
   | 'SEARCH_FETCH_FAILED'
+  | 'SEARCH_BLOCKED'
+  | 'SEARCH_DEFERRED'
   | 'IMPORTED'
   | 'DUPLICATE'
   | 'EXPIRED'
   | 'WRONG_REGION'
   | 'FETCH_FAILED'
+  | 'SOURCE_BLOCKED'
+  | 'DEFERRED'
   | 'REJECTED'
   | 'IMPORT_FAILED';
 
