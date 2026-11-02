@@ -239,7 +239,9 @@ const copy = {
   },
 };
 
-type Copy = typeof copy.vi;
+export type Copy = typeof copy.vi;
+/** Câu chữ dùng chung với trang Lộ trình học (PathView, ErrorLine…). */
+export const skillPathCopy = copy;
 
 const textLink =
   'inline-flex items-center gap-1 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer disabled:pointer-events-none disabled:opacity-40';
@@ -255,7 +257,7 @@ function formatDay(iso: string | undefined, vi: boolean) {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(vi ? 'vi-VN' : 'en-GB');
 }
 
-function Section({ id, index, title, note, action, children }: { id: string; index: string; title: string; note?: string; action?: ReactNode; children: ReactNode }) {
+export function Section({ id, index, title, note, action, children }: { id: string; index: string; title: string; note?: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section id={id} className="mt-[clamp(3rem,6vw,4.5rem)] scroll-mt-6">
       <div className="border-b border-ink pb-3">
@@ -273,7 +275,7 @@ function Section({ id, index, title, note, action, children }: { id: string; ind
   );
 }
 
-function Working({ text }: { text: string }) {
+export function Working({ text }: { text: string }) {
   return (
     <p role="status" className="flex items-center gap-2 border-b border-border py-6 text-[15px] text-ink">
       <Loader2 size={15} className="animate-spin text-brand" aria-hidden="true" />
@@ -282,7 +284,7 @@ function Working({ text }: { text: string }) {
   );
 }
 
-function ErrorLine({ error, c }: { error: unknown; c: Copy }) {
+export function ErrorLine({ error, c }: { error: unknown; c: Copy }) {
   if (!error) return null;
   // Bước gọi AI dài: tách lỗi hết giờ chờ và lỗi mất kết nối giữa chừng cho dễ tìm nguyên nhân.
   // 502 = AI trả kết quả không hợp lệ (câu hỏi trùng, thiếu trích dẫn JD…), câu chữ gốc của BE là tiếng Anh kỹ thuật.
@@ -298,7 +300,7 @@ function ErrorLine({ error, c }: { error: unknown; c: Copy }) {
   return <p className="mt-3 text-[13px] leading-6 text-danger">{message}</p>;
 }
 
-function Muted({ children }: { children: ReactNode }) {
+export function Muted({ children }: { children: ReactNode }) {
   return <p className="border-b border-border py-6 text-[15px] leading-7 text-slate-500">{children}</p>;
 }
 
@@ -541,7 +543,7 @@ function NodeRow({ node, index, path, c, onStatus, busy }: { node: LearningPathN
 
 const hoursLeftOf = (path: LearningPath) => path.nodes.filter((n) => n.status !== 'completed').reduce((sum, n) => sum + n.hours, 0);
 
-function PathView({ path, c, busy, onStatus }: { path: LearningPath; c: Copy; busy: boolean; onStatus: (nodeId: string, status: LearningPathNode['status']) => void }) {
+export function PathView({ path, c, busy, onStatus }: { path: LearningPath; c: Copy; busy: boolean; onStatus: (nodeId: string, status: LearningPathNode['status']) => void }) {
   if (path.nodes.length === 0) return <p className="border-b border-border py-6 text-[15px] leading-7 text-slate-700">{c.pathEmpty}</p>;
   const doneNodes = path.nodes.filter((n) => n.status === 'completed').length;
   return (

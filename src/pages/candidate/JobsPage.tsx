@@ -483,9 +483,14 @@ export default function JobsPage() {
                           Chi tiết
                         </Link>
                         {isCandidate && (
-                          <Link to={`/candidate/cv-job-fit?jobId=${job.id}`} className={textLink}>
-                            Xem độ phù hợp
-                          </Link>
+                          <>
+                            <Link to={`/candidate/cv-job-fit?jobId=${job.id}`} className={textLink}>
+                              Xem độ phù hợp
+                            </Link>
+                            <Link to={`/candidate/learning-path?jobId=${job.id}&build=1`} className={textLink}>
+                              Tạo lộ trình học
+                            </Link>
+                          </>
                         )}
                         <button
                           type="button"

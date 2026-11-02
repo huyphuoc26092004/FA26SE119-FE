@@ -24,7 +24,7 @@ import {
   updateUserRole,
   resetUserPassword,
   deleteUser,
-  ALL_SYSTEM_PERMISSIONS,
+  permissionsForRole,
   getDefaultPermissionsForRole,
 } from '../../services/userService';
 import type { AdminManagedUser, UpdateUserPayload } from '../../types/userManagement';
@@ -331,7 +331,10 @@ export default function UserDetailsPage() {
   const tokenUsagePercent = Math.min(100, Math.round((user.tokensUsedThisMonth / user.tokenMonthlyQuota) * 100));
   const statusTone = user.status === 'ACTIVE' ? 'text-brand' : user.status === 'SUSPENDED' ? 'text-danger' : 'text-orange-600';
   const lastIp = user.recentActivities[0]?.ipAddress ?? '113.161.72.45';
-  const sorted = [...ALL_SYSTEM_PERMISSIONS].sort(
+  // Chỉ quyền của vai trò hiện tại.
+  const rolePermissions = permissionsForRole(user.role);
+  const grantedCount = rolePermissions.filter((p) => user.permissions?.includes(p.key)).length;
+  const sorted = [...rolePermissions].sort(
     (a, b) => Number(user.permissions?.includes(b.key)) - Number(user.permissions?.includes(a.key))
   );
 
@@ -441,7 +444,7 @@ export default function UserDetailsPage() {
         <SectionHead
           id="user-permissions"
           index="03"
-          title={c.s3(user.permissions?.length || 0)}
+          title={c.s3(grantedCount)}
           action={
             <button type="button" onClick={openRoleModal} className={`${textLink} text-[13px] text-ink`}>
               {c.editRole}

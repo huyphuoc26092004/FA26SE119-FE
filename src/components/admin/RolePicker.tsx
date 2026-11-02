@@ -1,5 +1,5 @@
 import { CheckBox, textLink } from './AdminKit';
-import { ALL_SYSTEM_PERMISSIONS } from '../../services/userService';
+import { permissionsForRole } from '../../services/userService';
 import type { UserRole } from '../../types/domain';
 
 const ROLE_LABEL: Record<'vi' | 'en', Record<UserRole, string>> = {
@@ -45,6 +45,9 @@ export function RolePicker({
   onPermissions: (p: string[]) => void;
 }) {
   const c = copy[lang];
+  // Chỉ quyền của vai trò đang chọn; quyền cũ không thuộc vai trò này không được tính.
+  const available = permissionsForRole(role);
+  const granted = permissions.filter((k) => available.some((p) => p.key === k));
   return (
     <div className="space-y-8">
       <div>
@@ -75,24 +78,24 @@ export function RolePicker({
       </div>
       <div>
         <div className="flex items-baseline justify-between border-b border-ink pb-2">
-          <p className="text-[15px] font-medium text-ink">{c.step2(permissions.length, ALL_SYSTEM_PERMISSIONS.length)}</p>
+          <p className="text-[15px] font-medium text-ink">{c.step2(granted.length, available.length)}</p>
           <button
             type="button"
-            onClick={() => onPermissions(ALL_SYSTEM_PERMISSIONS.map((p) => p.key))}
+            onClick={() => onPermissions(available.map((p) => p.key))}
             className={`${textLink} text-[13px] text-slate-600`}
           >
             {c.selectAll}
           </button>
         </div>
         <div className="grid gap-x-8 sm:grid-cols-2">
-          {ALL_SYSTEM_PERMISSIONS.map((p) => {
-            const isChecked = permissions.includes(p.key);
+          {available.map((p) => {
+            const isChecked = granted.includes(p.key);
             return (
               <CheckBox
                 key={p.key}
                 checked={isChecked}
                 onChange={(checked) =>
-                  onPermissions(checked ? [...permissions, p.key] : permissions.filter((k) => k !== p.key))
+                  onPermissions(checked ? [...granted, p.key] : granted.filter((k) => k !== p.key))
                 }
                 label={p.name}
                 description={p.description}

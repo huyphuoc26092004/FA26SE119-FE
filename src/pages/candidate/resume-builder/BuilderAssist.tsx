@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { suggestCvText, type CvSuggestParams } from '../../../services/assistantService';
 import { authErrorMessage } from '../../../services/authService';
+import { guestErrorMessage } from '../../../services/guestService';
 import type { StepTips } from './builderTips';
 
 type Lang = 'vi' | 'en';
@@ -98,16 +99,16 @@ export function StepTipsPanel({ tips, checks, lang }: { tips: StepTips; checks: 
  * Nút "Gợi ý bằng AI" cho một ô văn bản: hỏi trợ lý, hiện bản gợi ý,
  * người dùng bấm "Dùng" thì thay vào ô.
  */
-export function AiSuggest({ params, onApply, lang }: { params: () => CvSuggestParams; onApply: (text: string) => void; lang: Lang }) {
+export function AiSuggest({ params, onApply, lang, guest = false }: { params: () => CvSuggestParams; onApply: (text: string) => void; lang: Lang; guest?: boolean }) {
   const c = copy[lang];
   const [state, setState] = useState<{ status: 'idle' | 'loading' | 'done' | 'error'; text?: string }>({ status: 'idle' });
 
   const run = async () => {
     setState({ status: 'loading' });
     try {
-      setState({ status: 'done', text: await suggestCvText(params()) });
+      setState({ status: 'done', text: await suggestCvText(params(), { guest }) });
     } catch (error) {
-      setState({ status: 'error', text: authErrorMessage(error, c.aiError) });
+      setState({ status: 'error', text: guest ? guestErrorMessage(error, lang === 'vi') : authErrorMessage(error, c.aiError) });
     }
   };
 

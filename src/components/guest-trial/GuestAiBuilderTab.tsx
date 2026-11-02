@@ -56,8 +56,8 @@ export function GuestAiBuilderTab({ initialData, onOpenSaveModal }: GuestAiBuild
           </h3>
           <p className="mt-2 max-w-3xl text-base leading-relaxed text-slate-600">
             {isVietnamese
-              ? 'Điền từng phần: thông tin cá nhân, tóm tắt, kinh nghiệm, học vấn, kỹ năng, dự án và chứng chỉ. CV hiện ngay bên cạnh. Bản dùng thử có 1 mẫu và chỉ xem trước; đăng ký để lưu, dùng thêm mẫu và tải PDF.'
-              : 'Fill in each part: personal details, summary, experience, education, skills, projects and certificates, with a live preview. The trial has 1 template and is preview only; sign up to save, use more templates and download a PDF.'}
+              ? 'Điền từng phần: thông tin cá nhân, tóm tắt, kinh nghiệm, học vấn, kỹ năng, dự án và chứng chỉ. CV hiện ngay bên cạnh, và bấm “Gợi ý bằng AI” để AI viết giúp phần tóm tắt, kinh nghiệm, dự án. Bản dùng thử có 1 mẫu và chỉ xem trước; đăng ký để lưu, dùng thêm mẫu và tải PDF.'
+              : 'Fill in each part: personal details, summary, experience, education, skills, projects and certificates, with a live preview; press “Suggest with AI” to have AI draft your summary, experience and projects. The trial has 1 template and is preview only; sign up to save, use more templates and download a PDF.'}
           </p>
         </div>
         <p className="text-sm text-slate-500">{isVietnamese ? 'Bản dùng thử · không cần đăng nhập' : 'Guest trial · no sign-in needed'}</p>

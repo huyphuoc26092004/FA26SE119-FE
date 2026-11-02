@@ -1,75 +1,66 @@
-import { fieldLabel, underlineInput, underlineSelect } from '../../../components/admin/AdminKit';
+import { fieldLabel, underlineInput } from '../../../components/admin/AdminKit';
+import { MultiSelect } from '../../../components/admin/MultiSelect';
 import type { CrawlSource, CrawlSourceSite } from '../../../types/jobCrawl';
-import { ROLE_SUGGESTIONS, clamp } from './crawlFormat';
+import { KEYWORD_SUGGESTIONS, LOCATION_OPTIONS, ROLE_SUGGESTIONS, SITE_LABEL, clamp, type CrawlSelection } from './crawlFormat';
 
-/** Site / keyword / role / location / limits inputs shared by the manual run and the schedule. */
-export function CrawlSourceFields({
+const SITES: CrawlSourceSite[] = ['ITVIEC', 'TOPCV'];
+
+/** Trang nguồn / từ khoá / vai trò / địa điểm chọn được nhiều giá trị, dùng chung cho chạy ngay và lịch tự động. */
+export function CrawlSelectionFields({
   value,
   onChange,
-  idPrefix,
   disabled,
 }: {
-  value: CrawlSource;
-  onChange: (next: CrawlSource) => void;
-  idPrefix: string;
+  value: CrawlSelection;
+  onChange: (next: CrawlSelection) => void;
   disabled?: boolean;
 }) {
-  const set = <K extends keyof CrawlSource>(key: K, v: CrawlSource[K]) => onChange({ ...value, [key]: v });
-  const listId = `${idPrefix}-roles`;
+  const set = <K extends keyof CrawlSelection>(key: K, v: CrawlSelection[K]) => onChange({ ...value, [key]: v });
+  const siteLabels = SITES.map((s) => SITE_LABEL[s]);
 
   return (
     <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-6">
-      <label className="block xl:col-span-1">
-        <span className={fieldLabel}>Trang nguồn</span>
-        <select
-          className={underlineSelect}
-          value={value.sourceSite}
+      <div className="xl:col-span-2">
+        <MultiSelect
+          label="Trang nguồn"
+          options={siteLabels}
+          allowCustom={false}
           disabled={disabled}
-          onChange={(e) => set('sourceSite', e.target.value as CrawlSourceSite)}
-        >
-          <option value="ITVIEC">ITviec</option>
-          <option value="TOPCV">TopCV</option>
-        </select>
-      </label>
-      <label className="block xl:col-span-2">
-        <span className={fieldLabel}>Từ khoá tìm kiếm</span>
-        <input
-          className={underlineInput}
-          value={value.keyword}
-          maxLength={255}
-          disabled={disabled}
-          placeholder="Java, React, Data Engineer…"
-          onChange={(e) => set('keyword', e.target.value)}
+          value={value.sourceSites.map((s) => SITE_LABEL[s])}
+          onChange={(labels) => set('sourceSites', SITES.filter((s) => labels.includes(SITE_LABEL[s])))}
+          placeholder="Chọn ITviec, TopCV"
         />
-      </label>
-      <label className="block xl:col-span-1">
-        <span className={fieldLabel}>Nhóm vai trò</span>
-        <input
-          className={underlineInput}
-          value={value.roleCategory}
-          maxLength={100}
-          list={listId}
+      </div>
+      <div className="xl:col-span-2">
+        <MultiSelect
+          label="Từ khoá tìm kiếm"
+          options={KEYWORD_SUGGESTIONS}
           disabled={disabled}
-          placeholder="Backend"
-          onChange={(e) => set('roleCategory', e.target.value)}
+          value={value.keywords}
+          onChange={(v) => set('keywords', v.map((k) => k.slice(0, 255)))}
+          placeholder="Chọn một hoặc nhiều từ khoá"
         />
-        <datalist id={listId}>
-          {ROLE_SUGGESTIONS.map((r) => (
-            <option key={r} value={r} />
-          ))}
-        </datalist>
-      </label>
-      <label className="block xl:col-span-2">
-        <span className={fieldLabel}>Địa điểm</span>
-        <input
-          className={underlineInput}
-          value={value.location}
-          maxLength={120}
+      </div>
+      <div className="xl:col-span-2">
+        <MultiSelect
+          label="Nhóm vai trò"
+          options={ROLE_SUGGESTIONS}
           disabled={disabled}
-          placeholder="Để trống để tìm toàn quốc"
-          onChange={(e) => set('location', e.target.value)}
+          value={value.roles}
+          onChange={(v) => set('roles', v.map((r) => r.slice(0, 100)))}
+          placeholder="Chọn một hoặc nhiều vai trò"
         />
-      </label>
+      </div>
+      <div className="xl:col-span-2">
+        <MultiSelect
+          label="Địa điểm"
+          options={LOCATION_OPTIONS}
+          disabled={disabled}
+          value={value.locations}
+          onChange={(v) => set('locations', v.map((l) => l.slice(0, 120)))}
+          emptyLabel="Toàn quốc (không chọn)"
+        />
+      </div>
       <label className="block xl:col-span-1">
         <span className={fieldLabel}>Số tin tối đa (1–20)</span>
         <input
@@ -98,4 +89,5 @@ export function CrawlSourceFields({
   );
 }
 
+export const isSelectionComplete = (s: CrawlSelection) => s.sourceSites.length > 0 && s.keywords.length > 0 && s.roles.length > 0;
 export const isSourceComplete = (s: CrawlSource) => s.keyword.trim() !== '' && s.roleCategory.trim() !== '';

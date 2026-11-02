@@ -17,8 +17,8 @@ import {
 } from '../../../components/admin/AdminKit';
 import { crawlErrorMessage, updateCrawlSettings } from '../../../services/jobCrawlService';
 import type { CrawlSettings, CrawlSource } from '../../../types/jobCrawl';
-import { CrawlSourceFields, isSourceComplete } from './CrawlSourceFields';
-import { describeDelay, emptySource, formatDateTime } from './crawlFormat';
+import { CrawlSelectionFields, isSelectionComplete, isSourceComplete } from './CrawlSourceFields';
+import { describeDelay, describeSource, emptySelection, expandSelection, formatDateTime, type CrawlSelection } from './crawlFormat';
 
 const DELAY_PRESETS = ['PT1H', 'PT3H', 'PT6H', 'PT12H', 'PT24H', 'PT168H'];
 
@@ -28,6 +28,16 @@ export function CrawlScheduleTab({ settings, onSaved }: { settings: CrawlSetting
   const [enabled, setEnabled] = useState(settings.enabled);
   const [fixedDelay, setFixedDelay] = useState(settings.fixedDelay);
   const [sources, setSources] = useState<CrawlSource[]>(settings.sources);
+  const [adding, setAdding] = useState(false);
+  const [selection, setSelection] = useState<CrawlSelection>(emptySelection);
+  const sameSource = (a: CrawlSource, b: CrawlSource) =>
+    a.sourceSite === b.sourceSite &&
+    a.keyword.toLowerCase() === b.keyword.toLowerCase() &&
+    a.roleCategory.toLowerCase() === b.roleCategory.toLowerCase() &&
+    a.location.toLowerCase() === b.location.toLowerCase();
+  // Tổ hợp mới, bỏ những nguồn đã có trong lịch.
+  const newSources = expandSelection(selection).filter((n) => !sources.some((s) => sameSource(s, n)));
+  const roomLeft = 20 - sources.length;
 
   const mutation = useMutation({
     mutationFn: () => updateCrawlSettings({ enabled, fixedDelay, actorId: settings.actorId, sources }),
@@ -37,7 +47,6 @@ export function CrawlScheduleTab({ settings, onSaved }: { settings: CrawlSetting
     },
   });
 
-  const updateSource = (index: number, next: CrawlSource) => setSources((list) => list.map((s, i) => (i === index ? next : s)));
   const canSave =
     !mutation.isPending && sources.every(isSourceComplete) && sources.length <= 20 && (!enabled || sources.length > 0) && fixedDelay.trim() !== '';
 
@@ -78,25 +87,53 @@ export function CrawlScheduleTab({ settings, onSaved }: { settings: CrawlSetting
           title="Nguồn thu thập"
           meta={`${sources.length}/20`}
           action={
-            <button type="button" className={brandLink} disabled={sources.length >= 20} onClick={() => setSources((l) => [...l, emptySource()])}>
-              <Plus size={14} /> Thêm nguồn
+            <button type="button" className={brandLink} disabled={sources.length >= 20} onClick={() => setAdding((v) => !v)}>
+              <Plus size={14} /> {adding ? 'Đóng' : 'Thêm nguồn'}
             </button>
           }
         />
+        {adding && (
+          <div className="space-y-5 border-b border-border pb-8">
+            <SubHead title="Chọn nguồn cần thêm" />
+            <CrawlSelectionFields value={selection} onChange={setSelection} />
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <button
+                type="button"
+                className={primaryButton}
+                disabled={!isSelectionComplete(selection) || newSources.length === 0 || newSources.length > roomLeft}
+                onClick={() => {
+                  setSources((l) => [...l, ...newSources]);
+                  setSelection(emptySelection());
+                  setAdding(false);
+                }}
+              >
+                Thêm {newSources.length} nguồn
+              </button>
+              <span className={`text-[13px] ${newSources.length > roomLeft ? 'text-danger' : 'text-slate-500'}`}>
+                {newSources.length > roomLeft
+                  ? `Lịch chỉ còn chỗ cho ${roomLeft} nguồn (tối đa 20). Bỏ bớt lựa chọn.`
+                  : 'Mỗi tổ hợp trang × từ khoá × vai trò × địa điểm thành một nguồn trong lịch.'}
+              </span>
+            </div>
+          </div>
+        )}
         {sources.length === 0 && <EmptyRow>Chưa có nguồn nào.</EmptyRow>}
-        {sources.map((source, i) => (
-          <div key={i} className="space-y-5 pb-4">
-            <SubHead
-              title={`#${pad2(i + 1)}`}
-              action={
+        {sources.length > 0 && (
+          <ul>
+            {sources.map((source, i) => (
+              <li key={`${describeSource(source)}-${i}`} className="grid gap-1 border-b border-border py-3 md:grid-cols-[2.5rem_minmax(0,1fr)_12rem_auto] md:items-baseline md:gap-6">
+                <span className="text-xs tabular-nums text-slate-500">{pad2(i + 1)}</span>
+                <span className="text-[15px] text-ink">{describeSource(source)}</span>
+                <span className="text-[13px] text-slate-600">
+                  {source.limit} tin · {source.maxPages} trang
+                </span>
                 <button type="button" className={dangerLink} onClick={() => setSources((l) => l.filter((_, j) => j !== i))}>
                   Xoá
                 </button>
-              }
-            />
-            <CrawlSourceFields value={source} onChange={(next) => updateSource(i, next)} idPrefix={`schedule-${i}`} />
-          </div>
-        ))}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="space-y-6">

@@ -1,6 +1,7 @@
 import type { AiChatMessage, AiChatSession, CandidateProfile, Job, Resume } from '../types/domain';
 import { apiClient } from './apiClient';
 import { pending } from './apiPending';
+import { askGuestAssistant } from './guestService';
 
 interface ConversationResponse {
   id: string;
@@ -208,7 +209,7 @@ function cleanSuggestion(text: string, field: CvSuggestField): string {
  * Nhờ trợ lý nghề nghiệp viết gợi ý cho một ô của CV. Dùng một cuộc trò chuyện tạm
  * rồi lưu trữ (archive) ngay để không lẫn vào lịch sử chat của người dùng.
  */
-export async function suggestCvText(params: CvSuggestParams): Promise<string> {
+export async function suggestCvText(params: CvSuggestParams, options?: { guest?: boolean }): Promise<string> {
   const vi = params.language === 'vi';
   const lines = [
     SUGGEST_INSTRUCTIONS[params.field][params.language],
@@ -223,11 +224,19 @@ export async function suggestCvText(params: CvSuggestParams): Promise<string> {
     `${vi ? 'Nội dung hiện tại' : 'Current text'}: ${params.current?.trim() || (vi ? '(trống)' : '(empty)')}`,
   ].filter(Boolean);
 
+  const prompt = lines.join('\n').slice(0, 7900);
+  // Khách dùng thử: hỏi AI qua phiên khách (mỗi gợi ý một cuộc trò chuyện riêng để không lẫn với khung chat).
+  if (options?.guest) {
+    const text = cleanSuggestion(await askGuestAssistant(prompt, { freshConversation: true }), params.field);
+    if (!text) throw new Error(vi ? 'Trợ lý chưa trả về gợi ý nào.' : 'The assistant returned no suggestion.');
+    return text;
+  }
+
   const session = await createChatSession({ title: vi ? 'Gợi ý soạn CV' : 'CV writing hint' });
   try {
     const { data } = await apiClient.post<MessageResponse>(
       `/assistant/conversations/${session.id}/messages`,
-      { message: lines.join('\n').slice(0, 7900), retrieve: false },
+      { message: prompt, retrieve: false },
       { timeout: 600_000 },
     );
     const text = cleanSuggestion(data.message_text ?? '', params.field);

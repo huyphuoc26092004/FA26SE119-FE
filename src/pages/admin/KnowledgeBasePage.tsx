@@ -32,6 +32,7 @@ import {
   getRagDocuments,
   indexRagCourse,
   indexRagDocument,
+  type RagDocument,
 } from '../../services/ragService';
 
 type Tab = 'documents' | 'courses';
@@ -40,7 +41,7 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 const EMBED_LABEL: Record<string, string> = { PENDING: 'Chờ lập chỉ mục', PROCESSING: 'Đang xử lý', COMPLETED: 'Đã lập chỉ mục', FAILED: 'Lỗi' };
 const COURSE_LABEL: Record<string, string> = { PENDING_REVIEW: 'Chờ duyệt', APPROVED: 'Đã duyệt', ARCHIVED: 'Đã lưu trữ' };
 
-/** /admin/vector — tài liệu tri thức và khoá học dùng cho RAG (tư vấn, lộ trình học). */
+/** /admin/vector — trang "Tài liệu": tài liệu và khoá học để AI tra cứu (tư vấn, lộ trình học). */
 export default function KnowledgeBasePage() {
   const [params, setParams] = useSearchParams();
   const tab: Tab = params.get('tab') === 'courses' ? 'courses' : 'documents';
@@ -72,9 +73,9 @@ export default function KnowledgeBasePage() {
     <div className="space-y-[clamp(2.5rem,5vw,4rem)]">
       <Headline
         eyebrow="Nền tảng"
-        line1="Kho tri thức."
-        line2="Tài liệu và khoá học cho RAG."
-        intro="Tài liệu được chia đoạn và tạo embedding để AI tra cứu khi tư vấn. Khoá học YouTube/Coursera cần duyệt trước khi xuất hiện trong lộ trình học."
+        line1="Tài liệu."
+        line2="Tài liệu và khoá học để AI tra cứu."
+        intro="Thêm tài liệu bằng đường link (Google Docs, PDF…) và ghi rõ dùng để làm gì. Hệ thống chia nội dung thành đoạn và lập chỉ mục để trợ lý AI tra cứu khi tư vấn. Khoá học YouTube/Coursera cần duyệt trước khi xuất hiện trong lộ trình học."
       />
       <StatRow
         items={[
@@ -95,7 +96,7 @@ export default function KnowledgeBasePage() {
 
       {tab === 'documents' ? (
         <section className="space-y-4">
-          <SectionHead index="01" title="Tài liệu tri thức" action={<button type="button" className={smallPrimary} onClick={() => setCreating('documents')}>Thêm tài liệu</button>} />
+          <SectionHead index="01" title="Tài liệu" action={<button type="button" className={smallPrimary} onClick={() => setCreating('documents')}>Thêm tài liệu</button>} />
           {docsQuery.isError && <Note tone="danger">{errorText(docsQuery.error)}</Note>}
           {docs.length === 0 ? (
             <EmptyRow>{docsQuery.isLoading ? 'Đang tải...' : 'Chưa có tài liệu nào.'}</EmptyRow>
@@ -104,9 +105,13 @@ export default function KnowledgeBasePage() {
               {docs.map((d) => (
                 <li key={d.id} className="grid gap-2 border-b border-border py-4 md:grid-cols-[minmax(0,1fr)_12rem_auto] md:items-baseline md:gap-6">
                   <span className="min-w-0">
-                    <span className="block truncate text-[15px] text-ink">{d.title}</span>
+                    {docUrl(d) ? (
+                      <a href={docUrl(d)} target="_blank" rel="noreferrer" className="block truncate text-[15px] text-ink hover:text-brand">{d.title}</a>
+                    ) : (
+                      <span className="block truncate text-[15px] text-ink">{d.title}</span>
+                    )}
                     <span className="text-[12px] text-slate-500">
-                      {d.sourceType} · {d.chunksCount} đoạn · {d.createdAt}
+                      {[purposeLabel(d), docKindLabel(d), `${d.chunksCount} đoạn`, d.createdAt].filter(Boolean).join(' · ')}
                     </span>
                   </span>
                   <span className={`text-[13px] ${d.embeddingStatus === 'FAILED' ? 'text-danger' : d.embeddingStatus === 'COMPLETED' ? 'text-brand' : 'text-slate-600'}`}>
@@ -191,32 +196,104 @@ export default function KnowledgeBasePage() {
   );
 }
 
+const DOC_PURPOSES = [
+  { value: 'CAREER_ADVICE', label: 'Tư vấn định hướng nghề nghiệp' },
+  { value: 'CV_WRITING', label: 'Hướng dẫn viết CV' },
+  { value: 'INTERVIEW', label: 'Chuẩn bị phỏng vấn' },
+  { value: 'SKILL_LEARNING', label: 'Học kỹ năng / lộ trình học' },
+  { value: 'MARKET', label: 'Thị trường việc làm, mức lương' },
+  { value: 'POLICY', label: 'Quy định, chính sách hệ thống' },
+  { value: 'OTHER', label: 'Khác' },
+];
+
+const meta = (d: RagDocument, key: string) => (typeof d.metadata[key] === 'string' ? (d.metadata[key] as string) : '');
+const docUrl = (d: RagDocument) => d.fileUrl || meta(d, 'url');
+const purposeLabel = (d: RagDocument) => DOC_PURPOSES.find((p) => p.value === meta(d, 'purpose'))?.label ?? '';
+const docKindLabel = (d: RagDocument) => ({ PDF: 'PDF', DOCS: 'Google Docs', LINK: 'Trang web' })[meta(d, 'kind')] ?? '';
+
+/** Đoán loại tài liệu từ đường link để hiện nhãn PDF / Google Docs. */
+function kindOf(url: string): 'PDF' | 'DOCS' | 'LINK' {
+  if (/\.pdf($|[?#])/i.test(url)) return 'PDF';
+  if (/docs\.google\.com|drive\.google\.com/i.test(url)) return 'DOCS';
+  return 'LINK';
+}
+
+/** Thêm tài liệu giống thêm khoá học: link, tên, dùng để làm gì, mô tả; nội dung văn bản là tuỳ chọn. */
 function DocumentModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const save = useMutation({ mutationFn: () => createRagDocument({ title, content }), onSuccess: onSaved });
+  const [form, setForm] = useState({ url: '', title: '', purpose: 'CAREER_ADVICE', description: '', skills: '', language: 'vi', content: '' });
+  const purpose = DOC_PURPOSES.find((p) => p.value === form.purpose)?.label ?? '';
+  const save = useMutation({
+    mutationFn: () => {
+      const url = form.url.trim();
+      const skills = form.skills.split(',').map((s) => s.trim()).filter(Boolean);
+      // Backend chưa tự đọc được file từ link, nên AI tra cứu trên phần chữ gửi kèm.
+      // Không dán nội dung thì gửi phần mô tả để tài liệu vẫn tra cứu được theo mục đích và link.
+      const content =
+        form.content.trim() ||
+        [form.title.trim(), `Mục đích: ${purpose}`, form.description.trim(), skills.length ? `Kỹ năng liên quan: ${skills.join(', ')}` : '', url ? `Đường dẫn: ${url}` : '']
+          .filter(Boolean)
+          .join('\n');
+      return createRagDocument({
+        title: form.title.trim(),
+        content,
+        metadata: { url, kind: url ? kindOf(url) : undefined, purpose: form.purpose, description: form.description.trim(), skills, language: form.language },
+      });
+    },
+    onSuccess: onSaved,
+  });
+  const canSave = form.title.trim() && (form.url.trim() || form.content.trim()) && form.description.trim();
   return (
     <Modal
-      title="Thêm tài liệu tri thức"
+      title="Thêm tài liệu"
       width="max-w-3xl"
       onClose={onClose}
       footer={
         <>
           <button type="button" className={outlineButton} onClick={onClose}>Huỷ</button>
-          <button type="button" className={primaryButton} disabled={save.isPending || !title.trim() || !content.trim()} onClick={() => save.mutate()}>
+          <button type="button" className={primaryButton} disabled={save.isPending || !canSave} onClick={() => save.mutate()}>
             {save.isPending ? 'Đang lưu...' : 'Lưu tài liệu'}
           </button>
         </>
       }
     >
-      <label className="block">
-        <span className={fieldLabel}>Tiêu đề</span>
-        <input className={underlineInput} maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} />
-      </label>
-      <label className="mt-5 block">
-        <span className={fieldLabel}>Nội dung</span>
-        <textarea rows={12} className={`${boxInput} mt-2 text-[14px]`} value={content} onChange={(e) => setContent(e.target.value)} />
-      </label>
+      <div className="grid gap-5 md:grid-cols-2">
+        <label className="block md:col-span-2">
+          <span className={fieldLabel}>Đường dẫn tài liệu (Google Docs, file PDF hoặc trang web)</span>
+          <input type="url" className={underlineInput} value={form.url} placeholder="https://docs.google.com/… hoặc https://…/tai-lieu.pdf" onChange={(e) => setForm({ ...form, url: e.target.value })} />
+        </label>
+        <label className="block md:col-span-2">
+          <span className={fieldLabel}>Tên tài liệu</span>
+          <input className={underlineInput} maxLength={255} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        </label>
+        <label className="block">
+          <span className={fieldLabel}>Dùng để làm gì</span>
+          <select className={underlineSelect} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })}>
+            {DOC_PURPOSES.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className={fieldLabel}>Ngôn ngữ</span>
+          <select className={underlineSelect} value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })}>
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label className="block md:col-span-2">
+          <span className={fieldLabel}>Mô tả ngắn (tài liệu nói về gì, dành cho ai)</span>
+          <textarea rows={3} className={`${boxInput} mt-2 text-[14px]`} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        </label>
+        <label className="block md:col-span-2">
+          <span className={fieldLabel}>Kỹ năng liên quan (tuỳ chọn, cách nhau bằng dấu phẩy)</span>
+          <input className={underlineInput} value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} placeholder="Phỏng vấn, React, SQL" />
+        </label>
+        <label className="block md:col-span-2">
+          <span className={fieldLabel}>Nội dung để AI tra cứu (tuỳ chọn, dán phần chữ chính của tài liệu)</span>
+          <textarea rows={6} className={`${boxInput} mt-2 text-[14px]`} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
+          <span className="mt-1 block text-[12px] text-slate-500">Để trống thì AI chỉ biết tên, mục đích, mô tả và link của tài liệu.</span>
+        </label>
+      </div>
       {save.isError && <p className="mt-3 text-sm text-danger">{errorText(save.error)}</p>}
     </Modal>
   );

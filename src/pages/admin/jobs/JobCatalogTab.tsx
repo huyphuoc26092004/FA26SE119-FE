@@ -28,6 +28,7 @@ import {
   type ImportJobInput,
 } from '../../../services/adminJobService';
 import { crawlErrorMessage } from '../../../services/jobCrawlService';
+import { AutoIndexSection } from './AutoIndexSection';
 
 const STATUS_LABEL: Record<AdminJobStatus, string> = { ACTIVE: 'Đang tuyển', EXPIRED: 'Hết hạn', REMOVED: 'Đã gỡ', INVALID: 'Không hợp lệ' };
 
@@ -132,11 +133,13 @@ export function JobCatalogTab({ onDone }: { onDone: (message: string) => void })
             ))}
           </ul>
         )}
-        <Note>Danh sách lấy từ tìm kiếm việc làm công khai nên chỉ gồm tin đang tuyển. Tin đã gỡ hoặc hết hạn không hiện ở đây.</Note>
+        <Note>Danh sách lấy từ tìm kiếm việc làm công khai nên chỉ gồm tin đang tuyển. Tin đã gỡ hoặc hết hạn không hiện ở đây. “Lập chỉ mục” gửi riêng một tin đi tạo vector ngay; muốn làm cho tất cả theo giờ, dùng mục 02 bên dưới.</Note>
       </section>
 
+      <AutoIndexSection index="02" />
+
       <section className="space-y-4">
-        <SectionHead index="02" title="Chính sách lương khi đối sánh" />
+        <SectionHead index="03" title="Chính sách lương khi đối sánh" />
         {policy && (
           <dl>
             <InfoRow label="Biên độ chấp nhận">{policy.tolerancePercent}%</InfoRow>
@@ -175,6 +178,10 @@ export function JobCatalogTab({ onDone }: { onDone: (message: string) => void })
       )}
       {indexOf && (
         <Modal title={indexOf.title} eyebrow="Lịch sử lập chỉ mục" onClose={() => setIndexOf(null)}>
+          <p className="mb-4 text-[13px] leading-6 text-slate-600">
+            Mỗi dòng là một lần gửi tin này đi lập chỉ mục (tạo vector để AI tìm được tin). COMPLETED là đã xong, QUEUED/PROCESSING là đang chờ
+            hoặc đang chạy, FAILED là lỗi, CANCELLED là tin đã hết hạn hoặc đổi nội dung nên bỏ qua.
+          </p>
           {(indexQuery.data ?? []).length === 0 ? (
             <EmptyRow>{indexQuery.isLoading ? 'Đang tải...' : 'Chưa có lần lập chỉ mục nào.'}</EmptyRow>
           ) : (
