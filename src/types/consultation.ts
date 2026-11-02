@@ -157,6 +157,9 @@ export type ConsultationChannel = 'REQUEST' | 'CHAT';
 export interface ConsultationRequest {
   id: string;
   channel?: ConsultationChannel;
+  /** Tin cuối và số tin chưa đọc do GET /consultations trả sẵn (không cần tải toàn bộ tin nhắn). */
+  lastMessage?: { content: string; timestamp: string; senderRole: ConsultationMessage['senderRole'] };
+  unreadCount?: number;
   candidate: ConsultationCandidate;
   consultantId: string;
   consultantName: string;

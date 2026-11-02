@@ -5,8 +5,22 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowUp, ChevronDown, Search, X } from 'lucide-react';
-import type { ConsultationMessage } from '../../../types/consultation';
+import type { ConsultationMessage, ConsultationRequest } from '../../../types/consultation';
 import { Initials, pad2 } from '../ConsultantKit';
+
+// ─── Tóm tắt hội thoại ──────────────────────────────────────────────────────
+
+/** Tin cuối: lấy từ tin nhắn đã tải, nếu chưa tải thì dùng tóm tắt backend trả trong danh sách. */
+export function lastOf(t: ConsultationRequest) {
+  const m = t.messages[t.messages.length - 1];
+  return m ? { content: m.content, timestamp: m.timestamp, senderRole: m.senderRole } : t.lastMessage;
+}
+
+export function unreadOf(t: ConsultationRequest, me: ConsultationMessage['senderRole']) {
+  return t.messages.length ? t.messages.filter((m) => m.senderRole !== me && !m.readAt).length : (t.unreadCount ?? 0);
+}
+
+export const lastActivity = (t: ConsultationRequest) => lastOf(t)?.timestamp ?? t.requestedAt;
 
 // ─── Thời gian ──────────────────────────────────────────────────────────────
 

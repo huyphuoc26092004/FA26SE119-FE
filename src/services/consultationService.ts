@@ -36,7 +36,7 @@ const getProfile = (threadId: string) =>
     .catch(() => null);
 
 const getMessages = (threadId: string) =>
-  apiClient.get<ApiRow[]>(`/consultations/${threadId}/messages`, { params: { limit: 100, offset: 0 } }).then((r) => r.data);
+  apiClient.get<ApiRow[]>(`/consultations/${threadId}/messages`, { params: { limit: 100, latest: true } }).then((r) => r.data);
 
 /** Danh sách thread không có tên ứng viên, nên đọc thêm candidate-profile cho từng thread. */
 async function loadThreads(): Promise<ConsultationRequest[]> {
@@ -70,28 +70,18 @@ export async function getConsultationRequests(params: ConsultationFilterParams =
 }
 
 /**
- * Hộp thư của cố vấn: mỗi cuộc tư vấn kèm tin nhắn và hồ sơ ứng viên.
- * Backend chưa trả tin nhắn cuối và số chưa đọc trong danh sách, nên đọc tin nhắn từng thread.
+ * Hộp thư của cố vấn: GET /consultations đã kèm tên ứng viên, tin cuối và số tin chưa đọc,
+ * nên chỉ cần một request. Tin nhắn và hồ sơ đầy đủ được tải khi mở từng hội thoại.
  */
 export async function getConsultantInbox(): Promise<ConsultationRequest[]> {
   const { data } = await apiClient.get<ApiRow[]>('/consultations');
-  return Promise.all(
-    data.map(async (row) => {
-      const id = str(row.id);
-      const [messages, profile] = await Promise.all([getMessages(id).catch(() => []), getProfile(id)]);
-      return toConsultationRequest(row, {
-        messages,
-        candidate: profile ? toConsultationCandidate(profile, str(row.candidate_user_id)) : undefined,
-      });
-    }),
-  );
+  return data.map((row) => toConsultationRequest(row));
 }
 
-/** Đánh dấu đã đọc mọi tin nhắn của bên kia trong một cuộc tư vấn. */
-export async function markThreadRead(thread: ConsultationRequest, myRole: ConsultationMessage['senderRole']): Promise<number> {
-  const unread = thread.messages.filter((m) => m.senderRole !== myRole && !m.readAt);
-  await Promise.all(unread.map((m) => apiClient.patch(`/consultations/${thread.id}/messages/${m.id}/read`).catch(() => undefined)));
-  return unread.length;
+/** Đánh dấu đã đọc mọi tin nhắn của bên kia trong một cuộc tư vấn (POST /consultations/{id}/read). */
+export async function markThreadRead(threadId: string): Promise<number> {
+  const { data } = await apiClient.post<ApiRow>(`/consultations/${threadId}/read`);
+  return num(data.updated);
 }
 
 export async function getConsultationRequestById(id: string): Promise<ConsultationRequest | null> {

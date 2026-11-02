@@ -135,8 +135,13 @@ export function toConsultationRequest(
   const status = toConsultationStatus(row);
   const messages = (extra.messages ?? []).map((m) => toConsultationMessage(m, candidateUserId));
   const consultantName =
-    extra.consultantName ?? messages.find((m) => m.senderRole === 'CAREER_CONSULTANT')?.senderName ?? (row.consultant_user_id ? 'Cố vấn được phân công' : '');
-  const candidate = extra.candidate ?? emptyCandidate(candidateUserId, extra.candidateName ?? messages.find((m) => m.senderRole === 'CANDIDATE')?.senderName ?? '');
+    extra.consultantName ??
+    (str(row.consultant_name) ||
+      messages.find((m) => m.senderRole === 'CAREER_CONSULTANT')?.senderName ||
+      (row.consultant_user_id ? 'Cố vấn được phân công' : ''));
+  const candidate =
+    extra.candidate ??
+    emptyCandidate(candidateUserId, extra.candidateName ?? (str(row.candidate_name) || messages.find((m) => m.senderRole === 'CANDIDATE')?.senderName || ''));
   if (resumeId && !candidate.attachedResumeId) {
     candidate.attachedResumeId = resumeId;
     candidate.attachedResumeName = resumeTitle;
@@ -153,6 +158,14 @@ export function toConsultationRequest(
   return {
     id,
     channel: str(row.request_type) === DIRECT_CHAT_TYPE ? 'CHAT' : 'REQUEST',
+    lastMessage: row.last_message_at
+      ? {
+          content: str(row.last_message),
+          timestamp: str(row.last_message_at),
+          senderRole: str(row.last_sender_user_id) === candidateUserId ? 'CANDIDATE' : 'CAREER_CONSULTANT',
+        }
+      : undefined,
+    unreadCount: row.unread_count === undefined || row.unread_count === null ? undefined : num(row.unread_count),
     candidate,
     consultantId: str(row.consultant_user_id),
     consultantName,
