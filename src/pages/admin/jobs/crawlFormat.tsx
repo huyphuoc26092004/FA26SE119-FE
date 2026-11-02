@@ -1,4 +1,4 @@
-import type { CrawlSource } from '../../../types/jobCrawl';
+import type { CrawlSource, CrawlSourceSite } from '../../../types/jobCrawl';
 
 export const SITE_LABEL: Record<string, string> = { ITVIEC: 'ITviec', TOPCV: 'TopCV' };
 
@@ -15,6 +15,58 @@ export const ROLE_SUGGESTIONS = [
   'Product',
   'UI/UX Design',
 ];
+
+export const KEYWORD_SUGGESTIONS = [
+  'Java',
+  'Spring Boot',
+  'React',
+  'Angular',
+  'Vue',
+  'Node.js',
+  'Python',
+  '.NET',
+  'PHP',
+  'Golang',
+  'Flutter',
+  'Android',
+  'iOS',
+  'Data Engineer',
+  'Data Analyst',
+  'Machine Learning',
+  'DevOps',
+  'Tester',
+  'Business Analyst',
+  'UI/UX',
+];
+
+export const LOCATION_OPTIONS = ['Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng', 'Cần Thơ', 'Hải Phòng', 'Remote'];
+
+/** Lựa chọn nhiều giá trị trên form; mỗi tổ hợp trang × từ khoá × vai trò × địa điểm là một lượt tìm của backend. */
+export interface CrawlSelection {
+  sourceSites: CrawlSourceSite[];
+  keywords: string[];
+  roles: string[];
+  locations: string[];
+  limit: number;
+  maxPages: number;
+}
+
+export const emptySelection = (): CrawlSelection => ({ sourceSites: ['ITVIEC'], keywords: [], roles: [], locations: [], limit: 20, maxPages: 3 });
+
+/** Backend chỉ nhận một từ khoá / vai trò / địa điểm mỗi nguồn, nên FE tách thành từng tổ hợp. */
+export function expandSelection(sel: CrawlSelection): CrawlSource[] {
+  const locations = sel.locations.length ? sel.locations : [''];
+  const out: CrawlSource[] = [];
+  for (const sourceSite of sel.sourceSites)
+    for (const keyword of sel.keywords)
+      for (const roleCategory of sel.roles)
+        for (const location of locations)
+          out.push({ sourceSite, keyword: keyword.trim(), roleCategory: roleCategory.trim(), location: location.trim(), limit: sel.limit, maxPages: sel.maxPages });
+  return out;
+}
+
+export const describeSource = (s: CrawlSource) =>
+  [SITE_LABEL[s.sourceSite] ?? s.sourceSite, s.keyword, s.roleCategory, s.location || 'Toàn quốc'].join(' · ');
 
 export const RUN_STATUS: Record<string, { label: string; tone: string }> = {
   RUNNING: { label: 'Đang chạy', tone: 'text-orange-600' },

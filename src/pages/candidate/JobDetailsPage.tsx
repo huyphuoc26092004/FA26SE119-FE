@@ -274,6 +274,9 @@ export default function JobDetailsPage() {
             <Link to={`/candidate/applications?jobId=${job.id}`} className={`${textLink} text-ink`}>
               Soạn thư ứng tuyển
             </Link>
+            <Link to={`/candidate/learning-path?jobId=${job.id}&build=1`} className={`${textLink} text-ink`}>
+              Tạo lộ trình học
+            </Link>
           </>
         )}
       </div>

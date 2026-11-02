@@ -23,6 +23,10 @@ export const TOPIC_LABELS: Record<ConsultationTopic, { vi: string; en: string }>
 };
 
 const TOPICS = Object.keys(TOPIC_LABELS) as ConsultationTopic[];
+
+/** request_type của cuộc chat trực tiếp (backend lưu tự do, tối đa 50 ký tự). */
+export const DIRECT_CHAT_TYPE = 'DIRECT_CHAT';
+export const DIRECT_CHAT_SUBJECT = { vi: 'Trò chuyện trực tiếp', en: 'Direct chat' };
 const META_MARK = '\n\n---\n';
 
 export interface RequestMeta {
@@ -148,6 +152,7 @@ export function toConsultationRequest(
   }
   return {
     id,
+    channel: str(row.request_type) === DIRECT_CHAT_TYPE ? 'CHAT' : 'REQUEST',
     candidate,
     consultantId: str(row.consultant_user_id),
     consultantName,

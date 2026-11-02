@@ -49,6 +49,7 @@ export interface Translations {
     careerIntelligence: string;
     salaryEstimation: string;
     skillAssessment: string;
+    learningPath: string;
     learningRoadmap: string;
     skillGapAnalysis: string;
     aiCareerAssistant: string;
@@ -300,8 +301,6 @@ export interface Translations {
     parsingStep1: string;
     parsingStep2: string;
     parsingStep3: string;
-    parsingStep4: string;
-    parsingStep5: string;
     reviewTitle: string;
     reviewSubtitle: string;
     aiConfidence: string;

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ArrowUp, Lock, MessageSquare, X } from 'lucide-react';
 import { useTranslation } from '../../i18n';
-import { guestAssistantReplies, type AiAssistantResponse } from './guestTrialData';
+import { askGuestAssistant, guestErrorMessage } from '../../services/guestService';
 
 interface Message {
   role: 'USER' | 'ASSISTANT';
   text: string;
   tips?: string[];
+  error?: boolean;
   timestamp: string;
 }
 
@@ -33,12 +34,9 @@ export function GuestAiChatWidget({ onOpenSaveModal }: GuestAiChatWidgetProps) {
     {
       role: 'ASSISTANT',
       text: isVietnamese
-        ? 'Xin chào bạn! Tôi là Trợ lý AI Nghề nghiệp của CareerPilot. Bạn đang ở chế độ Dùng Thử Dành Cho Khách (Guest Trial) với 3 câu hỏi tư vấn miễn phí. Bạn có thể hỏi tôi về định hướng nghề nghiệp, cách viết CV hoặc mẹo phỏng vấn.'
-        : 'Welcome! I am your AI Career Assistant from CareerPilot. You are currently in Guest Trial Mode with 3 complimentary queries. Ask me anything about career roadmap, CV optimization, or interview tips.',
-      tips: isVietnamese
-        ? ['Tối ưu hoá CV chuẩn ATS', 'Xu hướng tuyển dụng ngành công nghệ', 'Kỹ năng phỏng vấn thực chiến']
-        : ['ATS CV Optimization', 'Tech Hiring Trends', 'Interview Strategy'],
-      timestamp: '12:00',
+        ? 'Xin chào! Mình là trợ lý nghề nghiệp của CCV, trả lời bằng AI thật của hệ thống. Bạn có 3 câu hỏi miễn phí trong phiên dùng thử: hỏi về định hướng nghề, cách viết CV hay chuẩn bị phỏng vấn đều được.'
+        : 'Hi! I am the CCV career assistant, answering with the system’s real AI. You have 3 free questions in this trial: ask about career direction, CV writing or interview prep.',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
 
@@ -72,7 +70,7 @@ export function GuestAiChatWidget({ onOpenSaveModal }: GuestAiChatWidgetProps) {
         },
       ];
 
-  const handleSend = async (textToSend = input, promptKey?: string) => {
+  const handleSend = async (textToSend = input) => {
     if (!textToSend.trim() || typing || quotaRemaining <= 0) return;
 
     const currentText = textToSend;
@@ -91,32 +89,27 @@ export function GuestAiChatWidget({ onOpenSaveModal }: GuestAiChatWidgetProps) {
     setQuotaRemaining((prev) => prev - 1);
     setTyping(true);
 
-    // Simulate AI response
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    let replyData: AiAssistantResponse = guestAssistantReplies.default;
-    const lower = currentText.toLowerCase();
-
-    if (promptKey && guestAssistantReplies[promptKey]) {
-      replyData = guestAssistantReplies[promptKey];
-    } else if (lower.includes('ats') || lower.includes('cv') || lower.includes('hồ sơ')) {
-      replyData = guestAssistantReplies.ats;
-    } else if (lower.includes('frontend') || lower.includes('react') || lower.includes('kỹ năng')) {
-      replyData = guestAssistantReplies.frontend;
-    } else if (lower.includes('yếu') || lower.includes('phỏng vấn') || lower.includes('weakness')) {
-      replyData = guestAssistantReplies.weakness;
+    // Câu trả lời do AI thật của hệ thống tạo (API /guest/assistant), không còn là câu soạn sẵn.
+    let reply: Message;
+    try {
+      const answer = await askGuestAssistant(currentText);
+      reply = {
+        role: 'ASSISTANT',
+        text: answer.trim() || (isVietnamese ? 'Trợ lý chưa có câu trả lời. Bạn thử hỏi lại nhé.' : 'No answer yet. Please ask again.'),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+    } catch (error) {
+      // Lỗi thì trả lại lượt đã trừ.
+      setQuotaRemaining((prev) => Math.min(MAX_GUEST_QUOTA, prev + 1));
+      reply = {
+        role: 'ASSISTANT',
+        text: guestErrorMessage(error, isVietnamese),
+        error: true,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
     }
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: 'ASSISTANT',
-        text: replyData.answer,
-        tips: replyData.tips,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      },
-    ]);
-
+    setMessages((prev) => [...prev, reply]);
     setTyping(false);
   };
 
@@ -206,7 +199,7 @@ export function GuestAiChatWidget({ onOpenSaveModal }: GuestAiChatWidgetProps) {
                     <span className="mx-1.5">·</span>
                     {msg.timestamp}
                   </p>
-                  <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-slate-800">
+                  <p className={`mt-1.5 whitespace-pre-line text-sm leading-relaxed ${msg.error ? 'text-danger' : 'text-slate-800'}`}>
                     {msg.text}
                   </p>
                   {msg.tips && msg.tips.length > 0 && (
@@ -273,7 +266,7 @@ export function GuestAiChatWidget({ onOpenSaveModal }: GuestAiChatWidgetProps) {
                   <button
                     key={p.key}
                     type="button"
-                    onClick={() => handleSend(p.text, p.key)}
+                    onClick={() => handleSend(p.text)}
                     disabled={typing}
                     className="w-56 shrink-0 rounded-2xl border border-border px-3.5 py-2 text-left text-xs leading-snug text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:opacity-50"
                   >

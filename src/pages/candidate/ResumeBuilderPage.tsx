@@ -648,7 +648,8 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
             onChange={(v) => update({ summary: v })}
             footer={f.chars(cv.summary?.length ?? 0)}
           />
-          {!guest && <AiSuggest
+          <AiSuggest
+                      guest={!!guest}
             lang={uiLang}
             onApply={(text) => update({ summary: text })}
             params={() => ({
@@ -662,7 +663,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                 .map((e) => [e.role, e.company, [e.startDate, e.isCurrent ? c.present : e.endDate].filter(Boolean).join('–')].filter(Boolean).join(', '))
                 .join('; '),
             })}
-          />}
+          />
           </>
         );
       case 'experience':
@@ -712,7 +713,8 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                       value={(e.highlights ?? []).join('\n')}
                       onChange={(v) => experience.change(e.id, { highlights: v.split('\n') })}
                     />
-                    {!guest && <AiSuggest
+                    <AiSuggest
+                      guest={!!guest}
                       lang={uiLang}
                       onApply={(text) => experience.change(e.id, { highlights: text.split('\n') })}
                       params={() => ({
@@ -724,7 +726,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                         subtitle: [e.company, e.location].filter(Boolean).join(', '),
                         current: [e.description, ...(e.highlights ?? [])].filter(Boolean).join('\n'),
                       })}
-                    />}
+                    />
                   </div>
                 </ItemRow>
               ))}
@@ -807,7 +809,8 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                   <Field className="sm:col-span-2" label={f.link} value={p.link} onChange={(v) => projects.change(p.id, { link: v })} />
                   <div className="sm:col-span-2">
                     <TextArea label={f.description} rows={4} value={p.description} onChange={(v) => projects.change(p.id, { description: v })} />
-                    {!guest && <AiSuggest
+                    <AiSuggest
+                      guest={!!guest}
                       lang={uiLang}
                       onApply={(text) => projects.change(p.id, { description: text })}
                       params={() => ({
@@ -817,7 +820,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                         subtitle: [p.role, (p.techStack ?? []).filter(Boolean).join(', ')].filter(Boolean).join(' · '),
                         current: p.description,
                       })}
-                    />}
+                    />
                   </div>
                 </ItemRow>
               ))}

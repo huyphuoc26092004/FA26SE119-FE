@@ -25,6 +25,7 @@ import ResumeAnalysisPage from '../pages/candidate/ResumeAnalysisPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
 import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
+import LearningPathPage from '../pages/candidate/LearningPathPage';
 import CvJobFitPage from '../pages/candidate/CvJobFitPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
 import ApplicationAssistancePage from '../pages/candidate/ApplicationAssistancePage';
@@ -130,12 +131,13 @@ export const router = createBrowserRouter([
               // Skill assessment by JD (no CV needed) with its learning path, on one page.
               { path: 'skill-assessment', element: <SkillAssessmentPage /> },
               { path: 'skill-test', element: <SkillAssessmentRedirect /> },
-              { path: 'learning-path', element: <SkillAssessmentRedirect /> },
+              // Learning path straight from a job's JD (no CV, no test); opened from Job discovery.
+              { path: 'learning-path', element: <LearningPathPage /> },
               { path: 'assessment', element: <SkillAssessmentRedirect /> },
               { path: 'assessment/*', element: <SkillAssessmentRedirect /> },
               { path: 'skill-gap', element: <SkillAssessmentRedirect /> },
-              { path: 'learning', element: <SkillAssessmentRedirect /> },
-              { path: 'learning/roadmap', element: <SkillAssessmentRedirect /> },
+              { path: 'learning', element: <LearningPathPage /> },
+              { path: 'learning/roadmap', element: <LearningPathPage /> },
               { path: 'consultations', element: <ConsultationsPage /> },
               { path: 'consultations/new', element: <ConsultationsPage /> },
               { path: 'consultations/:consultationId', element: <ConsultationsPage /> },

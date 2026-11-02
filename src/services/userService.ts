@@ -96,31 +96,21 @@ export const ALL_SYSTEM_PERMISSIONS: UserPermission[] = [
   },
 ];
 
+/** Quyền nào thuộc vai trò nào: chỉ hiện và chỉ cấp đúng quyền của vai trò đó (ứng viên không thấy quyền của cố vấn…). */
+const ROLE_PERMISSION_KEYS: Record<UserRole, string[]> = {
+  CANDIDATE: ['upload_resumes', 'match_jobs', 'book_consultation', 'access_ai_assistant', 'run_ats_audit', 'generate_cover_letter'],
+  CAREER_CONSULTANT: ['view_assigned_consultations', 'review_candidate_cv', 'provide_career_advice', 'access_ai_assistant'],
+  ADMIN: ['manage_all_users', 'manage_roles_permissions', 'view_system_telemetry', 'manage_subscriptions_revenue', 'toggle_maintenance'],
+};
+
+export function permissionsForRole(role: UserRole): UserPermission[] {
+  const keys = ROLE_PERMISSION_KEYS[role] ?? ROLE_PERMISSION_KEYS.CANDIDATE;
+  return ALL_SYSTEM_PERMISSIONS.filter((p) => keys.includes(p.key));
+}
+
+/** Mặc định một tài khoản có mọi quyền của vai trò mình. */
 export function getDefaultPermissionsForRole(role: UserRole): string[] {
-  switch (role) {
-    case 'ADMIN':
-      return ALL_SYSTEM_PERMISSIONS.map((p) => p.key);
-    case 'CAREER_CONSULTANT':
-      return [
-        'upload_resumes',
-        'match_jobs',
-        'access_ai_assistant',
-        'run_ats_audit',
-        'view_assigned_consultations',
-        'review_candidate_cv',
-        'provide_career_advice',
-      ];
-    case 'CANDIDATE':
-    default:
-      return [
-        'upload_resumes',
-        'match_jobs',
-        'book_consultation',
-        'access_ai_assistant',
-        'run_ats_audit',
-        'generate_cover_letter',
-      ];
-  }
+  return permissionsForRole(role).map((p) => p.key);
 }
 
 const STATUS_FROM_API: Record<string, UserAccountStatus> = { ACTIVE: 'ACTIVE', SUSPENDED: 'SUSPENDED', PENDING: 'PENDING' };

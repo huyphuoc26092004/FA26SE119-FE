@@ -12,7 +12,6 @@ import {
   Inbox,
   Users,
   Settings,
-  Database,
   ScrollText,
   Bell,
   MessagesSquare,
@@ -20,6 +19,8 @@ import {
   Wallet,
   LayoutTemplate,
   GraduationCap,
+  Route,
+  FileStack,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -54,6 +55,7 @@ export const candidateNav: NavItem[] = [
   { label: 'CV fit', labelVi: 'Độ phù hợp CV', translationKey: 'nav.cvJobFit', to: '/candidate/cv-job-fit', icon: CircleDot, group: 'apply' },
   { label: 'Application help', labelVi: 'Hỗ trợ ứng tuyển', translationKey: 'nav.applicationAssistance', to: '/candidate/applications', icon: Mail, group: 'apply' },
   { label: 'Skill assessment', labelVi: 'Đánh giá kỹ năng', translationKey: 'nav.skillAssessment', to: '/candidate/skill-assessment', icon: GraduationCap, group: 'grow' },
+  { label: 'Learning path', labelVi: 'Lộ trình học', translationKey: 'nav.learningPath', to: '/candidate/learning-path', icon: Route, group: 'grow' },
   { label: 'Career consultation', labelVi: 'Tư vấn nghề nghiệp', translationKey: 'nav.careerConsultation', to: '/candidate/consultations', icon: MessageSquare, group: 'grow' },
   { label: 'Plans & tokens', labelVi: 'Gói đăng ký & token', translationKey: 'nav.subscription', to: '/candidate/subscription', icon: CreditCard, group: 'account' },
   { label: 'AI usage', labelVi: 'Mức sử dụng AI', translationKey: 'nav.aiUsage', to: '/candidate/usage', icon: Activity, group: 'account' },
@@ -74,7 +76,7 @@ export const adminNav: NavItem[] = [
   { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/admin/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'AI configuration', labelVi: 'Cấu hình AI', translationKey: 'nav.aiConfig', to: '/admin/ai', icon: Settings, group: 'platform' },
   { label: 'Job collection', labelVi: 'Thu thập việc làm', translationKey: 'nav.jobProcessing', to: '/admin/jobs', icon: BriefcaseBusiness, group: 'platform' },
-  { label: 'Vector database', labelVi: 'Cơ sở dữ liệu Vector', translationKey: 'nav.vectorDatabase', to: '/admin/vector', icon: Database, group: 'platform' },
+  { label: 'Documents', labelVi: 'Tài liệu', translationKey: 'nav.vectorDatabase', to: '/admin/vector', icon: FileStack, group: 'platform' },
   { label: 'System logs', labelVi: 'Nhật ký hệ thống', translationKey: 'nav.systemLogs', to: '/admin/logs', icon: ScrollText, group: 'operations' },
   { label: 'Audit logs', labelVi: 'Nhật ký kiểm toán', translationKey: 'nav.auditLogs', to: '/admin/audit', icon: ScrollText, group: 'operations' },
   { label: 'Notifications', labelVi: 'Thông báo', translationKey: 'nav.notifications', to: '/admin/notifications', icon: Bell, group: 'operations' },

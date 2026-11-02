@@ -151,8 +151,12 @@ export interface ConsultationRating {
   createdAt: string;
 }
 
+/** REQUEST = yêu cầu tư vấn có chủ đề, khung giờ; CHAT = ứng viên nhắn trực tiếp. */
+export type ConsultationChannel = 'REQUEST' | 'CHAT';
+
 export interface ConsultationRequest {
   id: string;
+  channel?: ConsultationChannel;
   candidate: ConsultationCandidate;
   consultantId: string;
   consultantName: string;

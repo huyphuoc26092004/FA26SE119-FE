@@ -1,9 +1,9 @@
 import type { CandidateProfile, Resume } from '../types/domain';
 import type { ConsultationPriority, ConsultationRequest, ConsultationTopic } from '../types/consultation';
 import { apiClient } from './apiClient';
-import { notConnected } from './apiPending';
+import { notConnected, pending } from './apiPending';
 import { type ApiRow } from './candidateMappers';
-import { TOPIC_LABELS, buildDescription, toConsultationRequest } from './consultationMappers';
+import { DIRECT_CHAT_SUBJECT, DIRECT_CHAT_TYPE, TOPIC_LABELS, buildDescription, toConsultationRequest } from './consultationMappers';
 
 export const DEFAULT_CONSULTANT = {
   id: '',
@@ -70,4 +70,38 @@ export async function cancelConsultationRequest(id: string): Promise<Consultatio
 // TODO(api): POST /api/v1/consultations/{id}/rating (BE chưa có API)
 export async function rateConsultation(id: string, stars: number, comment: string): Promise<ConsultationRequest> {
   return notConnected('BE chưa có API', id, stars, comment);
+}
+
+/** Đọc lại một cuộc tư vấn kèm tin nhắn (dùng để làm mới khung chat). */
+export async function getMyConsultation(id: string): Promise<ConsultationRequest> {
+  const { data } = await apiClient.get<ApiRow>(`/consultations/${id}`);
+  return loadThread(data);
+}
+
+/**
+ * Chat trực tiếp: backend chưa có kênh chat riêng, nên tạo một cuộc tư vấn loại DIRECT_CHAT
+ * với tin nhắn đầu tiên làm mô tả, rồi gửi chính tin đó vào cuộc trò chuyện.
+ * Cuộc chat vẫn cần quản trị viên phân công cố vấn như yêu cầu thường.
+ */
+export async function startDirectChat(firstMessage: string, topic?: ConsultationTopic): Promise<ConsultationRequest> {
+  const content = firstMessage.trim().slice(0, 10000);
+  const { data } = await apiClient.post<ApiRow>('/consultations', {
+    subject: topic ? `${DIRECT_CHAT_SUBJECT.vi} · ${TOPIC_LABELS[topic].vi}` : DIRECT_CHAT_SUBJECT.vi,
+    requestType: DIRECT_CHAT_TYPE,
+    description: content,
+  });
+  await apiClient.post(`/consultations/${data.id}/messages`, { content });
+  return loadThread(data);
+}
+
+export interface AvailableConsultant {
+  id: string;
+  name: string;
+  title: string;
+  online: boolean;
+}
+
+// TODO(api): GET /api/v1/consultants (BE chưa có API cho ứng viên xem danh sách cố vấn đang trực)
+export function getAvailableConsultants(): Promise<AvailableConsultant[]> {
+  return Promise.resolve(pending<AvailableConsultant[]>([], 'BE chưa có API'));
 }

@@ -16,17 +16,18 @@ const copy = {
     headline: 'Có sẵn CV rồi.',
     headlineAccent: 'Để AI đọc giúp bạn.',
     intro:
-      'Tải lên file PDF hoặc DOCX. AI tự trích xuất thông tin và chấm điểm ATS, bạn chỉ cần kiểm tra lại.',
+      'Tải lên file PDF hoặc DOCX. AI đọc và điền sẵn thông tin vào form, bạn chỉ cần kiểm tra lại rồi lưu.',
     choose: 'Chọn file CV từ máy của bạn',
     dropHint: 'hoặc kéo thả file vào đây',
     formats: 'PDF, DOCX, TXT hoặc ảnh · tối đa 10 MB',
     browse: 'Duyệt file',
     uploadFailed: 'Không tải lên được CV. Vui lòng thử lại.',
     parsingHeadline: 'Đang đọc CV.',
-    parsingAccent: 'Chỉ mất vài giây.',
+    parsingAccent: 'Thường mất dưới một phút.',
     parsingFile: 'Đang phân tích tệp',
     done: 'Xong',
-    running: 'Đang chạy',
+    running: 'Đang làm',
+    parsingNote: 'Bước này chỉ đọc và tách thông tin trong CV, chưa chấm điểm. Điểm ATS được tính khi bạn so CV với một việc làm cụ thể ở trang Độ phù hợp CV.',
     reviewLabel: 'Kiểm tra CV',
     reviewHeadline: 'Đã đọc xong CV.',
     reviewAccent: 'Kiểm tra lại trước khi lưu.',
@@ -57,16 +58,12 @@ const copy = {
     end: 'Thời gian kết thúc',
     description: 'Mô tả trách nhiệm & thành tựu',
     remove: 'Xoá',
-    atsTitle: 'Điểm ATS ước tính',
-    atsNote: 'Tương thích tốt với hệ thống sàng lọc tự động.',
-    format: 'Định dạng & bố cục',
-    keywords: 'Từ khoá chuyên môn',
-    quantified: 'Định lượng thành tích',
+    atsTitle: 'Điểm ATS',
+    atsNote: 'Chưa có. Điểm ATS phụ thuộc vào từng việc làm, nên được tính khi bạn so CV này với một JD.',
     fileTitle: 'Thông tin tệp',
     fileName: 'Tên tệp gốc',
     fileSize: 'Kích thước',
     extractedAt: 'Thời gian trích xuất',
-    model: 'Mô hình',
     justNow: 'Vừa xong',
     warnings: 'Ghi chú khi trích xuất',
     showRaw: 'Xem văn bản thô',
@@ -80,17 +77,18 @@ const copy = {
     headline: 'Already have a CV?',
     headlineAccent: 'Let AI read it for you.',
     intro:
-      'Upload a PDF or DOCX file. AI extracts the details and scores it for ATS — you only need to review.',
+      'Upload a PDF or DOCX file. AI reads it and fills in the form for you; just review and save.',
     choose: 'Choose a CV file from your computer',
     dropHint: 'or drag and drop it here',
     formats: 'PDF, DOCX, TXT or image · up to 10 MB',
     browse: 'Browse files',
     uploadFailed: 'Could not upload the CV. Please try again.',
     parsingHeadline: 'Reading your CV.',
-    parsingAccent: 'This takes a few seconds.',
+    parsingAccent: 'Usually under a minute.',
     parsingFile: 'Analysing file',
     done: 'Done',
-    running: 'Running',
+    running: 'Working',
+    parsingNote: 'This step only reads and extracts the CV details; it does not score anything. The ATS score is calculated when you compare the CV with a specific job on the CV fit page.',
     reviewLabel: 'Review CV',
     reviewHeadline: 'Your CV has been read.',
     reviewAccent: 'Check it before saving.',
@@ -121,16 +119,12 @@ const copy = {
     end: 'End date',
     description: 'Responsibilities & achievements',
     remove: 'Remove',
-    atsTitle: 'Estimated ATS score',
-    atsNote: 'Works well with modern automated screening systems.',
-    format: 'Format & layout',
-    keywords: 'Domain keywords',
-    quantified: 'Quantified results',
+    atsTitle: 'ATS score',
+    atsNote: 'Not yet. The ATS score depends on the job, so it is calculated when you compare this CV with a job description.',
     fileTitle: 'File details',
     fileName: 'Original file',
     fileSize: 'Size',
     extractedAt: 'Extracted',
-    model: 'Model',
     justNow: 'Just now',
     warnings: 'Extraction notes',
     showRaw: 'Show raw text',
@@ -225,25 +219,19 @@ export default function UploadResumePage() {
     setFlowState('parsing');
     setParsingStep(1);
 
-    // Progressive step simulation for realistic AI feel
-    const t1 = setTimeout(() => setParsingStep(2), 350);
-    const t2 = setTimeout(() => setParsingStep(3), 700);
-    const t3 = setTimeout(() => setParsingStep(4), 1050);
-    const t4 = setTimeout(() => setParsingStep(5), 1350);
+    // Mốc gần đúng: backend tải lên, đọc chữ và tách thông tin trong một lần gọi; bước cuối chờ tới khi có kết quả.
+    const t1 = setTimeout(() => setParsingStep(2), 1200);
+    const t2 = setTimeout(() => setParsingStep(3), 4000);
 
     try {
       const parsed = await simulateAiCvExtraction(file, isVietnamese ? 'vi' : 'en');
       clearTimeout(t1);
       clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
       setExtractedData(parsed);
       setFlowState('review');
     } catch (error) {
       clearTimeout(t1);
       clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
       setUploadError(authErrorMessage(error, c.uploadFailed));
       setFlowState('upload');
     }
@@ -336,8 +324,6 @@ export default function UploadResumePage() {
     { step: 1, label: t('resumes.parsingStep1') },
     { step: 2, label: t('resumes.parsingStep2') },
     { step: 3, label: t('resumes.parsingStep3') },
-    { step: 4, label: t('resumes.parsingStep4') },
-    { step: 5, label: t('resumes.parsingStep5') },
   ];
 
   const heading =
@@ -428,13 +414,13 @@ export default function UploadResumePage() {
           <div
             className="h-[3px] w-full bg-slate-200"
             role="progressbar"
-            aria-valuenow={Math.min(parsingStep, 5)}
+            aria-valuenow={Math.min(parsingStep, 3)}
             aria-valuemin={0}
-            aria-valuemax={5}
+            aria-valuemax={3}
           >
             <div
               className="h-full bg-brand transition-[width] duration-300"
-              style={{ width: `${(Math.min(parsingStep, 5) / 5) * 100}%` }}
+              style={{ width: `${(Math.min(parsingStep, 3) / 3) * 90}%` }}
             />
           </div>
           <ol>
@@ -461,6 +447,7 @@ export default function UploadResumePage() {
               );
             })}
           </ol>
+          <p className="mt-5 max-w-2xl text-[13px] leading-6 text-slate-600">{c.parsingNote}</p>
         </section>
       )}
 
@@ -721,25 +708,7 @@ export default function UploadResumePage() {
             <aside className="min-w-0 space-y-12 lg:sticky lg:top-6 lg:self-start">
               <section className="border-t border-ink pt-4">
                 <p className="text-[13px] text-slate-600">{c.atsTitle}</p>
-                <p className="mt-2 text-[clamp(2.75rem,4vw,3.5rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
-                  {extractedData.atsScore ?? 92}
-                </p>
-                <p className="mt-2.5 text-sm text-slate-600">{c.atsNote}</p>
-                <dl className="mt-5 text-sm">
-                  {[
-                    { label: c.format, value: '95%' },
-                    { label: c.keywords, value: '90%' },
-                    { label: c.quantified, value: '88%' },
-                  ].map((row) => (
-                    <div
-                      key={row.label}
-                      className="flex justify-between gap-4 border-t border-border py-2.5 last:border-b"
-                    >
-                      <dt className="text-slate-600">{row.label}</dt>
-                      <dd className="text-ink tabular-nums">{row.value}</dd>
-                    </div>
-                  ))}
-                </dl>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{c.atsNote}</p>
               </section>
 
               <section className="border-t border-ink pt-4">
@@ -755,7 +724,6 @@ export default function UploadResumePage() {
                       label: c.extractedAt,
                       value: extractedData.extractedMeta?.extractedAt || c.justNow,
                     },
-                    { label: c.model, value: 'Gemini OCR & Semantic Parser' },
                   ].map((row) => (
                     <div
                       key={row.label}

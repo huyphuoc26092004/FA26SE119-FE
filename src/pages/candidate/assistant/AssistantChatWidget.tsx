@@ -28,7 +28,6 @@ import {
   createChatSession,
   renameChatSession,
   deleteChatSession,
-  clearSessionMessages,
   updateMessageFeedback,
   sendUserMessageAndGetAiReply,
 } from '../../../services/assistantService';
@@ -40,7 +39,7 @@ import { subscribeAssistantChat, type AssistantChatRequest } from './assistantCh
 
 const copy = {
   vi: {
-    title: 'Trợ lý nghề nghiệp',
+    title: 'Trợ lý AI',
     launcher: 'Hỏi trợ lý',
     open: 'Mở trò chuyện với trợ lý',
     close: 'Đóng khung chat',
@@ -52,11 +51,16 @@ const copy = {
     more: 'Tuỳ chọn khác',
     cv: 'CV',
     job: 'Việc làm',
-    noCv: 'Không gắn CV',
-    noJob: 'Không gắn việc làm',
+    noCv: 'Không chọn CV',
+    noJob: 'Không chọn việc làm',
+    contextLabel: 'Trợ lý đọc thêm',
+    contextHelp: 'Chọn CV hoặc việc làm nếu muốn trợ lý trả lời dựa trên chúng. Không bắt buộc.',
+    introTitle: 'Hỏi gì về nghề nghiệp cũng được.',
+    introBody: 'Ví dụ: sửa CV, chuẩn bị phỏng vấn, nên ứng tuyển việc nào. Trợ lý là AI, trả lời trong vài giây đến một phút. Muốn nói chuyện với người thật, dùng trang Tư vấn nghề nghiệp.',
+    historyShort: 'Lịch sử',
+    newShort: 'Mới',
     contextDetails: 'Xem ngữ cảnh',
     exportChat: 'Xuất hội thoại (.md)',
-    clearChat: 'Làm mới đoạn chat',
     assistant: 'Trợ lý',
     you: 'Bạn',
     keyPoints: 'Ý chính',
@@ -85,7 +89,7 @@ const copy = {
     activityLine: (a: number, s: number) => `Đang theo dõi ${a} việc đã ứng tuyển · ${s} việc đã lưu`,
   },
   en: {
-    title: 'Career assistant',
+    title: 'AI assistant',
     launcher: 'Ask the assistant',
     open: 'Open assistant chat',
     close: 'Close chat',
@@ -97,11 +101,16 @@ const copy = {
     more: 'More options',
     cv: 'CV',
     job: 'Job',
-    noCv: 'No CV attached',
-    noJob: 'No job attached',
+    noCv: 'No CV',
+    noJob: 'No job',
+    contextLabel: 'Assistant also reads',
+    contextHelp: 'Pick a CV or a job if you want answers based on them. Optional.',
+    introTitle: 'Ask anything about your career.',
+    introBody: 'For example: fixing your CV, interview prep, which job to apply for. The assistant is AI and replies within a few seconds to a minute. To talk to a real person, use the Career consultation page.',
+    historyShort: 'History',
+    newShort: 'New',
     contextDetails: 'View context',
     exportChat: 'Export chat (.md)',
-    clearChat: 'Clear conversation',
     assistant: 'Assistant',
     you: 'You',
     keyPoints: 'Key points',
@@ -148,6 +157,9 @@ function newDraftSession(params?: { title?: string; activeCvId?: string; activeJ
     messages: [],
   };
 }
+
+const textButton =
+  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[13px] text-slate-700 transition-colors hover:bg-slate-100 hover:text-ink';
 
 const iconButton =
   'grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink';
@@ -351,32 +363,6 @@ export function AssistantChatWidget() {
     }
     setSessions(remaining);
     if (activeSession?.id === id) setActiveSessionId(remaining[0].id);
-  };
-
-  const handleClearChat = () => {
-    setMenuOpen(false);
-    if (!activeSession) return;
-    if (!window.confirm(t('assistant.clearConfirm'))) return;
-    clearSessionMessages(activeSession.id);
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === activeSession.id
-          ? {
-              ...s,
-              messages: [
-                {
-                  id: `msg-${Date.now()}`,
-                  role: 'assistant',
-                  content: isVietnamese
-                    ? 'Cuộc trò chuyện đã được làm mới. Bạn cần hỗ trợ gì tiếp theo cho sự nghiệp của mình?'
-                    : 'Conversation cleared. How can I assist with your career today?',
-                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                },
-              ],
-            }
-          : s,
-      ),
-    );
   };
 
   const handleExportChat = () => {
@@ -587,12 +573,14 @@ export function AssistantChatWidget() {
             </div>
 
             {view === 'chat' && (
-              <button type="button" onClick={() => setView('history')} className={iconButton} aria-label={c.history} title={c.history}>
-                <History size={17} />
+              <button type="button" onClick={() => setView('history')} className={textButton} title={c.history}>
+                <History size={15} aria-hidden="true" />
+                {c.historyShort}
               </button>
             )}
-            <button type="button" onClick={handleNewSession} className={iconButton} aria-label={c.newChat} title={c.newChat}>
-              <Plus size={18} />
+            <button type="button" onClick={handleNewSession} className={textButton} title={c.newChat}>
+              <Plus size={15} aria-hidden="true" />
+              {c.newShort}
             </button>
             {view === 'chat' && (
               <button
@@ -624,15 +612,12 @@ export function AssistantChatWidget() {
                 {[
                   { label: c.contextDetails, onClick: () => { setMenuOpen(false); setInspectorOpen(true); } },
                   { label: c.exportChat, onClick: handleExportChat },
-                  { label: c.clearChat, onClick: handleClearChat, danger: true },
                 ].map((item) => (
                   <button
                     key={item.label}
                     type="button"
                     onClick={item.onClick}
-                    className={`block w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-slate-50 ${
-                      item.danger ? 'text-danger' : 'text-ink'
-                    }`}
+                    className="block w-full px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-slate-50"
                   >
                     {item.label}
                   </button>
@@ -731,7 +716,9 @@ export function AssistantChatWidget() {
             /* ---- Conversation ---- */
             <>
               {/* Context: which CV and job the assistant reads */}
-              <div className="flex items-center gap-4 border-b border-border px-4 py-2.5">
+              <div className="border-b border-border px-4 py-2.5">
+              <p className="text-[11px] text-slate-500" title={c.contextHelp}>{c.contextLabel}</p>
+              <div className="mt-1 flex items-center gap-4">
                 <label className="flex min-w-0 flex-1 items-center gap-2">
                   <span className="shrink-0 text-xs text-slate-500">{c.cv}</span>
                   <select
@@ -742,7 +729,7 @@ export function AssistantChatWidget() {
                     <option value="">{c.noCv}</option>
                     {resumes.map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.name} · {r.atsScore}% ATS
+                        {r.name}
                       </option>
                     ))}
                   </select>
@@ -781,6 +768,7 @@ export function AssistantChatWidget() {
                   </select>
                 </label>
               </div>
+              </div>
               {hasShortlist && !activeSession?.activeJobId && (
                 <p className="border-b border-border px-4 py-1.5 text-[11px] text-slate-500">
                   {c.activityLine(appliedJobs.length, savedJobs.length)}
@@ -806,7 +794,9 @@ export function AssistantChatWidget() {
 
                   {isFreshChat && !typing && (
                     <div>
-                      <p className="text-xs text-slate-500">{c.quickStart}</p>
+                      <p className="text-[15px] text-ink">{c.introTitle}</p>
+                      <p className="mt-1 text-[13px] leading-relaxed text-slate-600">{c.introBody}</p>
+                      <p className="mt-5 text-xs text-slate-500">{c.quickStart}</p>
                       <ol className="mt-1">
                         {quickCategories.map((item, idx) => (
                           <li key={item.title}>
@@ -821,9 +811,6 @@ export function AssistantChatWidget() {
                               <span className="min-w-0 flex-1">
                                 <span className="block text-sm font-medium text-ink group-hover:text-brand">
                                   {item.title}
-                                </span>
-                                <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-slate-500">
-                                  {item.prompt}
                                 </span>
                               </span>
                               <ArrowRight size={15} className="mt-0.5 shrink-0 text-slate-400 group-hover:text-brand" aria-hidden="true" />

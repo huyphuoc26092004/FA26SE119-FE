@@ -69,6 +69,31 @@ export async function getConsultationRequests(params: ConsultationFilterParams =
   }
 }
 
+/**
+ * Hộp thư của cố vấn: mỗi cuộc tư vấn kèm tin nhắn và hồ sơ ứng viên.
+ * Backend chưa trả tin nhắn cuối và số chưa đọc trong danh sách, nên đọc tin nhắn từng thread.
+ */
+export async function getConsultantInbox(): Promise<ConsultationRequest[]> {
+  const { data } = await apiClient.get<ApiRow[]>('/consultations');
+  return Promise.all(
+    data.map(async (row) => {
+      const id = str(row.id);
+      const [messages, profile] = await Promise.all([getMessages(id).catch(() => []), getProfile(id)]);
+      return toConsultationRequest(row, {
+        messages,
+        candidate: profile ? toConsultationCandidate(profile, str(row.candidate_user_id)) : undefined,
+      });
+    }),
+  );
+}
+
+/** Đánh dấu đã đọc mọi tin nhắn của bên kia trong một cuộc tư vấn. */
+export async function markThreadRead(thread: ConsultationRequest, myRole: ConsultationMessage['senderRole']): Promise<number> {
+  const unread = thread.messages.filter((m) => m.senderRole !== myRole && !m.readAt);
+  await Promise.all(unread.map((m) => apiClient.patch(`/consultations/${thread.id}/messages/${m.id}/read`).catch(() => undefined)));
+  return unread.length;
+}
+
 export async function getConsultationRequestById(id: string): Promise<ConsultationRequest | null> {
   if (!id) return null;
   const [{ data }, messages, profile] = await Promise.all([apiClient.get<ApiRow>(`/consultations/${id}`), getMessages(id), getProfile(id)]);
