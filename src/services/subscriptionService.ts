@@ -7,6 +7,7 @@ import { formatDateTime } from './supportService';
 
 /** Tên tiếng Việt cho mã quota/feature AI của backend. */
 export const FEATURE_LABELS: Record<string, string> = {
+  CV_AI_SUPPORT: 'Hỗ trợ sửa CV',
   AI_TOTAL_TOKENS: 'Tổng token AI',
   CV_PARSE: 'Bóc tách CV tải lên',
   CV_BUILD: 'Tạo CV bằng AI',

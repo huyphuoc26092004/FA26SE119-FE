@@ -1,4 +1,4 @@
-import type { CrawlSource } from '../../../types/jobCrawl';
+import type { CrawlItem, CrawlSource, CrawlSourceSite } from '../../../types/jobCrawl';
 
 export const SITE_LABEL: Record<string, string> = { ITVIEC: 'ITviec', TOPCV: 'TopCV' };
 

@@ -439,32 +439,6 @@ export function AssistantChatWidget() {
     }
   };
 
-  const handleClearChat = () => {
-    setMenuOpen(false);
-    if (!activeSession) return;
-    if (!window.confirm(t('assistant.clearConfirm'))) return;
-    clearSessionMessages(activeSession.id);
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === activeSession.id
-          ? {
-              ...s,
-              messages: [
-                {
-                  id: `msg-${Date.now()}`,
-                  role: 'assistant',
-                  content: isVietnamese
-                    ? 'Cuộc trò chuyện đã được làm mới. Bạn cần hỗ trợ gì tiếp theo cho sự nghiệp của mình?'
-                    : 'Conversation cleared. How can I assist with your career today?',
-                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                },
-              ],
-            }
-          : s,
-      ),
-    );
-  };
-
   const handleExportChat = () => {
     setMenuOpen(false);
     if (!activeSession) return;
@@ -757,9 +731,7 @@ export function AssistantChatWidget() {
                     key={item.label}
                     type="button"
                     onClick={item.onClick}
-                    className={`block w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-slate-50 ${
-                      item.danger ? 'text-danger' : 'text-ink'
-                    }`}
+                    className="block w-full px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-slate-50"
                   >
                     {item.label}
                   </button>

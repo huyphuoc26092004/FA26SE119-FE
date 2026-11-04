@@ -91,7 +91,7 @@ export default function JobsPage() {
     error: recommendationError,
     refetch: refreshRecommendations,
   } = useQuery({
-    queryKey: ['jobRecommendations', userId, recommendationSource, 'QUICK', sourceVersion],
+    queryKey: ['jobRecommendations', userId, recommendationSource, 'QUICK_EVIDENCE_V2', sourceVersion],
     queryFn: () => getRecommendationResult({
       basis: selectedResumeId ? 'SELECTED_CV' : 'CAREER_PROFILE',
       resumeId: selectedResumeId,

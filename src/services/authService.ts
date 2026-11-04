@@ -119,8 +119,8 @@ const knownMessages: Record<string, string> = {
   'Wait 60 seconds before requesting a new code': 'Vui lòng đợi 60 giây trước khi yêu cầu mã mới.',
   'Verification attempt limit reached; request a new code':
     'Bạn đã nhập sai quá số lần cho phép. Hãy gửi lại mã mới.',
-  'AI is disabled. Enable Ollama and start its local container with the configured model.':
-    'Backend đang tắt AI (AI_ENABLED=false). Bật Ollama và đặt AI_ENABLED=true trong .env của backend rồi chạy lại.',
+  'AI is disabled. Configure the AI API key and enable AI_ENABLED in the backend environment.':
+    'Dịch vụ AI chưa sẵn sàng. Vui lòng liên hệ quản trị viên hoặc thử lại sau.',
   'AI token quota exceeded; upgrade your subscription or wait for the next quota period':
     'Bạn đã dùng hết lượt AI của gói hiện tại trong kỳ này. Hãy nâng cấp gói hoặc đợi kỳ sau.',
   'Feature token quota exceeded':

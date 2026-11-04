@@ -420,6 +420,7 @@ export async function getResumeAnalysis(resumeId: string): Promise<ResumeAnalysi
   if (!resume) throw new Error('Không tìm thấy CV.');
   if (list.length === 0) return reanalyzeResume(resumeId);
   const latest = await get(`/resumes/${resumeId}/analyses/${str(list[0].id)}`);
+  if (latest.language_valid === false) return reanalyzeResume(resumeId);
   return toResumeAnalysis(latest, resume);
 }
 

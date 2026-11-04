@@ -202,6 +202,7 @@ export default function UploadResumePage() {
 
   // Flow states: 'upload' -> 'parsing' -> 'review'
   const [flowState, setFlowState] = useState<'upload' | 'parsing' | 'review'>('upload');
+  const [parsingStep, setParsingStep] = useState(0);
   const [selectedFileName, setSelectedFileName] = useState<string>('');
   const [selectedFileSize, setSelectedFileSize] = useState<number>(0);
   const [dragOver, setDragOver] = useState(false);

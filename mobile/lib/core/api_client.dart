@@ -129,8 +129,7 @@ class ApiClient {
 
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _wrap(() => dio.get(path, queryParameters: query));
-  /// [timeout] overrides the 60 s receive limit for AI calls, which run on
-  /// the local Ollama and can take several minutes.
+  /// [timeout] overrides the 60 s receive limit for longer AI tasks.
   Future<dynamic> post(String path, {Object? data, bool auth = true, Duration? timeout}) =>
       _wrap(() => dio.post(path,
           data: data,

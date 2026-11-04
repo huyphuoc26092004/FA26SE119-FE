@@ -3,7 +3,7 @@ import axios, { isAxiosError } from 'axios';
 import { authErrorMessage } from './authService';
 
 const STORAGE_KEY = 'ccv.guestSession';
-// Ollama có thể trả lời chậm; chờ tối đa 10 phút giống trợ lý của ứng viên.
+// Chờ tối đa 10 phút cho tác vụ AI giống trợ lý của ứng viên.
 const AI_TIMEOUT = 600_000;
 
 // Không dùng apiClient: khách không có access token, và lỗi 401 ở đây không được làm đăng xuất ai cả.

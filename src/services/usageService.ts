@@ -6,6 +6,7 @@ import { formatDateTime } from './supportService';
 
 // Nhóm các mã feature của backend vào nhóm tính năng trên trang Mức sử dụng AI.
 const FEATURE_GROUP: Record<string, AiFeatureType> = {
+  CV_AI_SUPPORT: 'cv_parsing',
   CV_PARSE: 'cv_parsing',
   CV_BUILD: 'cv_parsing',
   CV_ANALYZE: 'cv_parsing',
@@ -43,8 +44,8 @@ export function toAiUsageRecord(row: ApiRow): AiUsageRecord {
     completionTokens: num(row.output_tokens),
     totalTokens: num(row.total_tokens),
     latencyMs: num(row.latency_ms),
-    // Backend chỉ có success true/false; lỗi quota hiển thị như bị giới hạn.
-    status: row.success === false ? 'rate_limited' : 'success',
+    // Provider failures do not imply a quota or rate limit.
+    status: row.success === false ? 'failed' : 'success',
     details: error || `${str(row.provider)} · ${code}`,
     createdAt: str(row.created_at),
   };

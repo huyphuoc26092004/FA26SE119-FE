@@ -234,7 +234,7 @@ export async function getAiModelConfigs(): Promise<AiModelConfig[]> {
         modelId: c.id,
         displayName: c.modelName,
         provider: c.provider,
-        contextWindow: num(c.configuration.contextWindow ?? c.configuration.num_ctx),
+        contextWindow: num(c.configuration.contextWindow),
         costPer1mInputUSD: 0,
         costPer1mOutputUSD: 0,
         status: list.some((u) => u.success === false) ? 'DEGRADED' : list.length ? 'HEALTHY' : 'STANDBY',
@@ -273,6 +273,53 @@ export interface AiConfiguration {
   version: number;
   isActive: boolean;
   updatedAt: string;
+}
+
+export type AiEditableConfigType = 'CHAT' | 'ASSESSMENT';
+
+export interface AiRuntimeModelConfiguration {
+  configType: string;
+  provider: string;
+  modelName: string;
+  configuration: Record<string, unknown> & {
+    temperature?: number;
+    numPredict?: number;
+  };
+  source: 'ENVIRONMENT' | 'DATABASE';
+  version?: number | null;
+  readOnly?: boolean;
+}
+
+export interface AiRuntimeConfiguration {
+  provider: string;
+  chat: AiRuntimeModelConfiguration;
+  assessment: AiRuntimeModelConfiguration;
+  embedding: AiRuntimeModelConfiguration;
+}
+
+export interface AiFeatureDefinition {
+  featureCode: string;
+  name: string;
+  description: string;
+  defaultSystemPrompt: string;
+  defaultUserPromptTemplate: string;
+  responseSchema: string;
+  modelConfigType: string;
+  minContext: number;
+  minOutputTokens: number;
+  deterministic: boolean;
+}
+
+/** Cấu hình thực tế đang được áp dụng, gồm cả giá trị từ môi trường. */
+export async function getAiRuntimeConfiguration(): Promise<AiRuntimeConfiguration> {
+  const { data } = await apiClient.get<AiRuntimeConfiguration>('/admin/ai/runtime');
+  return data;
+}
+
+/** Chỉ các chức năng đã được backend hỗ trợ mới có thể nhận prompt tùy chỉnh. */
+export async function getAiFeatureDefinitions(): Promise<AiFeatureDefinition[]> {
+  const { data } = await apiClient.get<AiFeatureDefinition[]>('/admin/ai/features');
+  return data;
 }
 
 const toAiConfiguration = (row: ApiRow): AiConfiguration => ({

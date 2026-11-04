@@ -1,6 +1,6 @@
 import type { AiChatMessage, AiChatSession, CandidateProfile, Job, Resume } from '../types/domain';
 import { apiClient } from './apiClient';
-import { pending } from './apiPending';
+import { askGuestAssistant } from './guestService';
 
 interface ConversationResponse {
   id: string;
@@ -204,6 +204,8 @@ export async function sendUserMessageAndGetAiReply(params: AiResponseEngineParam
 export type CvSuggestField = 'summary' | 'experience' | 'project';
 
 export interface CvSuggestParams {
+  /** CV đã lưu; backend kiểm tra quyền sở hữu trước khi dùng làm ngữ cảnh. */
+  resumeId?: string;
   field: CvSuggestField;
   language: 'vi' | 'en';
   /** Vị trí mong muốn, kỹ năng… để AI viết sát mục tiêu. */
@@ -220,12 +222,12 @@ export interface CvSuggestParams {
 
 const SUGGEST_INSTRUCTIONS: Record<CvSuggestField, Record<'vi' | 'en', string>> = {
   summary: {
-    vi: 'Viết lại phần "Giới thiệu bản thân" cho CV: 2–4 câu, ngôi thứ nhất ẩn chủ ngữ, nêu số năm kinh nghiệm, thế mạnh chính và mục tiêu, không bịa số liệu.',
-    en: 'Rewrite the CV "Professional summary": 2–4 sentences, implied first person, mention years of experience, key strengths and goal, do not invent figures.',
+    vi: 'Viết lại phần "Giới thiệu bản thân" cho CV: 2–4 câu, ngôi thứ nhất ẩn chủ ngữ, nêu thế mạnh và mục tiêu dựa trên dữ kiện đã cung cấp. Chỉ nêu số năm kinh nghiệm khi có thông tin xác thực.',
+    en: 'Rewrite the CV "Professional summary": 2–4 sentences, implied first person, using supplied strengths and goals. Mention years of experience only when provided; do not invent figures.',
   },
   experience: {
-    vi: 'Viết 3–5 gạch đầu dòng "Điểm nổi bật" cho kinh nghiệm này: mỗi dòng mở đầu bằng động từ, nêu kết quả, chỉ dùng số liệu nếu người dùng đã đưa, nếu chưa có thì để [số liệu] cho người dùng tự điền.',
-    en: 'Write 3–5 "Highlights" bullets for this job: each starts with an action verb and states a result; only use figures the user gave, otherwise put [number] as a placeholder.',
+    vi: 'Viết tối đa 5 gạch đầu dòng "Điểm nổi bật" cho kinh nghiệm này: mỗi dòng mở đầu bằng động từ và dùng đúng thông tin người dùng cung cấp. Không thêm số liệu hoặc thông tin thay thế khi chưa có dữ kiện.',
+    en: 'Write up to five "Highlights" bullets for this job using only supplied facts. Begin with an action verb; omit unsupported figures and do not add placeholders.',
   },
   project: {
     vi: 'Viết lại mô tả dự án cho CV: 2–3 câu, nêu bài toán, vai trò và công nghệ, kết quả đạt được, không bịa số liệu.',
@@ -249,8 +251,7 @@ function cleanSuggestion(text: string, field: CvSuggestField): string {
 }
 
 /**
- * Nhờ trợ lý nghề nghiệp viết gợi ý cho một ô của CV. Dùng một cuộc trò chuyện tạm
- * rồi lưu trữ (archive) ngay để không lẫn vào lịch sử chat của người dùng.
+ * Nhờ AI viết gợi ý cho một ô của CV; người dùng xem và tự áp dụng nội dung đề xuất.
  */
 export async function suggestCvText(params: CvSuggestParams, options?: { guest?: boolean }): Promise<string> {
   const vi = params.language === 'vi';
@@ -275,17 +276,24 @@ export async function suggestCvText(params: CvSuggestParams, options?: { guest?:
     return text;
   }
 
-  const session = await createChatSession({ title: vi ? 'Gợi ý soạn CV' : 'CV writing hint' });
-  try {
-    const { data } = await apiClient.post<MessageResponse>(
-      `/assistant/conversations/${session.id}/messages`,
-      { message: lines.join('\n').slice(0, 7900), retrieve: false },
-      { timeout: 600_000 },
-    );
-    const text = cleanSuggestion(data.message_text ?? '', params.field);
-    if (!text) throw new Error(vi ? 'Trợ lý chưa trả về gợi ý nào.' : 'The assistant returned no suggestion.');
-    return text;
-  } finally {
-    deleteChatSession(session.id).catch(() => undefined);
-  }
+  const { data } = await apiClient.post<{ answer: string }>(
+    '/resumes/AI-support',
+    {
+      question: [SUGGEST_INSTRUCTIONS[params.field][params.language]],
+      is_urgent: false,
+      resumeId: params.resumeId,
+      language: params.language,
+      field: params.field,
+      currentText: params.current,
+      position: params.position,
+      skills: params.skills?.slice(0, 30),
+      title: params.title,
+      subtitle: params.subtitle,
+      background: params.background,
+    },
+    { timeout: 600_000 },
+  );
+  const text = cleanSuggestion(data.answer ?? '', params.field);
+  if (!text) throw new Error(vi ? 'Trợ lý chưa trả về gợi ý nào.' : 'The assistant returned no suggestion.');
+  return text;
 }
