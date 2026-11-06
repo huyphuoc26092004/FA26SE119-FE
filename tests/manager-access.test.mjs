@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { Buffer } from 'node:buffer';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import ts from 'typescript';
