@@ -1,4 +1,8 @@
-import { Navigate, createBrowserRouter, Outlet, useParams, useSearchParams } from 'react-router-dom';
+import ManagerLayout from '../layouts/ManagerLayout';
+import ManagerPaymentsPage from '../pages/admin/ManagerPaymentsPage';
+import OperationsReportsPage from '../pages/admin/OperationsReportsPage';
+import { managerCanOpen } from '../utils/roleAccess';
+import { Navigate, createBrowserRouter, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import type { UserRole } from '../types/domain';
 import PublicLayout from '../layouts/PublicLayout';
@@ -37,6 +41,7 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import SubscriptionQuotaManagementPage from '../pages/admin/SubscriptionQuotaManagementPage';
+import ConsultationServicesPage from '../pages/admin/ConsultationServicesPage';
 import PaymentInvoiceManagementPage from '../pages/admin/PaymentInvoiceManagementPage';
 import ResumeTemplateManagementPage from '../pages/admin/ResumeTemplateManagementPage';
 import JobCrawlManagementPage from '../pages/admin/JobCrawlManagementPage';
@@ -68,7 +73,14 @@ function SkillAssessmentRedirect() {
 }
 
 export function ProtectedRoute() { const authenticated = useAuthStore(s => s.isAuthenticated); return authenticated ? <Outlet /> : <Navigate to="/login" replace />; }
-export function RoleRoute({ role }: { role: UserRole }) { const current = useAuthStore(s => s.role); return current === role ? <Outlet /> : <Navigate to="/unauthorized" replace />; }
+export function RoleRoute({ role }: { role: UserRole }) {
+  const current = useAuthStore(s => s.role);
+  const location = useLocation();
+  if (current === 'MANAGER' && role === 'ADMIN' && managerCanOpen(location.pathname)) {
+    return <Navigate to={location.pathname.replace(/^\/admin/, '/manager') + location.search} replace />;
+  }
+  return current === role ? <Outlet /> : <Navigate to="/unauthorized" replace />;
+}
 const placeholders = (paths: string[]) => paths.map(path => ({ path, element: <PlaceholderPage /> }));
 export const router = createBrowserRouter([
   {
@@ -166,6 +178,24 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        element: <RoleRoute role="MANAGER" />,
+        children: [{ path: '/manager', element: <ManagerLayout />, children: [
+          { index: true, element: <OperationsReportsPage /> },
+          { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
+          { path: 'consultation-services', element: <ConsultationServicesPage /> },
+          { path: 'payments', element: <ManagerPaymentsPage /> },
+          { path: 'templates', element: <ResumeTemplateManagementPage /> },
+          { path: 'jobs', element: <JobCrawlManagementPage /> },
+          { path: 'vector', element: <KnowledgeBasePage /> },
+          { path: 'notifications', element: <AnnouncementsPage /> },
+          { path: 'feedback', element: <OperationsReportsPage mode="feedback" /> },
+          { path: 'support', element: <AdminSupportPage /> },
+          { path: 'analytics', element: <OperationsReportsPage mode="analytics" /> },
+          { path: 'account', element: <AccountPage /> },
+          { path: 'inbox', element: <NotificationsPage /> },
+        ] }],
+      },
+      {
         element: <RoleRoute role="ADMIN" />,
         children: [
           {
@@ -176,6 +206,7 @@ export const router = createBrowserRouter([
               { path: 'users', element: <UserManagementPage /> },
               { path: 'users/:id', element: <UserDetailsPage /> },
               { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
+              { path: 'consultation-services', element: <ConsultationServicesPage /> },
               { path: 'payments', element: <PaymentInvoiceManagementPage /> },
               { path: 'templates', element: <ResumeTemplateManagementPage /> },
               { path: 'resume-templates', element: <Navigate to="/admin/templates" replace /> },
@@ -190,7 +221,9 @@ export const router = createBrowserRouter([
               { path: 'account', element: <AccountPage /> },
               { path: 'inbox', element: <NotificationsPage /> },
               // BE chưa có API cho các màn này (xem tài liệu API BE cần bổ sung).
-              ...placeholders(['ai/embeddings', 'feedback', 'analytics']),
+              { path: 'feedback', element: <OperationsReportsPage mode="feedback" /> },
+              { path: 'analytics', element: <OperationsReportsPage mode="analytics" /> },
+              ...placeholders(['ai/embeddings']),
             ],
           },
         ],

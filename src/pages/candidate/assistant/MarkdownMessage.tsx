@@ -8,10 +8,30 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
   const lines = content.split('\n');
 
   const renderFormattedText = (text: string): React.ReactNode => {
-    // Split by bold (**text**)
-    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+    const parts = text.split(/(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*.*?\*\*|\*.*?\*|`.*?`)/gi);
 
     return parts.map((part, index) => {
+      const link = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/i);
+      if (link) {
+        try {
+          const url = new URL(link[2]);
+          if (url.protocol === 'http:' || url.protocol === 'https:') {
+            return (
+              <a
+                key={index}
+                href={url.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-words text-brand-700 underline underline-offset-2 hover:text-brand-800"
+              >
+                {link[1]}
+              </a>
+            );
+          }
+        } catch {
+          return part;
+        }
+      }
       if (part.startsWith('**') && part.endsWith('**')) {
         return (
           <strong key={index} className="font-semibold text-slate-900">

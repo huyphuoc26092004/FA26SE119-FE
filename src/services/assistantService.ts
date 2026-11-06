@@ -1,6 +1,5 @@
 import type { AiChatMessage, AiChatSession, CandidateProfile, Job, Resume } from '../types/domain';
 import { apiClient } from './apiClient';
-import { pending } from './apiPending';
 import { askGuestAssistant } from './guestService';
 
 interface ConversationResponse {
@@ -22,6 +21,7 @@ interface MessageResponse {
   message_text: string;
   created_at: string;
   sources?: SourceResponse[];
+  feedback?: 'like' | 'dislike' | null;
 }
 
 interface SourceResponse {
@@ -38,13 +38,23 @@ const time = (iso: string) => {
 /** Nguồn học có link được nối vào cuối câu trả lời dạng danh sách markdown. */
 function toMessage(message: MessageResponse, sources: SourceResponse[] = []): AiChatMessage {
   const links = sources
-    .filter((s) => s.source_url)
-    .map((s) => `- [${s.source_label || s.source_url}](${s.source_url})`);
+    .flatMap((source) => {
+      try {
+        const url = new URL(source.source_url ?? '');
+        if (!['http:', 'https:'].includes(url.protocol)) return [];
+        const label = (source.source_label || url.href).replace(/[[\]\\\r\n]/g, ' ');
+        const href = url.href.replace(/\(/g, '%28').replace(/\)/g, '%29');
+        return [`- [${label}](${href})`];
+      } catch {
+        return [];
+      }
+    });
   return {
     id: message.id,
     role: message.sender_type === 'USER' ? 'user' : message.sender_type === 'SYSTEM' ? 'system' : 'assistant',
     content: links.length ? `${message.message_text}\n\n**Nguồn tham khảo**\n${links.join('\n')}` : message.message_text,
     timestamp: time(message.created_at),
+    feedback: message.feedback ?? null,
   };
 }
 
@@ -57,7 +67,7 @@ function toSession(row: ConversationResponse): AiChatSession {
     updatedAt: row.last_message_at ?? row.updated_at,
     activeCvId: row.related_resume_id ?? undefined,
     activeJobId: row.related_job_id ?? undefined,
-    messages: (row.messages ?? []).map((m) => toMessage(m, sources.filter((s) => s.message_id === m.id))),
+    messages: (row.messages ?? []).map((m) => toMessage(m, m.sources ?? sources.filter((s) => s.message_id === m.id))),
   };
 }
 
@@ -72,7 +82,7 @@ export async function getChatSessionById(sessionId: string): Promise<AiChatSessi
   return toSession(data);
 }
 
-/** CV và job gắn lúc tạo là ngữ cảnh backend nạp cho AI trong suốt cuộc trò chuyện. */
+/** CV và job đã gắn được backend nạp làm ngữ cảnh cho AI. */
 export async function createChatSession(params?: {
   title?: string;
   activeCvId?: string;
@@ -87,9 +97,23 @@ export async function createChatSession(params?: {
   return toSession(data);
 }
 
-// TODO(api): BE chưa có API
-export function renameChatSession(sessionId: string, newTitle: string): void {
-  pending(undefined, 'BE chưa có API', sessionId, newTitle);
+export async function renameChatSession(sessionId: string, newTitle: string): Promise<AiChatSession> {
+  const { data } = await apiClient.patch<ConversationResponse>(`/assistant/conversations/${sessionId}`, {
+    title: newTitle.trim().slice(0, 255),
+  });
+  return toSession(data);
+}
+
+/** Omitted fields stay attached; an explicitly undefined field detaches that context. */
+export async function updateChatSessionContext(sessionId: string, context: {
+  activeCvId?: string;
+  activeJobId?: string;
+}): Promise<AiChatSession> {
+  const body: { related_resume_id?: string | null; related_job_id?: string | null } = {};
+  if (Object.hasOwn(context, 'activeCvId')) body.related_resume_id = context.activeCvId ?? null;
+  if (Object.hasOwn(context, 'activeJobId')) body.related_job_id = context.activeJobId ?? null;
+  const { data } = await apiClient.patch<ConversationResponse>(`/assistant/conversations/${sessionId}`, body);
+  return toSession(data);
 }
 
 /** Backend lưu trữ (archive) cuộc trò chuyện, không xoá hẳn lịch sử. */
@@ -97,14 +121,16 @@ export async function deleteChatSession(sessionId: string): Promise<void> {
   await apiClient.delete(`/assistant/conversations/${sessionId}`);
 }
 
-// TODO(api): BE chưa có API
-export function clearSessionMessages(sessionId: string): void {
-  pending(undefined, 'BE chưa có API', sessionId);
+export async function clearSessionMessages(sessionId: string): Promise<void> {
+  await apiClient.delete(`/assistant/conversations/${sessionId}/messages`);
 }
 
-/** Chỉ gửi được đánh giá cho tin trả lời của trợ lý; bỏ đánh giá thì không có API. */
+/** Gửi hoặc bỏ đánh giá cho một tin trả lời đã được lưu của trợ lý. */
 export async function updateMessageFeedback(messageId: string, feedback: 'like' | 'dislike' | null): Promise<void> {
-  if (!feedback) return;
+  if (!feedback) {
+    await apiClient.delete(`/assistant/messages/${messageId}/feedback`);
+    return;
+  }
   await apiClient.post(`/assistant/messages/${messageId}/feedback`, {
     is_helpful: feedback === 'like',
     rating: feedback === 'like' ? 5 : 1,
@@ -118,6 +144,8 @@ export interface AiResponseEngineParams {
   selectedCv?: Resume;
   selectedJob?: Job;
   isVietnamese?: boolean;
+  /** Persisted messages before this send, used if the reply succeeds but reloading fails. */
+  currentSession?: AiChatSession;
   /** Jobs the candidate saved or applied for in Job discovery (newest first). */
   jobActivity?: AssistantJobActivity;
 }
@@ -141,18 +169,33 @@ export async function sendUserMessageAndGetAiReply(params: AiResponseEngineParam
   const { data } = await apiClient.post<MessageResponse>(
     `/assistant/conversations/${params.sessionId}/messages`,
     // Truy xuất RAG cần embedding; chỉ bật khi người dùng hỏi về việc học.
-    { message: params.userText, retrieve: LEARNING_QUESTION.test(params.userText) },
+    {
+      message: params.userText,
+      retrieve: LEARNING_QUESTION.test(params.userText),
+      language: params.isVietnamese === false ? 'en' : 'vi',
+    },
     { timeout: 600_000 },
   );
   const assistantMessage = toMessage(data, data.sources);
-  const updatedSession = await getChatSessionById(params.sessionId);
-  if (!updatedSession) throw new Error('Không đọc lại được cuộc trò chuyện.');
-  const userMessage = [...updatedSession.messages].reverse().find((m) => m.role === 'user') ?? {
-    id: `user-${Date.now()}`,
+  const now = new Date().toISOString();
+  const fallbackUserMessage: AiChatMessage = {
+    id: `user-${crypto.randomUUID()}`,
     role: 'user' as const,
     content: params.userText,
-    timestamp: time(new Date().toISOString()),
+    timestamp: time(now),
   };
+  // A successful POST has already saved both messages. A failed refresh must not
+  // turn that reply into a send error and encourage an accidental duplicate send.
+  const updatedSession = await getChatSessionById(params.sessionId).catch(() => undefined) ?? {
+    id: params.sessionId,
+    title: params.currentSession?.title ?? params.userText.slice(0, 80),
+    createdAt: params.currentSession?.createdAt ?? now,
+    activeCvId: params.currentSession?.activeCvId ?? params.selectedCv?.id,
+    activeJobId: params.currentSession?.activeJobId ?? params.selectedJob?.id,
+    updatedAt: data.created_at || now,
+    messages: [...(params.currentSession?.messages ?? []), fallbackUserMessage, assistantMessage],
+  };
+  const userMessage = [...updatedSession.messages].reverse().find((m) => m.role === 'user') ?? fallbackUserMessage;
   return { userMessage, assistantMessage, updatedSession };
 }
 
@@ -161,6 +204,8 @@ export async function sendUserMessageAndGetAiReply(params: AiResponseEngineParam
 export type CvSuggestField = 'summary' | 'experience' | 'project';
 
 export interface CvSuggestParams {
+  /** CV đã lưu; backend kiểm tra quyền sở hữu trước khi dùng làm ngữ cảnh. */
+  resumeId?: string;
   field: CvSuggestField;
   language: 'vi' | 'en';
   /** Vị trí mong muốn, kỹ năng… để AI viết sát mục tiêu. */
@@ -177,12 +222,12 @@ export interface CvSuggestParams {
 
 const SUGGEST_INSTRUCTIONS: Record<CvSuggestField, Record<'vi' | 'en', string>> = {
   summary: {
-    vi: 'Viết lại phần "Giới thiệu bản thân" cho CV: 2–4 câu, ngôi thứ nhất ẩn chủ ngữ, nêu số năm kinh nghiệm, thế mạnh chính và mục tiêu, không bịa số liệu.',
-    en: 'Rewrite the CV "Professional summary": 2–4 sentences, implied first person, mention years of experience, key strengths and goal, do not invent figures.',
+    vi: 'Viết lại phần "Giới thiệu bản thân" cho CV: 2–4 câu, ngôi thứ nhất ẩn chủ ngữ, nêu thế mạnh và mục tiêu dựa trên dữ kiện đã cung cấp. Chỉ nêu số năm kinh nghiệm khi có thông tin xác thực.',
+    en: 'Rewrite the CV "Professional summary": 2–4 sentences, implied first person, using supplied strengths and goals. Mention years of experience only when provided; do not invent figures.',
   },
   experience: {
-    vi: 'Viết 3–5 gạch đầu dòng "Điểm nổi bật" cho kinh nghiệm này: mỗi dòng mở đầu bằng động từ, nêu kết quả, chỉ dùng số liệu nếu người dùng đã đưa, nếu chưa có thì để [số liệu] cho người dùng tự điền.',
-    en: 'Write 3–5 "Highlights" bullets for this job: each starts with an action verb and states a result; only use figures the user gave, otherwise put [number] as a placeholder.',
+    vi: 'Viết tối đa 5 gạch đầu dòng "Điểm nổi bật" cho kinh nghiệm này: mỗi dòng mở đầu bằng động từ và dùng đúng thông tin người dùng cung cấp. Không thêm số liệu hoặc thông tin thay thế khi chưa có dữ kiện.',
+    en: 'Write up to five "Highlights" bullets for this job using only supplied facts. Begin with an action verb; omit unsupported figures and do not add placeholders.',
   },
   project: {
     vi: 'Viết lại mô tả dự án cho CV: 2–3 câu, nêu bài toán, vai trò và công nghệ, kết quả đạt được, không bịa số liệu.',
@@ -206,8 +251,7 @@ function cleanSuggestion(text: string, field: CvSuggestField): string {
 }
 
 /**
- * Nhờ trợ lý nghề nghiệp viết gợi ý cho một ô của CV. Dùng một cuộc trò chuyện tạm
- * rồi lưu trữ (archive) ngay để không lẫn vào lịch sử chat của người dùng.
+ * Nhờ AI viết gợi ý cho một ô của CV; người dùng xem và tự áp dụng nội dung đề xuất.
  */
 export async function suggestCvText(params: CvSuggestParams, options?: { guest?: boolean }): Promise<string> {
   const vi = params.language === 'vi';
@@ -232,17 +276,24 @@ export async function suggestCvText(params: CvSuggestParams, options?: { guest?:
     return text;
   }
 
-  const session = await createChatSession({ title: vi ? 'Gợi ý soạn CV' : 'CV writing hint' });
-  try {
-    const { data } = await apiClient.post<MessageResponse>(
-      `/assistant/conversations/${session.id}/messages`,
-      { message: prompt, retrieve: false },
-      { timeout: 600_000 },
-    );
-    const text = cleanSuggestion(data.message_text ?? '', params.field);
-    if (!text) throw new Error(vi ? 'Trợ lý chưa trả về gợi ý nào.' : 'The assistant returned no suggestion.');
-    return text;
-  } finally {
-    deleteChatSession(session.id).catch(() => undefined);
-  }
+  const { data } = await apiClient.post<{ answer: string }>(
+    '/resumes/AI-support',
+    {
+      question: [SUGGEST_INSTRUCTIONS[params.field][params.language]],
+      is_urgent: false,
+      resumeId: params.resumeId,
+      language: params.language,
+      field: params.field,
+      currentText: params.current,
+      position: params.position,
+      skills: params.skills?.slice(0, 30),
+      title: params.title,
+      subtitle: params.subtitle,
+      background: params.background,
+    },
+    { timeout: 600_000 },
+  );
+  const text = cleanSuggestion(data.answer ?? '', params.field);
+  if (!text) throw new Error(vi ? 'Trợ lý chưa trả về gợi ý nào.' : 'The assistant returned no suggestion.');
+  return text;
 }

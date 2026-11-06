@@ -1,4 +1,4 @@
-export type UserRole = 'CANDIDATE' | 'CAREER_CONSULTANT' | 'ADMIN';
+export type UserRole = 'CANDIDATE' | 'CAREER_CONSULTANT' | 'ADMIN' | 'MANAGER';
 export interface User {
   id: string;
   name: string;
@@ -225,6 +225,11 @@ export interface ResumeAnalysisResult {
 export interface SemanticMatchingDetail {
   /** ID dòng `job_match_results` ở backend, dùng để gửi phản hồi. */
   matchResultId?: string;
+  method?: string;
+  skillCoverageScore?: number;
+  experienceStatus?: 'MATCHED' | 'INSUFFICIENT' | 'UNVERIFIED' | 'NOT_SPECIFIED';
+  candidateYears?: number;
+  requiredYears?: number;
   overallScore: number;
   skillsScore: number;
   experienceScore: number;
@@ -248,6 +253,9 @@ export interface ExternalApplicationSource {
 
 export interface Job {
   id: string;
+  /** Current server-side availability, retained for saved/applied job selectors. */
+  status?: string;
+  validThrough?: string;
   title: string;
   company: string;
   location: string;

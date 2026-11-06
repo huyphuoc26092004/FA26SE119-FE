@@ -25,6 +25,16 @@ npm run build
 
 ## Tài khoản
 
+### Đăng nhập Google
+
+- Đặt `VITE_GOOGLE_CLIENT_ID` trong `.env` của FE bằng `GOOGLE_CLIENT_ID` của BE. Đây là OAuth client ID loại **Web application**, không phải client secret. Khởi động lại Vite sau khi đổi biến môi trường; khi triển khai phải build lại FE.
+- Trong Google Cloud Console, thêm origin của FE vào **Authorized JavaScript origins**, ví dụ `http://localhost`, `http://localhost:5173` và origin HTTPS khi triển khai. Luồng này dùng popup và callback JavaScript, không cần thêm redirect URI của FE. Xem [hướng dẫn Google](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
+- FE dùng Google Identity Services lấy ID token rồi gửi tới `POST /api/v1/auth/google`; BE xác minh token và trả phiên đăng nhập. Tài khoản mới có vai trò ứng viên. Email chưa đủ điều kiện xác minh tự động cần OTP; sau khi xác minh, bấm đăng nhập Google lần nữa.
+- Email đã đăng ký bằng mật khẩu cần dùng cách đăng nhập cũ. Backend không tự liên kết tài khoản chỉ dựa vào email.
+- Nếu máy chủ triển khai đặt `Cross-Origin-Opener-Policy`, dùng `same-origin-allow-popups` để popup Google hoạt động; cho phép tải SDK `https://accounts.google.com/gsi/client` trong CSP nếu có.
+
+Kiểm thử luồng phiên và phản hồi Google bằng `npm run test:auth`.
+
 Backend không tạo sẵn tài khoản mẫu.
 
 - **Ứng viên:** đăng ký trên web. Mã OTP được gửi qua SMTP cấu hình trong `.env` của BE. Nếu đặt `AUTH_EXPOSE_DEV_OTP=true`, mã OTP được trả thẳng trong response.

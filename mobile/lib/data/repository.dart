@@ -8,8 +8,7 @@ import '../core/json.dart';
 import '../features/auth/auth_controller.dart';
 import 'models.dart';
 
-/// AI calls run on the self-hosted Ollama and can take minutes
-/// (the backend allows up to AI_REQUEST_TIMEOUT=PT15M).
+/// Allow enough time for AI tasks to return the backend's result or timeout error.
 const aiTimeout = Duration(minutes: 16);
 
 /// All candidate calls to the backend, grouped like the API list

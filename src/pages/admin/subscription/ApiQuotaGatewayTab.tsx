@@ -8,13 +8,7 @@ import { EmptyRow, SectionHead, ThinBar, brandLink, dangerLink, smallPrimary, te
 
 const n = (v: number) => v.toLocaleString('vi-VN');
 
-// Static tier policy (same figures as before).
-const TIERS = [
-  { tier: 'Khởi đầu (Starter)', rpm: 5, tpm: 15_000, daily: '50 lượt / ngày', queue: 'Tiêu chuẩn', models: 'Gemini 1.5 Flash' },
-  { tier: 'Chuyên nghiệp (Pro)', rpm: 30, tpm: 150_000, daily: 'Không giới hạn', queue: 'Ưu tiên cao', models: 'Flash + Gemini 1.5 Pro' },
-  { tier: 'Cao cấp (Executive VIP)', rpm: 60, tpm: 500_000, daily: 'Không giới hạn', queue: 'Làn riêng VIP', models: 'Pro + Flash + Embeddings' },
-  { tier: 'Doanh nghiệp (Enterprise)', rpm: 120, tpm: 1_000_000, daily: 'Băng thông riêng', queue: 'Ưu tiên tối đa', models: 'Tất cả + dự phòng' },
-];
+
 
 interface ApiQuotaGatewayTabProps {
   models: AiModelConfig[];
@@ -61,13 +55,13 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
 
   const epGrid = 'md:grid-cols-[minmax(0,1fr)_7rem_7rem_6rem_6rem_6rem]';
   const keyGrid = 'md:grid-cols-[minmax(0,1fr)_10rem_9rem_8rem_6rem]';
-  const tierGrid = 'md:grid-cols-[minmax(0,1fr)_6rem_8rem_9rem_9rem]';
+
 
   return (
     <div className="space-y-[clamp(3rem,6vw,4.5rem)]">
       {/* 01 Models */}
       <section>
-        <SectionHead index="01" title="Mô hình AI" meta={`${models.filter((m) => m.status === 'HEALTHY').length}/${models.length} đang trực tuyến`} />
+        <SectionHead index="01" title="Mô hình AI" meta={`${models.length} cấu hình được lưu`} />
         <ul>
           {models.map((m) => {
             const isHealthy = m.status === 'HEALTHY';
@@ -128,35 +122,10 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
         </ul>
       </section>
 
-      {/* 02 Tier matrix */}
-      <section>
-        <SectionHead index="02" title="Giới hạn theo gói" meta="Chống quá tải và chia băng thông công bằng" />
-        <div className={`hidden gap-x-6 border-b border-border py-3 text-[13px] text-slate-500 md:grid ${tierGrid}`}>
-          <span>Gói</span>
-          <span className="text-right">RPM</span>
-          <span className="text-right">TPM</span>
-          <span>Hạn mức ngày</span>
-          <span>Hàng đợi</span>
-        </div>
-        <ul>
-          {TIERS.map((t) => (
-            <li key={t.tier} className={`grid gap-x-6 gap-y-1 border-b border-border py-4 ${tierGrid}`}>
-              <div className="min-w-0">
-                <p className="text-[15px] text-ink">{t.tier}</p>
-                <p className="mt-0.5 text-[13px] text-slate-500">{t.models}</p>
-                <p className="mt-1 text-[13px] text-slate-600 md:hidden">
-                  {t.rpm} RPM · {n(t.tpm)} TPM · {t.daily} · {t.queue}
-                </p>
-              </div>
-              <span className="hidden text-right text-sm tabular-nums text-ink md:block">{t.rpm}</span>
-              <span className="hidden text-right text-sm tabular-nums text-ink md:block">{n(t.tpm)}</span>
-              <span className="hidden text-sm text-slate-700 md:block">{t.daily}</span>
-              <span className="hidden text-sm text-slate-700 md:block">{t.queue}</span>
-            </li>
-          ))}
-        </ul>
+      <section className="space-y-3">
+        <SectionHead index="02" title="Hạn mức theo gói" />
+        <p className="max-w-3xl text-sm leading-7 text-slate-600">Hạn mức của ứng viên được tính bằng token trong từng gói cước. Các giới hạn RPM, TPM và hàng đợi theo gói chưa được triển khai; bảng số liệu mẫu cũ đã được bỏ.</p>
       </section>
-
       {/* 03 Endpoints */}
       <section>
         <SectionHead index="03" title="Lưu lượng API" meta="24 giờ qua" />

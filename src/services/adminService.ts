@@ -100,7 +100,7 @@ export async function getAdminDashboardData(timeRange: TimeRange = '30d'): Promi
       microservices: [
         { name: 'API backend', key: 'api', status: 'HEALTHY', latencyMs: 0, uptimePercent: 0, lastChecked: nowLabel, details: 'GET /admin/dashboard trả lời bình thường' },
         {
-          name: 'AI (Ollama)',
+          name: 'Dịch vụ AI',
           key: 'ai',
           status: ai.length === 0 ? 'WARNING' : aiFailures ? 'WARNING' : 'HEALTHY',
           latencyMs: ai.length ? Math.round(ai.reduce((s, r) => s + num(r.latency_ms), 0) / ai.length) : 0,

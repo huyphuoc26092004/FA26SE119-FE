@@ -182,13 +182,16 @@ export default function ResumeAnalysisPage() {
   const [targetRole, setTargetRole] = useState('Frontend Engineer');
 
   // Load all resumes for dropdown switcher
-  const { data: resumes } = useQuery({
+  const { data: resumes, isPending: resumesPending, error: resumesError } = useQuery({
     queryKey: ['resumes'],
     queryFn: getResumes,
   });
 
-  // Effective resume ID
-  const effectiveResumeId = resumeId || (resumes && resumes[0] ? resumes[0].id : 'cv-1');
+  // Resolve against the current account's loaded CVs before requesting an analysis.
+  const selectedResume = resumeId
+    ? resumes?.find((resume) => resume.id === resumeId)
+    : resumes?.find((resume) => resume.isDefault) ?? resumes?.[0];
+  const effectiveResumeId = selectedResume?.id ?? '';
 
   // Load analysis data
   const {
@@ -199,7 +202,7 @@ export default function ResumeAnalysisPage() {
   } = useQuery({
     queryKey: ['resumeAnalysis', effectiveResumeId],
     queryFn: () => getResumeAnalysis(effectiveResumeId),
-    enabled: !!effectiveResumeId,
+    enabled: !!effectiveResumeId && !resumesPending && !resumesError,
   });
 
   // Re-analyze mutation
@@ -274,6 +277,23 @@ export default function ResumeAnalysisPage() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  if (resumesPending) return <Loading />;
+  if (resumesError)
+    return <ErrorState message={authErrorMessage(resumesError, isVietnamese ? 'Không tải được danh sách CV.' : 'Could not load your CVs.')} />;
+  if (!effectiveResumeId) {
+    return (
+      <section className="space-y-4 py-8">
+        <p className="text-slate-600">
+          {resumeId
+            ? isVietnamese ? 'CV này không còn trong danh sách của bạn. Hãy chọn một CV hiện có.' : 'This CV is no longer in your list. Choose an available CV.'
+            : isVietnamese ? 'Bạn cần tạo hoặc tải lên CV trước khi phân tích.' : 'Create or upload a CV before requesting an analysis.'}
+        </p>
+        <Link to="/candidate/resumes" className={textLink}>
+          {isVietnamese ? 'Đến danh sách CV' : 'Go to your CVs'}
+        </Link>
+      </section>
+    );
+  }
   if (isPending) return <Loading />;
   if (isError || !analysis)
     return <ErrorState message={error ? authErrorMessage(error, 'Không đánh giá được CV. Vui lòng thử lại.') : undefined} />;

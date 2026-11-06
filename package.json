@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
+    "test:auth": "node --test tests/google-*.test.mjs",
+    "test:assistant": "node --test tests/assistant-*.test.mjs",
+    "test:matching": "node --test tests/matching-*.test.mjs",
     "format": "prettier --write .",
     "preview": "vite preview"
   },

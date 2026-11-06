@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   EmptyRow,
@@ -28,18 +29,25 @@ import {
   type Announcement,
   type AnnouncementStatus,
   type AnnouncementTarget,
+  getNotifications,
 } from '../../services/notificationService';
 import NotificationsPage from '../shared/NotificationsPage';
 
 const STATUS_LABEL: Record<AnnouncementStatus, string> = { DRAFT: 'Bản nháp', PUBLISHED: 'Đã phát hành', ARCHIVED: 'Đã lưu trữ' };
-const ROLE_LABEL = { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn', ADMIN: 'Quản trị viên' } as const;
+const ROLE_LABEL = { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' } as const;
 const errorText = (error: unknown) => (error instanceof Error ? error.message : 'Có lỗi xảy ra.');
 
 type Tab = 'announcements' | 'inbox';
 
 /** /admin/notifications — soạn, phát hành và lưu trữ thông báo hệ thống; kèm hộp thư của admin. */
 export default function AnnouncementsPage() {
-  const [tab, setTab] = useState<Tab>('announcements');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: Tab = searchParams.get('tab') === 'announcements' ? 'announcements' : 'inbox';
+  const setTab = (next: Tab) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', next);
+    setSearchParams(params);
+  };
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Partial<Announcement> | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -49,6 +57,12 @@ export default function AnnouncementsPage() {
   };
   const query = useQuery({ queryKey: ['admin', 'announcements'], queryFn: getAdminAnnouncements });
   const list = query.data ?? [];
+  const unreadQuery = useQuery({
+    queryKey: ['notifications', 'unread-badge'],
+    queryFn: () => getNotifications(true),
+    refetchInterval: 30_000,
+    staleTime: 30_000,
+  });
   const act = useMutation({
     mutationFn: ({ id, kind }: { id: string; kind: 'publish' | 'archive' }) => (kind === 'publish' ? publishAnnouncement(id) : archiveAnnouncement(id)),
     onSuccess: (_, { kind }) => {
@@ -64,15 +78,15 @@ export default function AnnouncementsPage() {
         value={tab}
         onChange={setTab}
         tabs={[
-          { value: 'announcements', label: 'Thông báo hệ thống' },
-          { value: 'inbox', label: 'Hộp thư của tôi' },
+          { value: 'inbox', label: 'Thông báo của tôi', count: unreadQuery.data?.length },
+          { value: 'announcements', label: 'Soạn & phát hành', count: query.data?.length },
         ]}
       />
       {tab === 'inbox' ? (
         <NotificationsPage />
       ) : (
         <>
-          <Headline eyebrow="Vận hành" line1="Thông báo hệ thống." line2="Gửi tới mọi người, một vai trò hoặc một người." />
+          <Headline eyebrow="Vận hành" line1="Thông báo gửi đi." line2="Soạn và phát hành tới người dùng." />
           <section className="space-y-4">
             <SectionHead
               index="01"
@@ -86,7 +100,7 @@ export default function AnnouncementsPage() {
             />
             {query.isError && <Note tone="danger">{errorText(query.error)}</Note>}
             {list.length === 0 ? (
-              <EmptyRow>{query.isLoading ? 'Đang tải...' : 'Chưa có thông báo nào.'}</EmptyRow>
+              <EmptyRow>{query.isLoading ? 'Đang tải...' : 'Chưa có thông báo do quản trị soạn. Thông báo sự kiện tự động nằm trong mục “Thông báo của tôi”.'}</EmptyRow>
             ) : (
               <ul>
                 {list.map((a) => (

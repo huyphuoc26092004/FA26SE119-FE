@@ -10,7 +10,7 @@ import { navGroupLabels, type NavItem } from '../constants/navigation';
 import { getNotifications } from '../services/notificationService';
 import { CcvLogo } from '../components/brand/CcvLogo';
 
-const ROOT_PATHS = ['/candidate', '/consultant', '/admin'];
+const ROOT_PATHS = ['/candidate', '/consultant', '/admin', '/manager'];
 
 /**
  * Picks the single nav item that best matches the current URL.
@@ -70,6 +70,9 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
     staleTime: 30_000,
   });
   const basePath = `/${areaKey}`;
+  const notificationPath = ['admin', 'manager'].includes(areaKey)
+    ? `${basePath}/notifications?tab=inbox`
+    : `${basePath}/inbox`;
 
   const { data: subscription } = useQuery({
     queryKey: ['userSubscription'],
@@ -104,6 +107,8 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
         return isVietnamese ? 'Không gian ứng viên' : 'Candidate workspace';
       case 'consultant':
         return isVietnamese ? 'Không gian cố vấn' : 'Consultant workspace';
+      case 'manager':
+        return isVietnamese ? 'Quản lý vận hành' : 'Operations management';
       case 'admin':
         return isVietnamese ? 'Quản trị hệ thống' : 'System administration';
       default:
@@ -117,6 +122,8 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
         return isVietnamese ? 'Ứng viên' : 'Candidate';
       case 'consultant':
         return isVietnamese ? 'Cố vấn' : 'Consultant';
+      case 'manager':
+        return isVietnamese ? 'Quản lý' : 'Manager';
       case 'admin':
         return isVietnamese ? 'Quản trị viên' : 'Administrator';
       default:
@@ -259,7 +266,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
               {avatarInitials}
             </span>
             <Link
-              to={`${basePath}/inbox`}
+              to={notificationPath}
               title={isVietnamese ? 'Thông báo' : 'Notifications'}
               aria-label={isVietnamese ? 'Thông báo' : 'Notifications'}
               className="relative grid h-9 w-9 place-items-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-ink"
@@ -300,7 +307,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
             </div>
 
             <div className="mt-4 flex items-center gap-5 text-[13px]">
-              <Link to={`${basePath}/inbox`} className={textLink}>
+              <Link to={notificationPath} className={textLink}>
                 {isVietnamese ? 'Thông báo' : 'Notifications'}
                 {unreadNotifications.length > 0 && (
                   <span className="ml-1 rounded-full bg-brand px-1.5 text-[11px] leading-5 text-white tabular-nums">{unreadNotifications.length}</span>

@@ -653,6 +653,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
             lang={uiLang}
             onApply={(text) => update({ summary: text })}
             params={() => ({
+              resumeId,
               field: 'summary',
               language: cvLang,
               position: cv.position,
@@ -718,6 +719,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                       lang={uiLang}
                       onApply={(text) => experience.change(e.id, { highlights: text.split('\n') })}
                       params={() => ({
+                        resumeId,
                         field: 'experience',
                         language: cvLang,
                         position: cv.position,
@@ -814,6 +816,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                       lang={uiLang}
                       onApply={(text) => projects.change(p.id, { description: text })}
                       params={() => ({
+                        resumeId,
                         field: 'project',
                         language: cvLang,
                         title: p.name,

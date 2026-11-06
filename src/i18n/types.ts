@@ -62,6 +62,7 @@ export interface Translations {
     candidates: string;
     users: string;
     subscriptions: string;
+    consultationServices: string;
     payments: string;
     aiConfig: string;
     jobProcessing: string;

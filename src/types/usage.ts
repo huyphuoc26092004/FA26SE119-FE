@@ -23,7 +23,7 @@ export interface AiUsageRecord {
   completionTokens: number;
   totalTokens: number;
   latencyMs: number;
-  status: 'success' | 'rate_limited' | 'cached';
+  status: 'success' | 'failed' | 'rate_limited' | 'cached';
   details: string;
   /** ISO time from the backend, for grouping by month/day. */
   createdAt?: string;

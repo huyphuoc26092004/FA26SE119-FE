@@ -7,7 +7,7 @@ import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
 // CV không bắt buộc: POST /assessments { jobId, resumeId? } sinh 10 câu theo JD (và CV nếu có);
 // POST /roadmaps { jobId, assessmentId } lập lộ trình cho kỹ năng bắt buộc còn thiếu, dùng đúng CV của bài đánh giá.
 
-// Backend chờ Ollama tối đa AI_REQUEST_TIMEOUT (mặc định 15 phút), nên phía FE phải chờ lâu hơn thế.
+// Chờ lâu hơn giới hạn gọi AI của backend để nhận được thông báo lỗi từ máy chủ.
 const AI_TIMEOUT = 16 * 60_000;
 
 /** Backend coi điểm kỹ năng dưới 70 là cần luyện thêm. */

@@ -62,6 +62,7 @@ export const vi: Translations = {
     candidates: 'Danh sách ứng viên',
     users: 'Người dùng',
     subscriptions: 'Quản lý gói dịch vụ',
+    consultationServices: 'Bảng giá tư vấn',
     payments: 'Lịch sử thanh toán',
     aiConfig: 'Cấu hình AI',
     jobProcessing: 'Thu thập việc làm',

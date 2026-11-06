@@ -35,6 +35,7 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 export default function AdminSupportPage() {
   const queryClient = useQueryClient();
   const myId = useAuthStore((s) => s.user?.id);
+  const isManager = useAuthStore((s) => s.role === 'MANAGER');
   const [filter, setFilter] = useState<TicketStatus | 'all'>('open');
   const [openId, setOpenId] = useState<string | null>(null);
   const [reply, setReply] = useState('');
@@ -45,7 +46,7 @@ export default function AdminSupportPage() {
   };
 
   const ticketsQuery = useQuery({ queryKey: ['admin', 'tickets'], queryFn: getSupportTickets });
-  const usersQuery = useQuery({ queryKey: ['admin', 'users-lite'], queryFn: () => getManagedUsers(), staleTime: 60_000 });
+  const usersQuery = useQuery({ queryKey: ['admin', 'users-lite'], queryFn: () => getManagedUsers(), staleTime: 60_000, enabled: !isManager });
   const detailQuery = useQuery({ queryKey: ['admin', 'ticket', openId], queryFn: () => getSupportTicket(openId!), enabled: Boolean(openId) });
   const userById = useMemo(() => new Map((usersQuery.data ?? []).map((u) => [u.id, u])), [usersQuery.data]);
 

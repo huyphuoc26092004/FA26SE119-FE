@@ -130,7 +130,8 @@ export function toConsultationRequest(
 ): ConsultationRequest {
   const id = str(row.id);
   const candidateUserId = str(row.candidate_user_id);
-  const topic = TOPICS.includes(str(row.request_type) as ConsultationTopic) ? (str(row.request_type) as ConsultationTopic) : 'CAREER_ORIENTATION';
+  const requestType = str(row.request_type) === 'CV_REVIEW_ASYNC' ? 'CV_REVIEW' : str(row.request_type);
+  const topic = TOPICS.includes(requestType as ConsultationTopic) ? (requestType as ConsultationTopic) : 'CAREER_ORIENTATION';
   const { goal, preferredSlot, resumeId, resumeTitle, priority } = parseDescription(str(row.request_description));
   const status = toConsultationStatus(row);
   const messages = (extra.messages ?? []).map((m) => toConsultationMessage(m, candidateUserId));

@@ -78,6 +78,8 @@ export function toJob(row: ApiRow): Job {
   const skills = rows(row.skills);
   return {
     id: str(row.id || row.market_job_id),
+    ...(row.status ? { status: str(row.status) } : {}),
+    ...(row.valid_through ? { validThrough: str(row.valid_through) } : {}),
     title: str(row.job_title),
     company: str(row.company_name),
     location: str(row.location),
@@ -116,11 +118,28 @@ const fitLevel = (score: number): SemanticMatchingDetail['fitLevel'] => {
 /** Một dòng `results[]` của POST /matching. Backend chỉ có một điểm tổng (0..1). */
 export function toSemanticMatch(result: ApiRow): SemanticMatchingDetail {
   const score = Math.round(num(result.final_score) * 100);
-  const reason = str(obj(result.match_reason_json).reason);
+  const explanation = obj(result.match_reason_json);
+  const assessment = obj(explanation.assessment);
+  const reason = str(explanation.reason);
+  const experienceStatuses: NonNullable<SemanticMatchingDetail['experienceStatus']>[] = [
+    'MATCHED', 'INSUFFICIENT', 'UNVERIFIED', 'NOT_SPECIFIED',
+  ];
+  const experienceStatus = str(assessment.experience_status);
+  const nonnegativeNumber = (value: unknown): number | undefined => {
+    if (value === null || value === undefined || value === '') return undefined;
+    const number = num(value, Number.NaN);
+    return Number.isFinite(number) && number >= 0 ? number : undefined;
+  };
+  const skillCoverage = nonnegativeNumber(assessment.skill_coverage);
   const matched = texts(result.strengths_json);
   const missing = texts(result.skill_gaps_json);
   return {
     matchResultId: str(result.id),
+    method: optStr(explanation.method),
+    skillCoverageScore: skillCoverage !== undefined && skillCoverage <= 1 ? Math.round(skillCoverage * 100) : undefined,
+    experienceStatus: experienceStatuses.find((status) => status === experienceStatus),
+    candidateYears: nonnegativeNumber(assessment.candidate_years),
+    requiredYears: nonnegativeNumber(assessment.required_years),
     overallScore: score,
     skillsScore: score,
     experienceScore: score,

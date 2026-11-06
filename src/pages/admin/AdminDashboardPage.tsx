@@ -165,7 +165,7 @@ const copy = {
       unlock: 'Mở khoá',
       empty: 'Không có người dùng phù hợp.',
     },
-    roles: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn', ADMIN: 'Quản trị viên' } as Record<UserRole, string>,
+    roles: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' } as Record<UserRole, string>,
     userStatus: { ACTIVE: 'Hoạt động', SUSPENDED: 'Bị khoá', PENDING: 'Chờ kích hoạt' } as Record<string, string>,
     receipt: {
       title: 'Biên lai giao dịch',
@@ -347,7 +347,7 @@ const copy = {
       unlock: 'Activate',
       empty: 'No matching users.',
     },
-    roles: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Consultant', ADMIN: 'Administrator' } as Record<UserRole, string>,
+    roles: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Consultant', ADMIN: 'Administrator', MANAGER: 'Operations manager' } as Record<UserRole, string>,
     userStatus: { ACTIVE: 'Active', SUSPENDED: 'Suspended', PENDING: 'Pending' } as Record<string, string>,
     receipt: {
       title: 'Payment receipt',
@@ -1188,7 +1188,7 @@ export default function AdminDashboardPage() {
                 <option value="ALL">{c.users.allRoles}</option>
                 <option value="CANDIDATE">{c.roles.CANDIDATE}</option>
                 <option value="CAREER_CONSULTANT">{c.roles.CAREER_CONSULTANT}</option>
-                <option value="ADMIN">{c.roles.ADMIN}</option>
+                <option value="MANAGER">Manager</option><option value="ADMIN">{c.roles.ADMIN}</option>
               </select>
             </div>
             {filteredUsers.length === 0 ? (

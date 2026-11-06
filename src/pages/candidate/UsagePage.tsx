@@ -58,7 +58,7 @@ const copy = {
     inOut: (i: string, o: string) => `vào ${i} · ra ${o}`,
     showMore: (n: number) => `Xem thêm ${n} lượt`,
     showLess: 'Thu gọn',
-    status: { success: '', cached: 'Dùng bộ nhớ đệm', rate_limited: 'Bị giới hạn' } as Record<string, string>,
+    status: { success: '', cached: 'Dùng bộ nhớ đệm', failed: 'Thất bại', rate_limited: 'Bị giới hạn' } as Record<string, string>,
     tokens: 'token',
     fbCount: 'Đánh giá đã gửi',
     fbAvg: 'Điểm trung bình',
@@ -117,7 +117,7 @@ const copy = {
     inOut: (i: string, o: string) => `in ${i} · out ${o}`,
     showMore: (n: number) => `Show ${n} more`,
     showLess: 'Show less',
-    status: { success: '', cached: 'Cached', rate_limited: 'Rate limited' } as Record<string, string>,
+    status: { success: '', cached: 'Cached', failed: 'Failed', rate_limited: 'Rate limited' } as Record<string, string>,
     tokens: 'tokens',
     fbCount: 'Feedback given',
     fbAvg: 'Average score',
@@ -280,7 +280,7 @@ export const UsagePage: React.FC = () => {
 
   // Request stats, computed from the visible history
   const requestCount = activeHistory.length;
-  const successCount = activeHistory.filter((r) => r.status !== 'rate_limited').length;
+  const successCount = activeHistory.filter((r) => r.status === 'success' || r.status === 'cached').length;
   const successPct = requestCount ? Math.round((successCount / requestCount) * 100) : 0;
   const historyTokens = activeHistory.reduce((sum, r) => sum + r.totalTokens, 0);
   const avgTokens = requestCount ? Math.round(historyTokens / requestCount) : 0;

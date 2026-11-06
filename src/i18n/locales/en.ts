@@ -62,6 +62,7 @@ export const en: Translations = {
     candidates: 'Candidates',
     users: 'Users',
     subscriptions: 'Subscriptions',
+    consultationServices: 'Consultation pricing',
     payments: 'Payments',
     aiConfig: 'AI Configuration',
     jobProcessing: 'Job Collection',

@@ -146,6 +146,25 @@ const knownMessages: Record<string, string> = {
   'At most 20 detail URLs are allowed': 'Tối đa 20 đường dẫn tin tuyển dụng.',
 };
 
+function sourceAccessMessage(message: string): string {
+  const cooldown = /^Source\s+(ITVIEC|TOPCV)\s+is cooling down until\s+(\S+)/i.exec(message);
+  if (cooldown) {
+    const site = cooldown[1].toUpperCase() === 'TOPCV' ? 'TopCV' : 'ITviec';
+    const until = cooldown[2].replace(/[.,;]$/, '');
+    const date = new Date(until);
+    const shown = Number.isNaN(date.getTime()) ? until : date.toLocaleString('vi-VN', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+    return `Đang tạm dừng thu thập từ ${site} đến ${shown}. Hãy thử lại sau thời điểm này.`;
+  }
+  const active = /^Source\s+(ITVIEC|TOPCV)\s+already has an active crawl/i.exec(message);
+  if (active) {
+    const site = active[1].toUpperCase() === 'TOPCV' ? 'TopCV' : 'ITviec';
+    return `${site} đang có lượt thu thập khác. Chờ lượt đó kết thúc rồi thử lại.`;
+  }
+  return knownMessages[message] ?? message;
+}
+
 /** Message to show for a failed crawl API call (ProblemDetail or network error). */
 export function crawlErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
@@ -153,8 +172,8 @@ export function crawlErrorMessage(error: unknown, fallback: string): string {
     if (!error.response) return 'Không kết nối được backend. Hãy kiểm tra backend đang chạy.';
     if (error.response.status === 403) return 'Chỉ tài khoản admin mới dùng được chức năng này.';
     const data = error.response.data as { detail?: string; errors?: string[] } | undefined;
-    if (data?.errors?.length) return data.errors.join('\n');
-    if (data?.detail) return knownMessages[data.detail] ?? data.detail;
+    if (data?.errors?.length) return data.errors.map(sourceAccessMessage).join('\n');
+    if (data?.detail) return sourceAccessMessage(data.detail);
   }
-  return error instanceof Error ? error.message : fallback;
+  return error instanceof Error ? sourceAccessMessage(error.message) : fallback;
 }

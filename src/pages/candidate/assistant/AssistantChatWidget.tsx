@@ -20,12 +20,13 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from '../../../i18n';
-import { getCandidateProfile, getResumes, getJobs } from '../../../services/candidateService';
+import { getCandidateProfile, getResumes, getResumeById, getJobs, getJobById } from '../../../services/candidateService';
 import { JOB_ACTIVITY_QUERY_KEY, getJobActivity } from '../../../services/jobActivityService';
 import {
   getStoredChatSessions,
   getChatSessionById,
   createChatSession,
+  updateChatSessionContext,
   renameChatSession,
   deleteChatSession,
   updateMessageFeedback,
@@ -83,10 +84,14 @@ const copy = {
     groupApplied: 'Đã ứng tuyển',
     groupSaved: 'Đã lưu',
     groupOthers: 'Việc làm khác',
-    shortlistTitle: 'Việc bạn đã lưu và ứng tuyển',
-    shortlistPrompt: 'Tóm tắt các việc tôi đã lưu và đã ứng tuyển, tôi nên ưu tiên việc nào tiếp theo?',
-    shortlistChip: 'Tôi nên ưu tiên việc nào trong số việc đã lưu và đã ứng tuyển?',
     activityLine: (a: number, s: number) => `Đang theo dõi ${a} việc đã ứng tuyển · ${s} việc đã lưu`,
+    loading: 'Đang tải hội thoại…',
+    saving: 'Đang lưu thay đổi…',
+    retry: 'Thử lại',
+    historyError: 'Không tải được lịch sử trò chuyện.',
+    sessionError: 'Không tải được nội dung hội thoại.',
+    saveError: 'Không lưu được thay đổi. Vui lòng thử lại.',
+    messageTooLong: 'Tin nhắn tối đa 8.000 ký tự.',
   },
   en: {
     title: 'AI assistant',
@@ -133,10 +138,14 @@ const copy = {
     groupApplied: 'Applied',
     groupSaved: 'Saved',
     groupOthers: 'Other jobs',
-    shortlistTitle: 'Your saved and applied jobs',
-    shortlistPrompt: 'Summarise the jobs I saved and applied for. Which one should I focus on next?',
-    shortlistChip: 'Which of my saved and applied jobs should I focus on?',
     activityLine: (a: number, s: number) => `Tracking ${a} applied · ${s} saved jobs`,
+    loading: 'Loading conversation…',
+    saving: 'Saving changes…',
+    retry: 'Retry',
+    historyError: 'Could not load chat history.',
+    sessionError: 'Could not load this conversation.',
+    saveError: 'Could not save changes. Please try again.',
+    messageTooLong: 'Messages can contain up to 8,000 characters.',
   },
 };
 
@@ -162,7 +171,7 @@ const textButton =
   'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[13px] text-slate-700 transition-colors hover:bg-slate-100 hover:text-ink';
 
 const iconButton =
-  'grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink';
+  'grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink disabled:opacity-40';
 
 // Floating career assistant: a launcher pinned to the bottom-right corner of every candidate
 // page that opens a chat panel (a full-screen sheet on phones). Sessions, context and
@@ -174,7 +183,7 @@ export function AssistantChatWidget() {
   const { data: profile } = useQuery({ queryKey: ['candidate-profile'], queryFn: getCandidateProfile });
   const { data: resumes = [], isFetched: resumesFetched } = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
   const { data: jobs = [], isFetched: jobsFetched } = useQuery({ queryKey: ['jobs'], queryFn: () => getJobs() });
-  // Saved / applied jobs from Job discovery: grouped in the job picker and passed to every reply.
+  // Saved / applied jobs are available in the context picker.
   const { data: activity } = useQuery({ queryKey: JOB_ACTIVITY_QUERY_KEY, queryFn: getJobActivity });
   const appliedJobs = useMemo(() => activity?.applied.map((t) => t.job) ?? [], [activity]);
   const savedJobs = useMemo(() => activity?.saved.map((t) => t.job) ?? [], [activity]);
@@ -196,6 +205,15 @@ export function AssistantChatWidget() {
   const loadedIds = useRef(new Set<string>());
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const operationInFlight = useRef(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState('');
+  const [sessionError, setSessionError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [historyRevision, setHistoryRevision] = useState(0);
+  const [sessionRevision, setSessionRevision] = useState(0);
+  const [loadingSessionId, setLoadingSessionId] = useState('');
   const [deepLink, setDeepLink] = useState<AssistantChatRequest | null>(null);
 
   const [query, setQuery] = useState('');
@@ -210,41 +228,72 @@ export function AssistantChatWidget() {
     () => sessions.find((s) => s.id === activeSessionId) || sessions[0],
     [sessions, activeSessionId],
   );
-  const selectedCv = resumes.find((r) => r.id === activeSession?.activeCvId);
-  const selectedJob = jobs.find((j) => j.id === activeSession?.activeJobId);
+  const allJobs = useMemo(() => [...new Map([...appliedJobs, ...savedJobs, ...jobs].map((j) => [j.id, j])).values()], [appliedJobs, savedJobs, jobs]);
+  const listedCv = resumes.find((r) => r.id === activeSession?.activeCvId);
+  const listedJob = allJobs.find((j) => j.id === activeSession?.activeJobId);
+  const cvId = activeSession?.activeCvId;
+  const jobId = activeSession?.activeJobId;
+  const { data: linkedCv } = useQuery({
+    queryKey: ['assistant-resume', cvId],
+    queryFn: () => getResumeById(cvId!),
+    enabled: !!cvId && !listedCv,
+  });
+  const { data: linkedJob } = useQuery({
+    queryKey: ['assistant-job', jobId],
+    queryFn: () => getJobById(jobId!),
+    enabled: !!jobId && !listedJob,
+  });
+  const selectedCv = listedCv ?? linkedCv;
+  const selectedJob = listedJob ?? linkedJob;
+  const sessionUnloaded = !!activeSession && !isDraft(activeSession) && !loadedIds.current.has(activeSession.id);
+  const busy = typing || saving || historyLoading || sessionUnloaded || !!loadingSessionId;
 
   // Conversation list from the backend; messages load when a conversation is opened.
   useEffect(() => {
     let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError('');
     getStoredChatSessions()
       .then((list) => {
         if (cancelled) return;
-        setSessions((prev) => [...prev.filter(isDraft), ...list]);
+        setSessions((prev) => [...prev.filter(isDraft), ...list.map((row) => ({
+          ...row,
+          messages: prev.find((s) => s.id === row.id)?.messages ?? row.messages,
+        }))]);
         setActiveSessionId((prev) => prev || list[0]?.id || '');
       })
-      .catch(() => undefined);
+      .catch((error) => { if (!cancelled) setHistoryError(authErrorMessage(error, c.historyError)); })
+      .finally(() => { if (!cancelled) setHistoryLoading(false); });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [historyRevision]);
 
   useEffect(() => {
-    const id = activeSession?.id;
-    if (!id || isDraft(activeSession) || loadedIds.current.has(id)) return;
-    loadedIds.current.add(id);
+    const id = activeSessionId;
+    setLoadingSessionId('');
+    setSessionError('');
+    if (!id || id.startsWith(DRAFT_PREFIX) || loadedIds.current.has(id)) return;
+    let cancelled = false;
+    setLoadingSessionId(id);
+    setSessionError('');
     getChatSessionById(id)
       .then((full) => {
-        if (full) setSessions((prev) => prev.map((s) => (s.id === id ? full : s)));
+        if (cancelled || !full) return;
+        loadedIds.current.add(id);
+        setSessions((prev) => prev.map((s) => (s.id === id ? full : s)));
       })
-      .catch(() => loadedIds.current.delete(id));
-  }, [activeSession]);
+      .catch((error) => { if (!cancelled) setSessionError(authErrorMessage(error, c.sessionError)); })
+      .finally(() => { if (!cancelled) setLoadingSessionId(''); });
+    return () => { cancelled = true; };
+  }, [activeSessionId, sessionRevision]);
 
   // Requests from other pages ("Ask the assistant about this job", the old route…)
   useEffect(() => subscribeAssistantChat((request) => setDeepLink(request)), []);
 
   // Attach the requested CV/job: reuse a matching session or start one (same rules as the old page).
   useEffect(() => {
-    if (!deepLink) return;
+    if (!deepLink || typing || saving) return;
     const { cvId, jobId } = deepLink;
     if (!cvId && !jobId) {
       setDeepLink(null);
@@ -252,31 +301,29 @@ export function AssistantChatWidget() {
       setOpen(true);
       return;
     }
-    if (!resumesFetched || !jobsFetched) return;
+    if (historyLoading || !resumesFetched || !jobsFetched) return;
 
-    setSessions((prev) => {
-      const matching = prev.find(
+    const matching = sessions.find(
         (s) => (!cvId || s.activeCvId === cvId) && (!jobId || s.activeJobId === jobId),
       );
-      if (matching) {
-        setActiveSessionId(matching.id);
-        return prev;
-      }
+    if (matching) {
+      setActiveSessionId(matching.id);
+    } else {
       const cvName = resumes.find((r) => r.id === cvId)?.name;
-      const jobTitle = jobs.find((j) => j.id === jobId)?.title;
-      let sessionTitle = 'Tư vấn sự nghiệp';
-      if (cvName && jobTitle) sessionTitle = `Tư vấn ${jobTitle} (${cvName})`;
-      else if (jobTitle) sessionTitle = `Tư vấn vị trí ${jobTitle}`;
-      else if (cvName) sessionTitle = `Tối ưu CV ${cvName}`;
+      const jobTitle = allJobs.find((j) => j.id === jobId)?.title;
+      let sessionTitle = isVietnamese ? 'Tư vấn sự nghiệp' : 'Career advice';
+      if (cvName && jobTitle) sessionTitle = `${isVietnamese ? 'Tư vấn' : 'Advice for'} ${jobTitle} (${cvName})`;
+      else if (jobTitle) sessionTitle = `${isVietnamese ? 'Tư vấn vị trí' : 'Advice for'} ${jobTitle}`;
+      else if (cvName) sessionTitle = `${isVietnamese ? 'Tối ưu CV' : 'Optimize CV'} ${cvName}`;
 
       const created = newDraftSession({ title: sessionTitle, activeCvId: cvId, activeJobId: jobId });
       setActiveSessionId(created.id);
-      return [created, ...prev];
-    });
+      setSessions((prev) => [created, ...prev]);
+    }
     setDeepLink(null);
     setView('chat');
     setOpen(true);
-  }, [deepLink, resumesFetched, jobsFetched, resumes, jobs]);
+  }, [deepLink, resumesFetched, jobsFetched, resumes, allJobs, sessions, typing, saving, historyLoading, isVietnamese]);
 
   // Keep the newest message in view; a long reply is shown from its first line.
   useEffect(() => {
@@ -315,18 +362,26 @@ export function AssistantChatWidget() {
     launcherRef.current?.focus();
   }
 
-  // ---- Session management (unchanged behaviour) ----
+  // Persist every action before changing the displayed conversation.
   const handleSelectSession = (id: string) => {
+    if (operationInFlight.current || historyLoading) return;
     setActiveSessionId(id);
     setInput('');
+    setSessionError('');
+    setActionError('');
+    setLoadingSessionId('');
     setView('chat');
   };
 
   const handleNewSession = () => {
-    const newSession = newDraftSession();
+    if (operationInFlight.current || historyLoading) return;
+    const newSession = newDraftSession({ title: c.newChat });
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
     setInput('');
+    setSessionError('');
+    setActionError('');
+    setLoadingSessionId('');
     setView('chat');
     setMenuOpen(false);
   };
@@ -336,33 +391,52 @@ export function AssistantChatWidget() {
     setRenameValue(session.title);
   };
 
-  const commitRename = () => {
+  const commitRename = async () => {
     const title = renameValue.trim();
-    if (renamingId && title) {
-      renameChatSession(renamingId, title);
-      setSessions((prev) => prev.map((s) => (s.id === renamingId ? { ...s, title } : s)));
+    if (!renamingId || !title || operationInFlight.current) return;
+    const id = renamingId;
+    operationInFlight.current = true;
+    setSaving(true);
+    setActionError('');
+    try {
+      if (!id.startsWith(DRAFT_PREFIX)) await renameChatSession(id, title);
+      setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s)));
+      setRenamingId(null);
+    } catch (error) {
+      setActionError(authErrorMessage(error, c.saveError));
+    } finally {
+      operationInFlight.current = false;
+      setSaving(false);
     }
-    setRenamingId(null);
   };
 
   const handleDeleteSession = async (id: string) => {
+    if (operationInFlight.current || historyLoading) return;
     if (!window.confirm(t('assistant.deleteConfirm'))) return;
-    if (!id.startsWith(DRAFT_PREFIX)) {
-      try {
-        await deleteChatSession(id);
-      } catch {
-        return;
+    operationInFlight.current = true;
+    setSaving(true);
+    setActionError('');
+    try {
+      if (!id.startsWith(DRAFT_PREFIX)) await deleteChatSession(id);
+      loadedIds.current.delete(id);
+      const remaining = sessions.filter((s) => s.id !== id);
+      if (remaining.length === 0) {
+        const fresh = newDraftSession({ title: c.newChat });
+        setSessions([fresh]);
+        setActiveSessionId(fresh.id);
+      } else {
+        setSessions(remaining);
+        if (activeSession?.id === id) setActiveSessionId(remaining[0].id);
       }
+      setInput('');
+      setSessionError('');
+      setLoadingSessionId('');
+    } catch (error) {
+      setActionError(authErrorMessage(error, c.saveError));
+    } finally {
+      operationInFlight.current = false;
+      setSaving(false);
     }
-    const remaining = sessions.filter((s) => s.id !== id);
-    if (remaining.length === 0) {
-      const fresh = newDraftSession();
-      setSessions([fresh]);
-      setActiveSessionId(fresh.id);
-      return;
-    }
-    setSessions(remaining);
-    if (activeSession?.id === id) setActiveSessionId(remaining[0].id);
   };
 
   const handleExportChat = () => {
@@ -391,35 +465,56 @@ export function AssistantChatWidget() {
     URL.revokeObjectURL(url);
   };
 
-  // The backend fixes a conversation's context when it is created (first message),
-  // so changing CV/job afterwards only affects this view.
-  const handleSelectCv = (cvId?: string) => {
-    if (!activeSession) return;
-    setSessions((prev) => prev.map((s) => (s.id === activeSession.id ? { ...s, activeCvId: cvId } : s)));
+  const handleSelectContext = async (context: { activeCvId?: string; activeJobId?: string }) => {
+    if (busy || operationInFlight.current) return;
+    const session = activeSession ?? newDraftSession({ title: c.newChat });
+    if (isDraft(session)) {
+      const updated = { ...session, ...context };
+      setSessions((prev) => prev.some((s) => s.id === session.id)
+        ? prev.map((s) => s.id === session.id ? updated : s) : [updated, ...prev]);
+      setActiveSessionId(session.id);
+      return;
+    }
+    operationInFlight.current = true;
+    setSaving(true);
+    setActionError('');
+    try {
+      const updated = await updateChatSessionContext(session.id, context);
+      setSessions((prev) => prev.map((s) => s.id === session.id ? updated : s));
+    } catch (error) {
+      setActionError(authErrorMessage(error, c.saveError));
+    } finally {
+      operationInFlight.current = false;
+      setSaving(false);
+    }
   };
 
-  const handleSelectJob = (jobId?: string) => {
-    if (!activeSession) return;
-    setSessions((prev) => prev.map((s) => (s.id === activeSession.id ? { ...s, activeJobId: jobId } : s)));
-  };
-
-  const handleFeedback = (messageId: string, feedback: 'like' | 'dislike') => {
-    if (!activeSession) return;
-    void updateMessageFeedback(messageId, feedback).catch(() => undefined);
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === activeSession.id
-          ? { ...s, messages: s.messages.map((m) => (m.id === messageId ? { ...m, feedback } : m)) }
-          : s,
-      ),
-    );
+  const handleFeedback = async (messageId: string, value: 'like' | 'dislike') => {
+    if (!activeSession || busy || operationInFlight.current) return;
+    const feedback = activeSession.messages.find((m) => m.id === messageId)?.feedback === value ? null : value;
+    operationInFlight.current = true;
+    setSaving(true);
+    setActionError('');
+    try {
+      await updateMessageFeedback(messageId, feedback);
+      setSessions((prev) => prev.map((s) => s.id === activeSession.id
+        ? { ...s, messages: s.messages.map((m) => m.id === messageId ? { ...m, feedback } : m) } : s));
+    } catch (error) {
+      setActionError(authErrorMessage(error, c.saveError));
+    } finally {
+      operationInFlight.current = false;
+      setSaving(false);
+    }
   };
 
   const handleSend = async (textToSend = input) => {
     const text = textToSend.trim();
-    if (!text || typing) return;
+    if (!text || busy || operationInFlight.current) return;
+    if (text.length > 8000) { setActionError(c.messageTooLong); return; }
 
-    let session = activeSession ?? newDraftSession();
+    operationInFlight.current = true;
+    setActionError('');
+    let session = activeSession ?? newDraftSession({ title: c.newChat });
     const now = new Date().toISOString();
     const userMessage: AiChatMessage = {
       id: `pending-${Date.now()}`,
@@ -428,9 +523,10 @@ export function AssistantChatWidget() {
       timestamp: new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     const draftId = session.id;
+    const optimisticSession = { ...session, messages: [...session.messages, userMessage], updatedAt: now };
     setSessions((prev) => {
-      const next = { ...session, messages: [...session.messages, userMessage], updatedAt: now };
-      return prev.some((s) => s.id === draftId) ? prev.map((s) => (s.id === draftId ? next : s)) : [next, ...prev];
+      return prev.some((s) => s.id === draftId)
+        ? prev.map((s) => (s.id === draftId ? optimisticSession : s)) : [optimisticSession, ...prev];
     });
     setActiveSessionId(draftId);
     setInput('');
@@ -438,7 +534,7 @@ export function AssistantChatWidget() {
     try {
       if (isDraft(session)) {
         // Name the conversation after its first question unless a page already gave it a title.
-        const title = session.title === 'Cuộc trò chuyện mới' ? text.slice(0, 80) : session.title;
+        const title = [copy.vi.newChat, copy.en.newChat].includes(session.title) ? text.slice(0, 80) : session.title;
         session = await createChatSession({ title, activeCvId: session.activeCvId, activeJobId: session.activeJobId });
         loadedIds.current.add(session.id);
         const created = session;
@@ -449,35 +545,38 @@ export function AssistantChatWidget() {
       const result = await sendUserMessageAndGetAiReply({
         sessionId,
         userText: text,
-        profile,
-        selectedCv,
-        selectedJob,
+        currentSession: session,
         isVietnamese,
-        jobActivity: { applied: appliedJobs, saved: savedJobs },
       });
       setSessions((prev) => prev.map((s) => (s.id === sessionId ? result.updatedSession : s)));
     } catch (error) {
-      const failedId = session.id;
-      const errorMessage: AiChatMessage = {
-        id: `error-${Date.now()}`,
-        role: 'assistant',
-        content: authErrorMessage(
-          error,
-          isVietnamese ? 'Trợ lý chưa trả lời được. Vui lòng thử lại.' : 'The assistant could not reply. Please try again.',
-        ),
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setSessions((prev) =>
-        prev.map((s) => (s.id === failedId || s.id === draftId ? { ...s, messages: [...s.messages, errorMessage] } : s)),
-      );
+      let recovered = false;
+      if (!isDraft(session)) {
+        const full = await getChatSessionById(session.id).catch(() => undefined);
+        if (full) {
+          const previousIds = new Set(session.messages.map((m) => m.id));
+          recovered = full.messages.some((m) => m.role === 'assistant' && !previousIds.has(m.id));
+          setSessions((prev) => prev.map((s) => s.id === full.id ? full : s));
+        } else {
+          setSessions((prev) => prev.map((s) => s.id === session.id ? { ...s, messages: session.messages } : s));
+        }
+      } else {
+        setSessions((prev) => prev.map((s) => s.id === draftId ? { ...s, messages: session.messages } : s));
+      }
+      if (!recovered) {
+        setInput(text);
+        setActionError(authErrorMessage(error,
+          isVietnamese ? 'Trợ lý chưa trả lời được. Vui lòng thử lại.' : 'The assistant could not reply. Please try again.'));
+      }
     } finally {
+      operationInFlight.current = false;
       setTyping(false);
       textareaRef.current?.focus();
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       void handleSend();
     }
@@ -485,54 +584,70 @@ export function AssistantChatWidget() {
 
   // ---- Prompts ----
   const quickCategories = [
-    ...(hasShortlist ? [{ title: c.shortlistTitle, prompt: c.shortlistPrompt }] : []),
     {
       title: t('assistant.cvOptimization'),
-      prompt:
-        'Trợ lý hãy kiểm tra CV đính kèm của tôi, đánh giá chi tiết điểm số ATS và chỉ ra các từ khóa quan trọng còn thiếu.',
+      prompt: isVietnamese
+        ? 'Trợ lý hãy kiểm tra CV đính kèm của tôi, đánh giá chi tiết điểm số ATS và chỉ ra các từ khóa quan trọng còn thiếu.'
+        : 'Review my attached CV for ATS compatibility and identify important missing keywords.',
     },
     {
       title: t('assistant.jobMatching'),
-      prompt: 'Đánh giá mức độ phù hợp giữa hồ sơ của tôi và công việc mục tiêu, tôi có bao nhiêu % cơ hội trúng tuyển?',
+      prompt: isVietnamese
+        ? 'Đánh giá mức độ phù hợp giữa hồ sơ của tôi và công việc mục tiêu, chỉ ra điểm mạnh và những yêu cầu còn thiếu.'
+        : 'Assess how well my profile fits the target job, highlighting strengths and missing requirements.',
     },
     {
       title: t('assistant.interviewPrep'),
-      prompt:
-        'Dự đoán 4 câu hỏi phỏng vấn kỹ thuật và tình huống khó nhất cho vị trí này, kèm theo gợi ý trả lời theo chuẩn STAR.',
+      prompt: isVietnamese
+        ? 'Dự đoán 4 câu hỏi phỏng vấn kỹ thuật và tình huống khó nhất cho vị trí này, kèm theo gợi ý trả lời theo chuẩn STAR.'
+        : 'Suggest four challenging technical and behavioral interview questions for this role with STAR answer guidance.',
     },
     {
       title: t('assistant.salaryNegotiation'),
-      prompt: 'Khảo sát dải lương thị trường năm 2026 cho vị trí này và tư vấn cho tôi kịch bản đàm phán lương tự tin.',
+      prompt: isVietnamese
+        ? 'Tư vấn khoảng lương tham khảo cho vị trí này và kịch bản đàm phán lương, nêu rõ các giả định và giới hạn dữ liệu.'
+        : 'Suggest an indicative salary range and negotiation script for this role, stating assumptions and data limitations.',
     },
   ];
 
   const suggestedPrompts = useMemo(() => {
     if (activeSession?.activeJobId) {
       return [
-        ...(hasShortlist ? [c.shortlistChip] : []),
-        'CV của tôi có đáp ứng đủ tiêu chuẩn vị trí này không?',
-        'Dự đoán câu hỏi phỏng vấn kỹ thuật cho vị trí này',
-        'Soạn thư ứng tuyển (Cover Letter) chuyên nghiệp cho công việc này',
-        'Cần chuẩn bị gì trước vòng phỏng vấn với Hiring Manager?',
+        ...(isVietnamese ? [
+          'CV của tôi có đáp ứng đủ tiêu chuẩn vị trí này không?',
+          'Dự đoán câu hỏi phỏng vấn kỹ thuật cho vị trí này',
+          'Soạn thư ứng tuyển (Cover Letter) chuyên nghiệp cho công việc này',
+          'Cần chuẩn bị gì trước vòng phỏng vấn với Hiring Manager?',
+        ] : [
+          'Does my CV meet the requirements for this role?',
+          'Suggest technical interview questions for this role',
+          'Write a professional cover letter for this job',
+          'How should I prepare for the hiring manager interview?',
+        ]),
       ];
     }
     if (activeSession?.activeCvId) {
       return [
-        ...(hasShortlist ? [c.shortlistChip] : []),
-        'Làm thế nào để nâng điểm ATS của CV lên trên 95%?',
-        'Viết lại mục kinh nghiệm theo chuẩn Google XYZ',
-        'Những từ khóa công nghệ nào tôi nên bổ sung vào CV?',
-        'Điểm mạnh và điểm yếu lớn nhất trong CV của tôi là gì?',
+        ...(isVietnamese ? [
+          'Làm thế nào để cải thiện khả năng đọc CV của hệ thống ATS?',
+          'Viết lại mục kinh nghiệm theo chuẩn Google XYZ',
+          'Những từ khóa công nghệ nào tôi nên bổ sung vào CV?',
+          'Điểm mạnh và điểm yếu lớn nhất trong CV của tôi là gì?',
+        ] : [
+          'How can I improve my CV for ATS screening?',
+          'Rewrite my experience using the Google XYZ format',
+          'Which technology keywords should I add to my CV?',
+          'What are the biggest strengths and weaknesses of my CV?',
+        ]),
       ];
     }
     return [
-      ...(hasShortlist ? [c.shortlistChip] : []),
       t('assistant.prompt1'),
       t('assistant.prompt2'),
       t('assistant.prompt3'),
-      'Lộ trình phát triển từ Senior lên Technical Lead',
+      isVietnamese ? 'Lộ trình phát triển từ Senior lên Technical Lead' : 'A career roadmap from Senior to Technical Lead',
     ];
-  }, [activeSession?.activeCvId, activeSession?.activeJobId, t, hasShortlist, c]);
+  }, [activeSession?.activeCvId, activeSession?.activeJobId, t, isVietnamese]);
 
   const filteredSessions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -578,9 +693,8 @@ export function AssistantChatWidget() {
                 {c.historyShort}
               </button>
             )}
-            <button type="button" onClick={handleNewSession} className={textButton} title={c.newChat}>
-              <Plus size={15} aria-hidden="true" />
-              {c.newShort}
+            <button type="button" onClick={handleNewSession} className={iconButton} aria-label={c.newChat} title={c.newChat}>
+              <Plus size={18} />
             </button>
             {view === 'chat' && (
               <button
@@ -626,6 +740,24 @@ export function AssistantChatWidget() {
             )}
           </div>
 
+          {(historyError || sessionError || actionError) && (
+            <div role="alert" className="border-b border-border bg-red-50 px-4 py-2 text-xs text-danger">
+              <p>{actionError || sessionError || historyError}</p>
+              {!actionError && (sessionError || historyError) && (
+                <button type="button" disabled={typing || saving || historyLoading || !!loadingSessionId}
+                  className="mt-1 underline underline-offset-2 disabled:opacity-50"
+                  onClick={() => sessionError ? setSessionRevision((n) => n + 1) : setHistoryRevision((n) => n + 1)}>
+                  {c.retry}
+                </button>
+              )}
+            </div>
+          )}
+          {(historyLoading || !!loadingSessionId || saving) && (
+            <p role="status" className="border-b border-border px-4 py-2 text-xs text-slate-500">
+              {saving ? c.saving : c.loading}
+            </p>
+          )}
+
           {view === 'history' ? (
             /* ---- History ---- */
             <div className="flex min-h-0 flex-1 flex-col">
@@ -641,7 +773,7 @@ export function AssistantChatWidget() {
               </label>
 
               <ol className="mt-2 flex-1 overflow-y-auto px-4 pb-4">
-                {filteredSessions.length === 0 && (
+                {!historyLoading && filteredSessions.length === 0 && (
                   <li className="py-6 text-sm text-slate-500">{c.noSessions}</li>
                 )}
                 {filteredSessions.map((session, idx) => {
@@ -656,19 +788,20 @@ export function AssistantChatWidget() {
                           className="flex min-w-0 flex-1 items-center gap-2"
                           onSubmit={(e) => {
                             e.preventDefault();
-                            commitRename();
+                            void commitRename();
                           }}
                         >
                           <input
                             autoFocus
                             value={renameValue}
                             onChange={(e) => setRenameValue(e.target.value)}
-                            onBlur={commitRename}
+                            maxLength={255}
+                            disabled={saving}
                             onKeyDown={(e) => e.key === 'Escape' && setRenamingId(null)}
                             className="min-w-0 flex-1 border-0 border-b border-brand bg-transparent py-0.5 text-sm text-ink outline-none"
                             aria-label={c.rename}
                           />
-                          <button type="submit" className="text-xs text-brand underline underline-offset-4">
+                          <button type="submit" disabled={saving || !renameValue.trim()} className="text-xs text-brand underline underline-offset-4 disabled:opacity-40">
                             {c.save}
                           </button>
                         </form>
@@ -676,6 +809,7 @@ export function AssistantChatWidget() {
                         <>
                           <button
                             type="button"
+                            disabled={typing || saving || historyLoading}
                             onClick={() => handleSelectSession(session.id)}
                             className="min-w-0 flex-1 text-left"
                           >
@@ -683,13 +817,15 @@ export function AssistantChatWidget() {
                               {session.title}
                             </span>
                             <span className="mt-0.5 block text-xs text-slate-500">
-                              {session.updatedAt} · {session.messages.length} {c.messages}
+                              {new Date(session.updatedAt).toLocaleString(isVietnamese ? 'vi-VN' : 'en-US')}
+                              {(isDraft(session) || loadedIds.current.has(session.id)) && <> · {session.messages.length} {c.messages}</>}
                               {isActive && <span className="text-brand"> · {c.current}</span>}
                             </span>
                           </button>
                           <div className="flex shrink-0 items-center gap-0.5 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                             <button
                               type="button"
+                              disabled={typing || saving || historyLoading}
                               onClick={() => startRename(session)}
                               className="grid h-8 w-8 place-items-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-ink"
                               aria-label={`${c.rename}: ${session.title}`}
@@ -698,6 +834,7 @@ export function AssistantChatWidget() {
                             </button>
                             <button
                               type="button"
+                              disabled={typing || saving || historyLoading}
                               onClick={() => handleDeleteSession(session.id)}
                               className="grid h-8 w-8 place-items-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-danger"
                               aria-label={`${c.delete}: ${session.title}`}
@@ -723,10 +860,12 @@ export function AssistantChatWidget() {
                   <span className="shrink-0 text-xs text-slate-500">{c.cv}</span>
                   <select
                     value={activeSession?.activeCvId ?? ''}
-                    onChange={(e) => handleSelectCv(e.target.value || undefined)}
+                    onChange={(e) => void handleSelectContext({ activeCvId: e.target.value || undefined })}
+                    disabled={busy}
                     className={selectClass}
                   >
                     <option value="">{c.noCv}</option>
+                    {cvId && !listedCv && <option value={cvId}>{selectedCv?.name ?? cvId}</option>}
                     {resumes.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.name}
@@ -738,10 +877,12 @@ export function AssistantChatWidget() {
                   <span className="shrink-0 text-xs text-slate-500">{c.job}</span>
                   <select
                     value={activeSession?.activeJobId ?? ''}
-                    onChange={(e) => handleSelectJob(e.target.value || undefined)}
+                    onChange={(e) => void handleSelectContext({ activeJobId: e.target.value || undefined })}
+                    disabled={busy}
                     className={selectClass}
                   >
                     <option value="">{c.noJob}</option>
+                    {jobId && !listedJob && <option value={jobId}>{selectedJob?.title ?? jobId}</option>}
                     {hasShortlist ? (
                       [
                         { label: c.groupApplied, items: appliedJobs },
@@ -789,10 +930,11 @@ export function AssistantChatWidget() {
                       unhelpfulLabel={t('assistant.unhelpful')}
                       onSendPrompt={(prompt) => void handleSend(prompt)}
                       onFeedback={handleFeedback}
+                      disabled={busy}
                     />
                   ))}
 
-                  {isFreshChat && !typing && (
+                  {isFreshChat && !typing && !historyLoading && !sessionUnloaded && (
                     <div>
                       <p className="text-[15px] text-ink">{c.introTitle}</p>
                       <p className="mt-1 text-[13px] leading-relaxed text-slate-600">{c.introBody}</p>
@@ -802,6 +944,7 @@ export function AssistantChatWidget() {
                           <li key={item.title}>
                             <button
                               type="button"
+                              disabled={busy}
                               onClick={() => void handleSend(item.prompt)}
                               className="group flex w-full items-start gap-3 border-b border-border py-3 text-left"
                             >
@@ -844,7 +987,7 @@ export function AssistantChatWidget() {
                         key={prompt}
                         type="button"
                         onClick={() => void handleSend(prompt)}
-                        disabled={typing}
+                        disabled={busy}
                         className="w-56 shrink-0 rounded-2xl border border-border px-3.5 py-2 text-left text-xs leading-snug text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:opacity-50"
                       >
                         {prompt}
@@ -871,11 +1014,13 @@ export function AssistantChatWidget() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={c.placeholder}
+                    maxLength={8000}
+                    disabled={busy}
                     className="max-h-32 min-h-8 flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed text-ink outline-none placeholder:text-slate-500"
                   />
                   <button
                     type="submit"
-                    disabled={typing || !input.trim()}
+                    disabled={busy || !input.trim()}
                     className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-white transition-colors hover:bg-brand-800 disabled:opacity-30"
                     aria-label={c.send}
                   >
@@ -930,6 +1075,7 @@ interface ChatMessageProps {
   unhelpfulLabel: string;
   onSendPrompt: (prompt: string) => void;
   onFeedback: (messageId: string, feedback: 'like' | 'dislike') => void;
+  disabled: boolean;
 }
 
 function ChatMessage({
@@ -941,6 +1087,7 @@ function ChatMessage({
   unhelpfulLabel,
   onSendPrompt,
   onFeedback,
+  disabled,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
 
@@ -972,6 +1119,7 @@ function ChatMessage({
     return (
       <button
         type="button"
+        disabled={disabled}
         onClick={() => onFeedback(message.id, value)}
         aria-pressed={active}
         aria-label={value === 'like' ? helpfulLabel : unhelpfulLabel}
@@ -1033,6 +1181,7 @@ function ChatMessage({
               <li key={idx}>
                 <button
                   type="button"
+                  disabled={disabled}
                   onClick={() => onSendPrompt(item.prompt)}
                   className="group flex w-full items-center justify-between gap-3 border-b border-border py-2 text-left text-sm text-ink last:border-0 hover:text-brand"
                 >
@@ -1054,8 +1203,8 @@ function ChatMessage({
           {copied ? <Check size={13} className="text-brand" /> : <Copy size={13} />}
           {copied ? copiedLabel : copyLabel}
         </button>
-        {feedbackButton('like')}
-        {feedbackButton('dislike')}
+        {message.role === 'assistant' && feedbackButton('like')}
+        {message.role === 'assistant' && feedbackButton('dislike')}
       </div>
     </div>
   );

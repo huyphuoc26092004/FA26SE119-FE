@@ -1,13 +1,14 @@
 import { ExternalLink } from 'lucide-react';
 import { EmptyRow, InfoRow, StatRow, SubHead } from '../../../components/admin/AdminKit';
 import type { CrawlRun } from '../../../types/jobCrawl';
-import { ITEM_STATUS, RunStatus, SITE_LABEL, formatDateTime, formatDuration } from './crawlFormat';
+import { RunStatus, SITE_LABEL, crawlItemStatus, crawlItemTitle, formatDateTime, formatDuration } from './crawlFormat';
 
 /** Counters, request info and per-URL log of one crawl run. */
 export function CrawlRunDetail({ run }: { run: CrawlRun }) {
   const items = run.items ?? [];
-  const pages = items.filter((it) => it.status === 'SEARCH_FETCHED' || it.status === 'SEARCH_FETCH_FAILED');
-  const jobs = items.filter((it) => it.status !== 'SEARCH_FETCHED' && it.status !== 'SEARCH_FETCH_FAILED');
+  const pages = items.filter((it) => it.status.startsWith('SEARCH_'));
+  const jobs = items.filter((it) => !it.status.startsWith('SEARCH_'));
+  const deferred = jobs.filter((it) => it.status === 'DEFERRED').length;
 
   return (
     <div className="space-y-10">
@@ -15,7 +16,8 @@ export function CrawlRunDetail({ run }: { run: CrawlRun }) {
         items={[
           { label: 'Việc mới đã nhập', value: run.importedJobs, valueTone: 'brand', detail: `${run.importedSkills} kỹ năng` },
           { label: 'Trùng, đã cập nhật', value: run.skippedDuplicates },
-          { label: 'Bị loại', value: run.rejectedPages, valueTone: run.rejectedPages ? 'warning' : 'ink', detail: run.wrongRegionPages ? `${run.wrongRegionPages} sai khu vực` : undefined },
+          { label: 'Bị loại hoặc lỗi', value: run.rejectedPages, valueTone: run.rejectedPages ? 'warning' : 'ink', detail: run.wrongRegionPages ? `${run.wrongRegionPages} sai khu vực` : undefined },
+          { label: 'Tạm hoãn, chưa tải', value: deferred, detail: deferred ? 'Không tính là lỗi tải' : undefined },
           { label: 'Trang chi tiết đã xem', value: run.detailPagesChecked, detail: `${run.searchPagesChecked} trang tìm kiếm` },
         ]}
       />
@@ -35,17 +37,17 @@ export function CrawlRunDetail({ run }: { run: CrawlRun }) {
       </dl>
 
       <section>
-        <SubHead title={`Tin tuyển dụng (${jobs.length})`} />
+        <SubHead title={`Đường dẫn tin (${jobs.length})`} />
         {jobs.length === 0 ? (
           <EmptyRow>Không có tin nào được xử lý trong lần chạy này.</EmptyRow>
         ) : (
           <ul>
             {jobs.map((it) => {
-              const s = ITEM_STATUS[it.status] ?? { label: it.status, tone: 'text-slate-600' };
+              const s = crawlItemStatus(it);
               return (
                 <li key={it.id} className="grid gap-x-6 gap-y-1 border-b border-border py-3.5 sm:grid-cols-[minmax(0,1fr)_10rem]">
                   <div className="min-w-0">
-                    <p className="truncate text-[15px] text-ink">{it.jobTitle || 'Không đọc được tiêu đề'}</p>
+                    <p className="truncate text-[15px] text-ink">{crawlItemTitle(it)}</p>
                     {it.sourceUrl && (
                       <a
                         href={it.sourceUrl}
@@ -75,11 +77,11 @@ export function CrawlRunDetail({ run }: { run: CrawlRun }) {
           <SubHead title={`Trang tìm kiếm (${pages.length})`} />
           <ul>
             {pages.map((it) => {
-              const s = ITEM_STATUS[it.status] ?? { label: it.status, tone: 'text-slate-600' };
+              const s = crawlItemStatus(it);
               return (
                 <li key={it.id} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border py-3 text-[13px]">
                   <span className="min-w-0 truncate text-slate-600">{it.sourceUrl}</span>
-                  <span className={s.tone}>{it.message || s.label}</span>
+                  <span className={s.tone}>{s.label}{it.httpStatus !== null ? ` · HTTP ${it.httpStatus}` : ''}{it.message ? ` · ${it.message}` : ''}</span>
                 </li>
               );
             })}

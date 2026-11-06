@@ -7,6 +7,7 @@ import { formatDateTime } from './supportService';
 
 /** Tên tiếng Việt cho mã quota/feature AI của backend. */
 export const FEATURE_LABELS: Record<string, string> = {
+  CV_AI_SUPPORT: 'Hỗ trợ sửa CV',
   AI_TOTAL_TOKENS: 'Tổng token AI',
   CV_PARSE: 'Bóc tách CV tải lên',
   CV_BUILD: 'Tạo CV bằng AI',
@@ -24,7 +25,7 @@ export const FEATURE_LABELS: Record<string, string> = {
 
 export const featureLabel = (code: string) => FEATURE_LABELS[code] ?? code;
 
-const PERIOD_LABELS: Record<string, string> = { DAILY: 'ngày', MONTHLY: 'tháng', YEARLY: 'năm', LIFETIME: 'trọn đời' };
+const PERIOD_LABELS: Record<string, string> = { DAILY: 'ngày', MONTHLY: 'tháng', YEARLY: 'năm', LIFETIME: 'trọn đời', SUBSCRIPTION: 'chu kỳ 30 ngày' };
 
 const EMPTY_SUBSCRIPTION: UserSubscriptionStatus = {
   planId: 'free',
@@ -68,7 +69,7 @@ export function toSubscriptionPlan(row: ApiRow): SubscriptionPlan {
     tierId: str(row.id),
     tierCode: code,
     name: str(row.display_name) || code,
-    description: monthly > 0 ? `${fmt(monthly)} ${str(row.currency) || 'VND'} mỗi tháng` : 'Dùng thử các tính năng AI cơ bản',
+    description: monthly > 0 ? `${fmt(monthly)} ${str(row.currency) || 'VND'} mỗi 30 ngày. Dịch vụ cố vấn thanh toán riêng.` : 'Dùng thử các tính năng AI cơ bản',
     monthlyPriceVND: monthly,
     // Backend tính tiền theo số tháng, không có giá năm riêng.
     yearlyPriceVND: monthly * 12,
@@ -197,7 +198,9 @@ export function toPaymentTransaction(row: ApiRow, plans: SubscriptionPlan[] = []
     id: str(row.id),
     orderCode: str(row.provider_order_id) || str(row.id).slice(0, 8).toUpperCase(),
     planId: plan?.id ?? 'free',
-    planName: `${plan?.name ?? 'Gói'} · ${months} tháng`,
+    planName: str(row.order_type) === 'CONSULTATION'
+      ? str(row.service_name) || 'Dịch vụ tư vấn'
+      : `${plan?.name ?? 'Gói'} · ${months * 30} ngày`,
     billingCycle: months >= 12 ? 'yearly' : 'monthly',
     amountVND: amount,
     discountAmountVND: 0,

@@ -1,4 +1,5 @@
 import type { AssessmentQuestion, AssessmentResult, AssessmentAttempt, AssessmentGrade, SkillGapAnalysis, SkillGapItem, LearningRoadmap, LearningResource, ResourceType } from '../types/assessment';
+import axios from 'axios';
 import type {
   CandidateProfile,
   CareerSalaryTrack,
@@ -12,6 +13,7 @@ import type {
 } from '../types/domain';
 import { useAuthStore } from '../stores/authStore';
 import { apiClient } from './apiClient';
+import { authErrorMessage } from './authService';
 import { pending, notConnected } from './apiPending';
 import { SEED_TEMPLATES } from './resumeTemplateAdminService';
 import {
@@ -101,40 +103,109 @@ export async function applyJobExternal(id: string, resumeId?: string): Promise<{
 
 // ---- Matching ----
 
-type MatchBasis = 'SELECTED_CV' | 'ALL_CVS' | 'CAREER_PROFILE';
+export type MatchBasis = 'SELECTED_CV' | 'ALL_CVS' | 'CAREER_PROFILE';
 
-// Một lượt matching có thể gọi AI xếp hạng lại; giữ kết quả 5 phút để các trang dùng chung.
-const matchingCache = new Map<string, { at: number; run: Promise<ApiRow> }>();
+export interface RecommendationOptions {
+  basis?: MatchBasis | 'AUTO';
+  resumeId?: string;
+}
 
-function runMatching(basis: MatchBasis, resumeId?: string): Promise<ApiRow> {
-  const key = `${basis}:${resumeId ?? ''}`;
-  const hit = matchingCache.get(key);
-  if (hit && Date.now() - hit.at < 5 * 60_000) return hit.run;
-  const run = post('/matching', { basis, resumeIds: resumeId ? [resumeId] : undefined, limit: 50 });
-  run.catch(() => matchingCache.delete(key));
-  matchingCache.set(key, { at: Date.now(), run });
+export interface RecommendationResult {
+  jobs: Job[];
+  basis: MatchBasis;
+  salaryFilter?: { active?: boolean; examinedJobs?: number; eligibleJobs?: number };
+  mode?: string;
+}
+
+// Share only requests still running for the same account. The backend caches by
+// current CV/profile content; keeping completed requests here would hide edits.
+const matchingInFlight = new Map<string, Promise<ApiRow>>();
+
+function runMatching(basis: MatchBasis, resumeId?: string, mode: 'QUICK' | 'DETAILED' = 'QUICK'): Promise<ApiRow> {
+  const auth = useAuthStore.getState();
+  const selectedResumeId = basis === 'SELECTED_CV' ? resumeId : undefined;
+  const key = JSON.stringify([auth.user?.id ?? auth.accessToken, basis, selectedResumeId ?? '', mode]);
+  const hit = matchingInFlight.get(key);
+  if (hit) return hit;
+  const run = apiClient.post<ApiRow>(
+    '/matching',
+    { basis, resumeIds: selectedResumeId ? [selectedResumeId] : undefined, limit: 50, mode },
+    { timeout: mode === 'QUICK' ? 60_000 : 600_000 },
+  ).then((response) => response.data).finally(() => {
+    if (matchingInFlight.get(key) === run) matchingInFlight.delete(key);
+  });
+  matchingInFlight.set(key, run);
   return run;
 }
 
 export async function getJobSemanticMatch(jobId: string, resumeId?: string): Promise<SemanticMatchingDetail> {
   if (!isSignedIn()) throw new Error('Đăng nhập để xem mức độ phù hợp.');
-  const run = await runMatching(resumeId ? 'SELECTED_CV' : 'ALL_CVS', resumeId);
+  const run = await runMatching(resumeId ? 'SELECTED_CV' : 'ALL_CVS', resumeId, 'DETAILED');
   const result = rows(run.results).find((r) => str(r.market_job_id) === jobId);
   if (!result) throw new Error('Việc làm này không nằm trong kết quả phù hợp với CV của bạn.');
   return toSemanticMatch(result);
 }
 
-export async function getRecommendations(): Promise<Job[]> {
-  if (!isSignedIn()) return [];
-  // Ưu tiên toàn bộ CV đã xác nhận; chưa có CV thì dùng hồ sơ nghề nghiệp.
-  for (const basis of ['ALL_CVS', 'CAREER_PROFILE'] as const) {
-    try {
-      return rows((await runMatching(basis)).results).map(toMatchedJob);
-    } catch {
-      // thử nguồn tiếp theo
-    }
+function toRecommendationResult(run: ApiRow, basis: MatchBasis): RecommendationResult {
+  const salary = obj(run.salary_filter ?? obj(run.profile_snapshot).salary_filter);
+  return {
+    jobs: rows(run.results)
+      .filter((row) => !str(row.job_status) || row.job_status === 'ACTIVE')
+      .map(toMatchedJob),
+    basis,
+    mode: optStr(obj(run.profile_snapshot).mode ?? run.mode),
+    salaryFilter: Object.keys(salary).length ? {
+      active: typeof salary.active === 'boolean' ? salary.active : undefined,
+      examinedJobs: salary.examined_jobs == null ? undefined : num(salary.examined_jobs),
+      eligibleJobs: salary.eligible_jobs == null ? undefined : num(salary.eligible_jobs),
+    } : undefined,
+  };
+}
+
+function isMatchingValidationError(error: unknown, basis: 'ALL_CVS' | 'CAREER_PROFILE'): boolean {
+  if (!axios.isAxiosError(error) || ![400, 409].includes(error.response?.status ?? 0)) return false;
+  const detail = authErrorMessage(error, '');
+  return basis === 'ALL_CVS'
+    ? /At least one confirmed CV is required|ALL_CVS supports at most 100 confirmed resumes|Confirm CV data before matching/i.test(detail)
+    : /Complete your career profile first|Set expectedSalary in your career profile|Set a positive monthly expectedSalary and a supported salaryCurrency/i.test(detail);
+}
+
+export async function getRecommendationResult(options?: RecommendationOptions): Promise<RecommendationResult> {
+  if (!isSignedIn()) throw new Error('Đăng nhập để xem việc làm phù hợp với CV hoặc hồ sơ cá nhân.');
+  const basis = options?.basis ?? (options?.resumeId ? 'SELECTED_CV' : 'AUTO');
+  if (basis !== 'AUTO') {
+    if (basis === 'SELECTED_CV' && !options?.resumeId) throw new Error('Chọn một CV để tìm việc làm phù hợp.');
+    return toRecommendationResult(await runMatching(basis, options?.resumeId), basis);
   }
-  return [];
+
+  let emptyCvResult: RecommendationResult | undefined;
+  let cvError: unknown;
+  try {
+    const result = toRecommendationResult(await runMatching('ALL_CVS'), 'ALL_CVS');
+    if (result.jobs.length) return result;
+    emptyCvResult = result;
+  } catch (error) {
+    if (!isMatchingValidationError(error, 'ALL_CVS')) throw error;
+    cvError = error;
+  }
+
+  try {
+    return toRecommendationResult(await runMatching('CAREER_PROFILE'), 'CAREER_PROFILE');
+  } catch (error) {
+    if (!isMatchingValidationError(error, 'CAREER_PROFILE')) throw error;
+    if (emptyCvResult) return emptyCvResult;
+    throw new Error(
+      `Không thể đề xuất việc làm từ CV hoặc hồ sơ cá nhân. CV: ${authErrorMessage(cvError, 'Chưa có CV đã xác nhận.')} ` +
+      `Hồ sơ cá nhân: ${authErrorMessage(error, 'Hãy hoàn thiện hồ sơ nghề nghiệp.')}`,
+    );
+  }
+}
+
+export function getRecommendations(options: RecommendationOptions): Promise<Job[]>;
+export function getRecommendations(): Promise<Job[]>;
+export async function getRecommendations(options?: RecommendationOptions): Promise<Job[]> {
+  if (!isSignedIn()) return [];
+  return (await getRecommendationResult(options)).jobs;
 }
 
 // ---- CV ----
@@ -208,12 +279,14 @@ export async function setDefaultResume(id: string): Promise<Resume> {
 /** Upload file CV; backend bóc tách và tạo CV ở trạng thái cần kiểm tra (có `id`). */
 export async function simulateAiCvExtraction(file: File, language: 'vi' | 'en' = 'vi'): Promise<Partial<Resume>> {
   const form = new FormData();
+  console.log('Uploading file', file.name, 'language', language);
   form.append('file', file);
   form.append('language', language);
   const res = await apiClient.post<ApiRow>('/resumes/upload', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 600_000,
   });
+  console.log('Uploaded file', file.name, 'response', res.data);
   return toResume(res.data);
 }
 
@@ -347,6 +420,7 @@ export async function getResumeAnalysis(resumeId: string): Promise<ResumeAnalysi
   if (!resume) throw new Error('Không tìm thấy CV.');
   if (list.length === 0) return reanalyzeResume(resumeId);
   const latest = await get(`/resumes/${resumeId}/analyses/${str(list[0].id)}`);
+  if (latest.language_valid === false) return reanalyzeResume(resumeId);
   return toResumeAnalysis(latest, resume);
 }
 
@@ -366,11 +440,12 @@ export async function reanalyzeResume(resumeId: string): Promise<ResumeAnalysisR
 
 /** ATS theo một job: điểm, điểm mạnh, kỹ năng thiếu và gợi ý sửa CV. */
 export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<CvJobFitResult> {
-  const [cv, job, ats] = await Promise.all([
+  // Check both resources before starting a paid analysis; stale selections must not spend AI quota.
+  const [cv, job] = await Promise.all([
     getResumeById(cvId),
     getJobById(jobId),
-    apiClient.post<ApiRow>(`/jobs/${jobId}/ats`, { resumeId: cvId }, { timeout: 600_000 }).then((res) => res.data),
   ]);
+  const ats = await apiClient.post<ApiRow>(`/jobs/${jobId}/ats`, { resumeId: cvId }, { timeout: 600_000 }).then((res) => res.data);
   const score = Math.round(num(ats.ats_score));
   const strengths = texts(ats.strengths_json);
   const missing = texts(ats.missing_skills_json);

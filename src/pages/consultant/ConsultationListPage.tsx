@@ -28,6 +28,8 @@ import {
 } from '../../services/consultationService';
 import type { ConsultationRequest } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
+import ConsultantBookingManager, { bookingDisplayStatus, bookingMessageAvailable, useBookingClock } from '../../components/consultation/ConsultantBookingManager';
+import { listBookings } from '../../services/bookingService';
 
 const copy = {
   vi: {
@@ -154,15 +156,22 @@ export default function ConsultationListPage() {
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const selectedId = params.get('c') ?? '';
+  const messagesView = !!selectedId || params.get('view') === 'messages';
+  const now = useBookingClock();
 
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('ALL');
   const [showInfo, setShowInfo] = useState(true);
 
-  const inbox = useQuery({ queryKey: ['consultant-inbox'], queryFn: getConsultantInbox, refetchInterval: 20_000 });
+  const inbox = useQuery({ queryKey: ['consultant-inbox'], queryFn: getConsultantInbox, refetchInterval: 20_000, enabled: messagesView });
+  const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings, refetchInterval: 20_000 });
   const threads = useMemo(
-    () => [...(inbox.data ?? [])].sort((a, b) => new Date(lastActivity(b)).getTime() - new Date(lastActivity(a)).getTime()),
-    [inbox.data],
+    () => [...(inbox.data ?? [])].map(thread => {
+      const booking = bookings.data?.find(item => item.thread_id === thread.id);
+      return booking ? { ...thread, status: bookingDisplayStatus(booking, now), topicLabel: booking.subject,
+        meeting: { ...thread.meeting, scheduledAt: booking.starts_at, durationMinutes: booking.duration_minutes } } : thread;
+    }).sort((a, b) => new Date(lastActivity(b)).getTime() - new Date(lastActivity(a)).getTime()),
+    [inbox.data, bookings.data, now],
   );
 
   // Tin mới đến qua SSE; polling chỉ là dự phòng khi mất kết nối.
@@ -177,7 +186,18 @@ export default function ConsultationListPage() {
     refetchInterval: live ? 30_000 : 5_000,
     placeholderData: () => threads.find((t) => t.id === selectedId),
   });
-  const thread = active.data ?? null;
+  const scheduledBooking = bookings.data?.find(booking => booking.thread_id === selectedId);
+  const rawThread = active.data ?? null;
+  const thread = rawThread && scheduledBooking ? {
+    ...rawThread,
+    status: bookingDisplayStatus(scheduledBooking, now),
+    topicLabel: scheduledBooking.subject,
+    targetGoal: scheduledBooking.description,
+    candidate: { ...rawThread.candidate, targetRole: scheduledBooking.target_role },
+    meeting: { ...rawThread.meeting, scheduledAt: scheduledBooking.starts_at, durationMinutes: scheduledBooking.duration_minutes },
+  } : rawThread;
+  const canSend = !!thread && !isClosed(thread) && bookings.isSuccess
+    && (!scheduledBooking || bookingMessageAvailable(scheduledBooking, now));
 
   // Mở hội thoại thì đánh dấu đã đọc tin của ứng viên.
   const unreadInThread = thread ? unreadOf(thread) : 0;
@@ -196,7 +216,12 @@ export default function ConsultationListPage() {
   };
 
   const sendMutation = useMutation({
-    mutationFn: (text: string) => sendConsultationMessage(selectedId, text),
+    mutationFn: (text: string) => {
+      if (!canSend || (scheduledBooking && !bookingMessageAvailable(scheduledBooking, Date.now()))) {
+        throw new Error(isVietnamese ? 'Chỉ có thể trao đổi trong khung giờ tư vấn đã xác nhận.' : 'Messaging is available during the confirmed session.');
+      }
+      return sendConsultationMessage(selectedId, text);
+    },
     onSuccess: (message) => {
       if (thread) syncThread({ ...thread, messages: [...thread.messages, message] });
     },
@@ -238,9 +263,14 @@ export default function ConsultationListPage() {
   const select = (id: string) => {
     const next = new URLSearchParams(params);
     if (id) next.set('c', id);
-    else next.delete('c');
+    else {
+      next.delete('c');
+      next.set('view', 'messages');
+    }
     setParams(next, { replace: !id });
   };
+
+  if (!messagesView) return <ConsultantBookingManager />;
 
   return (
     <ChatFrame>
@@ -250,6 +280,9 @@ export default function ConsultationListPage() {
         className={`w-full shrink-0 flex-col border-r border-border md:flex md:w-[20rem] xl:w-[22rem] ${selectedId ? 'hidden' : 'flex'}`}
       >
         <div className="px-5 pt-5">
+          <Link to="/consultant/consultations" className="mb-3 inline-block text-sm text-brand underline underline-offset-4">
+            {isVietnamese ? 'Lịch tư vấn và tiếp nhận yêu cầu' : 'Schedule and booking requests'}
+          </Link>
           <h1 className="flex items-baseline justify-between text-[1.625rem] font-normal tracking-[-0.02em] text-ink">
             {c.title}
             <span className="text-[13px] tabular-nums tracking-normal text-slate-500">{threads.length}</span>
@@ -362,8 +395,8 @@ export default function ConsultationListPage() {
               autoFocusKey={thread.id}
               onSend={(text) => sendMutation.mutateAsync(text)}
               sending={sendMutation.isPending}
-              disabled={isClosed(thread)}
-              disabledText={c.closed}
+              disabled={!canSend}
+              disabledText={isClosed(thread) ? c.closed : isVietnamese ? 'Khung trao đổi mở trong giờ tư vấn sau khi tiếp nhận lịch.' : 'Messaging opens during the confirmed session.'}
               placeholder={c.placeholder}
               sendLabel={c.send}
               quickReplies={thread.messages.some((m) => m.senderRole === ME) ? c.quick.slice(1) : c.quick}
@@ -421,7 +454,7 @@ export default function ConsultationListPage() {
               <InfoRow label={c.rows.status}>
                 <span className={statusTone(thread.status)}>{STATUS_LABEL[lang][thread.status]}</span>
               </InfoRow>
-              {!isClosed(thread) && (
+              {!isClosed(thread) && !bookings.isLoading && !bookings.isError && !scheduledBooking && (
                 <button
                   type="button"
                   disabled={closeMutation.isPending}
@@ -430,6 +463,11 @@ export default function ConsultationListPage() {
                 >
                   {c.close}
                 </button>
+              )}
+              {scheduledBooking && (
+                <Link to="/consultant/consultations" className="mt-3 inline-block text-[13px] text-brand underline underline-offset-4">
+                  {isVietnamese ? 'Quản lý tiếp nhận và hoàn tất trong Lịch tư vấn' : 'Manage acceptance and completion in Schedule'}
+                </Link>
               )}
               {closeMutation.error && <p className="mt-2 text-[12px] text-danger">{closeMutation.error.message}</p>}
             </InfoSection>

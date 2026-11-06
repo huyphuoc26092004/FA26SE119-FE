@@ -89,7 +89,8 @@ export function CrawlRunTab({ onDone }: { onDone: (run: CrawlRun) => void }) {
 
         <Note>
           Hệ thống chỉ đọc trang ITviec và TopCV, bỏ tin hết hạn hoặc sai khu vực, gộp tin trùng và tự xếp hàng tạo
-          embedding cho tin mới. Một lần chạy có thể mất vài phút.
+          embedding cho tin mới. Các lượt tải cùng nguồn có khoảng nghỉ nên một lần chạy có thể mất vài phút.
+          Khi nguồn chặn truy cập, hệ thống dừng và hoãn các đường dẫn chưa tải.
         </Note>
 
         {mutation.isError && (
