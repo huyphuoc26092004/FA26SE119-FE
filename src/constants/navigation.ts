@@ -72,6 +72,7 @@ export const adminNav: NavItem[] = [
   { label: 'Dashboard', labelVi: 'Bảng điều khiển', translationKey: 'nav.dashboard', to: '/admin', icon: House, group: 'main' },
   { label: 'Users', labelVi: 'Người dùng', translationKey: 'nav.users', to: '/admin/users', icon: Users, group: 'management' },
   { label: 'Subscriptions', labelVi: 'Quản lý gói dịch vụ', translationKey: 'nav.subscriptions', to: '/admin/subscriptions', icon: CreditCard, group: 'management' },
+  { label: 'Consultation pricing', labelVi: 'Bảng giá tư vấn', translationKey: 'nav.consultationServices', to: '/admin/consultation-services', icon: CreditCard, group: 'management' },
   { label: 'Payments', labelVi: 'Lịch sử thanh toán', translationKey: 'nav.payments', to: '/admin/payments', icon: Wallet, group: 'management' },
   { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/admin/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'AI configuration', labelVi: 'Cấu hình AI', translationKey: 'nav.aiConfig', to: '/admin/ai', icon: Settings, group: 'platform' },
@@ -84,3 +85,7 @@ export const adminNav: NavItem[] = [
   { label: 'Support tickets', labelVi: 'Phiếu hỗ trợ', translationKey: 'nav.supportTickets', to: '/admin/support', icon: LifeBuoy, group: 'operations' },
   { label: 'Analytics', labelVi: 'Phân tích & thống kê', translationKey: 'nav.analytics', to: '/admin/analytics', icon: ChartColumn, group: 'operations' },
 ];
+
+export const managerNav: NavItem[] = adminNav
+  .filter((item) => !['/admin/users', '/admin/ai', '/admin/logs', '/admin/audit'].includes(item.to))
+  .map((item) => ({ ...item, to: item.to.replace('/admin', '/manager') }));

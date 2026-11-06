@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User, UserRole } from '../types/domain';
 import { authErrorMessage, authService, type AuthTokens } from '../services/authService';
+import { clearAccountQueryCache } from '../app/queryClient';
 
 export type GoogleLoginResult =
   | { status: 'authenticated' }
@@ -12,6 +13,7 @@ export type GoogleLoginResult =
     };
 
 interface AuthState {
+  sessionVersion: number;
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
@@ -60,8 +62,10 @@ async function call<T>(request: () => Promise<T>, fallback: string): Promise<T> 
 
 export const useAuthStore = create<AuthState>((set, get) => {
   const clearSession = () => {
+    clearAccountQueryCache();
     sessionStorage.removeItem(KEY);
     set({
+      sessionVersion: get().sessionVersion + 1,
       user: null,
       accessToken: null,
       refreshToken: null,
@@ -87,6 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
   };
 
   return {
+    sessionVersion: 0,
     user: null,
     accessToken: null,
     refreshToken: null,
@@ -166,6 +171,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
       if (!refreshToken || !user) return null;
       try {
         const tokens = await authService.refresh(refreshToken);
+        // A refresh that started in an old login must not restore it after logout/account switching.
+        if (get().user?.id !== user.id || get().refreshToken !== refreshToken) return null;
         saveSession({ user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
         set({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
         return tokens.accessToken;
@@ -182,7 +189,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
       clearSession();
     },
 
-    setUser: (user) => set({ user, role: user.role }),
+    setUser: (user) => {
+      const changedAccount = get().user?.id !== user.id;
+      if (changedAccount) clearAccountQueryCache();
+      set({ user, role: user.role, sessionVersion: get().sessionVersion + (changedAccount ? 1 : 0) });
+    },
 
     restoreSession: () => {
       try {
@@ -194,8 +205,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
           sessionStorage.removeItem(KEY);
           return;
         }
+        const changedAccount = get().user?.id !== session.user.id;
+        if (changedAccount) clearAccountQueryCache();
         set({
           ...session,
+          sessionVersion: get().sessionVersion + (changedAccount ? 1 : 0),
           refreshToken: session.refreshToken ?? null,
           isAuthenticated: true,
           role: session.user.role,

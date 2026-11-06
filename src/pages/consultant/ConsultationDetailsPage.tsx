@@ -29,6 +29,8 @@ import type {
   ConsultationAdvicePillars,
 } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
+import { listBookings } from '../../services/bookingService';
+import { bookingDisplayStatus, bookingMessageAvailable, ConsultantBookingCard, useBookingClock } from '../../components/consultation/ConsultantBookingManager';
 
 const copy = {
   vi: {
@@ -212,6 +214,9 @@ export default function ConsultationDetailsPage() {
   const c = copy[lang];
   const locale = isVietnamese ? 'vi-VN' : 'en-GB';
   const queryClient = useQueryClient();
+  const now = useBookingClock();
+  const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings, refetchInterval: 20_000 });
+  const booking = bookings.data?.find(item => item.thread_id === id);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -282,7 +287,12 @@ export default function ConsultationDetailsPage() {
 
   // Save consultation advice mutation across 4 pillars
   const adviceMutation = useMutation({
-    mutationFn: (newAdvice: ConsultationAdvicePillars) => saveConsultationAdvice(id!, newAdvice),
+    mutationFn: (newAdvice: ConsultationAdvicePillars) => {
+      if (!bookings.isSuccess || (booking && !bookingMessageAvailable(booking, Date.now()))) {
+        throw new Error(isVietnamese ? 'Chỉ có thể gửi lời khuyên trong giờ tư vấn đã xác nhận.' : 'Advice can be sent during the confirmed session.');
+      }
+      return saveConsultationAdvice(id!, newAdvice);
+    },
     onSuccess: (updated) => {
       queryClient.setQueryData(['consultation-detail', id], updated);
       queryClient.invalidateQueries({ queryKey: ['consultation-requests'] });
@@ -293,7 +303,13 @@ export default function ConsultationDetailsPage() {
 
   // Send message mutation
   const messageMutation = useMutation({
-    mutationFn: (content: string) => sendConsultationMessage(id!, content, 'CAREER_CONSULTANT'),
+    mutationFn: (content: string) => {
+      if (!bookings.isSuccess || (booking && !bookingMessageAvailable(booking, Date.now()))
+        || request?.status === 'COMPLETED' || request?.status === 'CANCELLED') {
+        throw new Error(isVietnamese ? 'Chỉ có thể trao đổi trong giờ tư vấn đã xác nhận.' : 'Messaging is available during the confirmed session.');
+      }
+      return sendConsultationMessage(id!, content, 'CAREER_CONSULTANT');
+    },
     onSuccess: () => {
       setMessageContent('');
       queryClient.invalidateQueries({ queryKey: ['consultation-detail', id] });
@@ -308,8 +324,8 @@ export default function ConsultationDetailsPage() {
     }
   };
 
-  if (isLoading) return <Loading />;
-  if (isError || !request) {
+  if (isLoading || bookings.isLoading) return <Loading />;
+  if (isError || bookings.isError || !request) {
     return (
       <div className="py-12 text-center">
         <ErrorState />
@@ -324,10 +340,11 @@ export default function ConsultationDetailsPage() {
     );
   }
 
-  const status = request.status;
+  const status: ConsultationStatus = booking ? bookingDisplayStatus(booking, now) : request.status;
   const isOpen = status !== 'CANCELLED' && status !== 'COMPLETED';
+  const canSend = isOpen && (!booking || bookingMessageAvailable(booking, now));
   const live = status === 'SCHEDULED' || status === 'IN_PROGRESS';
-  const scheduledLabel = formatDateTime(request.meeting.scheduledAt, locale);
+  const scheduledLabel = formatDateTime(booking?.starts_at ?? request.meeting.scheduledAt, locale);
   const line2 =
     status === 'SCHEDULED' ? c.headline.SCHEDULED(scheduledLabel) : c.headline[status as Exclude<ConsultationStatus, 'SCHEDULED'>];
 
@@ -336,7 +353,7 @@ export default function ConsultationDetailsPage() {
     status === 'PENDING' ? 0 : status === 'SCHEDULED' ? 2 : status === 'IN_PROGRESS' ? 2 : status === 'COMPLETED' ? 4 : -1;
 
   const sendMessage = () => {
-    if (messageContent.trim()) messageMutation.mutate(messageContent);
+    if (canSend && !messageMutation.isPending && messageContent.trim()) messageMutation.mutate(messageContent);
   };
 
   return (
@@ -357,6 +374,8 @@ export default function ConsultationDetailsPage() {
         </span>
       </div>
 
+      {booking && <div className="mt-6"><ConsultantBookingCard booking={booking} showLinks={false} /></div>}
+
       {/* Headline */}
       <Headline
         eyebrow={
@@ -375,12 +394,12 @@ export default function ConsultationDetailsPage() {
         intro={
           <>
             {request.candidate.currentTitle} <span className="text-slate-400">→</span>{' '}
-            <span className="text-ink">{request.candidate.targetRole}</span>
+            <span className="text-ink">{booking?.target_role ?? request.candidate.targetRole}</span>
           </>
         }
         aside={<Avatar src={request.candidate.avatar} name={request.candidate.name} size="lg" />}
       >
-        {status === 'PENDING' && (
+        {!booking && status === 'PENDING' && (
           <button
             type="button"
             onClick={() =>
@@ -393,7 +412,7 @@ export default function ConsultationDetailsPage() {
             {c.accept}
           </button>
         )}
-        {status === 'SCHEDULED' && (
+        {!booking && status === 'SCHEDULED' && (
           <button
             type="button"
             onClick={() =>
@@ -406,7 +425,7 @@ export default function ConsultationDetailsPage() {
             <ArrowRight size={16} />
           </button>
         )}
-        {status === 'IN_PROGRESS' && (
+        {!booking && status === 'IN_PROGRESS' && (
           <button
             type="button"
             onClick={() => statusMutation.mutate({ status: 'COMPLETED', note: 'Hoàn tất phiên tư vấn.' })}
@@ -417,13 +436,13 @@ export default function ConsultationDetailsPage() {
             {c.finish}
           </button>
         )}
-        {live && (
+        {live && request.meeting.meetingUrl && (
           <a href={request.meeting.meetingUrl} target="_blank" rel="noreferrer" className={`${textLink} text-brand`}>
             {c.join}
             <ExternalLink size={13} />
           </a>
         )}
-        {isOpen && (
+        {!booking && isOpen && (
           <button
             type="button"
             onClick={() => {
@@ -551,12 +570,13 @@ export default function ConsultationDetailsPage() {
             <SectionHead index="03" title={c.advice} />
             <div className="pt-6">
               {adviceData && (
+                <fieldset disabled={!canSend} className="min-w-0 border-0 p-0">
                 <ConsultationAdviceBuilder
                   initialAdvice={adviceData}
                   candidateName={request.candidate.name}
-                  candidateRole={request.candidate.targetRole}
+                  candidateRole={booking?.target_role ?? request.candidate.targetRole}
                   topic={request.topic}
-                  consultationId={request.status === 'COMPLETED' ? undefined : request.id}
+                  consultationId={canSend ? request.id : undefined}
                   resumeId={request.candidate.attachedResumeId}
                   onSave={async (newAdv) => {
                     setAdviceData(newAdv);
@@ -564,7 +584,10 @@ export default function ConsultationDetailsPage() {
                   }}
                   isSaving={adviceMutation.isPending}
                 />
+                </fieldset>
               )}
+              {!canSend && <p className="text-sm text-slate-500">{isVietnamese ? 'Lời khuyên được gửi trong khung giờ tư vấn đã xác nhận.' : 'Advice can be sent during the confirmed session.'}</p>}
+              {adviceMutation.error && <p role="alert" className="mt-3 text-sm text-danger">{adviceMutation.error.message}</p>}
             </div>
           </section>
 
@@ -599,9 +622,10 @@ export default function ConsultationDetailsPage() {
               <input
                 type="text"
                 value={messageContent}
+                disabled={!canSend || messageMutation.isPending}
                 onChange={(e) => setMessageContent(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && messageContent.trim()) {
+                  if (e.key === 'Enter' && canSend && !messageMutation.isPending && messageContent.trim()) {
                     e.preventDefault();
                     messageMutation.mutate(messageContent);
                   }
@@ -612,12 +636,14 @@ export default function ConsultationDetailsPage() {
               <button
                 type="button"
                 onClick={sendMessage}
-                disabled={!messageContent.trim() || messageMutation.isPending}
+                disabled={!canSend || !messageContent.trim() || messageMutation.isPending}
                 className="inline-flex min-h-10 items-center rounded-full bg-ink px-5 text-sm text-white transition-colors hover:bg-brand-800 disabled:bg-slate-300"
               >
                 {c.send}
               </button>
             </div>
+            {!canSend && <p className="mt-3 text-sm text-slate-500">{isVietnamese ? 'Khung trao đổi mở trong giờ tư vấn sau khi tiếp nhận lịch.' : 'Messaging opens during the confirmed session.'}</p>}
+            {messageMutation.error && <p role="alert" className="mt-3 text-sm text-danger">{messageMutation.error.message}</p>}
           </section>
 
           {/* 05 Candidate rating */}
@@ -688,21 +714,21 @@ export default function ConsultationDetailsPage() {
             <SubHead title={c.meeting} />
             <dl className="text-sm">
               {[
-                [c.time, new Date(request.meeting.scheduledAt).toLocaleString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })],
-                [c.duration, `${request.meeting.durationMinutes} ${c.minutes}`],
-                [c.platform, request.meeting.platform],
+                [c.time, scheduledLabel],
+                [c.duration, `${booking?.duration_minutes ?? request.meeting.durationMinutes} ${c.minutes}`],
+                ...(request.meeting.meetingUrl ? [[c.platform, request.meeting.platform]] : []),
               ].map(([label, value]) => (
                 <div key={label} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3 border-b border-border py-2.5">
                   <dt className="text-slate-500">{label}</dt>
                   <dd className="tabular-nums text-ink">{value}</dd>
                 </div>
               ))}
-              <div className="border-b border-border py-2.5">
+              {request.meeting.meetingUrl && <div className="border-b border-border py-2.5">
                 <dt className="text-slate-500">{c.link}</dt>
                 <dd className="mt-1 truncate font-mono text-[13px] text-brand">{request.meeting.meetingUrl}</dd>
-              </div>
+              </div>}
             </dl>
-            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+            {request.meeting.meetingUrl && <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
               <a href={request.meeting.meetingUrl} target="_blank" rel="noreferrer" className={`${textLink} text-ink`}>
                 {c.join}
                 <ExternalLink size={13} />
@@ -711,7 +737,7 @@ export default function ConsultationDetailsPage() {
                 {copiedLink ? <Check size={13} /> : <Copy size={13} />}
                 {copiedLink ? c.copied : c.copy}
               </button>
-            </div>
+            </div>}
           </section>
 
           {/* Timeline */}

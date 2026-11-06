@@ -100,6 +100,7 @@ export const ALL_SYSTEM_PERMISSIONS: UserPermission[] = [
 const ROLE_PERMISSION_KEYS: Record<UserRole, string[]> = {
   CANDIDATE: ['upload_resumes', 'match_jobs', 'book_consultation', 'access_ai_assistant', 'run_ats_audit', 'generate_cover_letter'],
   CAREER_CONSULTANT: ['view_assigned_consultations', 'review_candidate_cv', 'provide_career_advice', 'access_ai_assistant'],
+  MANAGER: ['view_system_telemetry', 'manage_subscriptions_revenue'],
   ADMIN: ['manage_all_users', 'manage_roles_permissions', 'view_system_telemetry', 'manage_subscriptions_revenue', 'toggle_maintenance'],
 };
 

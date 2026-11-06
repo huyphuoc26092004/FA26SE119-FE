@@ -78,6 +78,8 @@ export function toJob(row: ApiRow): Job {
   const skills = rows(row.skills);
   return {
     id: str(row.id || row.market_job_id),
+    ...(row.status ? { status: str(row.status) } : {}),
+    ...(row.valid_through ? { validThrough: str(row.valid_through) } : {}),
     title: str(row.job_title),
     company: str(row.company_name),
     location: str(row.location),

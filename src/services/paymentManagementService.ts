@@ -1,6 +1,7 @@
 import type { AdminPaymentTransaction, VatInvoiceItem, CreateInvoicePayload, PaymentGatewayConfig, ReconciliationRecord, TaxReportSummary, VatInvoiceStatus, PaymentGatewayId } from '../types/paymentManagement';
 import { pending, notConnected } from './apiPending';
 import { apiClient } from './apiClient';
+import { useAuthStore } from '../stores/authStore';
 import { getMonitoring } from './adminService';
 import { getSubscriptionPlans, toPaymentTransaction } from './subscriptionService';
 import { getManagedUsers } from './userService';
@@ -17,7 +18,7 @@ export async function getAdminPaymentTransactions(filters?: {
   const [orders, plans, users] = await Promise.all([
     getMonitoring('billing'),
     getSubscriptionPlans().catch(() => []),
-    getManagedUsers().catch(() => []),
+    useAuthStore.getState().role === 'MANAGER' ? Promise.resolve([]) : getManagedUsers().catch(() => []),
   ]);
   const userById = new Map(users.map((u) => [u.id, u]));
   const list = orders.map((row): AdminPaymentTransaction => {
@@ -25,8 +26,8 @@ export async function getAdminPaymentTransactions(filters?: {
     const user = userById.get(str(row.user_id));
     return {
       ...base,
-      candidateName: user?.name ?? str(row.user_id).slice(0, 8),
-      candidateEmail: user?.email ?? '',
+      candidateName: user?.name ?? (str(row.payer_name) || str(row.user_id).slice(0, 8)),
+      candidateEmail: user?.email ?? str(row.payer_email),
       transactionType: row.subscription_id ? 'SUBSCRIPTION_RENEW' : 'SUBSCRIPTION_NEW',
       gatewayRefId: str(row.provider_order_id) || undefined,
     };

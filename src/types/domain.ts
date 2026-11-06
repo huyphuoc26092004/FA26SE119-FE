@@ -1,4 +1,4 @@
-export type UserRole = 'CANDIDATE' | 'CAREER_CONSULTANT' | 'ADMIN';
+export type UserRole = 'CANDIDATE' | 'CAREER_CONSULTANT' | 'ADMIN' | 'MANAGER';
 export interface User {
   id: string;
   name: string;
@@ -253,6 +253,9 @@ export interface ExternalApplicationSource {
 
 export interface Job {
   id: string;
+  /** Current server-side availability, retained for saved/applied job selectors. */
+  status?: string;
+  validThrough?: string;
   title: string;
   company: string;
   location: string;

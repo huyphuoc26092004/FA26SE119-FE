@@ -117,7 +117,6 @@ const copy = {
     skillsCount: 'Kỹ năng cần học',
     status: { not_started: 'Chưa học', in_progress: 'Đang học', completed: 'Đã xong' } as Record<LearningPathNode['status'], string>,
     reason: { NEEDS_PRACTICE: 'Bài đánh giá dưới 70 điểm', MISSING_EVIDENCE: 'CV và hồ sơ chưa có' },
-    startNode: 'Bắt đầu học',
     finishNode: 'Đánh dấu đã xong',
     resetNode: 'Bỏ đánh dấu',
     after: (names: string) => `Học sau: ${names}`,
@@ -223,7 +222,6 @@ const copy = {
     skillsCount: 'Skills to learn',
     status: { not_started: 'Not started', in_progress: 'Learning', completed: 'Done' } as Record<LearningPathNode['status'], string>,
     reason: { NEEDS_PRACTICE: 'Assessment under 70', MISSING_EVIDENCE: 'Not in CV or profile' },
-    startNode: 'Start learning',
     finishNode: 'Mark as done',
     resetNode: 'Undo',
     after: (names: string) => `After: ${names}`,
@@ -234,7 +232,7 @@ const copy = {
     loadError: 'Could not load data.',
     timeout: 'The AI request timed out. Please try again later.',
     network: 'The connection was lost while processing. Check your connection and try again.',
-    aiInvalid: 'The AI returned an invalid result (for example, repeated questions) even after retrying. Nothing was saved; press the button to try again.',
+    aiInvalid: 'AI could not complete a valid result. The assessment was not saved. You can try again.',
     fitLink: 'See how your CV fits this job',
   },
 };
@@ -503,11 +501,6 @@ function NodeRow({ node, index, path, c, onStatus, busy }: { node: LearningPathN
         {node.description && <p className="mt-1.5 max-w-[42rem] text-[15px] leading-7 text-slate-700">{node.description}</p>}
         {after && <p className="mt-1.5 text-[13px] text-slate-500">{c.afterShort(after)}</p>}
         <p className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-2">
-          {node.status === 'not_started' && (
-            <button type="button" disabled={busy} onClick={() => onStatus('in_progress')} className={`${action} text-brand`}>
-              {c.startNode}
-            </button>
-          )}
           {node.status === 'in_progress' && <span className="text-[13px] text-ink">{c.status.in_progress}</span>}
           {node.resources.length > 0 ? (
             <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`${action} text-ink`}>

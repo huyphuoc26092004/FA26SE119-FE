@@ -14,6 +14,7 @@ type Filter = 'all' | 'unread';
 
 /** Trang mở ra khi bấm vào thông báo; null nếu thông báo không gắn với màn nào. */
 function notificationLink(area: string, n: UserNotification): string | null {
+  if (n.referenceType === 'CONSULTATION_ORDER' && area === 'candidate') return '/candidate/consultations';
   if (n.referenceType !== 'CONSULTATION' || !n.referenceId) return null;
   if (area === 'admin') return '/admin?tab=consultations';
   if (area === 'candidate' || area === 'consultant') return `/${area}/consultations/${n.referenceId}`;
@@ -25,7 +26,7 @@ export default function NotificationsPage() {
   const queryClient = useQueryClient();
   const area = useLocation().pathname.split('/')[1] ?? '';
   const [filter, setFilter] = useState<Filter>('all');
-  const notificationsQuery = useQuery({ queryKey: ['notifications', filter], queryFn: () => getNotifications(filter === 'unread') });
+  const notificationsQuery = useQuery({ queryKey: ['notifications', filter], queryFn: () => getNotifications(filter === 'unread'), refetchInterval: 30_000 });
   const announcementsQuery = useQuery({ queryKey: ['announcements'], queryFn: getAnnouncements });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['notifications'] });
   const markOne = useMutation({ mutationFn: markNotificationRead, onSuccess: refresh });

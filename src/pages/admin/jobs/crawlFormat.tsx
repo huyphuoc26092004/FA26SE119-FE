@@ -51,7 +51,7 @@ export interface CrawlSelection {
   maxPages: number;
 }
 
-export const emptySelection = (): CrawlSelection => ({ sourceSites: ['ITVIEC'], keywords: [], roles: [], locations: [], limit: 20, maxPages: 3 });
+export const emptySelection = (): CrawlSelection => ({ sourceSites: ['ITVIEC'], keywords: [], roles: [], locations: [], limit: 50, maxPages: 5 });
 
 /** Backend chỉ nhận một từ khoá / vai trò / địa điểm mỗi nguồn, nên FE tách thành từng tổ hợp. */
 export function expandSelection(sel: CrawlSelection): CrawlSource[] {
@@ -149,8 +149,8 @@ export const emptySource = (): CrawlSource => ({
   keyword: '',
   roleCategory: '',
   location: '',
-  limit: 20,
-  maxPages: 3,
+  limit: 50,
+  maxPages: 5,
 });
 
 export const clamp = (value: number, min: number, max: number) =>

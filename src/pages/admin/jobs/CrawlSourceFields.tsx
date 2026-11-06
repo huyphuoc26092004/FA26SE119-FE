@@ -62,27 +62,27 @@ export function CrawlSelectionFields({
         />
       </div>
       <label className="block xl:col-span-1">
-        <span className={fieldLabel}>Số tin tối đa (1–20)</span>
+        <span className={fieldLabel}>Số tin tối đa (1–100)</span>
         <input
           type="number"
           min={1}
-          max={20}
+          max={100}
           className={underlineInput}
           value={value.limit}
           disabled={disabled}
-          onChange={(e) => set('limit', clamp(Number(e.target.value), 1, 20))}
+          onChange={(e) => set('limit', clamp(Number(e.target.value), 1, 100))}
         />
       </label>
       <label className="block xl:col-span-1">
-        <span className={fieldLabel}>Số trang tìm (1–5)</span>
+        <span className={fieldLabel}>Số trang tìm (1–10)</span>
         <input
           type="number"
           min={1}
-          max={5}
+          max={10}
           className={underlineInput}
           value={value.maxPages}
           disabled={disabled}
-          onChange={(e) => set('maxPages', clamp(Number(e.target.value), 1, 5))}
+          onChange={(e) => set('maxPages', clamp(Number(e.target.value), 1, 10))}
         />
       </label>
     </div>

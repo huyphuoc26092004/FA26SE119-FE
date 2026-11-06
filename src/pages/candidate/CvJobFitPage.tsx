@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
+import axios from 'axios';
 import { useSearchParams, Link} from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, ArrowUpRight, Bookmark, Check, ChevronDown, Loader2, X } from 'lucide-react';
-import { getResumes, getJobs, getCvJobFitAnalysis, getJobSemanticMatch } from '../../services/candidateService';
+import { getResumes, getJobs, getJobById, getCvJobFitAnalysis, getJobSemanticMatch } from '../../services/candidateService';
 import {
   JOB_ACTIVITY_QUERY_KEY,
   formatActivityDate,
@@ -13,13 +14,14 @@ import {
   toggleSavedJob,
 } from '../../services/jobActivityService';
 import type { CvJobFitResult, SemanticMatchingDetail } from '../../types/domain';
-import { Loading } from '../../components/ui';
+import { ErrorState, Loading } from '../../components/ui';
 import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 import { skillAssessmentHref } from '../../services/skillPathService';
 import { JobPicker, jobPickerCopy, lineField } from './cv-job-fit/JobPicker';
 import { JobDescription } from '../../components/jobs/JobContent';
+import { selectableJobs } from './cv-job-fit/jobSelection';
 
 const copy = {
   vi: {
@@ -61,6 +63,8 @@ const copy = {
     idleSteps: ['Điểm phù hợp theo từng tiêu chí', 'Điểm mạnh và điểm cần cải thiện', 'Kỹ năng JD có và chưa có trong CV', 'Gợi ý viết lại CV'],
     workingBody: 'Đang đọc CV và JD để chấm điểm. Việc này có thể mất một lúc.',
     fitError: 'Không so khớp được CV với việc làm này.',
+    staleSelection: 'CV hoặc tin tuyển dụng đã thay đổi hoặc không còn khả dụng. Danh sách đang được cập nhật; hãy chọn lại CV và công việc rồi bấm so khớp.',
+    unavailableSelection: 'CV hoặc tin tuyển dụng trong đường dẫn không còn khả dụng; hãy chọn lại CV và công việc để so khớp.',
     noCv: 'Bạn chưa có CV nào để so khớp.',
     uploadCv: 'Tải CV lên',
     noCvSkill: 'Chưa có CV? Vẫn có thể đánh giá kỹ năng theo JD',
@@ -187,6 +191,8 @@ const copy = {
     idleSteps: ['Fit score per criterion', 'Strengths and what to improve', 'JD skills found and missing in the CV', 'CV rewrite tips'],
     workingBody: 'Reading the CV and JD to score them. This can take a while.',
     fitError: 'Could not match this CV with the job.',
+    staleSelection: 'The CV or job has changed or is no longer available. The lists are being refreshed; select an available CV and job before matching again.',
+    unavailableSelection: 'The CV or job in this link is unavailable. Select an available CV and job before matching.',
     noCv: 'You have no CV to match yet.',
     uploadCv: 'Upload a CV',
     noCvSkill: 'No CV? You can still assess your skills from the JD',
@@ -367,11 +373,31 @@ export default function CvJobFitPage() {
   const queryCvId = searchParams.get('cvId') || searchParams.get('resumeId');
   const queryJobId = searchParams.get('jobId');
 
-  const { data: resumes, isPending: isResumesPending } = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
-  const { data: jobs, isPending: isJobsPending } = useQuery({ queryKey: ['jobs'], queryFn: () => getJobs() });
+  const { data: resumes, isPending: isResumesPending, error: resumesError } = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
+  const { data: catalogJobs, isPending: isJobsPending, error: jobsError } = useQuery({ queryKey: ['jobs'], queryFn: () => getJobs() });
+  const { data: activity, isFetched: isActivityFetched } = useQuery({
+    queryKey: JOB_ACTIVITY_QUERY_KEY,
+    queryFn: getJobActivity,
+  });
+  const needsExplicitJob = !!queryJobId && !!catalogJobs && !catalogJobs.some((job) => job.id === queryJobId);
+  const explicitJob = useQuery({
+    queryKey: ['fit-job', queryJobId],
+    queryFn: () => getJobById(queryJobId!),
+    enabled: needsExplicitJob,
+    retry: false,
+  });
+  const jobs = useMemo(() => selectableJobs(catalogJobs ?? [], activity,
+    needsExplicitJob && !explicitJob.error && explicitJob.data?.id === queryJobId ? explicitJob.data : undefined)
+    .filter((job) => job.id !== queryJobId || !needsExplicitJob
+      || (!explicitJob.error && explicitJob.data?.id === queryJobId)),
+  [catalogJobs, activity, needsExplicitJob, explicitJob.data, explicitJob.error, queryJobId]);
 
-  const [selectedCvId, setSelectedCvId] = useState<string>('');
-  const [selectedJobId, setSelectedJobId] = useState<string>('');
+  const [requestedCvId, setSelectedCvId] = useState<string>('');
+  const [requestedJobId, setSelectedJobId] = useState<string>('');
+  // A remembered selection is usable only while it exists in the current account/catalog response.
+  const selectedCvId = resumes?.some((resume) => resume.id === requestedCvId) ? requestedCvId : '';
+  const selectedJobId = jobs?.some((job) => job.id === requestedJobId) ? requestedJobId : '';
+  const [selectionError, setSelectionError] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [redirectModalOpen, setRedirectModalOpen] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -381,32 +407,29 @@ export default function CvJobFitPage() {
   const [storedFits, setStoredFits] = useState<Record<string, StoredFit>>(readStoredFits);
 
   useEffect(() => {
-    if (resumes && resumes.length > 0) {
-      if (queryCvId && resumes.some((r) => r.id === queryCvId)) {
-        setSelectedCvId(queryCvId);
+    if (resumes) {
+      if (queryCvId) {
+        setSelectedCvId(resumes.some((r) => r.id === queryCvId) ? queryCvId : '');
       } else if (!selectedCvId) {
-        setSelectedCvId(resumes[0].id);
+        setSelectedCvId(resumes.find((resume) => resume.isDefault)?.id ?? resumes[0]?.id ?? '');
       }
     }
-  }, [resumes, queryCvId]);
-
-  // Saved and applied jobs from Job discovery (shared with the assistant)
-  const { data: activity, isFetched: isActivityFetched } = useQuery({
-    queryKey: JOB_ACTIVITY_QUERY_KEY,
-    queryFn: getJobActivity,
-  });
+  }, [resumes, queryCvId, selectedCvId]);
 
   // Default target: the URL job, else the latest applied job, else the latest saved one.
   // Chọn job chỉ đổi lựa chọn; không gọi AI cho tới khi bấm "Bắt đầu so khớp".
   useEffect(() => {
-    if (jobs && jobs.length > 0) {
-      if (queryJobId && jobs.some((j) => j.id === queryJobId)) {
-        setSelectedJobId(queryJobId);
+    if (jobs) {
+      if (queryJobId) {
+        setSelectedJobId(jobs.some((j) => j.id === queryJobId) ? queryJobId : '');
       } else if (!selectedJobId && isActivityFetched) {
-        setSelectedJobId(activity?.applied[0]?.job.id ?? activity?.saved[0]?.job.id ?? jobs[0].id);
+        const eligibleIds = new Set(jobs.map((job) => job.id));
+        const preferred = [...(activity?.applied ?? []), ...(activity?.saved ?? [])]
+          .find((tracked) => eligibleIds.has(tracked.job.id));
+        setSelectedJobId(preferred?.job.id ?? jobs[0]?.id ?? '');
       }
     }
-  }, [jobs, queryJobId, isActivityFetched]);
+  }, [jobs, queryJobId, isActivityFetched, activity, selectedJobId]);
 
   const isApplied = !!activity?.appliedIds.includes(selectedJobId);
   const isSaved = !!activity?.savedIds.includes(selectedJobId);
@@ -416,20 +439,31 @@ export default function CvJobFitPage() {
   // So khớp chỉ chạy khi người dùng bấm nút (ATS theo JD + điểm khớp phía việc làm).
   const matchMutation = useMutation({
     mutationFn: async ({ cvId, jobId }: { cvId: string; jobId: string }): Promise<StoredFit> => {
-      const [fit, semantic] = await Promise.allSettled([getCvJobFitAnalysis(cvId, jobId), getJobSemanticMatch(jobId, cvId)]);
-      if (fit.status === 'rejected') throw fit.reason;
+      const fit = await getCvJobFitAnalysis(cvId, jobId);
+      // Supplemental matching is useful only after the requested CV/job pair has passed validation.
+      const semantic = await getJobSemanticMatch(jobId, cvId).catch(() => undefined);
       return {
-        fit: fit.value,
-        semantic: semantic.status === 'fulfilled' ? semantic.value : undefined,
+        fit,
+        semantic,
         savedAt: new Date().toISOString(),
       };
     },
     onSuccess: (result, { cvId, jobId }) => {
+      setSelectionError('');
       setStoredFits((prev) => {
         const next = { ...prev, [fitKey(cvId, jobId)]: result };
         writeStoredFits(next);
         return next;
       });
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        setSelectionError(c.staleSelection);
+        void queryClient.invalidateQueries({ queryKey: ['resumes'] });
+        void queryClient.invalidateQueries({ queryKey: ['jobs'] });
+        void queryClient.invalidateQueries({ queryKey: JOB_ACTIVITY_QUERY_KEY });
+        void queryClient.invalidateQueries({ queryKey: ['fit-job'] });
+      }
     },
   });
 
@@ -443,12 +477,17 @@ export default function CvJobFitPage() {
   const semantic = stored?.semantic;
 
   const startMatch = () => {
-    if (!selectedCvId || !selectedJobId || matchMutation.isPending) return;
+    if (!selectedCvId || !selectedJobId || resumesError || jobsError || matchMutation.isPending) return;
+    setSelectionError('');
     matchMutation.mutate({ cvId: selectedCvId, jobId: selectedJobId });
   };
 
   const currentCv = useMemo(() => resumes?.find((r) => r.id === selectedCvId), [resumes, selectedCvId]);
   const currentJob = useMemo(() => jobs?.find((j) => j.id === selectedJobId), [jobs, selectedJobId]);
+  const unavailableLink = (!!queryCvId && !!resumes && !resumes.some((resume) => resume.id === queryCvId))
+    || (!!queryJobId && !isJobsPending && (!needsExplicitJob || !explicitJob.isPending)
+      && !jobs.some((job) => job.id === queryJobId));
+  const selectionNotice = selectionError || (unavailableLink ? c.unavailableSelection : '');
 
   const handleSelectCv = (id: string) => {
     setSelectedCvId(id);
@@ -492,7 +531,8 @@ export default function CvJobFitPage() {
     }, 2500);
   };
 
-  if (isResumesPending || isJobsPending) return <Loading />;
+  if (isResumesPending || isJobsPending || (needsExplicitJob && explicitJob.isPending)) return <Loading />;
+  if (resumesError || jobsError) return <ErrorState message={authErrorMessage(resumesError || jobsError, c.fitError)} />;
   if (!resumes?.length || !jobs?.length) {
     return (
       <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
@@ -501,6 +541,7 @@ export default function CvJobFitPage() {
           <span className="block text-brand">{c.idleLine}</span>
         </h1>
         <div className="mt-[clamp(2rem,4vw,2.75rem)] border-t border-slate-400 py-6">
+          {selectionNotice && <p role="alert" className="mb-3 text-[15px] leading-7 text-danger">{selectionNotice}</p>}
           <p className="text-[15px] leading-7 text-ink">{!resumes?.length ? c.noCv : c.noJobsYet}</p>
           <p className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
             {!resumes?.length && (
@@ -619,6 +660,7 @@ export default function CvJobFitPage() {
                 onChange={(e) => handleSelectCv(e.target.value)}
                 className={`${lineField} appearance-none pr-7`}
               >
+                <option value="" disabled>{c.cvHint}</option>
                 {resumes.map((cv) => (
                   <option key={cv.id} value={cv.id}>
                     {cv.name}
@@ -635,7 +677,7 @@ export default function CvJobFitPage() {
           <div className="min-w-0">
             <p className="text-[13px] text-slate-600">{c.jobLabel}</p>
             <div className="mt-1">
-              <JobPicker jobs={jobs} selectedId={selectedJobId} activity={activity} onSelect={handleSelectJob} c={pickerCopy} label={c.jobLabel} />
+              <JobPicker jobs={jobs} selectedId={selectedJobId} activity={activity} includeTrackedJobs={false} onSelect={handleSelectJob} c={pickerCopy} label={c.jobLabel} />
             </div>
             {currentJob ? (
               <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-[13px] leading-6 text-slate-600">
@@ -665,7 +707,7 @@ export default function CvJobFitPage() {
             <button
               type="button"
               onClick={startMatch}
-              disabled={!selectedCvId || !selectedJobId || matchMutation.isPending}
+              disabled={!currentCv || !currentJob || matchMutation.isPending}
               className={`${primaryButton} w-full shrink-0 md:w-auto`}
             >
               {runningThisPair && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
@@ -714,9 +756,9 @@ export default function CvJobFitPage() {
               ))}
           </div>
         </div>
-        {failedThisPair && (
+        {(selectionNotice || failedThisPair) && (
           <p role="alert" className="mt-3 text-[13px] leading-6 text-danger">
-            {authErrorMessage(matchMutation.error, c.fitError)}
+            {selectionNotice || authErrorMessage(matchMutation.error, c.fitError)}
           </p>
         )}
       </section>

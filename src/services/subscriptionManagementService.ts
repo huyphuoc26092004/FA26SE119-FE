@@ -463,7 +463,7 @@ export async function getSubscriptionOverviewMetrics(): Promise<SubscriptionMana
   ]);
   const thisMonth = new Date().toISOString().slice(0, 7);
   const mrr = orders
-    .filter((o) => str(o.status) === 'COMPLETED' && str(o.completed_at ?? o.created_at).startsWith(thisMonth))
+    .filter((o) => str(o.order_type) !== 'CONSULTATION' && str(o.status) === 'COMPLETED' && str(o.completed_at ?? o.created_at).startsWith(thisMonth))
     .reduce((s, o) => s + num(o.amount) / Math.max(1, num(o.duration_months, 1)), 0);
   const consumed = num(obj(dash.aiUsage).total_tokens);
   const allocated = plans.reduce((s, p) => s + p.tokenMonthlyQuota, 0);

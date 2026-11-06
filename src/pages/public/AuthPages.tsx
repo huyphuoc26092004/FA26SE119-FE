@@ -1,3 +1,4 @@
+import { homeForRole } from '../../utils/roleAccess';
 import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -267,7 +268,7 @@ function useGoogleAuth(setError: (message: string) => void) {
         return;
       }
       const role = useAuthStore.getState().role;
-      navigate(role === 'ADMIN' ? '/admin' : role === 'CAREER_CONSULTANT' ? '/consultant' : '/candidate', {
+      navigate(homeForRole(role), {
         replace: true,
       });
     } catch (error) {
@@ -326,7 +327,7 @@ export function LoginPage() {
       await login(data.email, data.password);
       const role = useAuthStore.getState().role;
       navigate(
-        role === 'ADMIN' ? '/admin' : role === 'CAREER_CONSULTANT' ? '/consultant' : '/candidate',
+        homeForRole(role),
         { replace: true }
       );
     } catch (e) {
@@ -708,7 +709,7 @@ export function VerifyOtpPage() {
           return;
         }
         navigate(
-          role === 'ADMIN' ? '/admin' : role === 'CAREER_CONSULTANT' ? '/consultant' : '/candidate',
+          homeForRole(role),
           { replace: true }
         );
       }, 1500);

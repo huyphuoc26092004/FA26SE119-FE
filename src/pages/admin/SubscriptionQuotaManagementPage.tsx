@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n';
+import { useAuthStore } from '../../stores/authStore';
 import {
   StatRow,
   Toast,
@@ -68,6 +69,7 @@ export default function SubscriptionQuotaManagementPage({
   defaultTab = 'plans',
 }: SubscriptionQuotaManagementPageProps) {
   const { isVietnamese } = useTranslation();
+  const isManager = useAuthStore((state) => state.role === 'MANAGER');
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -121,6 +123,7 @@ export default function SubscriptionQuotaManagementPage({
   const { data: policy, refetch: refetchPolicy } = useQuery({
     queryKey: ['token-policy'],
     queryFn: getTokenPolicySettings,
+    enabled: false,
   });
 
   const { data: topupPacks = [], refetch: refetchTopups } = useQuery({
@@ -136,6 +139,7 @@ export default function SubscriptionQuotaManagementPage({
   const { data: models = [], refetch: refetchModels } = useQuery({
     queryKey: ['ai-models'],
     queryFn: getAiModelConfigs,
+    enabled: !isManager,
   });
 
   const { data: apiKeys = [], refetch: refetchApiKeys } = useQuery({
@@ -161,7 +165,7 @@ export default function SubscriptionQuotaManagementPage({
     refetchPolicy();
     refetchTopups();
     refetchOverrides();
-    refetchModels();
+    if (!isManager) refetchModels();
     refetchApiKeys();
     refetchEndpoints();
     refetchTransactions();
@@ -392,7 +396,7 @@ export default function SubscriptionQuotaManagementPage({
   const tabs: { value: SubscriptionManagementTabKey; label: string; count?: number }[] = [
     { value: 'plans', label: isVietnamese ? 'Gói cước' : 'Plans', count: plans.length },
     { value: 'tokens', label: isVietnamese ? 'Hạn mức token & quy tắc' : 'Token quotas & rules' },
-    { value: 'api', label: isVietnamese ? 'Cổng API & giới hạn' : 'API gateway & limits' },
+    ...(!isManager ? [{ value: 'api' as const, label: isVietnamese ? 'Cấu hình & theo dõi AI' : 'AI configuration & monitoring' }] : []),
     {
       value: 'payments',
       label: isVietnamese ? 'Giao dịch & hoá đơn' : 'Payments & invoices',
@@ -517,6 +521,30 @@ export default function SubscriptionQuotaManagementPage({
       )}
 
       {/* Tab 2: Token Quotas & Rules */}
+      {activeTab === 'tokens' && !policy && (
+        <section className="space-y-5">
+          <h2 className="text-2xl">Hạn mức token theo gói</h2>
+          <p className="max-w-3xl text-sm leading-7 text-slate-600">
+            Đây là số token AI được cấp theo từng gói. Hạn mức được chỉnh sửa tại mục Gói cước.
+            Các công cụ cấu hình quy tắc trừ token, cộng dồn và cấp riêng chưa được triển khai.
+          </p>
+          {plans.map((plan) => (
+            <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
+              <div>
+                <p className="font-medium">{plan.name}</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {plan.tokenMonthlyQuota.toLocaleString('vi-VN')} token
+                  {plan.quotas?.find((quota) => quota.featureCode === 'AI_TOTAL_TOKENS')?.quotaPeriod === 'SUBSCRIPTION'
+                    ? ' / kỳ gói' : ' / tháng'}
+                </p>
+              </div>
+              <button type="button" className={textLink} onClick={() => { setSelectedPlanForEdit(plan); setIsPlanModalOpen(true); }}>
+                Chỉnh sửa hạn mức
+              </button>
+            </div>
+          ))}
+        </section>
+      )}
       {activeTab === 'tokens' && policy && (
         <TokenQuotaManagementTab
           rules={rules}
@@ -543,7 +571,7 @@ export default function SubscriptionQuotaManagementPage({
       )}
 
       {/* Tab 3: API Gateway & Models */}
-      {activeTab === 'api' && (
+      {activeTab === 'api' && !isManager && (
         <ApiQuotaGatewayTab
           models={models}
           apiKeys={apiKeys}

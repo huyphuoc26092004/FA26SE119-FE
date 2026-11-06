@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import type { Job } from '../../../types/domain';
 import type { JobActivity } from '../../../services/jobActivityService';
+import { selectableJobs } from './jobSelection';
 
 /** Chữ hiển thị của bộ chọn công việc (dùng chung cho trang Độ phù hợp CV và Đánh giá kỹ năng). */
 export const jobPickerCopy = {
@@ -36,6 +37,7 @@ export function JobPicker({
   onSelect,
   c,
   label,
+  includeTrackedJobs = true,
 }: {
   jobs: Job[];
   selectedId: string;
@@ -43,15 +45,16 @@ export function JobPicker({
   onSelect: (id: string) => void;
   c: JobPickerCopy;
   label: string;
+  includeTrackedJobs?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const selected =
-    jobs.find((j) => j.id === selectedId) ??
-    [...(activity?.applied ?? []), ...(activity?.saved ?? [])].find((t) => t.job.id === selectedId)?.job;
+  const available = useMemo(() => selectableJobs(jobs, includeTrackedJobs ? activity : undefined),
+    [jobs, activity, includeTrackedJobs]);
+  const selected = available.find((j) => j.id === selectedId);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -60,17 +63,25 @@ export function JobPicker({
       [j.title, j.company, j.location, j.department, ...(j.skills || [])]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
-    const applied = (activity?.applied ?? []).map((t) => t.job).filter(matches);
-    const saved = (activity?.saved ?? []).map((t) => t.job).filter(matches);
+    // Saved/applied history can contain removed jobs; retain only current eligible rows.
+    const eligible = new Map(available.map((job) => [job.id, job]));
+    const applied = (activity?.applied ?? []).flatMap((tracked) => {
+      const job = eligible.get(tracked.job.id);
+      return job && matches(job) ? [job] : [];
+    });
+    const saved = (activity?.saved ?? []).flatMap((tracked) => {
+      const job = eligible.get(tracked.job.id);
+      return job && matches(job) ? [job] : [];
+    });
     const tracked = new Set([...applied, ...saved].map((j) => j.id));
     const trackedIds = new Set([...(activity?.appliedIds ?? []), ...(activity?.savedIds ?? [])]);
-    const others = jobs.filter((j) => !tracked.has(j.id) && !trackedIds.has(j.id) && matches(j));
+    const others = available.filter((j) => !tracked.has(j.id) && !trackedIds.has(j.id) && matches(j));
     return [
       { key: 'applied', title: c.applied, jobs: applied },
       { key: 'saved', title: c.saved, jobs: saved },
       { key: 'others', title: c.groupOthers, jobs: others },
     ].filter((g) => g.jobs.length > 0);
-  }, [jobs, query, activity, c]);
+  }, [available, query, activity, c]);
 
   const filtered = useMemo(() => groups.flatMap((g) => g.jobs), [groups]);
   const hasTracked = groups.some((g) => g.key !== 'others');

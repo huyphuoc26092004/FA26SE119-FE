@@ -440,11 +440,12 @@ export async function reanalyzeResume(resumeId: string): Promise<ResumeAnalysisR
 
 /** ATS theo một job: điểm, điểm mạnh, kỹ năng thiếu và gợi ý sửa CV. */
 export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<CvJobFitResult> {
-  const [cv, job, ats] = await Promise.all([
+  // Check both resources before starting a paid analysis; stale selections must not spend AI quota.
+  const [cv, job] = await Promise.all([
     getResumeById(cvId),
     getJobById(jobId),
-    apiClient.post<ApiRow>(`/jobs/${jobId}/ats`, { resumeId: cvId }, { timeout: 600_000 }).then((res) => res.data),
   ]);
+  const ats = await apiClient.post<ApiRow>(`/jobs/${jobId}/ats`, { resumeId: cvId }, { timeout: 600_000 }).then((res) => res.data);
   const score = Math.round(num(ats.ats_score));
   const strengths = texts(ats.strengths_json);
   const missing = texts(ats.missing_skills_json);
