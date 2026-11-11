@@ -1,6 +1,5 @@
-import type { AdminSubscriptionPlan, AdminTokenTopupPack, AiModelConfig, ApiEndpointMetric, ApiKeyItem, CreateApiKeyPayload, GrantUserTokensPayload, SubscriptionManagementOverview, TokenConsumptionRule, TokenPolicySettings, UserQuotaOverride } from '../types/subscriptionManagement';
+import type { AdminSubscriptionPlan, AiModelConfig, ApiEndpointMetric, SubscriptionManagementOverview, TokenConsumptionRule } from '../types/subscriptionManagement';
 import type { PaymentTransaction, SubscriptionPlan } from '../types/subscription';
-import { pending, notConnected } from './apiPending';
 import { apiClient } from './apiClient';
 import { type ApiRow, num, obj, rows, str } from './candidateMappers';
 import { FEATURE_LABELS, featureLabel, toPaymentTransaction, toSubscriptionPlan } from './subscriptionService';
@@ -70,11 +69,6 @@ export async function getAdminPlans(): Promise<AdminSubscriptionPlan[]> {
   });
 }
 
-// TODO(api): PUT /api/v1/admin/subscription-tiers/order (BE chưa có API lưu nhiều gói một lần)
-export async function saveAdminPlans(plans: AdminSubscriptionPlan[]): Promise<AdminSubscriptionPlan[]> {
-  return notConnected('BE chưa có API', plans);
-}
-
 const tierCodeOf = (plan: Partial<AdminSubscriptionPlan>) =>
   (plan.tierCode || plan.badge || plan.name || 'PLAN')
     .normalize('NFD')
@@ -125,11 +119,6 @@ export async function toggleAdminPlanStatus(id: string): Promise<AdminSubscripti
   return updateAdminPlan(id, { status: current.status === 'ACTIVE' ? 'ARCHIVED' : 'ACTIVE' });
 }
 
-// TODO(api): DELETE /api/v1/admin/subscription-tiers/{id} (BE chưa có API, hiện chỉ tắt gói được)
-export async function deleteAdminPlan(id: string): Promise<void> {
-  return notConnected('BE chưa có API', id);
-}
-
 /** Nhân bản bằng cách tạo gói mới cùng giá và quota. */
 export async function duplicateAdminPlan(id: string): Promise<AdminSubscriptionPlan> {
   const current = (await getAdminPlans()).find((p) => p.id === id);
@@ -176,51 +165,6 @@ export async function getTokenConsumptionRules(): Promise<TokenConsumptionRule[]
         monthlyUsageCount: list.length,
       };
     });
-}
-
-// TODO(api): PUT /api/v1/admin/ai/token-rules/{featureCode} (BE chưa có API; quota theo gói sửa ở tab Gói)
-export async function updateTokenConsumptionRule(featureKey: string, updates: Partial<TokenConsumptionRule>): Promise<TokenConsumptionRule> {
-  return notConnected('BE chưa có API', featureKey, updates);
-}
-
-// TODO(api): BE chưa có API
-export async function getTokenPolicySettings(): Promise<TokenPolicySettings> {
-  return notConnected('BE chưa có API');
-}
-
-// TODO(api): BE chưa có API
-export async function saveTokenPolicySettings(settings: Partial<TokenPolicySettings>): Promise<TokenPolicySettings> {
-  return notConnected('BE chưa có API', settings);
-}
-
-// TODO(api): BE chưa có API
-export async function getAdminTopupPacks(): Promise<AdminTokenTopupPack[]> {
-  return pending([], 'BE chưa có API');
-}
-
-// TODO(api): BE chưa có API
-export async function saveAdminTopupPack(pack: Omit<AdminTokenTopupPack, 'id' | 'totalSold'> & { id?: string }): Promise<AdminTokenTopupPack> {
-  return notConnected('BE chưa có API', pack);
-}
-
-// TODO(api): BE chưa có API
-export async function deleteAdminTopupPack(id: string): Promise<void> {
-  return notConnected('BE chưa có API', id);
-}
-
-// TODO(api): BE chưa có API
-export async function getUserQuotaOverrides(): Promise<UserQuotaOverride[]> {
-  return pending([], 'BE chưa có API');
-}
-
-// TODO(api): BE chưa có API
-export async function grantUserTokens(payload: GrantUserTokensPayload): Promise<UserQuotaOverride> {
-  return notConnected('BE chưa có API', payload);
-}
-
-// TODO(api): BE chưa có API
-export async function revokeUserQuotaOverride(id: string): Promise<void> {
-  return notConnected('BE chưa có API', id);
 }
 
 /** Bản cấu hình AI đang bật của mỗi loại (CHAT, EMBEDDING…), kèm độ trễ trung bình từ ai-usage. */
@@ -386,21 +330,6 @@ export async function restoreAiPrompt(oldVersionId: string): Promise<AiPrompt> {
   return toAiPrompt(data);
 }
 
-// TODO(api): BE chưa có API
-export async function getApiKeys(): Promise<ApiKeyItem[]> {
-  return pending([], 'BE chưa có API');
-}
-
-// TODO(api): BE chưa có API
-export async function createApiKey(payload: CreateApiKeyPayload): Promise<ApiKeyItem> {
-  return notConnected('BE chưa có API', payload);
-}
-
-// TODO(api): BE chưa có API
-export async function revokeApiKey(id: string): Promise<void> {
-  return notConnected('BE chưa có API', id);
-}
-
 /** Mỗi feature AI một dòng, tính từ 100 lượt gọi AI gần nhất (backend chưa đo theo endpoint HTTP). */
 export async function getEndpointMetrics(): Promise<ApiEndpointMetric[]> {
   const usage = await getMonitoring('ai-usage');
@@ -422,11 +351,6 @@ export async function getEndpointMetrics(): Promise<ApiEndpointMetric[]> {
   });
 }
 
-// TODO(api): BE chưa có API
-export async function testApiEndpointPing(endpointPath: string): Promise<{ status: number; latencyMs: number; message: string; timestamp: string }> {
-  return notConnected('BE chưa có API', endpointPath);
-}
-
 /** 100 đơn thanh toán mới nhất (/admin/monitoring/billing), lọc ở FE. */
 export async function getAdminTransactions(filters?: {
   search?: string;
@@ -442,16 +366,6 @@ export async function getAdminTransactions(filters?: {
     .filter((t) => !filters?.status || filters.status === 'ALL' || t.status === filters.status)
     .filter((t) => !filters?.planId || filters.planId === 'ALL' || t.planId === filters.planId)
     .filter((t) => !q || [t.id, t.orderCode, t.planName].some((v) => v.toLowerCase().includes(q)));
-}
-
-// TODO(api): BE chưa có API
-export async function approveManualTransaction(orderId: string): Promise<PaymentTransaction> {
-  return notConnected('BE chưa có API', orderId);
-}
-
-// TODO(api): BE chưa có API
-export async function refundTransaction(orderId: string, _reason?: string): Promise<PaymentTransaction> {
-  return notConnected('BE chưa có API', orderId, _reason);
 }
 
 export async function getSubscriptionOverviewMetrics(): Promise<SubscriptionManagementOverview> {

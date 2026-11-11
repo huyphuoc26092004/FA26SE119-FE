@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import {
   getResumes,
   getResumeAnalysis,
-  applySuggestionToResume,
   reanalyzeResume,
 } from '../../services/candidateService';
 import { ErrorState, Loading } from '../../components/ui';
@@ -40,6 +39,7 @@ const copy = {
     catStructure: 'Bố cục',
     noSuggestions: 'Không có đề xuất nào khớp bộ lọc.',
     applying: 'Đang áp dụng…',
+    editToApply: 'Sửa trong CV',
     copy: 'Sao chép đề xuất',
     copyShort: 'Sao chép',
     style: 'Phong cách',
@@ -96,6 +96,7 @@ const copy = {
     catStructure: 'Layout',
     noSuggestions: 'No suggestions match these filters.',
     applying: 'Applying…',
+    editToApply: 'Edit in CV',
     copy: 'Copy suggestion',
     copyShort: 'Copy',
     style: 'Style',
@@ -213,18 +214,6 @@ export default function ResumeAnalysisPage() {
       queryClient.invalidateQueries({ queryKey: ['resumes'] });
       queryClient.invalidateQueries({ queryKey: ['resume', effectiveResumeId] });
       setToastMessage('Đã phân tích lại CV với AI thành công! Điểm số và dữ liệu đã được cập nhật.');
-      setTimeout(() => setToastMessage(null), 4000);
-    },
-  });
-
-  // Apply suggestion mutation
-  const applyMutation = useMutation({
-    mutationFn: (suggestionId: string) => applySuggestionToResume(effectiveResumeId, suggestionId),
-    onSuccess: (data) => {
-      queryClient.setQueryData(['resumeAnalysis', effectiveResumeId], data.analysis);
-      queryClient.invalidateQueries({ queryKey: ['resumes'] });
-      queryClient.invalidateQueries({ queryKey: ['resume', effectiveResumeId] });
-      setToastMessage('Đã áp dụng đề xuất cải thiện vào bản CV! Điểm tương thích ATS đã được nâng cao.');
       setTimeout(() => setToastMessage(null), 4000);
     },
   });
@@ -519,14 +508,13 @@ export default function ResumeAnalysisPage() {
                       {sug.applied ? (
                         <span className="text-sm text-brand">{t('resumes.appliedSuggestion')}</span>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => applyMutation.mutate(sug.id)}
-                          disabled={applyMutation.isPending}
-                          className={`${textLink} text-brand hover:text-ink disabled:opacity-50`}
+                        // Backend chưa có API tự áp dụng gợi ý: mở trang sửa CV để người dùng tự sửa.
+                        <Link
+                          to={`/candidate/resumes/${effectiveResumeId}/edit`}
+                          className={`${textLink} text-brand hover:text-ink`}
                         >
-                          {applyMutation.isPending ? c.applying : t('resumes.applySuggestion')}
-                        </button>
+                          {c.editToApply}
+                        </Link>
                       )}
                     </div>
 

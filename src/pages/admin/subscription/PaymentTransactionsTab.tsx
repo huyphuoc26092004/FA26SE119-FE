@@ -17,8 +17,9 @@ import { METHOD_LABEL, PAYMENT_STATUS_LABEL, paymentStatusTone } from '../paymen
 
 interface PaymentTransactionsTabProps {
   transactions: PaymentTransaction[];
-  onApproveTransaction: (orderId: string) => Promise<void>;
-  onRefundTransaction: (orderId: string, reason: string) => Promise<void>;
+  /** Backend chưa có API duyệt tay / hoàn tiền: không truyền thì ẩn nút. Đơn chỉ hoàn tất qua IPN của SePay. */
+  onApproveTransaction?: (orderId: string) => Promise<void>;
+  onRefundTransaction?: (orderId: string, reason: string) => Promise<void>;
   onViewInvoice: (transaction: PaymentTransaction) => void;
 }
 
@@ -66,7 +67,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
     if (!refundTarget) return;
     setIsRefunding(true);
     try {
-      await onRefundTransaction(refundTarget.id, refundReason);
+      await onRefundTransaction?.(refundTarget.id, refundReason);
       setRefundTarget(null);
     } finally {
       setIsRefunding(false);
@@ -209,7 +210,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
                 </span>
                 <span className={`hidden text-sm md:block ${paymentStatusTone(tx.status)}`}>{PAYMENT_STATUS_LABEL[tx.status] ?? tx.status}</span>
                 <span className="flex flex-col items-end gap-1.5 text-[13px]">
-                  {isPending && (
+                  {isPending && onApproveTransaction && (
                     <button type="button" onClick={() => onApproveTransaction(tx.id)} className={`${brandLink} text-[13px]`}>
                       Duyệt
                     </button>
@@ -217,7 +218,7 @@ export const PaymentTransactionsTab: React.FC<PaymentTransactionsTabProps> = ({
                   <button type="button" onClick={() => onViewInvoice(tx)} className={`${textLink} text-[13px] text-ink`}>
                     Hoá đơn
                   </button>
-                  {isSuccess && (
+                  {isSuccess && onRefundTransaction && (
                     <button type="button" onClick={() => setRefundTarget(tx)} className={`${dangerLink} text-[13px]`}>
                       Hoàn tiền
                     </button>

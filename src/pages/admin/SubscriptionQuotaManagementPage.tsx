@@ -15,48 +15,22 @@ import {
   getAdminPlans,
   createAdminPlan,
   updateAdminPlan,
-  deleteAdminPlan,
   toggleAdminPlanStatus,
   duplicateAdminPlan,
   getTokenConsumptionRules,
-  updateTokenConsumptionRule,
-  getTokenPolicySettings,
-  saveTokenPolicySettings,
-  getAdminTopupPacks,
-  saveAdminTopupPack,
-  deleteAdminTopupPack,
-  getUserQuotaOverrides,
-  grantUserTokens,
-  revokeUserQuotaOverride,
   getAiModelConfigs,
   updateAiModelConfig,
-  getApiKeys,
-  createApiKey,
-  revokeApiKey,
   getEndpointMetrics,
-  testApiEndpointPing,
   getAdminTransactions,
-  approveManualTransaction,
-  refundTransaction,
   getSubscriptionOverviewMetrics,
 } from '../../services/subscriptionManagementService';
-import type {
-  AdminSubscriptionPlan,
-  AdminTokenTopupPack,
-  AiModelConfig,
-  GrantUserTokensPayload,
-  CreateApiKeyPayload,
-  TokenConsumptionRule,
-} from '../../types/subscriptionManagement';
+import type { AdminSubscriptionPlan, AiModelConfig } from '../../types/subscriptionManagement';
 import type { PaymentTransaction } from '../../types/subscription';
 
 import { PlanManagementTab } from './subscription/PlanManagementTab';
-import { TokenQuotaManagementTab } from './subscription/TokenQuotaManagementTab';
 import { ApiQuotaGatewayTab } from './subscription/ApiQuotaGatewayTab';
 import { PaymentTransactionsTab } from './subscription/PaymentTransactionsTab';
 import { PlanEditorModal } from './subscription/PlanEditorModal';
-import { UserTokenGrantModal } from './subscription/UserTokenGrantModal';
-import { ApiKeyModal } from './subscription/ApiKeyModal';
 import { TransactionInvoiceModal } from './subscription/TransactionInvoiceModal';
 
 export type SubscriptionManagementTabKey = 'plans' | 'tokens' | 'api' | 'payments';
@@ -96,9 +70,6 @@ export default function SubscriptionQuotaManagementPage({
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<AdminSubscriptionPlan | null>(null);
 
-  const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-
   const [selectedInvoiceTransaction, setSelectedInvoiceTransaction] =
     useState<PaymentTransaction | null>(null);
 
@@ -120,31 +91,10 @@ export default function SubscriptionQuotaManagementPage({
     queryFn: getTokenConsumptionRules,
   });
 
-  const { data: policy, refetch: refetchPolicy } = useQuery({
-    queryKey: ['token-policy'],
-    queryFn: getTokenPolicySettings,
-    enabled: false,
-  });
-
-  const { data: topupPacks = [], refetch: refetchTopups } = useQuery({
-    queryKey: ['admin-topup-packs'],
-    queryFn: getAdminTopupPacks,
-  });
-
-  const { data: overrides = [], refetch: refetchOverrides } = useQuery({
-    queryKey: ['quota-overrides'],
-    queryFn: getUserQuotaOverrides,
-  });
-
   const { data: models = [], refetch: refetchModels } = useQuery({
     queryKey: ['ai-models'],
     queryFn: getAiModelConfigs,
     enabled: !isManager,
-  });
-
-  const { data: apiKeys = [], refetch: refetchApiKeys } = useQuery({
-    queryKey: ['api-keys'],
-    queryFn: getApiKeys,
   });
 
   const { data: endpoints = [], refetch: refetchEndpoints } = useQuery({
@@ -162,11 +112,7 @@ export default function SubscriptionQuotaManagementPage({
     refetchOverview();
     refetchPlans();
     refetchRules();
-    refetchPolicy();
-    refetchTopups();
-    refetchOverrides();
     if (!isManager) refetchModels();
-    refetchApiKeys();
     refetchEndpoints();
     refetchTransactions();
     showToast(isVietnamese ? 'Đã làm mới dữ liệu.' : 'Data refreshed.');
@@ -226,82 +172,6 @@ export default function SubscriptionQuotaManagementPage({
     },
   });
 
-  // Delete Plan
-  const deletePlanMutation = useMutation({
-    mutationFn: deleteAdminPlan,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-plans'] });
-      showToast(isVietnamese ? 'Đã xóa gói cước khỏi hệ thống.' : 'Deleted plan from system.');
-    },
-  });
-
-  // Update Token Rule
-  const updateRuleMutation = useMutation({
-    mutationFn: ({
-      featureKey,
-      updates,
-    }: {
-      featureKey: string;
-      updates: Partial<TokenConsumptionRule>;
-    }) => updateTokenConsumptionRule(featureKey, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['token-rules'] });
-      showToast(isVietnamese ? 'Đã cập nhật định mức tính năng.' : 'Updated feature quota rule.');
-    },
-  });
-
-  // Save Token Policy
-  const savePolicyMutation = useMutation({
-    mutationFn: saveTokenPolicySettings,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['token-policy'] });
-      showToast(isVietnamese ? 'Đã lưu chính sách hạn ngạch Token.' : 'Saved token policy.');
-    },
-  });
-
-  // Save Top-up Pack
-  const saveTopupPackMutation = useMutation({
-    mutationFn: (pack: Partial<AdminTokenTopupPack>) =>
-      saveAdminTopupPack(
-        pack as Omit<AdminTokenTopupPack, 'id' | 'totalSold'> & { id?: string }
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-topup-packs'] });
-      showToast(isVietnamese ? 'Đã lưu gói nạp Token bổ sung.' : 'Saved token top-up pack.');
-    },
-  });
-
-  // Delete Top-up Pack
-  const deleteTopupPackMutation = useMutation({
-    mutationFn: deleteAdminTopupPack,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-topup-packs'] });
-      showToast(isVietnamese ? 'Đã xóa gói nạp Token.' : 'Deleted top-up pack.');
-    },
-  });
-
-  // Grant User Tokens
-  const grantTokensMutation = useMutation({
-    mutationFn: grantUserTokens,
-    onSuccess: (ovr) => {
-      queryClient.invalidateQueries({ queryKey: ['quota-overrides'] });
-      showToast(
-        isVietnamese
-          ? `Đã cấp phát Token thành công cho: ${ovr.userName}!`
-          : `Granted tokens for: ${ovr.userName}!`
-      );
-    },
-  });
-
-  // Revoke Override
-  const revokeOverrideMutation = useMutation({
-    mutationFn: revokeUserQuotaOverride,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quota-overrides'] });
-      showToast(isVietnamese ? 'Đã thu hồi hạn mức cá nhân.' : 'Revoked quota override.');
-    },
-  });
-
   // Update AI Model
   const updateModelMutation = useMutation({
     mutationFn: ({
@@ -321,64 +191,13 @@ export default function SubscriptionQuotaManagementPage({
     },
   });
 
-  // Create API Key
-  const createApiKeyMutation = useMutation({
-    mutationFn: createApiKey,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-      showToast(isVietnamese ? 'Khởi tạo API Key thành công!' : 'Created API key successfully!');
-    },
-  });
-
-  // Revoke API Key
-  const revokeApiKeyMutation = useMutation({
-    mutationFn: revokeApiKey,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-      showToast(isVietnamese ? 'Đã thu hồi quyền API Key.' : 'Revoked API key.');
-    },
-  });
-
-  // Approve Transaction
-  const approveTxMutation = useMutation({
-    mutationFn: approveManualTransaction,
-    onSuccess: (tx) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['subscription-overview'] });
-      showToast(
-        isVietnamese
-          ? `Đã duyệt thành công đơn hàng: ${tx.orderCode} (${tx.candidateName})!`
-          : `Approved transaction: ${tx.orderCode}!`
-      );
-    },
-  });
-
-  // Refund Transaction
-  const refundTxMutation = useMutation({
-    mutationFn: ({ orderId, reason }: { orderId: string; reason: string }) =>
-      refundTransaction(orderId, reason),
-    onSuccess: (tx) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['subscription-overview'] });
-      showToast(
-        isVietnamese
-          ? `Đã hoàn tiền cho đơn hàng: ${tx.orderCode}.`
-          : `Refunded transaction: ${tx.orderCode}.`
-      );
-    },
-  });
-
   // Export full system backup JSON
   const handleExportFullConfig = () => {
     const backupData = {
       exportedAt: new Date().toISOString(),
       plans,
       rules,
-      policy,
-      topupPacks,
-      overrides,
       models,
-      apiKeys,
       endpoints,
     };
     const blob = new Blob([JSON.stringify(backupData, null, 2)], {
@@ -463,8 +282,7 @@ export default function SubscriptionQuotaManagementPage({
               {
                 label: isVietnamese ? 'Doanh thu định kỳ (MRR)' : 'Monthly recurring (MRR)',
                 value: formatMillions(overview.totalMrrVND, isVietnamese ? 'vi' : 'en'),
-                detail: isVietnamese ? '+14,8% tăng trưởng' : '+14.8% growth',
-                detailTone: 'brand',
+                detail: isVietnamese ? 'Đơn hoàn tất trong tháng' : 'Orders completed this month',
               },
               {
                 label: isVietnamese ? 'Thuê bao đang kích hoạt' : 'Active subscribers',
@@ -514,19 +332,15 @@ export default function SubscriptionQuotaManagementPage({
           onDuplicatePlan={async (id) => {
             await duplicatePlanMutation.mutateAsync(id);
           }}
-          onDeletePlan={async (id) => {
-            await deletePlanMutation.mutateAsync(id);
-          }}
         />
       )}
 
       {/* Tab 2: Token Quotas & Rules */}
-      {activeTab === 'tokens' && !policy && (
+      {activeTab === 'tokens' && (
         <section className="space-y-5">
           <h2 className="text-2xl">Hạn mức token theo gói</h2>
           <p className="max-w-3xl text-sm leading-7 text-slate-600">
             Đây là số token AI được cấp theo từng gói. Hạn mức được chỉnh sửa tại mục Gói cước.
-            Các công cụ cấu hình quy tắc trừ token, cộng dồn và cấp riêng chưa được triển khai.
           </p>
           {plans.map((plan) => (
             <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
@@ -545,45 +359,15 @@ export default function SubscriptionQuotaManagementPage({
           ))}
         </section>
       )}
-      {activeTab === 'tokens' && policy && (
-        <TokenQuotaManagementTab
-          rules={rules}
-          policy={policy}
-          topupPacks={topupPacks}
-          overrides={overrides}
-          onUpdateRule={async (featureKey, updates) => {
-            await updateRuleMutation.mutateAsync({ featureKey, updates });
-          }}
-          onSavePolicy={async (newPolicy) => {
-            await savePolicyMutation.mutateAsync(newPolicy);
-          }}
-          onSaveTopupPack={async (pack) => {
-            await saveTopupPackMutation.mutateAsync(pack);
-          }}
-          onDeleteTopupPack={async (id) => {
-            await deleteTopupPackMutation.mutateAsync(id);
-          }}
-          onOpenGrantModal={() => setIsGrantModalOpen(true)}
-          onRevokeOverride={async (id) => {
-            await revokeOverrideMutation.mutateAsync(id);
-          }}
-        />
-      )}
 
       {/* Tab 3: API Gateway & Models */}
       {activeTab === 'api' && !isManager && (
         <ApiQuotaGatewayTab
           models={models}
-          apiKeys={apiKeys}
           endpoints={endpoints}
-          onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
-          onRevokeApiKey={async (id) => {
-            await revokeApiKeyMutation.mutateAsync(id);
-          }}
           onUpdateModel={async (modelId, updates) => {
             await updateModelMutation.mutateAsync({ modelId, updates });
           }}
-          onTestEndpoint={testApiEndpointPing}
         />
       )}
 
@@ -591,12 +375,6 @@ export default function SubscriptionQuotaManagementPage({
       {activeTab === 'payments' && (
         <PaymentTransactionsTab
           transactions={transactions}
-          onApproveTransaction={async (id) => {
-            await approveTxMutation.mutateAsync(id);
-          }}
-          onRefundTransaction={async (orderId, reason) => {
-            await refundTxMutation.mutateAsync({ orderId, reason });
-          }}
           onViewInvoice={(tx) => setSelectedInvoiceTransaction(tx)}
         />
       )}
@@ -615,22 +393,6 @@ export default function SubscriptionQuotaManagementPage({
           await savePlanMutation.mutateAsync(planData);
         }}
         initialPlan={selectedPlanForEdit}
-      />
-
-      <UserTokenGrantModal
-        isOpen={isGrantModalOpen}
-        onClose={() => setIsGrantModalOpen(false)}
-        onGrant={async (payload: GrantUserTokensPayload) => {
-          await grantTokensMutation.mutateAsync(payload);
-        }}
-      />
-
-      <ApiKeyModal
-        isOpen={isApiKeyModalOpen}
-        onClose={() => setIsApiKeyModalOpen(false)}
-        onCreate={async (payload: CreateApiKeyPayload) => {
-          return createApiKeyMutation.mutateAsync(payload);
-        }}
       />
 
       <TransactionInvoiceModal

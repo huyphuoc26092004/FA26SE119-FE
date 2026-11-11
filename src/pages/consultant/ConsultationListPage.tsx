@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useAuthStore } from '../../stores/authStore';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ExternalLink, FileText, PanelRight, UserRound, X } from 'lucide-react';
@@ -152,6 +153,7 @@ export default function ConsultationListPage() {
   const c = copy[lang];
   const locale = isVietnamese ? 'vi-VN' : 'en-GB';
   const queryClient = useQueryClient();
+  const viewerId = useAuthStore((s) => s.user?.id) ?? '';
   const [params, setParams] = useSearchParams();
   const selectedId = params.get('c') ?? '';
   const messagesView = !!selectedId || params.get('view') === 'messages';
@@ -195,7 +197,7 @@ export default function ConsultationListPage() {
   const unreadInThread = thread ? unreadOf(thread) : 0;
   useEffect(() => {
     if (!thread || unreadInThread === 0) return;
-    void markThreadRead(thread.id).then((n) => {
+    void markThreadRead(thread.id, viewerId).then((n) => {
       if (n) void queryClient.invalidateQueries({ queryKey: ['consultant-inbox'] });
     });
   }, [thread?.id, unreadInThread]);

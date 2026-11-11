@@ -51,8 +51,6 @@ const copy = {
     refreshing: 'Đang làm mới…',
     search: 'Tìm kiếm',
     searchPh: 'Tên, email, số điện thoại hoặc ID',
-    plan: 'Gói đăng ký',
-    allPlans: 'Tất cả gói',
     status: 'Trạng thái',
     allStatus: 'Tất cả',
     sort: 'Sắp xếp',
@@ -159,8 +157,6 @@ const copy = {
     refreshing: 'Refreshing…',
     search: 'Search',
     searchPh: 'Name, email, phone or ID',
-    plan: 'Plan',
-    allPlans: 'All plans',
     status: 'Status',
     allStatus: 'All',
     sort: 'Sort',
@@ -268,11 +264,6 @@ const STATUS_LABEL: Record<'vi' | 'en', Record<UserAccountStatus, string>> = {
   en: { ACTIVE: 'Active', SUSPENDED: 'Suspended', PENDING: 'Pending' },
 };
 
-const PLAN_SHORT: Record<'vi' | 'en', Record<UserSubscriptionTier, string>> = {
-  vi: { free: 'Miễn phí', pro: 'Pro', executive: 'Premium', consultant: '–', enterprise: 'Enterprise' },
-  en: { free: 'Free', pro: 'Pro', executive: 'Premium', consultant: '–', enterprise: 'Enterprise' },
-};
-
 const statusTone = (s: UserAccountStatus) =>
   s === 'ACTIVE' ? 'text-brand' : s === 'SUSPENDED' ? 'text-danger' : 'text-orange-600';
 
@@ -297,7 +288,6 @@ export default function UserManagementPage() {
   };
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<UserAccountStatus | 'ALL'>('ALL');
-  const [selectedPlan, setSelectedPlan] = useState<UserSubscriptionTier | 'ALL'>('ALL');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name_asc' | 'tokens_desc'>('newest');
 
   // Modal states
@@ -450,9 +440,6 @@ export default function UserManagementPage() {
       list = list.filter((u) => u.status === selectedStatus);
     }
 
-    if (selectedPlan !== 'ALL') {
-      list = list.filter((u) => u.planId === selectedPlan);
-    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
@@ -482,7 +469,7 @@ export default function UserManagementPage() {
     });
 
     return list;
-  }, [users, selectedRole, selectedStatus, selectedPlan, searchQuery, sortBy]);
+  }, [users, selectedRole, selectedStatus, searchQuery, sortBy]);
 
   // Aggregate counts
   const counts = useMemo(() => {
@@ -545,10 +532,9 @@ export default function UserManagementPage() {
   const resetFilters = () => {
     setSelectedRole('ALL');
     setSelectedStatus('ALL');
-    setSelectedPlan('ALL');
     setSearchQuery('');
   };
-  const hasFilters = selectedRole !== 'ALL' || selectedStatus !== 'ALL' || selectedPlan !== 'ALL' || !!searchQuery;
+  const hasFilters = selectedRole !== 'ALL' || selectedStatus !== 'ALL' || !!searchQuery;
 
   if (isLoading) return <Loading />;
   if (isError) return <ErrorState />;
@@ -580,7 +566,7 @@ export default function UserManagementPage() {
       </header>
 
       {/* Filters */}
-      <div className="mt-[clamp(2rem,4vw,3rem)] grid gap-x-8 gap-y-6 md:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
+      <div className="mt-[clamp(2rem,4vw,3rem)] max-w-2xl">
         <label className="block">
           <span className={fieldLabel}>{c.search}</span>
           <input
@@ -590,21 +576,6 @@ export default function UserManagementPage() {
             placeholder={c.searchPh}
             className={`${underlineInput} border-ink`}
           />
-        </label>
-        <label className="block">
-          <span className={fieldLabel}>{c.plan}</span>
-          <select
-            value={selectedPlan}
-            onChange={(e) => setSelectedPlan(e.target.value as UserSubscriptionTier | 'ALL')}
-            className={`${underlineSelect} border-ink`}
-          >
-            <option value="ALL">{c.allPlans}</option>
-            {(['free', 'pro', 'executive', 'consultant', 'enterprise'] as const).map((p) => (
-              <option key={p} value={p}>
-                {c.planOptions[p].replace(/\s*\(.*\)$/, '')}
-              </option>
-            ))}
-          </select>
         </label>
       </div>
 
@@ -677,7 +648,7 @@ export default function UserManagementPage() {
           {filteredUsers.map((u) => (
             <li
               key={u.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 border-b border-border py-5 md:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_7rem_6.5rem_auto]"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 border-b border-border py-5 md:grid-cols-[minmax(0,1fr)_7.5rem_7rem_6.5rem_auto]"
             >
               <div className="min-w-0">
                 <Link to={`/admin/users/${u.id}`} className="block truncate text-[clamp(1rem,1.2vw,1.0625rem)] font-medium text-ink hover:text-brand">
@@ -685,12 +656,11 @@ export default function UserManagementPage() {
                 </Link>
                 <p className="mt-0.5 truncate text-sm text-slate-600">{u.email}</p>
                 <p className="mt-1 text-[13px] text-slate-600 md:hidden">
-                  {ROLE_LABEL[lang][u.role]} · {PLAN_SHORT[lang][u.planId]} ·{' '}
+                  {ROLE_LABEL[lang][u.role]} ·{' '}
                   <span className={statusTone(u.status)}>{STATUS_LABEL[lang][u.status]}</span> · {u.createdAt}
                 </p>
               </div>
               <span className="hidden text-sm text-ink md:block">{ROLE_LABEL[lang][u.role]}</span>
-              <span className="hidden text-sm text-slate-600 md:block">{PLAN_SHORT[lang][u.planId]}</span>
               <span className={`hidden text-sm md:block ${statusTone(u.status)}`} title={u.suspendedReason}>
                 {STATUS_LABEL[lang][u.status]}
               </span>
@@ -1110,7 +1080,6 @@ export default function UserManagementPage() {
             {quickInspectUser.email} · {quickInspectUser.phone}
           </p>
           <dl className="mt-5">
-            <InfoRow label={c.inspect.plan}>{quickInspectUser.planName}</InfoRow>
             <InfoRow label={c.inspect.tokens}>
               {quickInspectUser.tokensUsedThisMonth.toLocaleString(isVietnamese ? 'vi-VN' : 'en-US')} /{' '}
               {(quickInspectUser.tokenMonthlyQuota / 1000).toFixed(0)}k

@@ -6,9 +6,6 @@ import type {
   TemplateImportResponse,
 } from '../types/resumeTemplate';
 
-const STORAGE_KEY = 'careerpilot_admin_resume_templates_v3';
-
-const delay = (ms = 250) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ============================================================================
 // Default Pre-seeded Templates (Full HTML/CSS with standard slots)
@@ -619,322 +616,69 @@ export const SEED_TEMPLATES: ResumeTemplateAdmin[] = [
   },
 ];
 
-// Helper to load templates from localStorage or seeds
-function loadLocalTemplates(): ResumeTemplateAdmin[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_TEMPLATES));
-      return SEED_TEMPLATES;
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_TEMPLATES;
-  } catch {
-    return SEED_TEMPLATES;
-  }
-}
-
-export function resetTemplatesToSeed(): ResumeTemplateAdmin[] {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_TEMPLATES));
-  } catch (err) {
-    console.error('Failed to reset templates in localStorage:', err);
-  }
-  return SEED_TEMPLATES;
-}
-
-function saveLocalTemplates(templates: ResumeTemplateAdmin[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
-  } catch (err) {
-    console.error('Failed to save templates to localStorage:', err);
-  }
-}
-
 // ============================================================================
-// Service API Methods
+// Service API Methods (ResumeTemplateAdminController). Backend là nguồn dữ liệu duy nhất:
+// không lưu tạm ở trình duyệt, lỗi API được báo lên giao diện. Backend không có API xoá mẫu,
+// chỉ bật/tắt (PATCH /status).
 // ============================================================================
 
-export async function getAdminResumeTemplates(
-  filter?: Partial<TemplateFilterState>
-): Promise<ResumeTemplateAdmin[]> {
-  try {
-    // Attempt real API call first
-    const res = await apiClient.get<ResumeTemplateAdmin[]>('/admin/resume-templates', {
-      params: { limit: 100, offset: 0 },
-    });
-    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-      saveLocalTemplates(res.data);
-      return applyFilters(res.data, filter);
-    }
-  } catch {
-    // Backend offline or error -> fallback gracefully
-  }
+const writeBody = (payload: ResumeTemplateInput) => ({
+  name: payload.name.trim(),
+  careerPath: payload.careerPath?.trim() || null,
+  language: payload.language,
+  description: payload.description.trim(),
+  active: payload.active,
+  trialEnabled: payload.trialEnabled,
+  htmlContent: payload.htmlContent,
+});
 
-  await delay(120);
-  const local = loadLocalTemplates();
-  return applyFilters(local, filter);
+export async function getAdminResumeTemplates(filter?: Partial<TemplateFilterState>): Promise<ResumeTemplateAdmin[]> {
+  const res = await apiClient.get<ResumeTemplateAdmin[]>('/admin/resume-templates', { params: { limit: 100, offset: 0 } });
+  return applyFilters(Array.isArray(res.data) ? res.data : [], filter);
 }
 
 export async function getAdminResumeTemplateById(id: string): Promise<ResumeTemplateAdmin> {
-  try {
-    const res = await apiClient.get<ResumeTemplateAdmin>(`/admin/resume-templates/${id}`);
-    if (res.data) return res.data;
-  } catch {
-    // fallback
-  }
-
-  const local = loadLocalTemplates();
-  const item = local.find((t) => t.id === id);
-  if (!item) throw new Error('Không tìm thấy mẫu CV.');
-  return item;
+  const res = await apiClient.get<ResumeTemplateAdmin>(`/admin/resume-templates/${encodeURIComponent(id)}`);
+  return res.data;
 }
 
-export async function createAdminResumeTemplate(
-  payload: ResumeTemplateInput
-): Promise<ResumeTemplateAdmin> {
-  try {
-    const res = await apiClient.post<ResumeTemplateAdmin>('/admin/resume-templates', {
-      name: payload.name.trim(),
-      careerPath: payload.careerPath?.trim() || null,
-      language: payload.language,
-      description: payload.description.trim(),
-      active: payload.active,
-      trialEnabled: payload.trialEnabled,
-      htmlContent: payload.htmlContent,
-    });
-    if (res.data && res.data.id) {
-      const local = loadLocalTemplates();
-      saveLocalTemplates([res.data, ...local.filter((t) => t.id !== res.data.id)]);
-      return res.data;
-    }
-  } catch (err) {
-    console.warn('API create error, persisting locally:', err);
-  }
-
-  await delay(150);
-  const now = new Date().toISOString();
-  const newTemplate: ResumeTemplateAdmin = {
-    id: 'tpl-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now().toString(36),
-    name: payload.name.trim(),
-    career_path: payload.careerPath?.trim() || null,
-    language: payload.language,
-    description: payload.description.trim(),
-    is_active: payload.active,
-    is_trial_enabled: payload.trialEnabled,
-    html_content: payload.htmlContent,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const local = loadLocalTemplates();
-  saveLocalTemplates([newTemplate, ...local]);
-  return newTemplate;
+export async function createAdminResumeTemplate(payload: ResumeTemplateInput): Promise<ResumeTemplateAdmin> {
+  const res = await apiClient.post<ResumeTemplateAdmin>('/admin/resume-templates', writeBody(payload));
+  return res.data;
 }
 
-export async function updateAdminResumeTemplate(
-  id: string,
-  payload: ResumeTemplateInput
-): Promise<ResumeTemplateAdmin> {
-  try {
-    const res = await apiClient.put<ResumeTemplateAdmin>(`/admin/resume-templates/${id}`, {
-      name: payload.name.trim(),
-      careerPath: payload.careerPath?.trim() || null,
-      language: payload.language,
-      description: payload.description.trim(),
-      active: payload.active,
-      trialEnabled: payload.trialEnabled,
-      htmlContent: payload.htmlContent,
-    });
-    if (res.data) {
-      const local = loadLocalTemplates();
-      saveLocalTemplates(local.map((t) => (t.id === id ? res.data : t)));
-      return res.data;
-    }
-  } catch (err) {
-    console.warn('API update error, updating locally:', err);
-  }
-
-  await delay(150);
-  const local = loadLocalTemplates();
-  const existing = local.find((t) => t.id === id);
-  if (!existing) throw new Error('Không tìm thấy mẫu CV để cập nhật.');
-
-  const updated: ResumeTemplateAdmin = {
-    ...existing,
-    name: payload.name.trim(),
-    career_path: payload.careerPath?.trim() || null,
-    language: payload.language,
-    description: payload.description.trim(),
-    is_active: payload.active,
-    is_trial_enabled: payload.trialEnabled,
-    html_content: payload.htmlContent,
-    updated_at: new Date().toISOString(),
-  };
-
-  saveLocalTemplates(local.map((t) => (t.id === id ? updated : t)));
-  return updated;
+export async function updateAdminResumeTemplate(id: string, payload: ResumeTemplateInput): Promise<ResumeTemplateAdmin> {
+  const res = await apiClient.put<ResumeTemplateAdmin>(`/admin/resume-templates/${encodeURIComponent(id)}`, writeBody(payload));
+  return res.data;
 }
 
-export async function toggleResumeTemplateStatus(
-  id: string,
-  active: boolean
-): Promise<ResumeTemplateAdmin> {
-  try {
-    const res = await apiClient.patch<ResumeTemplateAdmin>(`/admin/resume-templates/${id}/status`, {
-      active,
-    });
-    if (res.data) {
-      const local = loadLocalTemplates();
-      saveLocalTemplates(local.map((t) => (t.id === id ? res.data : t)));
-      return res.data;
-    }
-  } catch {
-    // fallback
-  }
-
-  await delay(100);
-  const local = loadLocalTemplates();
-  const existing = local.find((t) => t.id === id);
-  if (!existing) throw new Error('Không tìm thấy mẫu CV.');
-
-  const updated: ResumeTemplateAdmin = {
-    ...existing,
-    is_active: active,
-    updated_at: new Date().toISOString(),
-  };
-  saveLocalTemplates(local.map((t) => (t.id === id ? updated : t)));
-  return updated;
-}
-
-export async function deleteAdminResumeTemplate(id: string): Promise<void> {
-  try {
-    // Attempt real delete if backend supports it
-    await apiClient.delete(`/admin/resume-templates/${id}`);
-  } catch {
-    // If backend doesn't support DELETE or template is in use, attempt deactivating first
-    try {
-      await apiClient.patch(`/admin/resume-templates/${id}/status`, { active: false });
-    } catch {
-      // ignore
-    }
-  }
-
-  await delay(150);
-  const local = loadLocalTemplates();
-  saveLocalTemplates(local.filter((t) => t.id !== id));
+export async function toggleResumeTemplateStatus(id: string, active: boolean): Promise<ResumeTemplateAdmin> {
+  const res = await apiClient.patch<ResumeTemplateAdmin>(`/admin/resume-templates/${encodeURIComponent(id)}/status`, { active });
+  return res.data;
 }
 
 export async function duplicateResumeTemplate(id: string): Promise<ResumeTemplateAdmin> {
   const original = await getAdminResumeTemplateById(id);
-  const clonedPayload: ResumeTemplateInput = {
+  return createAdminResumeTemplate({
     name: `${original.name} (Bản sao)`,
-    careerPath: original.career_path,
+    careerPath: original.career_path ?? '',
     language: original.language,
-    description: original.description ? `Bản sao của: ${original.description}` : 'Bản sao mẫu CV.',
-    active: false, // cloned starts as inactive so admin can edit first
-    trialEnabled: original.is_trial_enabled,
+    description: original.description ?? '',
+    active: false,
+    trialEnabled: false,
     htmlContent: original.html_content,
-  };
-
-  return createAdminResumeTemplate(clonedPayload);
+  });
 }
 
-export async function importResumeTemplateDocument(
-  file: File,
-  language: 'vi' | 'en' = 'vi'
-): Promise<TemplateImportResponse> {
-  const isHtml = file.name.endsWith('.html') || file.type === 'text/html';
-
-  if (isHtml) {
-    // Client-side instant reading for HTML files
-    const text = await file.text();
-    return {
-      source_file_name: file.name,
-      source_format: 'HTML',
-      html_content: text,
-      blocks: [
-        { id: 'block-1', tag: 'div', text: 'Tài liệu HTML đã tải lên hoàn tất.' },
-      ],
-      warnings: [],
-      requires_review: true,
-      page_count: 1,
-    };
-  }
-
-  // Attempt backend multipart endpoint
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('language', language);
-
-    const res = await apiClient.post<TemplateImportResponse>(
-      '/admin/resume-templates/import',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    if (res.data) return res.data;
-  } catch (err) {
-    console.warn('Backend import failed or offline, generating simulated draft:', err);
-  }
-
-  // Fallback simulator for offline or mock mode when uploading DOCX/PDF
-  await delay(600);
-  const sampleImportHtml = `<!DOCTYPE html>
-<html lang="${language}">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    @page { size: A4; margin: 15mm; }
-    body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.5; color: #1e293b; }
-    .import-header { border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; }
-    .cv-section { margin-bottom: 16px; }
-    .cv-section h2 { font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin: 0 0 8px 0; }
-  </style>
-</head>
-<body>
-  <div class="import-header">
-    <h1 data-cv-field="fullName">${file.name.replace(/\.[^/.]+$/, '').toUpperCase()}</h1>
-    <p data-cv-field="headline">Chức danh / Mục tiêu nghề nghiệp</p>
-    <p data-cv-field="contact">email@example.com • 0912 345 678 • TP. Hồ Chí Minh</p>
-  </div>
-  <section class="cv-section">
-    <h2>Tóm tắt chuyên môn</h2>
-    <div data-cv-section="summary"></div>
-  </section>
-  <section class="cv-section">
-    <h2>Kinh nghiệm làm việc</h2>
-    <div data-cv-section="experience"></div>
-  </section>
-  <section class="cv-section">
-    <h2>Học vấn</h2>
-    <div data-cv-section="education"></div>
-  </section>
-  <section class="cv-section">
-    <h2>Kỹ năng chuyên môn</h2>
-    <div data-cv-section="skills"></div>
-  </section>
-</body>
-</html>`;
-
-  return {
-    source_file_name: file.name,
-    source_format: file.name.endsWith('.pdf') ? 'PDF' : 'DOCX',
-    html_content: sampleImportHtml,
-    blocks: [
-      { id: 'block-1', tag: 'h1', text: 'Tiêu đề trích xuất từ file nguồn' },
-      { id: 'block-2', tag: 'p', text: 'Các khối văn bản tự động chuyển đổi sang cấu trúc chuẩn' },
-    ],
-    warnings: [
-      'Bản nháp chuyển đổi cần được xem lại và gán đầy đủ các thẻ data-cv-field / data-cv-section trước khi lưu.',
-    ],
-    requires_review: true,
-    page_count: 1,
-  };
+export async function importResumeTemplateDocument(file: File, language: 'vi' | 'en' = 'vi'): Promise<TemplateImportResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('language', language);
+  const res = await apiClient.post<TemplateImportResponse>('/admin/resume-templates/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120_000,
+  });
+  return res.data;
 }
 
 export function exportResumeTemplateHtml(template: ResumeTemplateAdmin): void {

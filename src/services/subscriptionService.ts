@@ -277,11 +277,6 @@ export interface VoucherVerificationResult {
   message: string;
 }
 
-// TODO(api): POST /api/v1/vouchers/verify (BE chưa có API)
-export function verifyVoucherCode(code: string, baseAmount: number): VoucherVerificationResult {
-  return notConnected('BE chưa có API', code, baseAmount);
-}
-
 export interface SePayCheckout {
   order: PaymentTransaction;
   checkoutUrl: string;

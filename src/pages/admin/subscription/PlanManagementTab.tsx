@@ -25,7 +25,8 @@ interface PlanManagementTabProps {
   onOpenEditPlan: (plan: AdminSubscriptionPlan) => void;
   onToggleStatus: (planId: string) => Promise<void>;
   onDuplicatePlan: (planId: string) => Promise<void>;
-  onDeletePlan: (planId: string) => Promise<void>;
+  /** Backend chưa có API xoá gói: không truyền thì ẩn "Xoá gói" (dùng Tạm ngưng). */
+  onDeletePlan?: (planId: string) => Promise<void>;
 }
 
 export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
@@ -62,7 +63,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
   const totalMrrVND = plans.reduce((acc, p) => acc + (p.status === 'ACTIVE' ? p.mrrVND : 0), 0);
 
   const confirmDelete = async () => {
-    if (planToDelete) {
+    if (planToDelete && onDeletePlan) {
       await onDeletePlan(planToDelete.id);
       setPlanToDelete(null);
     }
@@ -77,7 +78,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
         { label: 'Chỉnh sửa', onClick: () => onOpenEditPlan(plan) },
         { label: 'Nhân bản', onClick: () => onDuplicatePlan(plan.id) },
         { label: plan.status === 'ACTIVE' ? 'Lưu trữ / ẩn gói' : 'Mở bán lại', onClick: () => onToggleStatus(plan.id) },
-        { label: 'Xoá gói', onClick: () => setPlanToDelete(plan), tone: 'danger' },
+        ...(onDeletePlan ? [{ label: 'Xoá gói', onClick: () => setPlanToDelete(plan), tone: 'danger' as const }] : []),
       ]}
     />
   );

@@ -47,7 +47,6 @@ import UserManagementPage from '../pages/admin/UserManagementPage';
 import UserDetailsPage from '../pages/admin/UserDetailsPage';
 import SubscriptionQuotaManagementPage from '../pages/admin/SubscriptionQuotaManagementPage';
 import ConsultationServicesPage from '../pages/admin/ConsultationServicesPage';
-import PaymentInvoiceManagementPage from '../pages/admin/PaymentInvoiceManagementPage';
 import ResumeTemplateManagementPage from '../pages/admin/ResumeTemplateManagementPage';
 import JobCrawlManagementPage from '../pages/admin/JobCrawlManagementPage';
 import ConsultantDashboardPage from '../pages/consultant/ConsultantDashboardPage';
@@ -214,7 +213,7 @@ export const router = createBrowserRouter([
               { path: 'users/:id', element: <UserDetailsPage /> },
               { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
               { path: 'consultation-services', element: <ConsultationServicesPage /> },
-              { path: 'payments', element: <PaymentInvoiceManagementPage /> },
+              { path: 'payments', element: <ManagerPaymentsPage /> },
               { path: 'templates', element: <ResumeTemplateManagementPage /> },
               { path: 'resume-templates', element: <Navigate to="/admin/templates" replace /> },
               { path: 'jobs', element: <JobCrawlManagementPage /> },
