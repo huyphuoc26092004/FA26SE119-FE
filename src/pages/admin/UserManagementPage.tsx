@@ -51,8 +51,6 @@ const copy = {
     refreshing: 'Đang làm mới…',
     search: 'Tìm kiếm',
     searchPh: 'Tên, email, số điện thoại hoặc ID',
-    plan: 'Gói đăng ký',
-    allPlans: 'Tất cả gói',
     status: 'Trạng thái',
     allStatus: 'Tất cả',
     sort: 'Sắp xếp',
@@ -159,8 +157,6 @@ const copy = {
     refreshing: 'Refreshing…',
     search: 'Search',
     searchPh: 'Name, email, phone or ID',
-    plan: 'Plan',
-    allPlans: 'All plans',
     status: 'Status',
     allStatus: 'All',
     sort: 'Sort',
@@ -297,7 +293,6 @@ export default function UserManagementPage() {
   };
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<UserAccountStatus | 'ALL'>('ALL');
-  const [selectedPlan, setSelectedPlan] = useState<UserSubscriptionTier | 'ALL'>('ALL');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name_asc' | 'tokens_desc'>('newest');
 
   // Modal states
@@ -450,9 +445,6 @@ export default function UserManagementPage() {
       list = list.filter((u) => u.status === selectedStatus);
     }
 
-    if (selectedPlan !== 'ALL') {
-      list = list.filter((u) => u.planId === selectedPlan);
-    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
@@ -482,7 +474,7 @@ export default function UserManagementPage() {
     });
 
     return list;
-  }, [users, selectedRole, selectedStatus, selectedPlan, searchQuery, sortBy]);
+  }, [users, selectedRole, selectedStatus, searchQuery, sortBy]);
 
   // Aggregate counts
   const counts = useMemo(() => {
@@ -545,10 +537,9 @@ export default function UserManagementPage() {
   const resetFilters = () => {
     setSelectedRole('ALL');
     setSelectedStatus('ALL');
-    setSelectedPlan('ALL');
     setSearchQuery('');
   };
-  const hasFilters = selectedRole !== 'ALL' || selectedStatus !== 'ALL' || selectedPlan !== 'ALL' || !!searchQuery;
+  const hasFilters = selectedRole !== 'ALL' || selectedStatus !== 'ALL' || !!searchQuery;
 
   if (isLoading) return <Loading />;
   if (isError) return <ErrorState />;
@@ -580,7 +571,7 @@ export default function UserManagementPage() {
       </header>
 
       {/* Filters */}
-      <div className="mt-[clamp(2rem,4vw,3rem)] grid gap-x-8 gap-y-6 md:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
+      <div className="mt-[clamp(2rem,4vw,3rem)] max-w-2xl">
         <label className="block">
           <span className={fieldLabel}>{c.search}</span>
           <input
@@ -590,21 +581,6 @@ export default function UserManagementPage() {
             placeholder={c.searchPh}
             className={`${underlineInput} border-ink`}
           />
-        </label>
-        <label className="block">
-          <span className={fieldLabel}>{c.plan}</span>
-          <select
-            value={selectedPlan}
-            onChange={(e) => setSelectedPlan(e.target.value as UserSubscriptionTier | 'ALL')}
-            className={`${underlineSelect} border-ink`}
-          >
-            <option value="ALL">{c.allPlans}</option>
-            {(['free', 'pro', 'executive', 'consultant', 'enterprise'] as const).map((p) => (
-              <option key={p} value={p}>
-                {c.planOptions[p].replace(/\s*\(.*\)$/, '')}
-              </option>
-            ))}
-          </select>
         </label>
       </div>
 
