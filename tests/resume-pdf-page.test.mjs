@@ -40,6 +40,7 @@ function renderPage({ status = 'Ready', pending = false, error = null, downloade
     '../../services/authService': { authErrorMessage: (failure, fallback) => failure?.message ?? fallback },
     '../../components/ui': { Loading: 'Loading', ErrorState: 'ErrorState' },
     '../../i18n': { useTranslation: () => ({ isVietnamese: false, t: (key) => key }) },
+    './resume/ProfileAlignmentSection': { ProfileAlignmentSection: 'ProfileAlignmentSection', default: 'ProfileAlignmentSection' },
   };
   const exports = {};
   runInNewContext(compiled, { exports, require: (name) => {

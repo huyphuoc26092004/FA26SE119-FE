@@ -4,7 +4,6 @@ import type {
   ConsultantDashboardStats,
   ConsultationAdvicePillars,
   ConsultationCandidate,
-  ConsultationMeetingInfo,
   ConsultationMessage,
   ConsultationPriority,
   ConsultationRequest,
@@ -12,7 +11,6 @@ import type {
   ConsultationTopic,
 } from '../types/consultation';
 import { apiClient } from './apiClient';
-import { notConnected, pending } from './apiPending';
 import { type ApiRow, num, obj, rows, str, texts } from './candidateMappers';
 import { TOPIC_LABELS, toConsultationCandidate, toConsultationMessage, toConsultationRequest } from './consultationMappers';
 
@@ -35,7 +33,7 @@ const getProfile = (threadId: string) =>
     .catch(() => null);
 
 const getMessages = (threadId: string) =>
-  apiClient.get<ApiRow[]>(`/consultations/${threadId}/messages`, { params: { limit: 100, latest: true } }).then((r) => r.data);
+  apiClient.get<ApiRow[]>(`/consultations/${threadId}/messages`, { params: { limit: 100 } }).then((r) => r.data);
 
 /** Danh sách thread không có tên ứng viên, nên đọc thêm candidate-profile cho từng thread. */
 async function loadThreads(): Promise<ConsultationRequest[]> {
@@ -69,18 +67,35 @@ export async function getConsultationRequests(params: ConsultationFilterParams =
 }
 
 /**
- * Hộp thư của cố vấn: GET /consultations đã kèm tên ứng viên, tin cuối và số tin chưa đọc,
- * nên chỉ cần một request. Tin nhắn và hồ sơ đầy đủ được tải khi mở từng hội thoại.
+ * Hộp thư của cố vấn. GET /consultations chỉ trả dữ liệu thread (không có tên ứng viên, tin cuối hay số chưa đọc),
+ * nên đọc thêm tin nhắn và hồ sơ ứng viên của từng thread; tin cuối và số chưa đọc tính từ tin nhắn.
  */
 export async function getConsultantInbox(): Promise<ConsultationRequest[]> {
   const { data } = await apiClient.get<ApiRow[]>('/consultations');
-  return data.map((row) => toConsultationRequest(row));
+  return Promise.all(
+    data.map(async (row) => {
+      const id = str(row.id);
+      const [messages, profile] = await Promise.all([
+        str(row.request_type) === 'SESSION_BOOKING' ? Promise.resolve([]) : getMessages(id).catch(() => []),
+        getProfile(id),
+      ]);
+      return toConsultationRequest(row, {
+        messages,
+        candidate: profile ? toConsultationCandidate(profile, str(row.candidate_user_id)) : undefined,
+      });
+    }),
+  );
 }
 
-/** Đánh dấu đã đọc mọi tin nhắn của bên kia trong một cuộc tư vấn (POST /consultations/{id}/read). */
-export async function markThreadRead(threadId: string): Promise<number> {
-  const { data } = await apiClient.post<ApiRow>(`/consultations/${threadId}/read`);
-  return num(data.updated);
+/**
+ * Đánh dấu đã đọc mọi tin của bên kia trong một cuộc tư vấn.
+ * Backend chỉ có PATCH /consultations/{id}/messages/{messageId}/read cho từng tin.
+ */
+export async function markThreadRead(threadId: string, viewerId: string): Promise<number> {
+  const messages = await getMessages(threadId);
+  const unread = messages.filter((m) => str(m.sender_user_id) !== viewerId && !m.read_at);
+  await Promise.all(unread.map((m) => apiClient.patch(`/consultations/${threadId}/messages/${str(m.id)}/read`).catch(() => undefined)));
+  return unread.length;
 }
 
 export async function getConsultationRequestById(id: string): Promise<ConsultationRequest | null> {
@@ -190,15 +205,6 @@ export async function sendConsultationMessage(
 /** Đánh dấu tin nhắn của bên kia là đã đọc. */
 export async function markConsultationMessageRead(id: string, messageId: string): Promise<void> {
   await apiClient.patch(`/consultations/${id}/messages/${messageId}/read`);
-}
-
-// TODO(api): PUT /api/v1/consultations/{id}/meeting (BE chưa có API lịch hẹn)
-export async function updateMeetingSchedule(id: string, meetingUpdate: Partial<ConsultationMeetingInfo>): Promise<ConsultationRequest> {
-  return notConnected('BE chưa có API', id, meetingUpdate);
-}
-
-export function resetConsultationData(): void {
-  pending(undefined, 'BE chưa có API');
 }
 
 // ---- Admin phân công ----
@@ -370,4 +376,22 @@ export async function getCandidateCareerAnalysis(candidateId: string): Promise<C
     },
     consultationHistory: mine.map((t) => ({ id: t.id, topicLabel: t.topicLabel, status: t.status, scheduledAt: t.meeting.scheduledAt, notes: t.targetGoal })),
   };
+}
+
+export interface ConsultationCandidateResume {
+  id: string;
+  title: string;
+  isPrimary: boolean;
+  updatedAt: string;
+}
+
+/** CV đã xác nhận của ứng viên trong cuộc tư vấn (GET /consultations/{id}/candidate-resumes). */
+export async function getConsultationCandidateResumes(consultationId: string): Promise<ConsultationCandidateResume[]> {
+  const { data } = await apiClient.get<ApiRow[]>(`/consultations/${encodeURIComponent(consultationId)}/candidate-resumes`);
+  return (data ?? []).map((row) => ({
+    id: String(row.id ?? ''),
+    title: String(row.title ?? '') || 'CV chưa đặt tên',
+    isPrimary: row.is_primary === true,
+    updatedAt: String(row.updated_at ?? ''),
+  }));
 }

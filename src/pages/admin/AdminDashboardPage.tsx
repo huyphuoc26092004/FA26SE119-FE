@@ -14,9 +14,7 @@ import {
   Toast,
   UnderlineTabs,
   brandLink,
-  dangerButton,
   formatMillions,
-  outlineButton,
   pad2,
   primaryButton,
   textLink,
@@ -25,8 +23,6 @@ import {
 } from '../../components/admin/AdminKit';
 import {
   getAdminDashboardData,
-  toggleMaintenanceMode,
-  purgeSystemCache,
   toggleUserStatus,
 } from '../../services/adminService';
 import { getManagedUsers } from '../../services/userService';
@@ -451,7 +447,6 @@ export default function AdminDashboardPage() {
   const [selectedTx, setSelectedTx] = useState<AdminDashboardData['revenueMetrics']['recentTransactions'][0] | null>(null);
 
   // Maintenance Confirmation Modal
-  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -481,24 +476,6 @@ export default function AdminDashboardPage() {
   const { data: paymentTx = [] } = useQuery({
     queryKey: ['admin-payment-transactions'],
     queryFn: () => getAdminPaymentTransactions(),
-  });
-
-  // Maintenance mutation
-  const maintenanceMutation = useMutation({
-    mutationFn: (enable: boolean) => toggleMaintenanceMode(enable),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-      setShowMaintenanceModal(false);
-      showToast(res.message);
-    },
-  });
-
-  // Purge cache mutation
-  const purgeCacheMutation = useMutation({
-    mutationFn: () => purgeSystemCache(),
-    onSuccess: (res) => {
-      showToast(c.toastPurge(res.clearedKeysCount, res.freedMemoryMB));
-    },
   });
 
   // Toggle user status
@@ -611,17 +588,6 @@ export default function AdminDashboardPage() {
   const topFeature = [...aiMetrics.featureBreakdown].sort((a, b) => b.tokenCount - a.tokenCount)[0];
 
   const todos: { title: string; detail: string; action: ReactNode; tone?: 'warning' }[] = [];
-  if (isMaintenance) {
-    todos.push({
-      title: c.todos.maintenanceOn,
-      detail: c.todos.maintenanceOnDetail,
-      action: (
-        <button type="button" onClick={() => setShowMaintenanceModal(true)} className={brandLink}>
-          {c.todos.maintenanceAction}
-        </button>
-      ),
-    });
-  }
   if (pendingConsults.length > 0) {
     todos.push({
       title: c.todos.pendingConsult(pendingConsults.length),
@@ -855,23 +821,8 @@ export default function AdminDashboardPage() {
           <button type="button" onClick={() => refetch()} disabled={isFetching} className={textLink}>
             {isFetching ? c.actions.refreshing : c.actions.refresh}
           </button>
-          <button
-            type="button"
-            onClick={() => purgeCacheMutation.mutate()}
-            disabled={purgeCacheMutation.isPending}
-            className={textLink}
-          >
-            {c.actions.purge}
-          </button>
           <button type="button" onClick={handleExportReport} className={textLink}>
             {c.actions.export}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowMaintenanceModal(true)}
-            className={`${textLink} ${isMaintenance ? 'text-orange-600' : ''}`}
-          >
-            {isMaintenance ? c.actions.maintenanceOff : c.actions.maintenance}
           </button>
         </div>
 
@@ -1315,33 +1266,6 @@ export default function AdminDashboardPage() {
         </Modal>
       )}
 
-      {/* Maintenance modal */}
-      {showMaintenanceModal && (
-        <Modal
-          title={c.maintenanceModal.title}
-          onClose={() => setShowMaintenanceModal(false)}
-          width="max-w-lg"
-          footer={
-            <>
-              <button type="button" onClick={() => setShowMaintenanceModal(false)} className={outlineButton}>
-                {c.maintenanceModal.cancel}
-              </button>
-              <button
-                type="button"
-                onClick={() => maintenanceMutation.mutate(!isMaintenance)}
-                disabled={maintenanceMutation.isPending}
-                className={isMaintenance ? primaryButton : dangerButton}
-              >
-                {isMaintenance ? c.maintenanceModal.disable : c.maintenanceModal.enable}
-              </button>
-            </>
-          }
-        >
-          <p className="text-[15px] leading-7 text-slate-700">
-            {isMaintenance ? c.maintenanceModal.disableText : c.maintenanceModal.enableText}
-          </p>
-        </Modal>
-      )}
     </div>
   );
 }

@@ -2,7 +2,6 @@ import type { AssessmentQuestion, AssessmentResult, AssessmentAttempt, Assessmen
 import axios from 'axios';
 import type {
   CandidateProfile,
-  CareerSalaryTrack,
   CvJobFitGapItem,
   CvJobFitResult,
   Job,
@@ -14,7 +13,7 @@ import type {
 import { useAuthStore } from '../stores/authStore';
 import { apiClient } from './apiClient';
 import { authErrorMessage } from './authService';
-import { pending, notConnected } from './apiPending';
+import { pending } from './apiPending';
 import { SEED_TEMPLATES } from './resumeTemplateAdminService';
 import {
   type ApiRow,
@@ -424,11 +423,6 @@ export async function getResumeAnalysis(resumeId: string): Promise<ResumeAnalysi
   return toResumeAnalysis(latest, resume);
 }
 
-// TODO(api): BE chưa có API
-export async function applySuggestionToResume(resumeId: string, suggestionId: string): Promise<{ resume: Resume; analysis: ResumeAnalysisResult }> {
-  return notConnected('BE chưa có API', resumeId, suggestionId);
-}
-
 export async function reanalyzeResume(resumeId: string): Promise<ResumeAnalysisResult> {
   const [resume, analysis] = await Promise.all([
     getResumeById(resumeId),
@@ -825,16 +819,6 @@ export async function getLearningResources(skill?: string): Promise<LearningReso
 
 // ---- Ước lượng lương ----
 
-// Backend không có danh mục ngạch lương; trang lương đã bỏ khỏi router.
-export async function getSalaryTracks(): Promise<CareerSalaryTrack[]> {
-  return pending([], 'POST /api/v1/salary-estimations');
-}
-
-// TODO(api): BE chưa có API
-export async function getLocationMultipliers(): Promise<{ location: string; multiplier: number; label: string; }[]> {
-  return pending([], 'BE chưa có API');
-}
-
 export interface SalaryEstimate {
   id: string;
   targetJobTitle: string;
@@ -846,14 +830,7 @@ export interface SalaryEstimate {
   createdAt: string;
 }
 
-/** AI ước lượng khoảng lương theo vị trí mục tiêu và hồ sơ nghề nghiệp đã lưu. */
-export async function calculateSalaryEstimate(params: {
-  targetJobTitle: string;
-  location?: string;
-  currency?: string;
-  language?: 'vi' | 'en';
-}): Promise<SalaryEstimate> {
-  const res = await apiClient.post<ApiRow>('/salary-estimations', params, { timeout: 600_000 }).then((r) => r.data);
+const toSalaryEstimate = (res: ApiRow): SalaryEstimate => {
   const reasoning = res.reasoning;
   return {
     id: str(res.id),
@@ -865,4 +842,40 @@ export async function calculateSalaryEstimate(params: {
     modelName: str(res.model_name),
     createdAt: str(res.created_at),
   };
+};
+
+/** AI ước lượng khoảng lương theo vị trí mục tiêu và hồ sơ nghề nghiệp đã lưu. */
+export async function calculateSalaryEstimate(params: {
+  targetJobTitle: string;
+  location?: string;
+  currency?: string;
+  language?: 'vi' | 'en';
+}): Promise<SalaryEstimate> {
+  return toSalaryEstimate(await apiClient.post<ApiRow>('/salary-estimations', params, { timeout: 600_000 }).then((r) => r.data));
+}
+
+/** AI ước lượng lương cho một tin tuyển dụng cụ thể, dựa trên hồ sơ nghề nghiệp (POST /jobs/{id}/salary-estimation). */
+export async function estimateJobSalary(jobId: string): Promise<SalaryEstimate> {
+  return toSalaryEstimate(
+    await apiClient.post<ApiRow>(`/jobs/${encodeURIComponent(jobId)}/salary-estimation`, undefined, { timeout: 600_000 }).then((r) => r.data),
+  );
+}
+
+/**
+ * AI viết một CV mới nhắm vào job, chỉ dùng dữ kiện từ CV gốc và hồ sơ nghề nghiệp (POST /jobs/{jobId}/resume-draft).
+ * CV mới ở trạng thái cần xem lại; trả về id để mở trang chỉnh sửa.
+ */
+export async function createTargetedResume(jobId: string, sourceResumeId: string, title?: string): Promise<string> {
+  const source = await get<ApiRow>(`/resumes/${encodeURIComponent(sourceResumeId)}`);
+  const body: Record<string, unknown> = {
+    language: str(source.language) || 'vi',
+    structured_data: obj(source.structured_data),
+    ...(str(source.raw_content) ? { raw_content: str(source.raw_content) } : {}),
+    ...(str(source.template_id) ? { template_id: str(source.template_id) } : {}),
+    ...(title ? { title } : {}),
+  };
+  const created = await apiClient
+    .post<ApiRow>(`/jobs/${encodeURIComponent(jobId)}/resume-draft`, body, { timeout: 600_000 })
+    .then((r) => r.data);
+  return str(created.id);
 }

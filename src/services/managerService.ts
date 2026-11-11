@@ -55,3 +55,9 @@ export function safeInvoiceUrl(value: unknown): string | null {
     return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
   } catch { return null; }
 }
+
+/** Admin đọc / đặt trần hạn mức mà một Manager được phép cấp khi sửa gói (ManagerQuotaController). */
+export const getManagerQuotaLimitsFor = (managerId: string) =>
+  apiClient.get<ManagerQuotaLimits>(`/admin/managers/${encodeURIComponent(managerId)}/quota-limits`).then((response) => response.data);
+export const saveManagerQuotaLimits = (managerId: string, body: { maxTokenQuota: number; maxApiQuota: number }) =>
+  apiClient.put<ManagerQuotaLimits>(`/admin/managers/${encodeURIComponent(managerId)}/quota-limits`, body).then((response) => response.data);

@@ -19,6 +19,7 @@ import { useTranslation } from '../../i18n';
 import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiRecommendationFeedbackWidget';
 import { parseJobContent, sectionLength } from '../../utils/jobContent';
 import { JobContent } from '../../components/jobs/JobContent';
+import { JobCandidateTools } from './job/JobCandidateTools';
 
 const textLink =
   'inline-flex items-center gap-1.5 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
@@ -406,6 +407,8 @@ export default function JobDetailsPage() {
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
+
+          {isCandidate && <JobCandidateTools jobId={job.id} jobTitle={job.title} />}
 
           {/* Source */}
           <div className="mt-10 border-t border-ink pt-5">

@@ -6,7 +6,8 @@ import { useTranslation } from '../../../i18n';
 interface SavedApplicationsListProps {
   drafts: ApplicationDraft[];
   onSelectDraft: (draft: ApplicationDraft) => void;
-  onDeleteDraft: (id: string) => void;
+  /** Backend chưa có API xoá thư: không truyền thì ẩn nút Xoá. */
+  onDeleteDraft?: (id: string) => void;
   onCreateNew: () => void;
 }
 
@@ -157,7 +158,7 @@ function DraftPreview({
   onCopy: (e: React.MouseEvent) => void;
   onDownload: (e: React.MouseEvent) => void;
   onOpen: (e: React.MouseEvent) => void;
-  onDelete: (e: React.MouseEvent) => void;
+  onDelete?: (e: React.MouseEvent) => void;
   compact?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -273,9 +274,11 @@ function DraftPreview({
           <button type="button" onClick={onDownload} className={`${textLink} text-ink`}>
             {c.download}
           </button>
-          <button type="button" onClick={onDelete} className={`${textLink} text-slate-600 hover:text-red-700`}>
-            {c.remove}
-          </button>
+          {onDelete && (
+            <button type="button" onClick={onDelete} className={`${textLink} text-slate-600 hover:text-red-700`}>
+              {c.remove}
+            </button>
+          )}
         </div>
       </div>
     </article>
@@ -358,7 +361,7 @@ export function SavedApplicationsList({
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(t('applicationAssistance.deleteConfirm'))) {
+    if (onDeleteDraft && window.confirm(t('applicationAssistance.deleteConfirm'))) {
       onDeleteDraft(id);
     }
   };
@@ -393,7 +396,7 @@ export function SavedApplicationsList({
     onCopy: (e: React.MouseEvent) => handleCopy(draft, e),
     onDownload: (e: React.MouseEvent) => handleDownload(draft, e),
     onOpen: (e: React.MouseEvent) => handleOpen(draft, e),
-    onDelete: (e: React.MouseEvent) => handleDelete(draft.id, e),
+    onDelete: onDeleteDraft ? (e: React.MouseEvent) => handleDelete(draft.id, e) : undefined,
   });
 
   return (

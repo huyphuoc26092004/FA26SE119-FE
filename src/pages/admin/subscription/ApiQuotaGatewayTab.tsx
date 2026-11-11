@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type {
   AiModelConfig,
   ApiEndpointMetric,
-  ApiKeyItem,
 } from '../../../types/subscriptionManagement';
-import { EmptyRow, SectionHead, ThinBar, brandLink, dangerLink, smallPrimary, textLink } from '../../../components/admin/AdminKit';
+import { EmptyRow, SectionHead, ThinBar, textLink } from '../../../components/admin/AdminKit';
 
 const n = (v: number) => v.toLocaleString('vi-VN');
 
@@ -12,49 +11,16 @@ const n = (v: number) => v.toLocaleString('vi-VN');
 
 interface ApiQuotaGatewayTabProps {
   models: AiModelConfig[];
-  apiKeys: ApiKeyItem[];
   endpoints: ApiEndpointMetric[];
-  onOpenApiKeyModal: () => void;
-  onRevokeApiKey: (id: string) => Promise<void>;
   onUpdateModel: (modelId: string, updates: Partial<AiModelConfig>) => Promise<void>;
-  onTestEndpoint: (
-    endpoint: string
-  ) => Promise<{ status: number; latencyMs: number; message: string; timestamp: string }>;
 }
 
 export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
   models,
-  apiKeys,
   endpoints,
-  onOpenApiKeyModal,
-  onRevokeApiKey,
   onUpdateModel,
-  onTestEndpoint,
 }) => {
-  const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{
-    endpoint: string;
-    status: number;
-    latencyMs: number;
-    message: string;
-    timestamp: string;
-  } | null>(null);
-
-  const handleRunPing = async (endpoint: string) => {
-    setTestingEndpoint(endpoint);
-    try {
-      const res = await onTestEndpoint(endpoint);
-      setTestResult({
-        endpoint,
-        ...res,
-      });
-    } finally {
-      setTestingEndpoint(null);
-    }
-  };
-
   const epGrid = 'md:grid-cols-[minmax(0,1fr)_7rem_7rem_6rem_6rem_6rem]';
-  const keyGrid = 'md:grid-cols-[minmax(0,1fr)_10rem_9rem_8rem_6rem]';
 
 
   return (
@@ -129,15 +95,6 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
       {/* 03 Endpoints */}
       <section>
         <SectionHead index="03" title="Lưu lượng API" meta="24 giờ qua" />
-        {testResult && (
-          <div className="mt-5 border-l-2 border-brand py-1 pl-4 text-[13px] leading-6">
-            <p className="text-brand">
-              HTTP {testResult.status} · {testResult.latencyMs} ms · {testResult.timestamp}
-            </p>
-            <p className="text-ink">{testResult.message}</p>
-            <p className="font-mono text-xs text-slate-500">{testResult.endpoint}</p>
-          </div>
-        )}
         <div className={`mt-2 hidden gap-x-6 border-b border-border py-3 text-[13px] text-slate-500 md:grid ${epGrid}`}>
           <span>Endpoint</span>
           <span className="text-right">Lượt gọi</span>
@@ -167,76 +124,13 @@ export const ApiQuotaGatewayTab: React.FC<ApiQuotaGatewayTabProps> = ({
                 <span className={`hidden text-right text-sm tabular-nums md:block ${ep.rateLimitedCount24h > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
                   {ep.rateLimitedCount24h}
                 </span>
-                <span className="text-right">
-                  <button type="button" onClick={() => handleRunPing(ep.endpoint)} disabled={testingEndpoint === ep.endpoint} className={`${brandLink} text-[13px]`}>
-                    {testingEndpoint === ep.endpoint ? 'Đang ping…' : 'Ping'}
-                  </button>
-                </span>
+                <span />
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      {/* 04 API keys */}
-      <section>
-        <SectionHead
-          index="04"
-          title="Khoá API"
-          meta={`${apiKeys.filter((k) => k.status === 'ACTIVE').length} đang hoạt động`}
-          action={
-            <button type="button" onClick={onOpenApiKeyModal} className={smallPrimary}>
-              Tạo khoá mới
-            </button>
-          }
-        />
-        <div className={`hidden gap-x-6 border-b border-border py-3 text-[13px] text-slate-500 md:grid ${keyGrid}`}>
-          <span>Khoá & chủ sở hữu</span>
-          <span>Mã</span>
-          <span>Giới hạn</span>
-          <span className="text-right">Hôm nay</span>
-          <span />
-        </div>
-        {apiKeys.length === 0 ? (
-          <EmptyRow>Chưa có khoá API nào.</EmptyRow>
-        ) : (
-          <ul>
-            {apiKeys.map((k) => {
-              const isActive = k.status === 'ACTIVE';
-              return (
-                <li key={k.id} className={`grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6 gap-y-1 border-b border-border py-5 ${keyGrid} ${isActive ? '' : 'opacity-60'}`}>
-                  <div className="min-w-0">
-                    <p className="text-[15px] text-ink">{k.name}</p>
-                    <p className="mt-0.5 text-[13px] text-slate-600">
-                      {k.ownerEmail} · {k.tier}
-                    </p>
-                    <p className="mt-0.5 text-[13px] text-slate-500">
-                      Tạo {k.createdAt}
-                      {!isActive && <span className="text-danger"> · Đã thu hồi</span>}
-                    </p>
-                    <p className="mt-1 font-mono text-xs text-slate-600 md:hidden">{k.secretMasked}</p>
-                  </div>
-                  <span className="hidden truncate font-mono text-xs leading-6 text-slate-700 md:block">{k.secretMasked}</span>
-                  <span className="hidden text-[13px] text-slate-700 md:block">
-                    {k.rpm} RPM · {(k.tpm / 1000).toFixed(0)}k TPM
-                  </span>
-                  <span className="hidden text-right text-[13px] md:block">
-                    <span className="block tabular-nums text-ink">{n(k.requestsToday)} lượt</span>
-                    <span className="block text-slate-500">{(k.tokensUsedToday / 1000).toFixed(0)}k token</span>
-                  </span>
-                  <span className="text-right">
-                    {isActive && (
-                      <button type="button" onClick={() => onRevokeApiKey(k.id)} className={`${dangerLink} text-[13px]`}>
-                        Thu hồi
-                      </button>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
     </div>
   );
 };

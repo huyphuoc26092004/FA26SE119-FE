@@ -21,17 +21,14 @@ import {
   createAdminResumeTemplate,
   updateAdminResumeTemplate,
   toggleResumeTemplateStatus,
-  deleteAdminResumeTemplate,
   duplicateResumeTemplate,
   exportResumeTemplateHtml,
-  resetTemplatesToSeed,
 } from '../../services/resumeTemplateAdminService';
 import { renderTemplateWithSampleData } from '../../utils/resumeTemplatePreview';
 
 import { TemplateEditorModal } from './template/TemplateEditorModal';
 import { TemplateImportModal } from './template/TemplateImportModal';
 import { TemplatePreviewModal } from './template/TemplatePreviewModal';
-import { TemplateDeleteModal } from './template/TemplateDeleteModal';
 
 const PAPER_WIDTH = 794; // A4 ở 96dpi
 
@@ -88,8 +85,6 @@ export default function ResumeTemplateManagementPage() {
 
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedTemplateForPreview, setSelectedTemplateForPreview] =
-    useState<ResumeTemplateAdmin | null>(null);
-  const [selectedTemplateForDelete, setSelectedTemplateForDelete] =
     useState<ResumeTemplateAdmin | null>(null);
 
   // --------------------------------------------------------------------------
@@ -149,16 +144,7 @@ export default function ResumeTemplateManagementPage() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteAdminResumeTemplate(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-resume-templates'] });
-      showToast('Đã xoá mẫu CV khỏi hệ thống.');
-    },
-    onError: (err: unknown) => {
-      alert('Lỗi xoá mẫu CV: ' + (err instanceof Error ? err.message : String(err)));
-    },
-  });
+
 
   // --------------------------------------------------------------------------
   // Filtered and Sorted Templates
@@ -253,23 +239,11 @@ export default function ResumeTemplateManagementPage() {
     }
   };
 
-  const restoreSeeds = () => {
-    if (
-      window.confirm(
-        'Khôi phục danh mục mẫu CV về 5 mẫu chuẩn mặc định? (Harvard ATS, 2 Cột Hiện Đại, Sinh Viên Năng Động, Kỹ Sư Silicon Valley, Lãnh Đạo Cấp Cao)'
-      )
-    ) {
-      resetTemplatesToSeed();
-      queryClient.invalidateQueries({ queryKey: ['admin-resume-templates'] });
-      showToast('Đã khôi phục 5 mẫu CV chuẩn.');
-    }
-  };
 
   const menuItems = (item: ResumeTemplateAdmin) => [
     { label: item.is_active ? 'Tạm tắt mẫu' : 'Bật mẫu', onClick: () => statusMutation.mutate({ id: item.id, active: !item.is_active }) },
     { label: 'Nhân bản', onClick: () => duplicateMutation.mutate(item.id) },
     { label: 'Tải tệp HTML', onClick: () => exportResumeTemplateHtml(item) },
-    { label: 'Xoá mẫu', tone: 'danger' as const, onClick: () => setSelectedTemplateForDelete(item) },
   ];
 
   const metaLine = (item: ResumeTemplateAdmin) =>
@@ -293,9 +267,6 @@ export default function ResumeTemplateManagementPage() {
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 lg:flex-nowrap">
-          <button type="button" onClick={restoreSeeds} className={`${textLink} text-slate-600`}>
-            Khôi phục mẫu chuẩn
-          </button>
           <button type="button" onClick={() => setIsImportOpen(true)} className={`${textLink} text-ink`}>
             Nhập từ tài liệu
           </button>
@@ -511,19 +482,6 @@ export default function ResumeTemplateManagementPage() {
         onEdit={(tpl) => handleOpenEdit(tpl)}
       />
 
-      {/* Delete Confirmation Modal */}
-      <TemplateDeleteModal
-        isOpen={Boolean(selectedTemplateForDelete)}
-        template={selectedTemplateForDelete}
-        onClose={() => setSelectedTemplateForDelete(null)}
-        onConfirmDelete={async (id) => {
-          await deleteMutation.mutateAsync(id);
-        }}
-        onDeactivateInstead={async (id) => {
-          await statusMutation.mutateAsync({ id, active: false });
-        }}
-        isDeleting={deleteMutation.isPending}
-      />
     </div>
   );
 }

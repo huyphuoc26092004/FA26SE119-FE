@@ -21,6 +21,7 @@ import { downloadResumePdf } from '../../services/resumePdfService';
 import { authErrorMessage } from '../../services/authService';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+import { ProfileAlignmentSection } from './resume/ProfileAlignmentSection';
 
 // Short page-only strings that have no i18n key yet.
 const copy = {
@@ -1080,6 +1081,7 @@ export default function ResumeDetailsPage() {
               </dl>
             </section>
           )}
+          <ProfileAlignmentSection resumeId={cv.id} ready={cv.status === 'Ready'} />
         </aside>
       </div>
 

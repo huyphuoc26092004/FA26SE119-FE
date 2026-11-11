@@ -1,7 +1,6 @@
 import type { AdminDashboardData, AuditLogEvent } from '../types/admin';
 import type { UserRole } from '../types/domain';
 import { apiClient } from './apiClient';
-import { notConnected } from './apiPending';
 import { type ApiRow, num, obj, rows, str } from './candidateMappers';
 import { featureLabel } from './subscriptionService';
 import { formatDateTime } from './supportService';
@@ -234,16 +233,6 @@ export async function getAdminDashboardData(timeRange: TimeRange = '30d'): Promi
     },
     openSupportTickets: num(dash.openSupportTickets),
   };
-}
-
-// TODO(api): POST /api/v1/admin/system/maintenance (BE chưa có API)
-export async function toggleMaintenanceMode(enable: boolean): Promise<{ maintenance: boolean; message: string }> {
-  return notConnected('BE chưa có API', enable);
-}
-
-// TODO(api): POST /api/v1/admin/system/cache/purge (BE chưa có API)
-export async function purgeSystemCache(): Promise<{ clearedKeysCount: number; freedMemoryMB: number }> {
-  return notConnected('BE chưa có API');
 }
 
 export async function toggleUserStatus(userId: string, newStatus: 'ACTIVE' | 'SUSPENDED'): Promise<{ userId: string; status: 'ACTIVE' | 'SUSPENDED' }> {

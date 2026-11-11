@@ -17,6 +17,7 @@ import {
   underlineInput,
 } from '../../components/admin/AdminKit';
 import { RolePicker } from '../../components/admin/RolePicker';
+import { ManagerQuotaLimitsSection } from './users/ManagerQuotaLimitsSection';
 import {
   getUserById,
   updateUser,
@@ -486,6 +487,8 @@ export default function UserDetailsPage() {
           <InfoRow label={c.cycle}>{c.cycleValue}</InfoRow>
         </dl>
       </section>
+
+      {user.role === 'MANAGER' && <ManagerQuotaLimitsSection managerId={user.id} index="04b" />}
 
       {/* 05 */}
       <section className="mt-14">

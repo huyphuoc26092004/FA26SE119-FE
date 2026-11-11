@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ConsultationAdviceBuilder from './ConsultationAdviceBuilder';
 import { useTranslation } from '../../i18n';
 import { consultationPublishError, getConsultationAdviceReport, getConsultationPrivateNotes, saveConsultationAdviceReport, saveConsultationPrivateNotes, type ConsultationAdviceReport, type ConsultationPrivateNotes, type ConsultationRubric } from '../../services/consultationReportService';
+import { getConsultationCandidateResumes } from '../../services/consultationService';
 import type { ApplicationAdviceDetails, ConsultationAdvicePillars } from '../../types/consultation';
 
 interface ReportEditorProps {
@@ -38,8 +39,16 @@ function ReportWorkspace({ initialReport, initialNotes, reload, ...props }: Repo
   const [rubric, setRubric] = useState<ConsultationRubric>({ cvQuality: initialNotes.rubric?.cvQuality ?? 0, technicalDepth: initialNotes.rubric?.technicalDepth ?? 0, communication: initialNotes.rubric?.communication ?? 0, marketReadiness: initialNotes.rubric?.marketReadiness ?? 0 });
   const [application, setApplication] = useState<ApplicationAdviceDetails>(initialReport.advice.applicationAdvice ?? { summary: '', coverLetterTips: [], emailTips: [], applicationChecklist: [] });
   const [validationError, setValidationError] = useState('');
+  const fixedResumeId = report.resumeId || props.resumeId;
+  const resumes = useQuery({
+    queryKey: ['consultation-candidate-resumes', props.consultationId],
+    queryFn: () => getConsultationCandidateResumes(props.consultationId),
+    enabled: !fixedResumeId,
+  });
+  const [pickedResumeId, setPickedResumeId] = useState('');
+  const resumeId = fixedResumeId || pickedResumeId || resumes.data?.[0]?.id;
   const saveReport = useMutation({ mutationFn: ({ status, advice }: { status: 'DRAFT' | 'PUBLISHED'; advice: ConsultationAdvicePillars }) => saveConsultationAdviceReport(props.consultationId, {
-    expectedVersion: report.version, status, resumeId: report.resumeId || props.resumeId || null, jobId: report.jobId || null, advice,
+    expectedVersion: report.version, status, resumeId: resumeId || null, jobId: report.jobId || null, advice,
   }), onSuccess: (saved) => { setReport(saved); client.setQueryData(['consultation-report', props.consultationId], saved); } });
   const saveNotes = useMutation({ mutationFn: () => saveConsultationPrivateNotes(props.consultationId, { expectedVersion: notesVersion, notes, rubric }), onSuccess: (saved) => { setNotesVersion(saved.version); client.setQueryData(['consultation-private-notes', props.consultationId], saved); } });
   const persistReport = async (advice: ConsultationAdvicePillars, status: 'DRAFT' | 'PUBLISHED') => {
@@ -64,8 +73,15 @@ function ReportWorkspace({ initialReport, initialNotes, reload, ...props }: Repo
         <label className="block text-sm">Chiến lược ứng tuyển<textarea className={field} rows={3} maxLength={10000} value={application.summary} onChange={(event) => setApplication({ ...application, summary: event.target.value })} /></label>
         {([['coverLetterTips', 'Gợi ý thư ứng tuyển'], ['emailTips', 'Gợi ý email ứng tuyển'], ['applicationChecklist', 'Việc cần làm trước khi nộp']] as const).map(([key, label]) => <label key={key} className="block text-sm">{label} <span className="text-slate-500">(mỗi dòng một mục)</span><textarea className={field} rows={3} maxLength={30000} value={application[key].join('\n')} onChange={(event) => setApplication({ ...application, [key]: event.target.value.split('\n') })} /></label>)}
       </fieldset>
+      {!fixedResumeId && <label className="block text-sm">CV dùng để nhận xét
+        {resumes.isPending ? <p className="mt-2 text-slate-500">Đang tải CV của ứng viên…</p>
+          : !resumes.data?.length ? <p className="mt-2 text-slate-500">Ứng viên chưa có CV đã xác nhận.</p>
+          : <select className={field} value={resumeId ?? ''} disabled={!props.writable} onChange={(event) => setPickedResumeId(event.target.value)}>
+            {resumes.data.map((cv) => <option key={cv.id} value={cv.id}>{cv.title}{cv.isPrimary ? ' (CV chính)' : ''}</option>)}
+          </select>}
+      </label>}
       <ConsultationAdviceBuilder initialAdvice={report.advice} candidateName={props.candidateName} candidateRole={props.candidateRole}
-        consultationId={props.consultationId} resumeId={report.resumeId || props.resumeId} readOnly={!props.writable} isSaving={saveReport.isPending}
+        consultationId={props.consultationId} resumeId={resumeId} readOnly={!props.writable} isSaving={saveReport.isPending}
         saveLabel={report.status === 'PUBLISHED' ? 'Cập nhật phiếu đã gửi' : 'Lưu bản nháp'}
         onSave={(advice) => persistReport(advice, report.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT')}
         onPublish={report.status === 'PUBLISHED' ? undefined : (advice) => persistReport(advice, 'PUBLISHED')} />
