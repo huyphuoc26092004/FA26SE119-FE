@@ -264,11 +264,6 @@ const STATUS_LABEL: Record<'vi' | 'en', Record<UserAccountStatus, string>> = {
   en: { ACTIVE: 'Active', SUSPENDED: 'Suspended', PENDING: 'Pending' },
 };
 
-const PLAN_SHORT: Record<'vi' | 'en', Record<UserSubscriptionTier, string>> = {
-  vi: { free: 'Miễn phí', pro: 'Pro', executive: 'Premium', consultant: '–', enterprise: 'Enterprise' },
-  en: { free: 'Free', pro: 'Pro', executive: 'Premium', consultant: '–', enterprise: 'Enterprise' },
-};
-
 const statusTone = (s: UserAccountStatus) =>
   s === 'ACTIVE' ? 'text-brand' : s === 'SUSPENDED' ? 'text-danger' : 'text-orange-600';
 
@@ -653,7 +648,7 @@ export default function UserManagementPage() {
           {filteredUsers.map((u) => (
             <li
               key={u.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 border-b border-border py-5 md:grid-cols-[minmax(0,1fr)_7.5rem_6.5rem_7rem_6.5rem_auto]"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 border-b border-border py-5 md:grid-cols-[minmax(0,1fr)_7.5rem_7rem_6.5rem_auto]"
             >
               <div className="min-w-0">
                 <Link to={`/admin/users/${u.id}`} className="block truncate text-[clamp(1rem,1.2vw,1.0625rem)] font-medium text-ink hover:text-brand">
@@ -661,12 +656,11 @@ export default function UserManagementPage() {
                 </Link>
                 <p className="mt-0.5 truncate text-sm text-slate-600">{u.email}</p>
                 <p className="mt-1 text-[13px] text-slate-600 md:hidden">
-                  {ROLE_LABEL[lang][u.role]} · {PLAN_SHORT[lang][u.planId]} ·{' '}
+                  {ROLE_LABEL[lang][u.role]} ·{' '}
                   <span className={statusTone(u.status)}>{STATUS_LABEL[lang][u.status]}</span> · {u.createdAt}
                 </p>
               </div>
               <span className="hidden text-sm text-ink md:block">{ROLE_LABEL[lang][u.role]}</span>
-              <span className="hidden text-sm text-slate-600 md:block">{PLAN_SHORT[lang][u.planId]}</span>
               <span className={`hidden text-sm md:block ${statusTone(u.status)}`} title={u.suspendedReason}>
                 {STATUS_LABEL[lang][u.status]}
               </span>
@@ -1086,7 +1080,6 @@ export default function UserManagementPage() {
             {quickInspectUser.email} · {quickInspectUser.phone}
           </p>
           <dl className="mt-5">
-            <InfoRow label={c.inspect.plan}>{quickInspectUser.planName}</InfoRow>
             <InfoRow label={c.inspect.tokens}>
               {quickInspectUser.tokensUsedThisMonth.toLocaleString(isVietnamese ? 'vi-VN' : 'en-US')} /{' '}
               {(quickInspectUser.tokenMonthlyQuota / 1000).toFixed(0)}k
