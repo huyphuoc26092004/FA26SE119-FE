@@ -1,34 +1,53 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getAdminPaymentTransactions } from '../../services/paymentManagementService';
+import { getManagerPayments, getManagerPayment, getManagerInvoices, getManagerInvoice, safeInvoiceUrl } from '../../services/managerService';
+import { num, obj, str, type ApiRow } from '../../services/candidateMappers';
+import OperationalTable, { operationalDate, OperationalPagination } from '../../components/admin/OperationalTable';
 import { PaymentReportsTab } from './payment/PaymentReportsTab';
 
 export default function ManagerPaymentsPage() {
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('ALL');
-  const query = useQuery({ queryKey: ['manager-payments'], queryFn: () => getAdminPaymentTransactions(), refetchInterval: 30_000 });
-  const shown = (query.data ?? []).filter((item) =>
-    (status === 'ALL' || item.status === status) &&
-    [item.orderCode, item.candidateName, item.candidateEmail, item.planName].join(' ').toLowerCase().includes(search.toLowerCase()),
-  );
-  return (
-    <main className="space-y-8">
-      <h1 className="text-3xl font-medium">Lịch sử thanh toán</h1>
-      <p className="text-sm text-slate-600">Theo dõi tối đa 100 đơn thanh toán mới nhất và xử lý báo cáo sự cố.</p>
-      <div className="flex flex-wrap gap-4">
-        <input aria-label="Tìm giao dịch" className="rounded-lg border border-border px-3 py-2" placeholder="Mã đơn, người thanh toán, gói…" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <select aria-label="Trạng thái thanh toán" className="rounded-lg border border-border px-3 py-2" value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value="ALL">Tất cả trạng thái</option>
-          {[...new Set((query.data ?? []).map((item) => item.status))].map((value) => <option key={value} value={value}>{value}</option>)}
-        </select>
-      </div>
-      {query.isPending && <p>Đang tải giao dịch…</p>}
-      {query.error && <p role="alert" className="text-danger">{query.error.message}</p>}
-      {query.isSuccess && <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{['Mã đơn', 'Người thanh toán', 'Gói dịch vụ', 'Số tiền', 'Trạng thái', 'Thời gian'].map((label) => <th key={label} className="border-b border-border p-3">{label}</th>)}</tr></thead><tbody>
-        {shown.map((item) => <tr key={item.id}><td className="border-b border-border p-3">{item.orderCode}</td><td className="border-b border-border p-3">{item.candidateName}<span className="block text-xs text-slate-500">{item.candidateEmail}</span></td><td className="border-b border-border p-3">{item.planName}</td><td className="whitespace-nowrap border-b border-border p-3">{item.amountVND.toLocaleString('vi-VN')} đ</td><td className="border-b border-border p-3">{item.status}</td><td className="border-b border-border p-3">{item.createdAt}</td></tr>)}
-        {!shown.length && <tr><td colSpan={6} className="p-5 text-slate-500">Không có giao dịch phù hợp.</td></tr>}
-      </tbody></table></div>}
-      <PaymentReportsTab />
-    </main>
-  );
+  const [status, setStatus] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState('');
+  const [selectedInvoice, setSelectedInvoice] = useState('');
+  const [paymentOffset, setPaymentOffset] = useState(0);
+  const [invoiceOffset, setInvoiceOffset] = useState(0);
+  const payments = useQuery({ queryKey: ['manager-payments', search, status, paymentOffset], queryFn: () => getManagerPayments(search, status, paymentOffset), refetchInterval: 30_000 });
+  const order = useQuery({ queryKey: ['manager-payment', selectedOrder], queryFn: () => getManagerPayment(selectedOrder), enabled: !!selectedOrder });
+  const invoices = useQuery({ queryKey: ['manager-invoices', invoiceOffset], queryFn: () => getManagerInvoices(invoiceOffset), refetchInterval: 30_000 });
+  const invoice = useQuery({ queryKey: ['manager-invoice', selectedInvoice], queryFn: () => getManagerInvoice(selectedInvoice), enabled: !!selectedInvoice });
+  const money = (row: ApiRow, key: string) => `${num(row[key]).toLocaleString('vi-VN')} ${str(row.currency)}`;
+  return <main className="space-y-8"><header><h1 className="text-3xl font-medium">Thanh toán và hóa đơn</h1><p className="mt-3 text-sm text-slate-600">Theo dõi đơn, trạng thái xử lý, hóa đơn và báo cáo sự cố. Chuyển trang để xem các giao dịch cũ hơn.</p></header>
+    <div className="flex flex-wrap gap-3"><input aria-label="Tìm đơn thanh toán" className="rounded-lg border border-border px-3 py-2" placeholder="Email hoặc mã đơn…" value={search} onChange={(event) => { setSearch(event.target.value); setPaymentOffset(0); }} />
+      <select aria-label="Trạng thái đơn" className="rounded-lg border border-border px-3 py-2" value={status} onChange={(event) => { setStatus(event.target.value); setPaymentOffset(0); }}><option value="">Tất cả trạng thái</option>{['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED', 'REFUNDED'].map((value) => <option key={value}>{value}</option>)}</select></div>
+    {payments.isPending && <p>Đang tải thanh toán…</p>}{payments.error && <p role="alert" className="text-danger">{payments.error.message}</p>}
+    {payments.data && <OperationalTable rows={payments.data} onSelect={(row) => setSelectedOrder(str(row.id))} columns={[
+      { key: 'id', label: 'Mã đơn' }, { key: 'payer_name', label: 'Người thanh toán' }, { key: 'payer_email', label: 'Email' }, { key: 'order_type', label: 'Loại đơn' },
+      { key: 'amount', label: 'Số tiền', render: (row) => money(row, 'amount') }, { key: 'status', label: 'Trạng thái' }, { key: 'created_at', label: 'Ngày tạo', render: (row) => operationalDate(row.created_at) },
+    ]} />}
+    <OperationalPagination offset={paymentOffset} count={payments.data?.length ?? 0} busy={payments.isFetching} onChange={setPaymentOffset} />
+    {selectedOrder && <section className="space-y-3"><h2 className="text-xl font-medium">Chi tiết đơn thanh toán</h2>{order.isPending && <p>Đang tải chi tiết…</p>}{order.error && <p role="alert" className="text-danger">{order.error.message}</p>}
+      {order.data && <><dl className="grid gap-3 rounded-xl border border-border p-5 sm:grid-cols-2">{[
+        ['Mã đơn', str(order.data.id)], ['Người thanh toán', str(order.data.payer_email)], ['Trạng thái', str(order.data.status)], ['Cổng thanh toán', str(order.data.payment_provider)], ['Số tiền', money(order.data, 'amount')], ['Hoàn tất', operationalDate(order.data.completed_at)],
+      ].map(([label, value]) => <div key={label}><dt className="text-sm text-slate-500">{label}</dt><dd className="mt-1 break-all text-sm">{value || '—'}</dd></div>)}</dl>
+        {Object.keys(obj(order.data.invoice)).length > 0 && <InvoiceDetail row={obj(order.data.invoice)} />}</>}
+    </section>}
+    <section className="space-y-4"><h2 className="text-xl font-medium">Hóa đơn</h2>{invoices.isPending && <p>Đang tải hóa đơn…</p>}{invoices.error && <p role="alert" className="text-danger">{invoices.error.message}</p>}
+      {invoices.data && <OperationalTable rows={invoices.data} onSelect={(row) => setSelectedInvoice(str(row.id))} columns={[
+        { key: 'invoice_number', label: 'Số hóa đơn' }, { key: 'payer_email', label: 'Người nhận' }, { key: 'total_amount', label: 'Tổng tiền', render: (row) => money(row, 'total_amount') }, { key: 'status', label: 'Trạng thái' }, { key: 'issued_at', label: 'Phát hành', render: (row) => operationalDate(row.issued_at) },
+      ]} />}
+      <OperationalPagination offset={invoiceOffset} count={invoices.data?.length ?? 0} busy={invoices.isFetching} onChange={setInvoiceOffset} />
+      {invoice.isPending && selectedInvoice && <p>Đang tải chi tiết hóa đơn…</p>}{invoice.error && <p role="alert" className="text-danger">{invoice.error.message}</p>}{invoice.data && <InvoiceDetail row={invoice.data} />}
+    </section>
+    <PaymentReportsTab />
+  </main>;
+}
+
+function InvoiceDetail({ row }: { row: ApiRow }) {
+  const url = safeInvoiceUrl(row.invoice_url);
+  return <section className="space-y-4 rounded-xl border border-border p-5"><h3 className="font-medium">Hóa đơn {str(row.invoice_number)}</h3><dl className="grid gap-3 text-sm sm:grid-cols-2">{[
+    ['Trạng thái', str(row.status)], ['Người nhận', str(row.payer_email)], ['Trước thuế', `${num(row.subtotal).toLocaleString('vi-VN')} ${str(row.currency)}`], ['Thuế', `${num(row.tax_amount).toLocaleString('vi-VN')} ${str(row.currency)}`], ['Tổng tiền', `${num(row.total_amount).toLocaleString('vi-VN')} ${str(row.currency)}`], ['Ngày phát hành', operationalDate(row.issued_at)],
+  ].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd className="mt-1">{value || '—'}</dd></div>)}</dl>
+    {url ? <a className="inline-block text-sm text-brand underline" href={url} target="_blank" rel="noopener noreferrer">Mở hóa đơn</a> : <p className="text-sm text-slate-500">Chưa có liên kết hóa đơn để mở.</p>}
+  </section>;
 }

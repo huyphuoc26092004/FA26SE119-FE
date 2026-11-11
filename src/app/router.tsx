@@ -1,5 +1,10 @@
 import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerPaymentsPage from '../pages/admin/ManagerPaymentsPage';
+import ManagerPlansPage from '../pages/admin/ManagerPlansPage';
+import ManagerSubscribersPage from '../pages/admin/ManagerSubscribersPage';
+import ManagerConsultantsPage from '../pages/admin/ManagerConsultantsPage';
+import ManagerCrawlReportsPage from '../pages/admin/ManagerCrawlReportsPage';
+import ManagerReportsPage from '../pages/admin/ManagerReportsPage';
 import OperationsReportsPage from '../pages/admin/OperationsReportsPage';
 import { managerCanOpen } from '../utils/roleAccess';
 import { Navigate, createBrowserRouter, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
@@ -180,17 +185,19 @@ export const router = createBrowserRouter([
       {
         element: <RoleRoute role="MANAGER" />,
         children: [{ path: '/manager', element: <ManagerLayout />, children: [
-          { index: true, element: <OperationsReportsPage /> },
-          { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
+          { index: true, element: <ManagerReportsPage /> },
+          { path: 'subscriptions', element: <ManagerPlansPage /> },
+          { path: 'subscribers', element: <ManagerSubscribersPage /> },
           { path: 'consultation-services', element: <ConsultationServicesPage /> },
           { path: 'payments', element: <ManagerPaymentsPage /> },
           { path: 'templates', element: <ResumeTemplateManagementPage /> },
           { path: 'jobs', element: <JobCrawlManagementPage /> },
-          { path: 'vector', element: <KnowledgeBasePage /> },
+          { path: 'consultants', element: <ManagerConsultantsPage /> },
+          { path: 'crawl-reports', element: <ManagerCrawlReportsPage /> },
           { path: 'notifications', element: <AnnouncementsPage /> },
           { path: 'feedback', element: <OperationsReportsPage mode="feedback" /> },
           { path: 'support', element: <AdminSupportPage /> },
-          { path: 'analytics', element: <OperationsReportsPage mode="analytics" /> },
+          { path: 'analytics', element: <ManagerReportsPage analytics /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'inbox', element: <NotificationsPage /> },
         ] }],

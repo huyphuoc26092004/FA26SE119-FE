@@ -82,7 +82,7 @@ export default function ConsultationServicesPage() {
         </div>
       </div>
       <p className="text-slate-600">
-        Gói tư vấn bán theo lượt, mỗi lượt từ 30 đến 60 phút. Giá và số lượt thay đổi chỉ áp dụng cho
+        Gói tư vấn qua Google Meet bán theo lượt, mỗi lượt từ 30 đến 60 phút. Hệ thống gửi lịch Google Calendar sau khi cố vấn tiếp nhận. Giá và số lượt thay đổi chỉ áp dụng cho
         đơn mới.
       </p>
       {saved && <p role="status">Đã lưu dịch vụ.</p>}

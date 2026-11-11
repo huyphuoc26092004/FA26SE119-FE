@@ -28,6 +28,8 @@ interface ConsultationAdviceBuilderProps {
   consultationId?: string;
   resumeId?: string;
   onSave?: (advice: ConsultationAdvicePillars) => void | Promise<void>;
+  onPublish?: (advice: ConsultationAdvicePillars) => void | Promise<void>;
+  saveLabel?: string;
   isSaving?: boolean;
   readOnly?: boolean;
 }
@@ -300,6 +302,8 @@ export default function ConsultationAdviceBuilder({
   consultationId,
   resumeId,
   onSave,
+  onPublish,
+  saveLabel,
   isSaving = false,
   readOnly = false,
 }: ConsultationAdviceBuilderProps) {
@@ -342,7 +346,7 @@ export default function ConsultationAdviceBuilder({
     const text = `
 === PHIẾU LỜI KHUYÊN TƯ VẤN SỰ NGHIỆP - CAREERPILOT ===
 Ứng viên: ${candidateName} | Vị trí mục tiêu: ${candidateRole}
-Cố vấn phụ trách: ${advice.consultantName || 'Taylor Lee'}
+Cố vấn phụ trách: ${advice.consultantName || '-'}
 Thời gian: ${new Date(advice.lastUpdated || Date.now()).toLocaleDateString()}
 
 1. CẢI THIỆN CV & ATS:
@@ -376,10 +380,10 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
 
   // Save handler
   const handleSave = async () => {
-    if (onSave) {
-      await onSave(advice);
-    }
-    triggerToast(t('consultation.adviceSavedSuccess'));
+    try {
+      if (onSave) await onSave(advice);
+      triggerToast(t('consultation.adviceSavedSuccess'));
+    } catch { /* The owner displays the API error and retains the local draft. */ }
   };
 
   // Star add
@@ -451,9 +455,13 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
           </button>
           {!readOnly && (
             <button type="button" onClick={handleSave} disabled={isSaving} className={smallPrimary}>
-              {isSaving ? c.saving : c.save}
+              {isSaving ? c.saving : saveLabel || c.save}
             </button>
           )}
+          {!readOnly && onPublish && <button type="button" disabled={isSaving} className={smallPrimary}
+            onClick={() => { void Promise.resolve(onPublish(advice)).catch(() => undefined); }}>
+            {isVietnamese ? 'Gửi phiếu cho ứng viên' : 'Publish to candidate'}
+          </button>}
         </div>
       </div>
 
@@ -928,7 +936,7 @@ ${advice.interviewAdvice.reverseQuestions.map((q) => `  ? ${q}`).join('\n')}
               </div>
               <div className="text-right text-[13px] text-slate-600">
                 <p>
-                  {c.consultant}: <span className="text-ink">{advice.consultantName || 'Taylor Lee'}</span>
+                  {c.consultant}: <span className="text-ink">{advice.consultantName || '-'}</span>
                 </p>
                 <p>
                   {c.date}: {new Date(advice.lastUpdated || Date.now()).toLocaleDateString()}

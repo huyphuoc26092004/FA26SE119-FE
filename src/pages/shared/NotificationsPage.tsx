@@ -3,23 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import { EmptyRow, Headline, Note, SectionHead, UnderlineTabs, brandLink } from '../../components/admin/AdminKit';
 import {
-  type UserNotification,
   getAnnouncements,
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from '../../services/notificationService';
+import { notificationLink } from '../../utils/notificationLinks';
 
 type Filter = 'all' | 'unread';
-
-/** Trang mở ra khi bấm vào thông báo; null nếu thông báo không gắn với màn nào. */
-function notificationLink(area: string, n: UserNotification): string | null {
-  if (n.referenceType === 'CONSULTATION_ORDER' && area === 'candidate') return '/candidate/consultations';
-  if (n.referenceType !== 'CONSULTATION' || !n.referenceId) return null;
-  if (area === 'admin') return '/admin?tab=consultations';
-  if (area === 'candidate' || area === 'consultant') return `/${area}/consultations/${n.referenceId}`;
-  return null;
-}
 
 /** /{role}/inbox — thông báo cá nhân và thông báo hệ thống đang hiệu lực. */
 export default function NotificationsPage() {

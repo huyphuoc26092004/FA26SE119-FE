@@ -143,7 +143,7 @@ export function toConsultationRequest(
   const candidate =
     extra.candidate ??
     emptyCandidate(candidateUserId, extra.candidateName ?? (str(row.candidate_name) || messages.find((m) => m.senderRole === 'CANDIDATE')?.senderName || ''));
-  if (resumeId && !candidate.attachedResumeId) {
+  if (requestType !== 'SESSION_BOOKING' && resumeId && !candidate.attachedResumeId) {
     candidate.attachedResumeId = resumeId;
     candidate.attachedResumeName = resumeTitle;
   }
@@ -169,6 +169,7 @@ export function toConsultationRequest(
     unreadCount: row.unread_count === undefined || row.unread_count === null ? undefined : num(row.unread_count),
     candidate,
     consultantId: str(row.consultant_user_id),
+    requestType: str(row.request_type),
     consultantName,
     topic,
     topicLabel: str(row.subject) || TOPIC_LABELS[topic].vi,

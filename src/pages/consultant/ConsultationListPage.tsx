@@ -6,7 +6,6 @@ import { ErrorState } from '../../components/ui';
 import { Initials, PRIORITY_LABEL, STATUS_LABEL, formatDateTime, statusTone } from '../../components/consultation/ConsultantKit';
 import {
   ChatFrame,
-  Composer,
   ConversationItem,
   FilterTabs,
   InfoRow,
@@ -18,17 +17,16 @@ import {
   relativeTime,
   unreadOf as unreadFor,
 } from '../../components/consultation/chat/ChatKit';
-import { useConsultationEvents } from '../../components/consultation/chat/useConsultationEvents';
 import {
   getConsultantInbox,
   getConsultationRequestById,
   markThreadRead,
-  sendConsultationMessage,
   updateConsultationStatus,
 } from '../../services/consultationService';
 import type { ConsultationRequest } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
-import ConsultantBookingManager, { bookingDisplayStatus, bookingMessageAvailable, useBookingClock } from '../../components/consultation/ConsultantBookingManager';
+import ConsultantBookingManager, { bookingDisplayStatus, ConsultantBookingCard, useBookingClock } from '../../components/consultation/ConsultantBookingManager';
+import { bookingPollInterval } from '../../utils/bookingMeeting';
 import { listBookings } from '../../services/bookingService';
 
 const copy = {
@@ -164,9 +162,12 @@ export default function ConsultationListPage() {
   const [showInfo, setShowInfo] = useState(true);
 
   const inbox = useQuery({ queryKey: ['consultant-inbox'], queryFn: getConsultantInbox, refetchInterval: 20_000, enabled: messagesView });
-  const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings, refetchInterval: 20_000 });
+  const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings,
+    refetchInterval: (query) => bookingPollInterval(query.state.data) });
+  const scheduledBooking = bookings.data?.find(booking => booking.thread_id === selectedId || booking.id === selectedId);
   const threads = useMemo(
-    () => [...(inbox.data ?? [])].map(thread => {
+    () => [...(inbox.data ?? [])].filter(thread => thread.requestType !== 'SESSION_BOOKING'
+      && !(bookings.data ?? []).some(booking => booking.thread_id === thread.id)).map(thread => {
       const booking = bookings.data?.find(item => item.thread_id === thread.id);
       return booking ? { ...thread, status: bookingDisplayStatus(booking, now), topicLabel: booking.subject,
         meeting: { ...thread.meeting, scheduledAt: booking.starts_at, durationMinutes: booking.duration_minutes } } : thread;
@@ -174,19 +175,12 @@ export default function ConsultationListPage() {
     [inbox.data, bookings.data, now],
   );
 
-  // Tin mới đến qua SSE; polling chỉ là dự phòng khi mất kết nối.
-  const live = useConsultationEvents(selectedId, () => {
-    void queryClient.invalidateQueries({ queryKey: ['consultant-thread', selectedId] });
-    void queryClient.invalidateQueries({ queryKey: ['consultant-inbox'] });
-  });
   const active = useQuery({
     queryKey: ['consultant-thread', selectedId],
     queryFn: () => getConsultationRequestById(selectedId),
-    enabled: !!selectedId,
-    refetchInterval: live ? 30_000 : 5_000,
+    enabled: !!selectedId && bookings.isSuccess && !scheduledBooking,
     placeholderData: () => threads.find((t) => t.id === selectedId),
   });
-  const scheduledBooking = bookings.data?.find(booking => booking.thread_id === selectedId);
   const rawThread = active.data ?? null;
   const thread = rawThread && scheduledBooking ? {
     ...rawThread,
@@ -196,8 +190,6 @@ export default function ConsultationListPage() {
     candidate: { ...rawThread.candidate, targetRole: scheduledBooking.target_role },
     meeting: { ...rawThread.meeting, scheduledAt: scheduledBooking.starts_at, durationMinutes: scheduledBooking.duration_minutes },
   } : rawThread;
-  const canSend = !!thread && !isClosed(thread) && bookings.isSuccess
-    && (!scheduledBooking || bookingMessageAvailable(scheduledBooking, now));
 
   // Mở hội thoại thì đánh dấu đã đọc tin của ứng viên.
   const unreadInThread = thread ? unreadOf(thread) : 0;
@@ -215,17 +207,6 @@ export default function ConsultationListPage() {
     );
   };
 
-  const sendMutation = useMutation({
-    mutationFn: (text: string) => {
-      if (!canSend || (scheduledBooking && !bookingMessageAvailable(scheduledBooking, Date.now()))) {
-        throw new Error(isVietnamese ? 'Chỉ có thể trao đổi trong khung giờ tư vấn đã xác nhận.' : 'Messaging is available during the confirmed session.');
-      }
-      return sendConsultationMessage(selectedId, text);
-    },
-    onSuccess: (message) => {
-      if (thread) syncThread({ ...thread, messages: [...thread.messages, message] });
-    },
-  });
   const closeMutation = useMutation({
     mutationFn: () => updateConsultationStatus(selectedId, 'COMPLETED'),
     onSuccess: (updated) => {
@@ -271,6 +252,13 @@ export default function ConsultationListPage() {
   };
 
   if (!messagesView) return <ConsultantBookingManager />;
+  if (scheduledBooking) return <div className="space-y-5 py-6">
+    <Link to="/consultant/consultations" className="text-brand underline">{isVietnamese ? 'Về lịch tư vấn' : 'Back to schedule'}</Link>
+    <ConsultantBookingCard booking={scheduledBooking} />
+  </div>;
+  if (thread?.requestType === 'SESSION_BOOKING') return <div className="py-8">
+    <Link to="/consultant/consultations" className="text-brand underline">{isVietnamese ? 'Xem lịch và Google Meet trong Lịch tư vấn' : 'View your schedule and Google Meet in Consultations'}</Link>
+  </div>;
 
   return (
     <ChatFrame>
@@ -390,18 +378,9 @@ export default function ConsultationListPage() {
 
             <MessageStream messages={thread.messages} mineRole={ME} vi={isVietnamese} youLabel={c.you} empty={c.emptyThread} />
 
-            <Composer
-              key={thread.id}
-              autoFocusKey={thread.id}
-              onSend={(text) => sendMutation.mutateAsync(text)}
-              sending={sendMutation.isPending}
-              disabled={!canSend}
-              disabledText={isClosed(thread) ? c.closed : isVietnamese ? 'Khung trao đổi mở trong giờ tư vấn sau khi tiếp nhận lịch.' : 'Messaging opens during the confirmed session.'}
-              placeholder={c.placeholder}
-              sendLabel={c.send}
-              quickReplies={thread.messages.some((m) => m.senderRole === ME) ? c.quick.slice(1) : c.quick}
-              error={sendMutation.error?.message}
-            />
+            <p className="border-t border-border px-6 py-4 text-sm text-slate-500">
+              {isVietnamese ? 'Lịch sử chỉ xem lại. Buổi tư vấn đã đặt diễn ra trên Google Meet.' : 'Read-only history. Booked consultations take place on Google Meet.'}
+            </p>
           </>
         )}
       </section>

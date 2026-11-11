@@ -18,7 +18,7 @@ class AppUser {
   final String id;
   final String email;
   final String name;
-  final String role; // CANDIDATE, CAREER_CONSULTANT, ADMIN
+  final String role; // CANDIDATE, CAREER_CONSULTANT, MANAGER, ADMIN
   final String? avatarUrl;
   final String? githubUrl;
   final String? preferredLanguage; // vi | en

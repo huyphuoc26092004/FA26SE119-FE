@@ -17,6 +17,8 @@ import {
   X,
 } from 'lucide-react';
 import { getResumeById, deleteResume, setDefaultResume } from '../../services/candidateService';
+import { downloadResumePdf } from '../../services/resumePdfService';
+import { authErrorMessage } from '../../services/authService';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 
@@ -31,7 +33,10 @@ const copy = {
     assistant: 'Tư vấn với trợ lý AI',
     coverLetter: 'Tạo cover letter',
     downloadToast: (name: string) =>
-      `Đang chuẩn bị tệp PDF chuẩn ATS cho bản CV "${name}"… Tệp sẽ tải về máy của bạn ngay bây giờ.`,
+      `Đã bắt đầu tải PDF của CV "${name}".`,
+    downloading: 'Đang tải PDF…',
+    downloadError: 'Không tải được PDF. Vui lòng thử lại.',
+    confirmBeforeDownload: 'Hoàn tất và xác nhận CV trước khi tải PDF.',
     closeToast: 'Đóng thông báo',
     statusReady: 'Sẵn sàng ứng tuyển',
     statusDraft: 'Bản nháp',
@@ -43,6 +48,7 @@ const copy = {
     template: 'Mẫu CV',
     templatePlum: 'Hai cột (mặc định)',
     templateAts: 'Một cột chuẩn ATS',
+    savedPdfTemplate: 'PDF dùng mẫu đã lưu trong trình chỉnh sửa CV.',
     overall: 'Điểm ATS tổng thể',
     overallNote: 'Dựa trên đối sánh ngữ nghĩa và tiêu chuẩn bộ lọc ATS tuyển dụng.',
     excellent: 'Xuất sắc',
@@ -65,7 +71,10 @@ const copy = {
     assistant: 'Ask the AI assistant',
     coverLetter: 'Create cover letter',
     downloadToast: (name: string) =>
-      `Preparing an ATS-ready PDF for "${name}"… The file will download shortly.`,
+      `The PDF download for "${name}" has started.`,
+    downloading: 'Downloading PDF…',
+    downloadError: 'Unable to download the PDF. Please try again.',
+    confirmBeforeDownload: 'Finish and confirm the CV before downloading its PDF.',
     closeToast: 'Close notification',
     statusReady: 'Ready to apply',
     statusDraft: 'Draft',
@@ -77,6 +86,7 @@ const copy = {
     template: 'Template',
     templatePlum: 'Two columns (default)',
     templateAts: 'One column, ATS standard',
+    savedPdfTemplate: 'PDF uses the template saved in the CV editor.',
     overall: 'Overall ATS score',
     overallNote: 'Based on semantic matching and recruiter ATS screening standards.',
     excellent: 'Excellent',
@@ -142,6 +152,19 @@ export default function ResumeDetailsPage() {
     },
   });
 
+  const downloadMutation = useMutation({
+    mutationFn: async () => {
+      if (!cv || cv.status !== 'Ready') throw new Error(c.confirmBeforeDownload);
+      await downloadResumePdf(cv.id, cv.name);
+    },
+    retry: false,
+    onMutate: () => setDownloadSuccessToast(false),
+    onSuccess: () => {
+      setDownloadSuccessToast(true);
+      queryClient.invalidateQueries({ queryKey: ['resume', resumeId] });
+    },
+  });
+
   if (isPending) return <Loading />;
   if (isError || !cv) return <ErrorState />;
 
@@ -149,11 +172,6 @@ export default function ResumeDetailsPage() {
     navigator.clipboard?.writeText(window.location.href);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 3000);
-  };
-
-  const handleDownloadPdf = () => {
-    setDownloadSuccessToast(true);
-    setTimeout(() => setDownloadSuccessToast(false), 4000);
   };
 
   const ats = cv.atsBreakdown || {
@@ -206,8 +224,15 @@ export default function ResumeDetailsPage() {
           <Link to={`/candidate/resumes/${cv.id}/edit`} className={`${textLink} text-[15px] text-ink`}>
             {t('resumes.editCv')}
           </Link>
-          <button type="button" onClick={handleDownloadPdf} className={`${textLink} text-[15px] text-ink`}>
-            {t('resumes.downloadPdf')}
+          <button
+            type="button"
+            onClick={() => downloadMutation.mutate()}
+            disabled={downloadMutation.isPending || cv.status !== 'Ready'}
+            title={cv.status !== 'Ready' ? c.confirmBeforeDownload : undefined}
+            aria-busy={downloadMutation.isPending}
+            className={`${textLink} text-[15px] text-ink disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            {downloadMutation.isPending ? c.downloading : t('resumes.downloadPdf')}
           </button>
           <Link to={`/candidate/assistant?cvId=${cv.id}`} className={`${textLink} text-[15px] text-ink`}>
             {c.assistant}
@@ -217,6 +242,13 @@ export default function ResumeDetailsPage() {
           </Link>
         </div>
       </header>
+
+      {cv.status !== 'Ready' && <p className="mt-4 text-sm text-slate-600">{c.confirmBeforeDownload}</p>}
+      {downloadMutation.isError && (
+        <p role="alert" className="mt-4 text-sm text-danger">
+          {authErrorMessage(downloadMutation.error, c.downloadError)}
+        </p>
+      )}
 
       {/* Download toast */}
       {downloadSuccessToast && (
@@ -290,6 +322,8 @@ export default function ResumeDetailsPage() {
               {c.templateAts}
             </button>
           </div>
+
+          <p className="text-[13px] leading-6 text-slate-600 print:hidden">{c.savedPdfTemplate}</p>
 
           <div className="overflow-x-auto">
           {selectedTemplate === 'topcv-plum' ? (

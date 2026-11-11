@@ -1,17 +1,21 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../../services/apiClient';
 import { getMonitoring } from '../../services/adminService';
 import { num, obj, rows, str, type ApiRow } from '../../services/candidateMappers';
 import { useAuthStore } from '../../stores/authStore';
+import { getManagerFeedback } from '../../services/managerService';
+import { OperationalPagination } from '../../components/admin/OperationalTable';
 
 export default function OperationsReportsPage({ mode = 'dashboard' }: { mode?: 'dashboard' | 'analytics' | 'feedback' }) {
   const manager = useAuthStore((state) => state.role === 'MANAGER');
   const base = manager ? '/manager' : '/admin';
   const feedback = mode === 'feedback';
+  const [offset, setOffset] = useState(0);
   const data = useQuery({
-    queryKey: ['operations-report', mode],
-    queryFn: async () => feedback ? getMonitoring('feedback') : (await apiClient.get<ApiRow>('/admin/dashboard')).data,
+    queryKey: ['operations-report', mode, manager, offset],
+    queryFn: async () => feedback ? (manager ? getManagerFeedback(offset) : getMonitoring('feedback')) : (await apiClient.get<ApiRow>('/admin/dashboard')).data,
     refetchInterval: 60_000,
   });
   const overview = obj(data.data);
@@ -26,7 +30,7 @@ export default function OperationsReportsPage({ mode = 'dashboard' }: { mode?: '
   return (
     <main className="space-y-7">
       <h1 className="text-3xl font-medium">{feedback ? 'Ý kiến phản hồi' : mode === 'analytics' ? 'Phân tích & thống kê' : 'Bảng điều khiển Manager'}</h1>
-      <p className="text-sm text-slate-600">{feedback ? 'Tối đa 100 phản hồi mới nhất từ matching, trợ lý AI và đánh giá tư vấn.' : 'Số liệu tổng hợp từ dữ liệu hệ thống. Thống kê AI tính từ đầu tháng hiện tại.'}</p>
+      <p className="text-sm text-slate-600">{feedback ? 'Phản hồi từ matching, trợ lý AI và đánh giá tư vấn.' : 'Số liệu tổng hợp từ dữ liệu hệ thống. Thống kê AI tính từ đầu tháng hiện tại.'}</p>
       {data.isPending && <p>Đang tải dữ liệu…</p>}
       {data.error && <p role="alert" className="text-danger">{data.error.message}</p>}
       {data.isSuccess && (feedback ? (
@@ -39,6 +43,7 @@ export default function OperationsReportsPage({ mode = 'dashboard' }: { mode?: '
               <p className="text-xs text-slate-500">{new Date(str(item.created_at)).toLocaleString('vi-VN')}</p>
             </article>
           ))}
+          {manager && <OperationalPagination offset={offset} count={rows(data.data).length} busy={data.isFetching} onChange={setOffset} />}
         </div>
       ) : (
         <>
