@@ -77,7 +77,8 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
   });
   const slots = buildBookingSlots(day, now, availability.data ?? [], bookings);
   const selectedSlot = slots.find((slot) => slot.value === time);
-  const scheduleReady = !!chosenConsultant && validDay && availability.isSuccess && !availability.isFetching;
+  // Background refetches (every 30s) keep the last data; disabling the picker then would close an open dropdown.
+  const scheduleReady = !!chosenConsultant && validDay && availability.isSuccess;
   const slotLabel = (slot: BookingSlot) => {
     const start = new Date(slot.startsAt);
     const end = new Date(slot.endsAt);
