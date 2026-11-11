@@ -1,7 +1,13 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, Clock, MessageSquare, Star } from 'lucide-react';
+import { CalendarDays, Clock, Star } from 'lucide-react';
+import BookingMeetingAccess from './BookingMeetingAccess';
+import BookingAttachments from './BookingAttachments';
+import ConsultantExpertiseEditor from './ConsultantExpertiseEditor';
+import { useBookingClock } from './useBookingClock';
+import { bookingPollInterval } from '../../utils/bookingMeeting';
+export { useBookingClock } from './useBookingClock';
 import { useTranslation } from '../../i18n';
 import type { ConsultationStatus } from '../../types/consultation';
 import {
@@ -11,7 +17,6 @@ import {
   getMyConsultantProfile,
   listBookings,
   listMyBusySlots,
-  saveMyConsultantProfile,
   type BookingStatus,
   type ConsultationBooking,
 } from '../../services/bookingService';
@@ -28,24 +33,12 @@ const statuses: Record<BookingStatus, [string, string]> = {
 };
 
 export function bookingDisplayStatus(booking: ConsultationBooking, now: number): ConsultationStatus {
-  if (booking.status === 'ACCEPTED') return now >= new Date(booking.starts_at).getTime() ? 'IN_PROGRESS' : 'SCHEDULED';
+  if (booking.status === 'ACCEPTED') {
+    if (now >= new Date(booking.ends_at).getTime()) return 'COMPLETED';
+    return now >= new Date(booking.starts_at).getTime() ? 'IN_PROGRESS' : 'SCHEDULED';
+  }
   if (booking.status === 'DECLINED' || booking.status === 'CANCELLED') return 'CANCELLED';
   return booking.status;
-}
-
-export function bookingMessageAvailable(booking: ConsultationBooking, now: number) {
-  return booking.status === 'ACCEPTED'
-    && now >= new Date(booking.starts_at).getTime()
-    && now < new Date(booking.ends_at).getTime();
-}
-
-export function useBookingClock() {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return now;
 }
 
 function localInputTime() {
@@ -90,6 +83,8 @@ export function ConsultantBookingCard({ booking, showLinks = true }: {
         <Clock size={16} aria-hidden="true" />{booking.duration_minutes} {vi ? 'phút' : 'minutes'}
       </p>
       <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">{booking.description}</p>
+      <BookingAttachments booking={booking} vi={vi} />
+      <BookingMeetingAccess booking={booking} />
       {booking.status === 'PENDING' && started && (
         <p className="mt-3 text-sm text-amber-700">{vi ? 'Khung giờ đã bắt đầu. Hệ thống sẽ hết hạn yêu cầu chưa tiếp nhận và hoàn lượt cho ứng viên.' : 'This time slot has started. The system will expire the unaccepted request and return the candidate’s credit.'}</p>
       )}
@@ -107,8 +102,7 @@ export function ConsultantBookingCard({ booking, showLinks = true }: {
         {booking.status === 'ACCEPTED' && <button type="button" className={button} disabled={mutation.isPending || !ended} onClick={() => mutation.mutate('complete')}>{vi ? 'Hoàn tất tư vấn' : 'Complete consultation'}</button>}
         {showLinks && booking.thread_id && (
           <>
-            <Link className={`${secondary} inline-flex items-center gap-2`} to={`/consultant/consultations?c=${booking.thread_id}`}><MessageSquare size={15} aria-hidden="true" />{vi ? 'Trao đổi' : 'Messages'}</Link>
-            {(booking.status === 'ACCEPTED' || booking.status === 'COMPLETED') && <Link className={secondary} to={`/consultant/consultations/${booking.thread_id}`}>{vi ? 'Hồ sơ và tư vấn' : 'Profile and advice'}</Link>}
+            {['PENDING', 'ACCEPTED', 'COMPLETED'].includes(booking.status) && <Link className={secondary} to={`/consultant/consultations/${booking.thread_id}`}>{vi ? 'Chuẩn bị và tư vấn' : 'Preparation and advice'}</Link>}
           </>
         )}
       </div>
@@ -130,13 +124,10 @@ export default function ConsultantBookingManager() {
   const [tab, setTab] = useState<'PENDING' | 'ACCEPTED' | 'HISTORY'>('PENDING');
   const [settings, setSettings] = useState(false);
   const [busyError, setBusyError] = useState('');
-  const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings, refetchInterval: 20_000 });
+  const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings,
+    refetchInterval: (query) => bookingPollInterval(query.state.data) });
   const profile = useQuery({ queryKey: ['consultant-profile'], queryFn: getMyConsultantProfile });
   const busy = useQuery({ queryKey: ['consultant-busy-slots'], queryFn: listMyBusySlots, enabled: settings });
-  const saveProfile = useMutation({
-    mutationFn: ({ roles, bio }: { roles: string[]; bio: string }) => saveMyConsultantProfile(roles, bio),
-    onSuccess: () => { void client.invalidateQueries({ queryKey: ['consultant-profile'] }); },
-  });
   const addBusy = useMutation({
     mutationFn: createBusySlot,
     onSuccess: () => { void client.invalidateQueries({ queryKey: ['consultant-busy-slots'] }); },
@@ -145,11 +136,6 @@ export default function ConsultantBookingManager() {
     mutationFn: deleteBusySlot,
     onSuccess: () => { void client.invalidateQueries({ queryKey: ['consultant-busy-slots'] }); },
   });
-  const profileSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const values = new FormData(event.currentTarget);
-    saveProfile.mutate({ roles: [...new Set(String(values.get('roles')).split(',').map(role => role.trim()).filter(Boolean))], bio: String(values.get('bio')) });
-  };
   const busySubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -177,11 +163,11 @@ export default function ConsultantBookingManager() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-medium tracking-tight text-ink">{vi ? 'Lịch tư vấn' : 'Consultation schedule'}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{vi ? 'Xem mục tiêu ứng tuyển, tiếp nhận yêu cầu và tư vấn trong khung giờ ứng viên đã chọn.' : 'Review target roles, accept requests and advise candidates during their chosen time slots.'}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{vi ? 'Tiếp nhận yêu cầu để hệ thống tạo Google Meet và gửi lời mời Google Calendar. Tư vấn trong khung giờ đã xác nhận.' : 'Accept requests to create Google Meet and send Google Calendar invitations. Meet during the confirmed time slot.'}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className={secondary} onClick={() => setSettings(!settings)} aria-expanded={settings}>{vi ? 'Chuyên môn và lịch bận' : 'Expertise and busy hours'}</button>
-          <Link className={secondary} to="/consultant/consultations?view=messages">{vi ? 'Hội thoại' : 'Conversations'}</Link>
+          <Link className={secondary} to="/consultant/consultations?view=messages">{vi ? 'Lịch sử trao đổi' : 'Message history'}</Link>
         </div>
       </header>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -189,20 +175,29 @@ export default function ConsultantBookingManager() {
         <div className="rounded-xl border border-border p-4"><p className="text-sm text-slate-500">{vi ? 'Đã hoàn tất' : 'Completed sessions'}</p><p className="mt-1 text-2xl text-ink">{bookings.data ? completed.length : '—'}</p></div>
         <div className="rounded-xl border border-border p-4"><p className="text-sm text-slate-500">{vi ? 'Đánh giá từ ứng viên' : 'Candidate reviews'}</p><p className="mt-1 text-2xl text-ink">{average == null ? '—' : `${average.toFixed(1)}/5`} <span className="text-sm text-slate-500">({bookings.data ? reviewed.length : '—'})</span></p></div>
       </div>
-      {profile.data && profile.data.target_roles.length === 0 && <p className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800">{vi ? 'Thêm vị trí chuyên môn để ứng viên tìm thấy bạn khi chọn người tư vấn.' : 'Add your areas of expertise so candidates can find you for their target role.'} <button type="button" className="underline" onClick={() => setSettings(true)}>{vi ? 'Cập nhật hồ sơ' : 'Update profile'}</button></p>}
+      <section className="rounded-xl border border-border p-5" aria-label={vi ? 'Chuyên môn tư vấn' : 'Consulting expertise'}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-medium text-ink">{vi ? 'Chuyên môn tư vấn' : 'Consulting expertise'}</h2>
+          <Link to="/consultant/account#consulting-expertise" className="text-sm text-brand underline">
+            {vi ? 'Cập nhật chuyên môn' : 'Update expertise'}
+          </Link>
+        </div>
+        {profile.isPending ? <p className="mt-3 text-sm text-slate-500">{vi ? 'Đang tải chuyên môn…' : 'Loading expertise…'}</p>
+          : profile.isError ? <p className="mt-3 text-sm text-danger" role="alert">{profile.error.message}</p>
+          : profile.data && (profile.data.target_roles.length === 0
+            ? <p className="mt-3 text-sm text-amber-800">{vi ? 'Chọn ít nhất một lĩnh vực trong hồ sơ để ứng viên có thể tìm thấy bạn.' : 'Select at least one area in your profile so candidates can find you.'}</p>
+            : <>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {profile.data.target_roles.map(role => <li key={role} className="rounded-full bg-brand/10 px-3 py-1 text-sm text-brand">{role}</li>)}
+              </ul>
+              {profile.data.bio && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-600">{profile.data.bio}</p>}
+            </>)}
+      </section>
       {settings && (
         <section className="grid gap-6 rounded-xl border border-border p-5 lg:grid-cols-2">
           <div>
             <h2 className="text-lg font-medium text-ink">{vi ? 'Chuyên môn tư vấn' : 'Consulting expertise'}</h2>
-            {profile.isLoading ? <p className="mt-3 text-sm text-slate-500">{vi ? 'Đang tải…' : 'Loading…'}</p> : profile.isError ? <p className="mt-3 text-sm text-danger" role="alert">{profile.error.message}</p> : profile.data && (
-              <form key={`${profile.data.target_roles.join(',')}:${profile.data.bio}`} className="mt-3 space-y-3" onSubmit={profileSubmit}>
-                <label className="block text-sm text-slate-700">{vi ? 'Vị trí chuyên môn (phân cách bằng dấu phẩy)' : 'Target roles (comma separated)'}<input name="roles" defaultValue={profile.data.target_roles.join(', ')} placeholder="Backend, Frontend, QA" maxLength={3000} className={field} /></label>
-                <label className="block text-sm text-slate-700">{vi ? 'Giới thiệu' : 'About you'}<textarea name="bio" defaultValue={profile.data.bio} rows={3} maxLength={3000} className={field} /></label>
-                <button className={button} disabled={saveProfile.isPending}>{vi ? 'Lưu chuyên môn' : 'Save expertise'}</button>
-                {saveProfile.error && <p className="text-sm text-danger" role="alert">{saveProfile.error.message}</p>}
-                {saveProfile.isSuccess && <p className="text-sm text-brand" role="status">{vi ? 'Đã lưu hồ sơ chuyên môn.' : 'Expertise saved.'}</p>}
-              </form>
-            )}
+            <div className="mt-3"><ConsultantExpertiseEditor /></div>
           </div>
           <div>
             <h2 className="text-lg font-medium text-ink">{vi ? 'Đánh dấu lịch bận' : 'Block busy hours'}</h2>

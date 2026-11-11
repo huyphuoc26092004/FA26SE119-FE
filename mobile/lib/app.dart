@@ -39,8 +39,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final onAuthPage = loc == '/login' || loc == '/register' || loc == '/forgot-password';
       if (auth.status == AuthStatus.loading) return loc == '/splash' ? null : '/splash';
       if (auth.status == AuthStatus.signedOut) return onAuthPage ? null : '/login';
-      if (auth.user != null && !auth.user!.isCandidate) return loc == '/staff' ? null : '/staff';
-      if (onAuthPage || loc == '/splash' || loc == '/staff') return '/home';
+      if (auth.user != null && !auth.user!.isCandidate) return loc == '/web-workspace' ? null : '/web-workspace';
+      if (onAuthPage || loc == '/splash' || loc == '/web-workspace') return '/home';
       return null;
     },
     routes: [
@@ -48,7 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       GoRoute(path: '/forgot-password', builder: (_, _) => const ForgotPasswordScreen()),
-      GoRoute(path: '/staff', builder: (_, _) => const _StaffNotice()),
+      GoRoute(path: '/web-workspace', builder: (_, _) => const _WebWorkspaceNotice()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => _TabShell(shell: shell),
         branches: [
@@ -139,9 +139,9 @@ class _Splash extends StatelessWidget {
   Widget build(BuildContext context) => const Scaffold(body: Center(child: CcvMark(height: 40)));
 }
 
-/// Consultant and admin accounts keep using the web app for now.
-class _StaffNotice extends ConsumerWidget {
-  const _StaffNotice();
+/// Consultant, manager and admin accounts keep using the web app for now.
+class _WebWorkspaceNotice extends ConsumerWidget {
+  const _WebWorkspaceNotice();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
@@ -155,8 +155,8 @@ class _StaffNotice extends ConsumerWidget {
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               Text(
-                tr('Tài khoản cố vấn và quản trị dùng bản web để làm việc.',
-                    'Consultant and admin accounts work on the web app.'),
+                tr('Tài khoản tư vấn viên, quản lý và quản trị viên dùng bản web để làm việc.',
+                    'Consultant, manager and admin accounts work on the web app.'),
                 style: const TextStyle(fontSize: 15, height: 1.5, color: AppColors.muted),
               ),
               const Spacer(),

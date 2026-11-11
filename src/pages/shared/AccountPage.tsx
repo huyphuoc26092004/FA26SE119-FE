@@ -27,6 +27,7 @@ import {
   updateAccount,
 } from '../../services/accountService';
 import { useAuthStore } from '../../stores/authStore';
+import ConsultantExpertiseEditor from '../../components/consultation/ConsultantExpertiseEditor';
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : 'Có lỗi xảy ra, thử lại sau.');
 
@@ -99,6 +100,13 @@ export default function AccountPage() {
 
   const sessions = sessionsQuery.data ?? [];
   const isGoogle = account?.authProvider === 'GOOGLE';
+  const isConsultant = account?.role === 'CAREER_CONSULTANT';
+
+  useEffect(() => {
+    if (isConsultant && window.location.hash === '#consulting-expertise') {
+      document.getElementById('consulting-expertise')?.scrollIntoView({ block: 'start' });
+    }
+  }, [isConsultant]);
 
   return (
     <div className="space-y-[clamp(2.5rem,5vw,4rem)]">
@@ -106,8 +114,11 @@ export default function AccountPage() {
         eyebrow="Tài khoản"
         line1="Tài khoản & bảo mật."
         line2={account?.email}
-        intro="Sửa tên hiển thị, đổi mật khẩu và xem các thiết bị đang đăng nhập."
+        intro={isConsultant
+          ? 'Cập nhật thông tin cá nhân, lĩnh vực tư vấn và bảo mật tài khoản.'
+          : 'Sửa tên hiển thị, đổi mật khẩu và xem các thiết bị đang đăng nhập.'}
       />
+      {isConsultant && <a href="#consulting-expertise" className={brandLink}>Chuyên môn tư vấn</a>}
       {accountQuery.isError && <Note tone="danger">{errorText(accountQuery.error)}</Note>}
 
       <section className="space-y-5">
@@ -155,8 +166,15 @@ export default function AccountPage() {
         )}
       </section>
 
+      {isConsultant && (
+        <section id="consulting-expertise" className="scroll-mt-6 space-y-5">
+          <SectionHead index="02" title="Chuyên môn tư vấn" />
+          <ConsultantExpertiseEditor />
+        </section>
+      )}
+
       <section className="space-y-5">
-        <SectionHead index="02" title="Đổi mật khẩu" />
+        <SectionHead index={isConsultant ? '03' : '02'} title="Đổi mật khẩu" />
         {isGoogle ? (
           <Note>Tài khoản đăng nhập bằng Google nên không có mật khẩu riêng.</Note>
         ) : (
@@ -184,7 +202,7 @@ export default function AccountPage() {
       </section>
 
       <section className="space-y-5">
-        <SectionHead index="03" title="Phiên đăng nhập" meta={`${sessions.length} phiên còn hiệu lực`} />
+        <SectionHead index={isConsultant ? '04' : '03'} title="Phiên đăng nhập" meta={`${sessions.length} phiên còn hiệu lực`} />
         {sessions.length === 0 ? (
           <EmptyRow>{sessionsQuery.isLoading ? 'Đang tải...' : 'Không có phiên nào.'}</EmptyRow>
         ) : (
@@ -207,7 +225,7 @@ export default function AccountPage() {
       </section>
 
       <section className="space-y-5">
-        <SectionHead index="04" title="Xoá tài khoản" />
+        <SectionHead index={isConsultant ? '05' : '04'} title="Xoá tài khoản" />
         <Note tone="danger">Tài khoản bị khoá đăng nhập và ẩn khỏi hệ thống. Bạn cần liên hệ admin nếu muốn khôi phục.</Note>
         <button type="button" className={dangerLink} onClick={() => setConfirmDelete(true)}>
           Xoá tài khoản của tôi

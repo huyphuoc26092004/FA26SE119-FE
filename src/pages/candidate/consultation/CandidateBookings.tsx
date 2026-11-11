@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
-import { MessageCircle, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
+import BookingMeetingAccess from '../../../components/consultation/BookingMeetingAccess';
+import BookingAttachments from '../../../components/consultation/BookingAttachments';
+import PublishedConsultationAdvice from '../../../components/consultation/PublishedConsultationAdvice';
+import { useBookingClock } from '../../../components/consultation/useBookingClock';
 import { useTranslation } from '../../../i18n';
 import {
   bookingAction,
@@ -11,10 +15,8 @@ import {
 
 export default function CandidateBookings({
   query,
-  onOpenMessages,
 }: {
   query: UseQueryResult<ConsultationBooking[], Error>;
-  onOpenMessages: (threadId: string) => void;
 }) {
   const { isVietnamese: vi } = useTranslation();
   const reviewsDue = (query.data ?? []).filter(
@@ -53,7 +55,7 @@ export default function CandidateBookings({
       )}
       <div className="space-y-4">
         {query.data?.map((booking) => (
-          <BookingCard key={booking.id} booking={booking} vi={vi} onOpenMessages={onOpenMessages} />
+          <BookingCard key={booking.id} booking={booking} vi={vi} />
         ))}
       </div>
     </section>
@@ -63,13 +65,12 @@ export default function CandidateBookings({
 function BookingCard({
   booking,
   vi,
-  onOpenMessages,
 }: {
   booking: ConsultationBooking;
   vi: boolean;
-  onOpenMessages: (threadId: string) => void;
 }) {
   const client = useQueryClient();
+  const now = useBookingClock();
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState('');
   const status: Record<BookingStatus, string> = vi
@@ -107,8 +108,8 @@ function BookingCard({
   const starts = new Date(booking.starts_at);
   const ends = new Date(booking.ends_at);
   const canCancel =
-    ['PENDING', 'ACCEPTED'].includes(booking.status) && starts.getTime() > Date.now();
-  const canRate = booking.status === 'COMPLETED' && ends.getTime() <= Date.now() && !booking.rating;
+    ['PENDING', 'ACCEPTED'].includes(booking.status) && starts.getTime() > now;
+  const canRate = booking.status === 'COMPLETED' && ends.getTime() <= now && !booking.rating;
   return (
     <article
       id={`booking-${booking.id}`}
@@ -138,15 +139,6 @@ function BookingCard({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm">
-          {booking.thread_id && (
-            <button
-              onClick={() => onOpenMessages(booking.thread_id)}
-              className="inline-flex items-center gap-1.5 text-brand underline underline-offset-4"
-            >
-              <MessageCircle size={15} />
-              {vi ? 'Trao đổi với cố vấn' : 'Advisor messages'}
-            </button>
-          )}
           {canCancel && (
             <button
               disabled={cancel.isPending}
@@ -167,6 +159,9 @@ function BookingCard({
       <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-slate-600">
         {booking.description}
       </p>
+      <BookingAttachments booking={booking} vi={vi} />
+      <BookingMeetingAccess booking={booking} />
+      {['ACCEPTED', 'COMPLETED'].includes(booking.status) && <PublishedConsultationAdvice consultationId={booking.thread_id} candidateRole={booking.target_role} />}
       {booking.credit_refunded && (
         <p className="mt-3 text-xs text-emerald-700">
           {vi
@@ -174,7 +169,7 @@ function BookingCard({
             : 'One credit has been returned to your pack.'}
         </p>
       )}
-      {booking.status === 'ACCEPTED' && ends.getTime() <= Date.now() && (
+      {booking.status === 'ACCEPTED' && ends.getTime() <= now && (
         <p className="mt-3 text-xs text-slate-500">
           {vi
             ? 'Buổi tư vấn đã hết giờ. Hệ thống đang cập nhật trạng thái để bạn đánh giá.'

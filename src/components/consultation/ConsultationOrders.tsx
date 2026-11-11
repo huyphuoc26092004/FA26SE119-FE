@@ -87,8 +87,8 @@ export default function ConsultationOrders() {
       </div>
       <p className="text-sm leading-6 text-slate-600">
         {vi
-          ? 'Thanh toán gói trước để có lượt đặt lịch. Mỗi buổi dùng 1 lượt, thời gian từ 30 đến 60 phút; bạn chủ động chọn cố vấn và khung giờ ở bước tiếp theo.'
-          : 'Purchase credits before requesting a session. Each session uses one credit and lasts 30-60 minutes. Choose your advisor and time in the next step.'}
+          ? 'Mỗi buổi Google Meet dùng 1 lượt và kéo dài tối đa 60 phút. Chọn cố vấn và giờ tư vấn; sau khi được tiếp nhận, bạn nhận lời mời Google Calendar.'
+          : 'Each Google Meet session uses one credit and lasts up to 60 minutes. Choose an advisor and time; after acceptance, you receive a Google Calendar invitation.'}
       </p>
       {services.isPending && <p className="text-sm">{vi ? 'Đang tải gói…' : 'Loading packs…'}</p>}
       {(services.error || orders.error || error || purchase.error) && (

@@ -213,6 +213,8 @@ export function toPaymentTransaction(row: ApiRow, plans: SubscriptionPlan[] = []
     candidateEmail: user?.email ?? '',
     durationMonths: months,
     provider: str(row.payment_provider),
+    orderType: str(row.order_type) || 'SUBSCRIPTION',
+    consultationOrderId: str(row.consultation_order_id) || undefined,
     invoiceNumber: invoice ? str(invoice.invoice_number) : undefined,
     invoiceUrl: invoice ? str(invoice.invoice_url) || undefined : undefined,
   };

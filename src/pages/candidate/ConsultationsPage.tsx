@@ -1,11 +1,14 @@
 ﻿import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { bookingPollInterval } from '../../utils/bookingMeeting';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from '../../i18n';
 import { useAuthStore } from '../../stores/authStore';
 import { getMyConsultations } from '../../services/candidateConsultationService';
 import { listBookings } from '../../services/bookingService';
 import ConsultationOrders from '../../components/consultation/ConsultationOrders';
+import PaymentReturnNotice from '../../components/consultation/PaymentReturnNotice';
 import CandidateBookingForm from './consultation/CandidateBookingForm';
 import CandidateBookings from './consultation/CandidateBookings';
 import CandidateBookingConversation from './consultation/CandidateBookingConversation';
@@ -18,7 +21,7 @@ export default function ConsultationsPage() {
   const bookings = useQuery({
     queryKey: ['consultation-bookings', candidateId],
     queryFn: listBookings,
-    refetchInterval: 30_000,
+    refetchInterval: (query) => bookingPollInterval(query.state.data),
   });
   const history = useQuery({
     queryKey: ['my-consultations', candidateId],
@@ -27,9 +30,18 @@ export default function ConsultationsPage() {
     refetchInterval: 30_000,
   });
   const historicalThreads = (history.data ?? []).filter(
-    (thread) => !(bookings.data ?? []).some((booking) => booking.thread_id === thread.id),
+    (thread) => thread.requestType !== 'SESSION_BOOKING'
+      && !(bookings.data ?? []).some((booking) => booking.thread_id === thread.id),
   );
   const threadId = selectedThread || consultationId || '';
+  const selectedBooking = bookings.data?.find((booking) => booking.thread_id === threadId || booking.id === threadId);
+  const historicalThread = historicalThreads.find((thread) => thread.id === threadId);
+  useEffect(() => {
+    if (!selectedBooking) return;
+    const id = selectedBooking.status === 'COMPLETED' && !selectedBooking.rating
+      ? `booking-rating-${selectedBooking.id}` : `booking-${selectedBooking.id}`;
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selectedBooking?.id, selectedBooking?.status, selectedBooking?.rating]);
   const openMessages = (id: string) => {
     setSelectedThread(id);
     requestAnimationFrame(() => {
@@ -41,6 +53,7 @@ export default function ConsultationsPage() {
 
   return (
     <div className="space-y-10 pb-16 pt-8">
+      <PaymentReturnNotice />
       <header className="max-w-3xl">
         <p className="mb-3 text-sm text-brand">
           {vi ? 'Tư vấn nghề nghiệp' : 'Career consultation'}
@@ -50,8 +63,8 @@ export default function ConsultationsPage() {
         </h1>
         <p className="mt-4 text-base leading-7 text-slate-600">
           {vi
-            ? 'Mua gói theo lượt, chọn vị trí ứng tuyển và cố vấn phù hợp, rồi gửi lịch tư vấn 30–60 phút. Cố vấn sẽ xem xét và xác nhận yêu cầu của bạn.'
-            : 'Buy a session pack, choose your target role and a matching advisor, then request a 30–60 minute session. Your advisor will review and accept the request.'}
+            ? 'Chọn cố vấn và lịch tư vấn 30–60 phút. Sau khi cố vấn tiếp nhận, hệ thống tạo Google Meet và gửi lời mời Google Calendar cho hai bên.'
+            : 'Choose an advisor and a 30–60 minute slot. Once the advisor accepts, the system creates Google Meet and sends Google Calendar invitations to both participants.'}
         </p>
         <ol className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600">
           {(vi
@@ -72,7 +85,7 @@ export default function ConsultationsPage() {
       </header>
       <ConsultationOrders />
       <CandidateBookingForm bookings={bookings.data ?? []} />
-      <CandidateBookings query={bookings} onOpenMessages={openMessages} />
+      <CandidateBookings query={bookings} />
       {historicalThreads.length > 0 && (
         <details className="rounded-2xl border border-border p-5">
           <summary className="cursor-pointer font-medium text-ink">
@@ -96,13 +109,10 @@ export default function ConsultationsPage() {
           </ul>
         </details>
       )}
-      {threadId && (
+      {historicalThread && !selectedBooking && bookings.isSuccess && (
         <CandidateBookingConversation
           key={threadId}
           threadId={threadId}
-          booking={bookings.data?.find((booking) => booking.thread_id === threadId)}
-          bookingsLoading={bookings.isPending || bookings.isError}
-          preferReview={!selectedThread && !!consultationId}
         />
       )}
     </div>

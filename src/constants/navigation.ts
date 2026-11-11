@@ -86,6 +86,11 @@ export const adminNav: NavItem[] = [
   { label: 'Analytics', labelVi: 'Phân tích & thống kê', translationKey: 'nav.analytics', to: '/admin/analytics', icon: ChartColumn, group: 'operations' },
 ];
 
-export const managerNav: NavItem[] = adminNav
-  .filter((item) => !['/admin/users', '/admin/ai', '/admin/logs', '/admin/audit'].includes(item.to))
-  .map((item) => ({ ...item, to: item.to.replace('/admin', '/manager') }));
+export const managerNav: NavItem[] = [
+  ...adminNav
+    .filter((item) => !['/admin/users', '/admin/ai', '/admin/vector', '/admin/logs', '/admin/audit'].includes(item.to))
+    .map((item) => ({ ...item, to: item.to.replace('/admin', '/manager') })),
+  { label: 'Subscribers', labelVi: 'Đăng ký người dùng', translationKey: '', to: '/manager/subscribers', icon: CreditCard, group: 'management' },
+  { label: 'Consultant quality', labelVi: 'Chất lượng tư vấn', translationKey: '', to: '/manager/consultants', icon: Users, group: 'management' },
+  { label: 'Collection reports', labelVi: 'Báo cáo thu thập', translationKey: '', to: '/manager/crawl-reports', icon: ScrollText, group: 'operations' },
+];

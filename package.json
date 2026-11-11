@@ -10,6 +10,10 @@
     "test:auth": "node --test tests/google-*.test.mjs",
     "test:assistant": "node --test tests/assistant-*.test.mjs",
     "test:matching": "node --test tests/matching-*.test.mjs",
+    "test:booking": "node --test tests/booking-*.test.mjs",
+    "test:roles": "node --test tests/manager-*.test.mjs tests/consultation-report.test.mjs",
+    "test:resume": "node --test tests/resume-*.test.mjs tests/demo-workflows.test.mjs",
+    "test:demo": "node --test tests/demo-workflows.test.mjs tests/google-auth.test.mjs tests/google-identity.test.mjs tests/google-auth-pages.test.mjs tests/auth-query-cache.test.mjs tests/resume-upload-page.test.mjs tests/resume-analysis-selection.test.mjs tests/resume-analysis-language.test.mjs tests/matching-errors.test.mjs tests/matching-service.test.mjs tests/matching-jobs-page.test.mjs tests/ats-resource-selection.test.mjs tests/booking-details.test.mjs tests/booking-meeting.test.mjs tests/booking-notification.test.mjs tests/booking-ui.test.mjs tests/consultation-report.test.mjs tests/manager-access.test.mjs tests/manager-operations.test.mjs",
     "format": "prettier --write .",
     "preview": "vite preview"
   },

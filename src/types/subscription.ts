@@ -81,6 +81,8 @@ export interface PaymentTransaction {
   qrDetails?: QrPaymentDetails;
   durationMonths?: number;
   provider?: string;
+  orderType?: string;
+  consultationOrderId?: string;
   invoiceNumber?: string;
   invoiceUrl?: string;
 }

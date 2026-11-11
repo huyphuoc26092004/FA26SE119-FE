@@ -1,4 +1,6 @@
 import { apiClient } from './apiClient';
+import { toJob, toResume, type ApiRow } from './candidateMappers';
+import type { Job, Resume } from '../types/domain';
 
 export interface ConsultantProfile {
   user_id?: string;
@@ -26,6 +28,7 @@ export interface ConsultantAvailability extends BusySlot {
 }
 
 export type BookingStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | 'COMPLETED';
+export type BookingMeetingStatus = 'NOT_REQUESTED' | 'PENDING' | 'READY' | 'FAILED' | 'CANCELLED' | 'ENDED';
 
 export interface ConsultationBooking {
   id: string;
@@ -37,10 +40,21 @@ export interface ConsultationBooking {
   target_role: string;
   subject: string;
   description: string;
+  resume_id?: string | null;
+  resume_title?: string | null;
+  job_id?: string | null;
+  job_title?: string | null;
+  company_name?: string | null;
   starts_at: string;
   ends_at: string;
   duration_minutes: number;
   status: BookingStatus;
+  meeting_status: BookingMeetingStatus;
+  meeting_url: string | null;
+  calendar_event_url: string | null;
+  meeting_error: string | null;
+  meeting_ended_at: string | null;
+  meeting_opened_at: string | null;
   thread_id: string;
   credit_refunded: boolean;
   created_at: string;
@@ -53,12 +67,43 @@ export interface ConsultationBooking {
 
 export interface NewBooking {
   consultantId: string;
+  resumeId: string;
+  jobId?: string;
   targetRole: string;
   subject: string;
   description: string;
   startsAt: string;
+  durationMinutes: 60;
   creditOrderId: string;
 }
+
+export interface BookingPreparation {
+  resume: Resume | null;
+  job: Job | null;
+  resume_analysis: ApiRow | null;
+  ats_analysis: ApiRow | null;
+}
+
+/** Read saved reports only; opening a booking never starts an AI analysis. */
+export async function getBookingPreparation(id: string): Promise<BookingPreparation> {
+  const { data } = await apiClient.get<{
+    resume: ApiRow | null; job: ApiRow | null;
+    resume_analysis: ApiRow | null; ats_analysis: ApiRow | null;
+  }>(`/consultation-bookings/${id}/preparation`);
+  return {
+    ...data,
+    resume: data.resume ? toResume(data.resume) : null,
+    job: data.job ? toJob(data.job) : null,
+  };
+}
+
+export const analyzeBookingResume = (threadId: string, resumeId: string) =>
+  apiClient.post(`/consultations/${threadId}/resumes/${resumeId}/analyze`, undefined,
+    { timeout: 600_000 }).then((r) => r.data);
+
+export const analyzeBookingAts = (threadId: string, resumeId: string, jobId: string) =>
+  apiClient.post(`/consultations/${threadId}/jobs/${jobId}/ats`, { resumeId },
+    { timeout: 600_000 }).then((r) => r.data);
 
 export const listConsultants = (targetRole: string) =>
   apiClient
@@ -80,6 +125,9 @@ export const createBooking = (input: NewBooking) =>
 
 export const bookingAction = (id: string, action: 'accept' | 'decline' | 'cancel' | 'complete') =>
   apiClient.post<ConsultationBooking>(`/consultation-bookings/${id}/${action}`).then((r) => r.data);
+
+export const retryBookingMeeting = (id: string) =>
+  apiClient.post<ConsultationBooking>(`/consultation-bookings/${id}/meeting/retry`).then((r) => r.data);
 
 export const rateBooking = (id: string, rating: number, comment: string) =>
   apiClient

@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Check, Star } from 'lucide-react';
 import { useTranslation } from '../../../i18n';
+import { useBookingClock } from '../../../components/consultation/useBookingClock';
+import { CONSULTATION_TARGET_ROLES } from '../../../constants/consultationRoles';
+import { buildBookingSlots, type BookingSlot } from '../../../utils/bookingSlots';
 import {
   createBooking,
   getConsultantAvailability,
@@ -9,6 +13,10 @@ import {
   type ConsultationBooking,
 } from '../../../services/bookingService';
 import { listConsultationOrders } from '../../../services/consultationCatalogService';
+import { getJobs, getResumes } from '../../../services/candidateService';
+import { getJobActivity, JOB_ACTIVITY_QUERY_KEY } from '../../../services/jobActivityService';
+import { JobPicker, jobPickerCopy } from '../cv-job-fit/JobPicker';
+import { selectableJobs } from '../cv-job-fit/jobSelection';
 
 const inputClass =
   'mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand';
@@ -19,23 +27,29 @@ function dateValue(value: Date) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
 }
 
-function overlaps(start: number, end: number, otherStart: string, otherEnd: string) {
-  return start < new Date(otherEnd).getTime() && end > new Date(otherStart).getTime();
-}
-
 export default function CandidateBookingForm({ bookings }: { bookings: ConsultationBooking[] }) {
   const { isVietnamese: vi } = useTranslation();
   const client = useQueryClient();
+  const now = useBookingClock();
   const [targetRole, setTargetRole] = useState('');
   const [consultantId, setConsultantId] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [creditId, setCreditId] = useState('');
+  const [resumeId, setResumeId] = useState('');
+  const [jobId, setJobId] = useState('');
   const [day, setDay] = useState(() => dateValue(new Date(Date.now() + 86_400_000)));
-  const [time, setTime] = useState('09:00');
+  const [time, setTime] = useState('');
   const [success, setSuccess] = useState(false);
   const locale = vi ? 'vi-VN' : 'en-GB';
   const orders = useQuery({ queryKey: ['consultation-orders'], queryFn: listConsultationOrders });
+  const resumes = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
+  const jobs = useQuery({ queryKey: ['consultation-job-catalog'], queryFn: () => getJobs(), staleTime: 60_000 });
+  const activity = useQuery({ queryKey: JOB_ACTIVITY_QUERY_KEY, queryFn: getJobActivity, staleTime: 60_000 });
+  const readyResumes = (resumes.data ?? []).filter((resume) => resume.status === 'Ready');
+  const selectedResume = readyResumes.find((resume) => resume.id === resumeId);
+  const availableJobs = selectableJobs(jobs.data ?? [], activity.data);
+  const selectedJob = availableJobs.find((job) => job.id === jobId);
   const credits = (orders.data ?? []).filter(
     (order) =>
       order.is_session_pack &&
@@ -53,9 +67,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
   const dayStart = new Date(`${day}T00:00:00`);
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
-  // Include the end of sessions that start late in the selected day.
-  dayEnd.setHours(dayEnd.getHours() + 1);
-  const validDay = !Number.isNaN(dayStart.getTime());
+  const validDay = /^\d{4}-\d{2}-\d{2}$/.test(day) && dateValue(dayStart) === day;
   const availability = useQuery({
     queryKey: ['consultant-availability', consultantId, day],
     queryFn: () =>
@@ -63,29 +75,41 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
     enabled: !!chosenConsultant && validDay,
     refetchInterval: 30_000,
   });
-  const start = new Date(`${day}T${time}`).getTime();
-  const end = start + 60 * 60_000;
-  const invalidTime = !Number.isFinite(start) || start <= Date.now();
-  const consultantConflict = (availability.data ?? []).some((slot) =>
-    overlaps(start, end, slot.starts_at, slot.ends_at),
-  );
-  const candidateConflict = bookings.some(
-    (booking) =>
-      ['PENDING', 'ACCEPTED'].includes(booking.status) &&
-      overlaps(start, end, booking.starts_at, booking.ends_at),
-  );
+  const slots = buildBookingSlots(day, now, availability.data ?? [], bookings);
+  const selectedSlot = slots.find((slot) => slot.value === time);
+  const scheduleReady = !!chosenConsultant && validDay && availability.isSuccess && !availability.isFetching;
+  const slotLabel = (slot: BookingSlot) => {
+    const start = new Date(slot.startsAt);
+    const end = new Date(slot.endsAt);
+    const options = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' } as const;
+    const endLabel = dateValue(end) !== day ? '24:00' : end.toLocaleTimeString(locale, options);
+    return `${start.toLocaleTimeString(locale, options)} – ${endLabel}`;
+  };
+  const slotReason = (reason: BookingSlot['reason']) => {
+    if (reason === 'past') return vi ? 'Đã qua giờ bắt đầu' : 'Start time has passed';
+    if (reason === 'advisor-busy') return vi ? 'Cố vấn bận' : 'Advisor unavailable';
+    if (reason === 'candidate-busy') return vi ? 'Trùng lịch của bạn' : 'Conflicts with your schedule';
+    return '';
+  };
   const create = useMutation({
     mutationFn: async () => {
-      if (!creditOrder || !chosenConsultant)
+      if (!creditOrder || !chosenConsultant || !selectedResume || (jobId && !selectedJob))
         throw new Error(
-          vi ? 'Chọn cố vấn và gói còn lượt.' : 'Choose an advisor and a pack with credits.',
+          vi ? 'Chọn CV sẵn sàng, cố vấn và gói còn lượt. Kiểm tra lại công việc nếu đã chọn.' : 'Choose a ready CV, an advisor and a pack with credits. Check the job if selected.',
         );
+      const currentSlot = buildBookingSlots(day, Date.now(), availability.data ?? [], bookings)
+        .find((slot) => slot.value === time);
+      if (!scheduleReady || !currentSlot || currentSlot.reason)
+        throw new Error(vi ? 'Chọn một khung giờ còn trống trong tương lai.' : 'Choose an available future time slot.');
       return createBooking({
         consultantId: chosenConsultant.id,
+        resumeId: selectedResume.id,
+        ...(selectedJob ? { jobId: selectedJob.id } : {}),
         targetRole: targetRole.trim(),
         subject: subject.trim(),
         description: description.trim(),
-        startsAt: new Date(start).toISOString(),
+        startsAt: currentSlot.startsAt,
+        durationMinutes: 60,
         creditOrderId: creditOrder.id,
       });
     },
@@ -93,6 +117,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
       setSuccess(true);
       setDescription('');
       setSubject('');
+      setTime('');
       void client.invalidateQueries({ queryKey: ['consultation-bookings'] });
       void client.invalidateQueries({ queryKey: ['consultation-orders'] });
       void client.invalidateQueries({ queryKey: ['consultant-availability'] });
@@ -101,25 +126,22 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
     onError: () => {
       void client.invalidateQueries({ queryKey: ['consultant-availability'] });
       void client.invalidateQueries({ queryKey: ['consultation-orders'] });
+      void client.invalidateQueries({ queryKey: ['resumes'] });
+      void client.invalidateQueries({ queryKey: ['consultation-job-catalog'] });
+      void client.invalidateQueries({ queryKey: JOB_ACTIVITY_QUERY_KEY });
     },
   });
   const ready =
     chosenConsultant &&
     creditOrder &&
+    selectedResume &&
+    !resumes.isError &&
+    (!jobId || !!selectedJob) &&
     subject.trim() &&
     description.trim() &&
-    !invalidTime &&
-    !consultantConflict &&
-    !candidateConflict &&
-    availability.isSuccess &&
-    !availability.isFetching;
-  const formatTime = (iso: string) => {
-    const value = new Date(iso);
-    const label = value.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-    return dateValue(value) === day
-      ? label
-      : `${label} (${value.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })})`;
-  };
+    selectedSlot &&
+    !selectedSlot.reason &&
+    scheduleReady;
 
   return (
     <section className="space-y-6" aria-labelledby="booking-title">
@@ -147,22 +169,13 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
             onChange={(event) => {
               setTargetRole(event.target.value);
               setConsultantId('');
+              setTime('');
               setSuccess(false);
             }}
             className={inputClass}
           >
             <option value="">{vi ? 'Chọn vị trí ứng tuyển' : 'Choose a target role'}</option>
-            {[
-              'Backend',
-              'Frontend',
-              'Fullstack',
-              'Mobile',
-              'Data Analyst',
-              'Data Engineer',
-              'DevOps',
-              'QA',
-              'UI/UX',
-            ].map((role) => (
+            {CONSULTATION_TARGET_ROLES.map((role) => (
               <option key={role} value={role}>{role}</option>
             ))}
           </select>
@@ -208,7 +221,11 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
                   type="button"
                   role="radio"
                   aria-checked={consultant.id === consultantId}
-                  onClick={() => setConsultantId(consultant.id)}
+                  onClick={() => {
+                    if (consultant.id !== consultantId) setTime('');
+                    setConsultantId(consultant.id);
+                    setSuccess(false);
+                  }}
                   className={`relative rounded-2xl border p-5 text-left transition-colors ${consultant.id === consultantId ? 'border-brand bg-brand/5 ring-1 ring-brand' : 'border-border hover:border-brand'}`}
                 >
                   {consultant.id === consultantId && (
@@ -247,6 +264,53 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
           )}
         </fieldset>
 
+        <section className="space-y-4 rounded-2xl border border-border p-5" aria-labelledby="booking-documents-title">
+          <h3 id="booking-documents-title" className="font-medium">
+            {vi ? 'Tài liệu gửi cố vấn' : 'Documents for your advisor'}
+          </h3>
+          <p className="text-sm leading-6 text-slate-600">
+            {vi
+              ? 'Chọn CV để cố vấn đọc và xem kết quả đánh giá trước buổi tư vấn. Bạn có thể gửi thêm một tin tuyển dụng để cố vấn xem công việc và độ phù hợp ATS với CV này.'
+              : 'Share a CV so your advisor can review it and its evaluation before the session. You can also share a job posting to discuss the role and its ATS match with this CV.'}
+          </p>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium">
+                {vi ? 'CV dùng cho buổi tư vấn (bắt buộc)' : 'CV for this session (required)'}
+                <select required aria-label={vi ? 'CV dùng cho buổi tư vấn' : 'CV for this session'}
+                  value={resumeId} onChange={(event) => { setResumeId(event.target.value); setSuccess(false); }}
+                  disabled={resumes.isPending || resumes.isError || !readyResumes.length} className={inputClass}>
+                  <option value="">{vi ? 'Chọn CV đã sẵn sàng' : 'Choose a ready CV'}</option>
+                  {readyResumes.map((resume) => <option key={resume.id} value={resume.id}>{resume.name}</option>)}
+                </select>
+              </label>
+              {resumes.isPending && <p className="mt-2 text-sm text-slate-500">{vi ? 'Đang tải CV…' : 'Loading CVs…'}</p>}
+              {resumes.error && <p role="alert" className="mt-2 text-sm text-danger">{resumes.error.message}</p>}
+              {!resumes.isPending && !resumes.isError && !readyResumes.length && <p className="mt-2 text-sm text-slate-600">
+                {vi ? 'Bạn cần tải CV lên hoặc hoàn tất CV đang chỉnh sửa để đặt lịch.' : 'Upload a CV or finish an existing draft before booking.'}
+              </p>}
+              {resumeId && !selectedResume && !resumes.isPending && <p role="alert" className="mt-2 text-sm text-danger">{vi ? 'CV đã chọn không còn sẵn sàng. Vui lòng chọn lại.' : 'The selected CV is no longer ready. Choose another CV.'}</p>}
+              <div className="mt-3 flex flex-wrap gap-4 text-sm text-brand">
+                {selectedResume && <Link to={`/candidate/resumes/${selectedResume.id}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{vi ? 'Xem CV đã chọn' : 'Preview selected CV'}</Link>}
+                <Link to="/candidate/resumes/upload" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{vi ? 'Tải CV lên' : 'Upload a CV'}</Link>
+                <button type="button" onClick={() => void resumes.refetch()} className="underline underline-offset-4">{vi ? 'Cập nhật danh sách CV' : 'Refresh CV list'}</button>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium">{vi ? 'Công việc muốn được tư vấn (không bắt buộc)' : 'Job to discuss (optional)'}</p>
+              <JobPicker jobs={jobs.data ?? []} activity={activity.data} selectedId={jobId}
+                onSelect={(id) => { setJobId(id); setSuccess(false); }} c={jobPickerCopy[vi ? 'vi' : 'en']}
+                label={vi ? 'Công việc muốn được tư vấn' : 'Job to discuss'} />
+              <p className="mt-2 text-xs leading-5 text-slate-500">{vi ? 'Có thể để trống nếu chỉ cần tư vấn CV hoặc định hướng nghề nghiệp.' : 'Leave empty for CV advice or general career guidance.'}</p>
+              {jobs.isPending && <p className="mt-2 text-sm text-slate-500">{vi ? 'Đang tải công việc…' : 'Loading jobs…'}</p>}
+              {jobs.error && <p role="alert" className="mt-2 text-sm text-danger">{vi ? 'Chưa tải được kho việc làm. Bạn vẫn có thể đặt lịch không kèm job.' : 'The job catalog could not be loaded. You can still book without a job.'}</p>}
+              {activity.error && <p className="mt-2 text-xs text-slate-500">{vi ? 'Chưa tải được việc đã lưu. Bạn có thể chọn từ kho việc làm.' : 'Saved jobs could not be loaded. You can choose from the catalog.'}</p>}
+              {jobId && !selectedJob && <p role="alert" className="mt-2 text-sm text-danger">{vi ? 'Công việc đã chọn không còn khả dụng. Chọn lại hoặc bỏ chọn.' : 'This job is no longer available. Choose another job or remove it.'}</p>}
+              {jobId && <button type="button" onClick={() => setJobId('')} className="mt-3 text-sm text-brand underline underline-offset-4">{vi ? 'Bỏ chọn công việc' : 'Remove job'}</button>}
+            </div>
+          </div>
+        </section>
+
         <div className="grid items-start gap-6 lg:grid-cols-2">
           <div className="space-y-5 rounded-2xl border border-border p-5">
             <h3 className="flex items-center gap-2 font-medium">
@@ -255,7 +319,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <p className="text-sm text-slate-600 sm:col-span-2">
-                {vi ? 'Mỗi lượt tư vấn từ 30 đến 60 phút. Hệ thống giữ khung lịch 60 phút để tránh trùng lịch.' : 'Each session lasts 30–60 minutes. A 60-minute slot is reserved to avoid scheduling conflicts.'}
+                {vi ? 'Mỗi khung giờ kéo dài 60 phút, ví dụ 07:00–08:00 hoặc 08:00–09:00. Sau khi cố vấn tiếp nhận, hai bên nhận lời mời Google Calendar và link Google Meet.' : 'Each slot lasts 60 minutes, for example 07:00–08:00 or 08:00–09:00. After acceptance, both participants receive Google Calendar invitations and a Google Meet link.'}
               </p>
               <label className="text-sm">
                 {vi ? 'Gói dùng cho buổi này' : 'Use credits from'}
@@ -280,25 +344,46 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
                 {vi ? 'Ngày tư vấn' : 'Date'}
                 <input
                   type="date"
-                  min={dateValue(new Date())}
-                  max={dateValue(new Date(Date.now() + 90 * 86_400_000))}
+                  min={dateValue(new Date(now))}
+                  max={dateValue(new Date(now + 90 * 86_400_000))}
                   value={day}
                   required
-                  onChange={(event) => setDay(event.target.value)}
+                  onChange={(event) => {
+                    setDay(event.target.value);
+                    setTime('');
+                    setSuccess(false);
+                  }}
                   className={inputClass}
                 />
               </label>
-              <label className="text-sm">
-                {vi ? 'Giờ bắt đầu' : 'Start time'}
-                <input
-                  type="time"
+              <label className="text-sm sm:col-span-2">
+                {vi ? 'Khung giờ tư vấn (60 phút)' : 'Consultation time slot (60 minutes)'}
+                <select
+                  aria-label={vi ? 'Khung giờ tư vấn' : 'Consultation time slot'}
                   value={time}
-                  step={900}
                   required
-                  onChange={(event) => setTime(event.target.value)}
+                  disabled={!scheduleReady}
+                  onChange={(event) => {
+                    setTime(event.target.value);
+                    setSuccess(false);
+                  }}
                   className={inputClass}
-                />
+                >
+                  <option value="">{vi ? 'Chọn khung giờ bắt đầu – kết thúc' : 'Choose a start – end time slot'}</option>
+                  {slots.map((slot) => (
+                    <option key={slot.value} value={slot.value} disabled={!!slot.reason}>
+                      {slotLabel(slot)}{slot.reason ? ` · ${slotReason(slot.reason)}` : ''}
+                    </option>
+                  ))}
+                </select>
               </label>
+              {selectedSlot && !selectedSlot.reason && scheduleReady && (
+                <p role="status" className="rounded-xl bg-brand/5 px-4 py-3 text-sm text-brand sm:col-span-2">
+                  {vi ? 'Đã chọn: ' : 'Selected: '}
+                  {dayStart.toLocaleDateString(locale)} · {slotLabel(selectedSlot)} · {vi ? '60 phút' : '60 minutes'}
+                  {dateValue(new Date(selectedSlot.endsAt)) !== day && (vi ? ' (kết thúc vào ngày hôm sau)' : ' (ends the following day)')}
+                </p>
+              )}
             </div>
             <p className="text-xs leading-5 text-slate-500">
               {vi
@@ -314,75 +399,24 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
             {!orders.isPending && !credits.length && (
               <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
                 {vi
-                  ? 'Bạn cần mua gói và còn lượt để đăng ký. Mỗi buổi từ 30 đến 60 phút dùng 1 lượt. Xem gói ở mục 01.'
-                  : 'Buy a pack with available credits to book. Each 30-60 minute session uses one credit. See section 01.'}
+                  ? 'Bạn cần mua gói và còn lượt để đăng ký. Mỗi khung 60 phút dùng 1 lượt. Xem gói ở mục 01.'
+                  : 'Buy a pack with available credits to book. Each 60-minute slot uses one credit. See section 01.'}
               </p>
             )}
-            {chosenConsultant && (
-              <div className="border-t border-border pt-4">
-                <p className="text-sm font-medium">
-                  {vi
-                    ? 'Các khung giờ không khả dụng trong ngày'
-                    : 'Unavailable times on this date'}
-                </p>
-                {availability.isPending ? (
-                  <p className="mt-2 text-sm text-slate-500">
-                    {vi ? 'Đang kiểm tra lịch…' : 'Checking availability…'}
-                  </p>
-                ) : availability.error ? (
-                  <p role="alert" className="mt-2 text-sm text-danger">
-                    {availability.error.message}
-                  </p>
-                ) : availability.data?.length === 0 ? (
-                  <p className="mt-2 text-sm text-slate-500">
-                    {vi
-                      ? 'Chưa có lịch tư vấn hoặc lịch bận trong ngày này.'
-                      : 'No booked sessions or busy periods on this date.'}
-                  </p>
-                ) : (
-                  <ul className="mt-2 space-y-2">
-                    {availability.data?.map((slot) => (
-                      <li
-                        key={slot.id}
-                        className="flex justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm"
-                      >
-                        <span>
-                          {formatTime(slot.starts_at)} – {formatTime(slot.ends_at)}
-                        </span>
-                        <span className="text-slate-500">
-                          {slot.type === 'BUSY'
-                            ? vi
-                              ? 'Cố vấn bận'
-                              : 'Advisor busy'
-                            : vi
-                              ? 'Đã có lịch tư vấn'
-                              : 'Session booked'}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+            {!chosenConsultant && <p className="text-sm text-slate-500">{vi ? 'Chọn cố vấn để xem các khung giờ có thể đặt.' : 'Choose an advisor to see time slots.'}</p>}
+            {chosenConsultant && !validDay && <p className="text-sm text-danger">{vi ? 'Chọn ngày tư vấn hợp lệ.' : 'Choose a valid consultation date.'}</p>}
+            {chosenConsultant && validDay && availability.isFetching && <p role="status" className="text-sm text-slate-500">{vi ? 'Đang kiểm tra lịch trống…' : 'Checking available times…'}</p>}
+            {chosenConsultant && validDay && availability.error && (
+              <div role="alert" className="space-y-2 text-sm text-danger">
+                <p>{availability.error.message}</p>
+                <button type="button" onClick={() => void availability.refetch()} className="text-brand underline underline-offset-4">{vi ? 'Thử tải lịch lại' : 'Retry availability'}</button>
               </div>
             )}
-            {invalidTime && (
-              <p className="text-sm text-danger">
-                {vi
-                  ? 'Chọn thời gian bắt đầu trong tương lai.'
-                  : 'Choose a start time in the future.'}
-              </p>
-            )}
-            {consultantConflict && (
-              <p className="text-sm text-danger">
-                {vi
-                  ? 'Khung giờ đã chọn trùng lịch của cố vấn. Vui lòng chọn giờ khác.'
-                  : 'This time overlaps with the advisor’s schedule. Choose another time.'}
-              </p>
-            )}
-            {candidateConflict && (
-              <p className="text-sm text-danger">
-                {vi
-                  ? 'Bạn đã có yêu cầu tư vấn khác trong khung giờ này.'
-                  : 'You already have another consultation request at this time.'}
+            {scheduleReady && !slots.some((slot) => !slot.reason) && <p className="text-sm text-slate-600">{vi ? 'Ngày này không còn khung giờ trống. Vui lòng chọn ngày khác.' : 'No time slots are available on this date. Choose another date.'}</p>}
+            {time && (!selectedSlot || selectedSlot.reason) && (
+              <p role="alert" className="text-sm text-danger">
+                {selectedSlot ? slotReason(selectedSlot.reason) : (vi ? 'Khung giờ đã chọn không còn khả dụng.' : 'The selected slot is no longer available.')}{' '}
+                {vi ? 'Vui lòng chọn khung giờ khác.' : 'Choose another time slot.'}
               </p>
             )}
           </div>

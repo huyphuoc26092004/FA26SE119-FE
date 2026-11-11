@@ -9,8 +9,8 @@ export const DEFAULT_CONSULTANT = {
   id: '',
   name: 'Đội ngũ cố vấn CCV',
   title: 'Career Consultant',
-  bio: 'Quản trị viên sẽ phân công một cố vấn phù hợp với chủ đề bạn chọn. Cố vấn xem hồ sơ, CV và trao đổi trực tiếp với bạn tại đây.',
-  bioEn: 'An admin assigns a consultant who fits your topic. They review your profile and CV and talk with you here.',
+  bio: 'Chọn cố vấn phù hợp và khung giờ tư vấn. Sau khi được tiếp nhận, hai bên nhận lịch Google Calendar và tham gia qua Google Meet.',
+  bioEn: 'Choose an advisor and time. Once accepted, both participants receive Google Calendar invitations and join through Google Meet.',
   responseTime: '24',
 };
 
@@ -19,6 +19,7 @@ export const CONSULTATION_TOPIC_LABELS = TOPIC_LABELS;
 const MESSAGE_PAGE = 100;
 
 async function loadThread(row: ApiRow): Promise<ConsultationRequest> {
+  if (row.request_type === 'SESSION_BOOKING') return toConsultationRequest(row, { messages: [] });
   const { data: messages } = await apiClient.get<ApiRow[]>(`/consultations/${row.id}/messages`, { params: { limit: MESSAGE_PAGE, latest: true } });
   return toConsultationRequest(row, { messages });
 }
@@ -26,7 +27,8 @@ async function loadThread(row: ApiRow): Promise<ConsultationRequest> {
 /** Cuộc tư vấn của ứng viên đang đăng nhập (backend tự lọc theo người gọi). */
 export async function getMyConsultations(candidateId: string): Promise<ConsultationRequest[]> {
   const { data } = await apiClient.get<ApiRow[]>('/consultations');
-  const mine = data.filter((row) => !candidateId || String(row.candidate_user_id) === candidateId);
+  const mine = data.filter((row) => row.request_type !== 'SESSION_BOOKING'
+    && (!candidateId || String(row.candidate_user_id) === candidateId));
   return Promise.all(mine.map(loadThread));
 }
 
@@ -72,7 +74,7 @@ export async function rateConsultation(id: string, stars: number, comment: strin
   return notConnected('BE chưa có API', id, stars, comment);
 }
 
-/** Đọc lại một cuộc tư vấn kèm tin nhắn (dùng để làm mới khung chat). */
+/** Booked sessions expose metadata only; legacy conversations retain their message history. */
 export async function getMyConsultation(id: string): Promise<ConsultationRequest> {
   const { data } = await apiClient.get<ApiRow>(`/consultations/${id}`);
   return loadThread(data);

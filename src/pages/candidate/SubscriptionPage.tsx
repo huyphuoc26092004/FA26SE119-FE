@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, Minus, Plus } from 'lucide-react';
 import type {
@@ -14,7 +14,6 @@ import {
   getPaymentHistory,
   getTopupPacks,
   purchaseTokenTopup,
-  getPaymentOrder,
   cancelSubscription,
   reportPaymentIssue,
   resumeSePayCheckout,
@@ -25,6 +24,7 @@ import { PaymentCheckoutModal } from './subscription/PaymentCheckoutModal';
 import { InvoiceReceiptModal } from './subscription/InvoiceReceiptModal';
 import { TokenQuotaRulesModal } from './subscription/TokenQuotaRulesModal';
 import { useTranslation } from '../../i18n';
+import PaymentReturnNotice from '../../components/consultation/PaymentReturnNotice';
 
 const copy = {
   vi: {
@@ -77,10 +77,6 @@ const copy = {
     status: { success: 'Thành công', pending: 'Đang chờ', failed: 'Thất bại' } as Record<string, string>,
     faqTitle: 'Câu hỏi thường gặp',
     planNames: { free: 'Miễn phí', basic: 'Basic', pro: 'Pro' } as Record<string, string>,
-    paidNotice: (plan: string) => `Thanh toán thành công. Đã ghi nhận thanh toán cho ${plan}.`,
-    waitingNotice: 'Đã nhận kết quả từ SePay, đang chờ backend xác nhận thanh toán. Tải lại trang sau ít phút.',
-    cancelledNotice: 'Bạn đã hủy thanh toán. Đơn vẫn ở trạng thái chờ, có thể thanh toán lại trong lịch sử.',
-    failedNotice: 'Thanh toán chưa thành công. Bạn có thể thử lại hoặc báo lỗi cho đơn này.',
     cancelPlan: 'Hủy gói',
     cancelConfirm: 'Hủy gói hiện tại? Quyền lợi dừng ngay và tài khoản trở về gói Miễn phí.',
     cancelledPlan: 'Đã hủy gói. Tài khoản trở về gói Miễn phí.',
@@ -141,10 +137,6 @@ const copy = {
     status: { success: 'Paid', pending: 'Pending', failed: 'Failed' } as Record<string, string>,
     faqTitle: 'Frequently asked questions',
     planNames: { free: 'Free', basic: 'Basic', pro: 'Pro' } as Record<string, string>,
-    paidNotice: (plan: string) => `Payment received for ${plan}.`,
-    waitingNotice: 'SePay returned; waiting for the backend to confirm the payment. Reload in a few minutes.',
-    cancelledNotice: 'You cancelled the payment. The order stays pending and can be paid from your history.',
-    failedNotice: 'The payment did not go through. Try again or report this order.',
     cancelPlan: 'Cancel plan',
     cancelConfirm: 'Cancel your current plan? Benefits stop now and you return to Free.',
     cancelledPlan: 'Plan cancelled. You are back on Free.',
@@ -221,7 +213,6 @@ export const SubscriptionPage: React.FC = () => {
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const packs = useMemo(() => getTopupPacks(), []);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<SubscriptionPlan | null>(null);
@@ -251,22 +242,6 @@ export const SubscriptionPage: React.FC = () => {
 
   useEffect(() => {
     void refreshData();
-  }, []);
-
-  // SePay quay lại trang này với ?orderId=…&payment=success|error|cancel; đọc lại đơn từ backend.
-  useEffect(() => {
-    const orderId = searchParams.get('orderId');
-    const payment = searchParams.get('payment');
-    if (!orderId) return;
-    void getPaymentOrder(orderId)
-      .then((order) => {
-        if (order.status === 'success') setNotice({ tone: 'ok', text: c.paidNotice(order.planName) });
-        else if (payment === 'success') setNotice({ tone: 'ok', text: c.waitingNotice });
-        else setNotice({ tone: 'error', text: payment === 'cancel' ? c.cancelledNotice : c.failedNotice });
-        void refreshData();
-      })
-      .catch((err) => setNotice({ tone: 'error', text: authErrorMessage(err, c.failedNotice) }))
-      .finally(() => setSearchParams({}, { replace: true }));
   }, []);
 
   const handleCancelSubscription = async () => {
@@ -409,6 +384,9 @@ export const SubscriptionPage: React.FC = () => {
 
   return (
     <div className="pb-[clamp(3rem,6vw,5rem)] pt-[clamp(1.75rem,3.5vw,2.5rem)]">
+      <div className="mb-8 empty:hidden">
+        <PaymentReturnNotice onSettled={() => void refreshData()} />
+      </div>
       {notice && (
         <p role="status" className={`mb-8 border-l-2 py-1 pl-4 text-[15px] ${notice.tone === 'ok' ? 'border-brand text-brand' : 'border-danger text-danger'}`}>
           {notice.text}

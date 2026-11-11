@@ -3,14 +3,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Check, ExternalLink } from 'lucide-react';
 import { Loading, ErrorState } from '../../components/ui';
-import ConsultationAdviceBuilder from '../../components/consultation/ConsultationAdviceBuilder';
 import {
   Avatar,
   Headline,
   Modal,
   SectionHead,
   StatRow,
-  SubHead,
   ThinBar,
   UnderlineTabs,
   pad2,
@@ -19,7 +17,6 @@ import {
 } from '../../components/consultation/ConsultantKit';
 import {
   getCandidateCareerAnalysis,
-  saveCandidateCareerAdvice,
 } from '../../services/consultationService';
 import type { CandidateCareerAnalysis } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
@@ -237,8 +234,6 @@ export default function CandidateCareerAnalysisPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [showCvModal, setShowCvModal] = useState(false);
-  const [consultantNote, setConsultantNote] = useState('');
-  const [noteSaved, setNoteSaved] = useState(false);
 
   const {
     data: analysis,
@@ -249,11 +244,6 @@ export default function CandidateCareerAnalysisPage() {
     queryFn: () => getCandidateCareerAnalysis(candidateId || '1'),
     enabled: !!candidateId,
   });
-
-  const handleSaveNote = () => {
-    setNoteSaved(true);
-    setTimeout(() => setNoteSaved(false), 2500);
-  };
 
   if (isLoading) return <Loading />;
   if (isError || !analysis) {
@@ -811,48 +801,13 @@ export default function CandidateCareerAnalysisPage() {
         )}
 
         {/* ── Advice ────────────────────────────────────────────── */}
-        {activeTab === 'advice' &&
-          (analysis.consultantAdvice ? (
-            <ConsultationAdviceBuilder
-              initialAdvice={analysis.consultantAdvice}
-              candidateName={candidate.name}
-              candidateRole={candidate.targetRole}
-              topic="CAREER_ORIENTATION"
-              onSave={async (newAdv) => {
-                await saveCandidateCareerAdvice(candidate.id, newAdv);
-              }}
-            />
-          ) : (
-            <p className="border-y border-border py-10 text-center text-sm text-slate-500">{c.noAdvice}</p>
-          ))}
+        {activeTab === 'advice' && (
+          <section className="space-y-4 border-y border-border py-8">
+            <p className="text-sm leading-6 text-slate-600">{isVietnamese ? 'Viết nhận xét CV, định hướng và lời khuyên ứng tuyển trong phiếu của buổi tư vấn. Ghi chú riêng được lưu tại cùng yêu cầu.' : 'Write CV, career and application advice in the consultation report. Private notes are saved in the same workspace.'}</p>
+            {latestRequest ? <Link className="text-brand underline" to={`/consultant/consultations/${latestRequest.id}`}>{isVietnamese ? 'Mở phiếu và ghi chú tư vấn' : 'Open consultation report and notes'}</Link> : <p>{c.noAdvice}</p>}
+          </section>
+        )}
       </div>
-
-      {/* Quick notes */}
-      <section className="mt-[clamp(3rem,6vw,5rem)]">
-        <SubHead
-          title={c.notesTitle}
-          action={
-            noteSaved && (
-              <span className="inline-flex items-center gap-1.5 text-[13px] text-brand">
-                <Check size={13} />
-                {c.saved}
-              </span>
-            )
-          }
-        />
-        <textarea
-          rows={3}
-          value={consultantNote}
-          onChange={(e) => setConsultantNote(e.target.value)}
-          placeholder={c.notesPlaceholder}
-          className="mt-3 w-full resize-y border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-[15px] leading-7 text-ink outline-none placeholder:text-slate-400 focus:border-brand"
-        />
-        <div className="mt-3 flex justify-end">
-          <button type="button" onClick={handleSaveNote} className={`${textLink} text-ink`}>
-            {c.saveNote}
-          </button>
-        </div>
-      </section>
 
       {/* Full CV */}
       {showCvModal && (

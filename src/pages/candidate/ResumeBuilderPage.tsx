@@ -46,6 +46,8 @@ const copy = {
     preview: 'Xem trước',
     template: 'Mẫu',
     changeTemplate: 'Đổi mẫu',
+    localTemplateDefaultPdf: 'Mẫu xem trước có sẵn. PDF sẽ dùng bố cục mặc định.',
+    localTemplateSavedPdf: 'Mẫu này chỉ để xem trước. PDF dùng mẫu đã lưu trong CV.',
     pages: (n: number) => `${n} trang A4`,
     next: (label: string) => `Tiếp: ${label}`,
     prev: 'Quay lại',
@@ -147,6 +149,8 @@ const copy = {
     preview: 'Preview',
     template: 'Template',
     changeTemplate: 'Change template',
+    localTemplateDefaultPdf: 'Built-in preview template. The PDF will use the default layout.',
+    localTemplateSavedPdf: 'This template is for preview only. The PDF uses the saved CV template.',
     pages: (n: number) => `${n} A4 page${n > 1 ? 's' : ''}`,
     next: (label: string) => `Next: ${label}`,
     prev: 'Back',
@@ -1065,6 +1069,11 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
               </label>
               <span className="text-sm tabular-nums text-slate-500">{c.pages(pageCount)}</span>
             </div>
+            {template.source === 'local' && !guest && (
+              <p className="mt-3 text-[13px] leading-6 text-slate-600">
+                {cv.templateId ? c.localTemplateSavedPdf : c.localTemplateDefaultPdf}
+              </p>
+            )}
             <div className="mt-5 max-h-none overflow-y-auto border border-border bg-slate-100 p-[clamp(0.75rem,1.5vw,1.25rem)] lg:max-h-[calc(100dvh-9rem)]">
               <div
                 className={`mx-auto max-w-[794px] shadow-[0_1px_2px_rgba(23,32,28,0.08)] ${guest ? 'select-none print:hidden [&_iframe]:pointer-events-none' : ''}`}

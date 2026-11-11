@@ -2,7 +2,6 @@ import type {
   CandidateCareerAnalysis,
   ConsultantCandidateSummary,
   ConsultantDashboardStats,
-  ConsultantFeedback,
   ConsultationAdvicePillars,
   ConsultationCandidate,
   ConsultationMeetingInfo,
@@ -86,7 +85,11 @@ export async function markThreadRead(threadId: string): Promise<number> {
 
 export async function getConsultationRequestById(id: string): Promise<ConsultationRequest | null> {
   if (!id) return null;
-  const [{ data }, messages, profile] = await Promise.all([apiClient.get<ApiRow>(`/consultations/${id}`), getMessages(id), getProfile(id)]);
+  const { data } = await apiClient.get<ApiRow>(`/consultations/${id}`);
+  const [messages, profile] = await Promise.all([
+    str(data.request_type) === 'SESSION_BOOKING' ? Promise.resolve([]) : getMessages(id),
+    getProfile(id),
+  ]);
   return toConsultationRequest(data, {
     messages,
     candidate: profile ? toConsultationCandidate(profile, str(data.candidate_user_id)) : undefined,
@@ -150,71 +153,6 @@ export async function updateConsultationStatus(id: string, newStatus: Consultati
   return updated;
 }
 
-// TODO(api): PUT /api/v1/consultations/{id}/private-notes (BE chưa có API)
-export async function saveConsultantPrivateNotes(id: string, notes: string, rubric?: {
-    cvQuality: number;
-    technicalDepth: number;
-    communication: number;
-    marketReadiness: number;
-  }): Promise<ConsultationRequest> {
-  return notConnected('BE chưa có API', id, notes, rubric);
-}
-
-const list = (items: string[]) => items.filter(Boolean).map((t) => `• ${t}`).join('\n');
-
-/** Định dạng lời khuyên 4 trụ cột thành văn bản để gửi cho ứng viên. */
-export function adviceToText(advice: ConsultationAdvicePillars): string {
-  const { cvAdvice: cv, careerAdvice: career, salaryAdvice: salary, interviewAdvice: interview } = advice;
-  return [
-    'LỜI KHUYÊN TƯ VẤN',
-    `1. CV & ATS\n${cv.summary}\n${list([...cv.actionItems, ...cv.formattingTips])}${cv.missingKeywordsToInject.length ? `\nTừ khóa nên bổ sung: ${cv.missingKeywordsToInject.join(', ')}` : ''}`,
-    `2. Định hướng nghề nghiệp\n${career.currentLevel} → ${career.targetLevel}\n${career.recommendedPositioning}\n${list([...career.shortTermRoadmap, ...career.strategicRecommendations])}`,
-    `3. Lương\n${salary.minSalary.toLocaleString('vi-VN')} – ${salary.maxSalary.toLocaleString('vi-VN')} ${salary.currency} (mục tiêu ${salary.targetSalary.toLocaleString('vi-VN')})\n${list(salary.negotiationTactics)}`,
-    `4. Phỏng vấn (sẵn sàng ${interview.overallReadiness}/10)\n${list([...interview.behavioralTips, ...interview.technicalTips, ...interview.pitfallsToAvoid])}`,
-  ]
-    .map((part) => part.trim())
-    .join('\n\n')
-    .slice(0, 10000);
-}
-
-/** Backend chưa lưu nhận xét có cấu trúc; gửi nhận xét cho ứng viên dưới dạng tin nhắn tư vấn. */
-export async function saveConsultantFeedback(id: string, feedback: ConsultantFeedback): Promise<ConsultationRequest> {
-  const text = [
-    'NHẬN XÉT CỦA CỐ VẤN',
-    feedback.summary,
-    feedback.strengths.length ? `Điểm mạnh:\n${list(feedback.strengths)}` : '',
-    feedback.improvements.length ? `Cần cải thiện:\n${list(feedback.improvements)}` : '',
-    feedback.actionChecklist.length ? `Việc cần làm:\n${list(feedback.actionChecklist.map((a) => a.task))}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n\n');
-  await apiClient.post(`/consultations/${id}/messages`, { content: text.slice(0, 10000) });
-  const updated = await getConsultationRequestById(id);
-  if (!updated) throw new Error('Không tìm thấy cuộc tư vấn.');
-  return { ...updated, feedback };
-}
-
-/** Gửi lời khuyên 4 trụ cột cho ứng viên dưới dạng tin nhắn (backend chưa có bảng lưu lời khuyên). */
-export async function saveConsultationAdvice(id: string, advice: ConsultationAdvicePillars): Promise<ConsultationRequest> {
-  await apiClient.post(`/consultations/${id}/messages`, { content: adviceToText(advice) });
-  const updated = await getConsultationRequestById(id);
-  if (!updated) throw new Error('Không tìm thấy cuộc tư vấn.');
-  return { ...updated, feedback: { summary: advice.cvAdvice.summary, strengths: [], improvements: [], actionChecklist: [], recommendedResources: [], advice } };
-}
-
-/** Lưu lời khuyên trên trang hồ sơ ứng viên: gửi vào cuộc tư vấn đang mở gần nhất của ứng viên đó. */
-export async function saveCandidateCareerAdvice(candidateId: string, advice: ConsultationAdvicePillars): Promise<ConsultationAdvicePillars> {
-  const threads = await apiClient.get<ApiRow[]>('/consultations').then((r) => r.data);
-  const open = threads.find((t) => str(t.candidate_user_id) === candidateId && str(t.status) === 'OPEN');
-  if (!open) throw new Error('Ứng viên không có cuộc tư vấn đang mở để gửi lời khuyên.');
-  await apiClient.post(`/consultations/${str(open.id)}/messages`, { content: adviceToText(advice) });
-  return { ...advice, lastUpdated: new Date().toISOString() };
-}
-
-/**
- * Bản nháp AI: dùng AI đánh giá CV của ứng viên trong cuộc tư vấn rồi điền vào phần CV & ATS.
- * Ba trụ cột còn lại giữ nguyên vì backend chưa có AI sinh lời khuyên tổng hợp.
- */
 export async function generateAiConsultationAdviceDraft(
   consultationId: string,
   resumeId: string,
@@ -337,6 +275,7 @@ export async function getCandidateCareerAnalysis(candidateId: string): Promise<C
   const filled = [profile.target_job_title, profile.career_goal, profile.current_job_title, profile.preferred_location, profile.expected_salary, resume.id].filter(Boolean).length;
   const gapSkills = rows(gap.skills);
   return {
+    consultationRequestType: thread.requestType,
     candidate,
     profileCompletion: Math.round((filled / 6) * 100),
     readinessLevel: readiness(score),

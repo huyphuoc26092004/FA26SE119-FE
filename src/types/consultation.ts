@@ -108,8 +108,16 @@ export interface ConsultationAdvicePillars {
   careerAdvice: CareerDirectionAdviceDetails;
   salaryAdvice: SalaryAdviceDetails;
   interviewAdvice: InterviewAdviceDetails;
+  applicationAdvice?: ApplicationAdviceDetails;
   lastUpdated?: string;
   consultantName?: string;
+}
+
+export interface ApplicationAdviceDetails {
+  summary: string;
+  coverLetterTips: string[];
+  emailTips: string[];
+  applicationChecklist: string[];
 }
 
 export interface ConsultantFeedback {
@@ -156,6 +164,7 @@ export type ConsultationChannel = 'REQUEST' | 'CHAT';
 
 export interface ConsultationRequest {
   id: string;
+  requestType?: string;
   channel?: ConsultationChannel;
   /** Tin cuối và số tin chưa đọc do GET /consultations trả sẵn (không cần tải toàn bộ tin nhắn). */
   lastMessage?: { content: string; timestamp: string; senderRole: ConsultationMessage['senderRole'] };
@@ -249,6 +258,7 @@ export interface ConsultantCandidateSummary {
 }
 
 export interface CandidateCareerAnalysis {
+  consultationRequestType?: string;
   candidate: ConsultationCandidate;
   profileCompletion: number;
   readinessLevel: 'Ready' | 'Near Ready' | 'Developing' | 'Early Stage';
