@@ -184,7 +184,6 @@ test('background refresh retains availability; a removed server slot cannot be s
   assert.equal(form.slotSelect().props.disabled, false);
   assert.equal(form.disabled(), false);
   form.queryData['consultant-availability'].isFetching = false;
-  const day = form.one((node) => node.type === 'input' && node.props.type === 'date').props.value;
   form.queryData['consultant-availability'].data = form.queryData['consultant-availability'].data.slice(1);
   form.render();
   assert.equal(form.disabled(), true);

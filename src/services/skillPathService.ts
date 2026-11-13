@@ -2,7 +2,6 @@ import type { AssessmentQuestion, LearningResource } from '../types/assessment';
 import { apiClient } from './apiClient';
 import { toQuestion, toResource } from './candidateService';
 import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
-import axios from 'axios';
 
 // Bài đánh giá kỹ năng và lộ trình học theo JD của một công việc (trang /candidate/skill-assessment).
 // CV không bắt buộc: POST /assessments { jobId, resumeId? } sinh 10 câu theo JD (và CV nếu có);

@@ -9,7 +9,6 @@ import { CONSULTATION_TARGET_ROLES } from '../../../constants/consultationRoles'
 import { type BookingSlot } from '../../../utils/bookingSlots';
 import {
   createBooking,
-  getConsultantAvailability,
   listConsultants,
   type ConsultationBooking,
 } from '../../../services/bookingService';

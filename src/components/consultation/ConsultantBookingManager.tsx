@@ -111,8 +111,6 @@ export function ConsultantBookingCard({ booking, showLinks = true }: {
 
 export default function ConsultantBookingManager() {
   const { isVietnamese: vi } = useTranslation();
-  const client = useQueryClient();
-  const now = useBookingClock();
   const [tab, setTab] = useState<'PENDING' | 'ACCEPTED' | 'HISTORY'>('PENDING');
   const [settings, setSettings] = useState(false);
   const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings,
