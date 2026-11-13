@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import WorkShiftPanel from './WorkShiftPanel';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Clock, Star } from 'lucide-react';
@@ -12,16 +13,12 @@ import { useTranslation } from '../../i18n';
 import type { ConsultationStatus } from '../../types/consultation';
 import {
   bookingAction,
-  createBusySlot,
-  deleteBusySlot,
   getMyConsultantProfile,
   listBookings,
-  listMyBusySlots,
   type BookingStatus,
   type ConsultationBooking,
 } from '../../services/bookingService';
 
-const field = 'mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink';
 const button = 'rounded-lg bg-brand px-4 py-2 text-sm text-white disabled:opacity-50';
 const secondary = 'rounded-lg border border-border px-4 py-2 text-sm text-ink disabled:opacity-50';
 const statuses: Record<BookingStatus, [string, string]> = {
@@ -41,11 +38,6 @@ export function bookingDisplayStatus(booking: ConsultationBooking, now: number):
   return booking.status;
 }
 
-function localInputTime() {
-  const value = new Date();
-  value.setMinutes(value.getMinutes() - value.getTimezoneOffset());
-  return value.toISOString().slice(0, 16);
-}
 
 export function ConsultantBookingCard({ booking, showLinks = true }: {
   booking: ConsultationBooking;
@@ -123,35 +115,9 @@ export default function ConsultantBookingManager() {
   const now = useBookingClock();
   const [tab, setTab] = useState<'PENDING' | 'ACCEPTED' | 'HISTORY'>('PENDING');
   const [settings, setSettings] = useState(false);
-  const [busyError, setBusyError] = useState('');
   const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings,
     refetchInterval: (query) => bookingPollInterval(query.state.data) });
   const profile = useQuery({ queryKey: ['consultant-profile'], queryFn: getMyConsultantProfile });
-  const busy = useQuery({ queryKey: ['consultant-busy-slots'], queryFn: listMyBusySlots, enabled: settings });
-  const addBusy = useMutation({
-    mutationFn: createBusySlot,
-    onSuccess: () => { void client.invalidateQueries({ queryKey: ['consultant-busy-slots'] }); },
-  });
-  const removeBusy = useMutation({
-    mutationFn: deleteBusySlot,
-    onSuccess: () => { void client.invalidateQueries({ queryKey: ['consultant-busy-slots'] }); },
-  });
-  const busySubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const values = new FormData(form);
-    const start = new Date(String(values.get('start')));
-    const end = new Date(String(values.get('end')));
-    if (start.getTime() <= Date.now() || end.getTime() <= start.getTime()) {
-      setBusyError(vi ? 'Chọn giờ bắt đầu trong tương lai và giờ kết thúc sau giờ bắt đầu.' : 'Choose a future start and an end after the start.');
-      return;
-    }
-    setBusyError('');
-    try {
-      await addBusy.mutateAsync({ startsAt: start.toISOString(), endsAt: end.toISOString(), description: String(values.get('description')) });
-      form.reset();
-    } catch { /* The mutation error is displayed below the form. */ }
-  };
   const rows = bookings.data ?? [];
   const completed = rows.filter(row => row.status === 'COMPLETED');
   const reviewed = completed.filter(row => row.rating != null);
@@ -166,7 +132,7 @@ export default function ConsultantBookingManager() {
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{vi ? 'Tiếp nhận yêu cầu để hệ thống tạo Google Meet và gửi lời mời Google Calendar. Tư vấn trong khung giờ đã xác nhận.' : 'Accept requests to create Google Meet and send Google Calendar invitations. Meet during the confirmed time slot.'}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={secondary} onClick={() => setSettings(!settings)} aria-expanded={settings}>{vi ? 'Chuyên môn và lịch bận' : 'Expertise and busy hours'}</button>
+          <button type="button" className={secondary} onClick={() => setSettings(!settings)} aria-expanded={settings}>{vi ? 'Chuyên môn' : 'Expertise'}</button>
           <Link className={secondary} to="/consultant/consultations?view=messages">{vi ? 'Lịch sử trao đổi' : 'Message history'}</Link>
         </div>
       </header>
@@ -199,28 +165,9 @@ export default function ConsultantBookingManager() {
             <h2 className="text-lg font-medium text-ink">{vi ? 'Chuyên môn tư vấn' : 'Consulting expertise'}</h2>
             <div className="mt-3"><ConsultantExpertiseEditor /></div>
           </div>
-          <div>
-            <h2 className="text-lg font-medium text-ink">{vi ? 'Đánh dấu lịch bận' : 'Block busy hours'}</h2>
-            <p className="mt-1 text-xs leading-5 text-slate-500">{vi ? 'Ứng viên sẽ thấy giờ bận và không thể đặt trùng lịch. Mô tả chỉ bạn thấy.' : 'Candidates see blocked hours and cannot book overlapping sessions. Descriptions remain private.'}</p>
-            <form className="mt-3 space-y-3" onSubmit={busySubmit}>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm text-slate-700">{vi ? 'Từ' : 'From'}<input required name="start" type="datetime-local" min={localInputTime()} className={field} /></label>
-                <label className="block text-sm text-slate-700">{vi ? 'Đến' : 'To'}<input required name="end" type="datetime-local" min={localInputTime()} className={field} /></label>
-              </div>
-              <label className="block text-sm text-slate-700">{vi ? 'Ghi chú riêng (tùy chọn)' : 'Private note (optional)'}<input name="description" maxLength={500} className={field} /></label>
-              <button className={button} disabled={addBusy.isPending}>{vi ? 'Thêm giờ bận' : 'Block time'}</button>
-              {(busyError || addBusy.error) && <p className="text-sm text-danger" role="alert">{busyError || addBusy.error?.message}</p>}
-              {addBusy.isSuccess && !busyError && <p className="text-sm text-brand" role="status">{vi ? 'Đã thêm giờ bận.' : 'Busy hours added.'}</p>}
-            </form>
-            {busy.isLoading && <p className="mt-4 text-sm text-slate-500">{vi ? 'Đang tải lịch bận…' : 'Loading busy hours…'}</p>}
-            {busy.error && <p className="mt-4 text-sm text-danger" role="alert">{busy.error.message}</p>}
-            <ul className="mt-4 divide-y divide-border">
-              {busy.data?.filter(slot => new Date(slot.ends_at).getTime() > now).map(slot => <li key={slot.id} className="flex items-start justify-between gap-3 py-3 text-sm"><div><p>{new Date(slot.starts_at).toLocaleString(vi ? 'vi-VN' : 'en-GB')} – {new Date(slot.ends_at).toLocaleString(vi ? 'vi-VN' : 'en-GB')}</p>{slot.description && <p className="mt-1 text-xs text-slate-500">{slot.description}</p>}</div><button type="button" className="shrink-0 text-danger underline disabled:opacity-50" disabled={removeBusy.isPending} onClick={() => removeBusy.mutate(slot.id)}>{vi ? 'Xóa' : 'Remove'}</button></li>)}
-            </ul>
-            {removeBusy.error && <p className="text-sm text-danger" role="alert">{removeBusy.error.message}</p>}
-          </div>
         </section>
       )}
+      <WorkShiftPanel readOnly />
       <section>
         <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={vi ? 'Lọc lịch tư vấn' : 'Filter consultations'}>
           {(['PENDING', 'ACCEPTED', 'HISTORY'] as const).map(value => <button type="button" key={value} aria-pressed={tab === value} onClick={() => setTab(value)} className={tab === value ? button : secondary}>{value === 'HISTORY' ? (vi ? 'Lịch sử và đánh giá' : 'History and reviews') : statuses[value][vi ? 0 : 1]}</button>)}

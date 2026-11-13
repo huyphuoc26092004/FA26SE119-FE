@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import WorkShiftPanel from '../../components/consultation/WorkShiftPanel';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import OperationalTable, { operationalDate, OperationalPagination } from '../../components/admin/OperationalTable';
@@ -12,6 +14,7 @@ export default function ManagerConsultantsPage() {
   const bookings = useQuery({ queryKey: ['manager-consultant-bookings', selected, bookingOffset], queryFn: () => getManagerConsultantBookings(selected, bookingOffset), enabled: !!selected, refetchInterval: 30_000 });
   return <main className="space-y-7">
     <header><h1 className="text-3xl font-medium">Cố vấn và chất lượng dịch vụ</h1><p className="mt-3 text-sm text-slate-600">Theo dõi chuyên môn, lịch tư vấn, trạng thái cuộc họp và đánh giá từ ứng viên.</p></header>
+    <Link to="/manager/work-schedule" className="inline-flex rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white">Phân công ca làm việc</Link>
     {consultants.isPending && <p>Đang tải cố vấn…</p>}{consultants.error && <p role="alert" className="text-danger">{consultants.error.message}</p>}
     {consultants.data && <OperationalTable rows={consultants.data} onSelect={(row) => { setSelected(str(row.user_id || row.id)); setBookingOffset(0); }} columns={[
       { key: 'full_name', label: 'Cố vấn' }, { key: 'email', label: 'Email' },
@@ -20,6 +23,7 @@ export default function ManagerConsultantsPage() {
       { key: 'average_rating', label: 'Chất lượng', render: (row) => num(row.rating_count) ? `${num(row.average_rating).toFixed(1)}/5 (${num(row.rating_count)} đánh giá)` : 'Chưa có đánh giá' },
     ]} />}
     <OperationalPagination offset={consultantOffset} count={consultants.data?.length ?? 0} busy={consultants.isFetching} onChange={setConsultantOffset} />
+    {selected && <WorkShiftPanel key={selected} consultantId={selected} />}
     {selected && <section className="space-y-4"><h2 className="text-xl font-medium">Lịch tư vấn của {str(consultants.data?.find((row) => str(row.user_id || row.id) === selected)?.full_name)}</h2>
       {bookings.isPending && <p>Đang tải lịch…</p>}{bookings.error && <p role="alert" className="text-danger">{bookings.error.message}</p>}
       {bookings.data && <OperationalTable rows={bookings.data} columns={[
