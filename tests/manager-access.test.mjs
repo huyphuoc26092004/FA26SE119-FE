@@ -9,7 +9,7 @@ const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.Modu
 const { managerCanOpen, homeForRole } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
 
 test('manager can open exactly the requested operating sections and personal account', () => {
-  for (const section of ['', 'subscriptions', 'subscribers', 'consultation-services', 'payments', 'templates', 'jobs', 'consultants', 'crawl-reports', 'notifications', 'feedback', 'support', 'analytics', 'account', 'inbox']) {
+  for (const section of ['', 'subscriptions', 'subscribers', 'consultation-services', 'payments', 'templates', 'jobs', 'consultants', 'work-schedule', 'crawl-reports', 'notifications', 'feedback', 'support', 'analytics', 'account', 'inbox']) {
     assert.equal(managerCanOpen(`/manager${section ? `/${section}` : ''}`), true);
     assert.equal(managerCanOpen(`/admin${section ? `/${section}` : ''}`), true);
   }

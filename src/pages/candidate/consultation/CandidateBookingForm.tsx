@@ -1,3 +1,4 @@
+import { getConsultantSlots } from '../../../services/workShiftService';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -5,10 +6,9 @@ import { CalendarDays, Check, Star } from 'lucide-react';
 import { useTranslation } from '../../../i18n';
 import { useBookingClock } from '../../../components/consultation/useBookingClock';
 import { CONSULTATION_TARGET_ROLES } from '../../../constants/consultationRoles';
-import { buildBookingSlots, type BookingSlot } from '../../../utils/bookingSlots';
+import { type BookingSlot } from '../../../utils/bookingSlots';
 import {
   createBooking,
-  getConsultantAvailability,
   listConsultants,
   type ConsultationBooking,
 } from '../../../services/bookingService';
@@ -71,11 +71,14 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
   const availability = useQuery({
     queryKey: ['consultant-availability', consultantId, day],
     queryFn: () =>
-      getConsultantAvailability(consultantId, dayStart.toISOString(), dayEnd.toISOString()),
+      getConsultantSlots(consultantId, dayStart.toISOString(), dayEnd.toISOString()),
     enabled: !!chosenConsultant && validDay,
     refetchInterval: 30_000,
   });
-  const slots = buildBookingSlots(day, now, availability.data ?? [], bookings);
+  const slots = (availability.data ?? []).map((slot): BookingSlot => ({
+    value: slot.starts_at, startsAt: slot.starts_at, endsAt: slot.ends_at,
+    reason: Date.parse(slot.starts_at) <= now ? 'past' : bookings.some(b => ['PENDING','ACCEPTED'].includes(b.status) && Date.parse(b.starts_at) < Date.parse(slot.ends_at) && Date.parse(b.ends_at) > Date.parse(slot.starts_at)) ? 'candidate-busy' : null,
+  }));
   const selectedSlot = slots.find((slot) => slot.value === time);
   // Background refetches (every 30s) keep the last data; disabling the picker then would close an open dropdown.
   const scheduleReady = !!chosenConsultant && validDay && availability.isSuccess;
@@ -98,7 +101,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
         throw new Error(
           vi ? 'Chọn CV sẵn sàng, cố vấn và gói còn lượt. Kiểm tra lại công việc nếu đã chọn.' : 'Choose a ready CV, an advisor and a pack with credits. Check the job if selected.',
         );
-      const currentSlot = buildBookingSlots(day, Date.now(), availability.data ?? [], bookings)
+      const currentSlot = slots.filter(slot => Date.parse(slot.startsAt) > Date.now())
         .find((slot) => slot.value === time);
       if (!scheduleReady || !currentSlot || currentSlot.reason)
         throw new Error(vi ? 'Chọn một khung giờ còn trống trong tương lai.' : 'Choose an available future time slot.');
@@ -320,7 +323,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <p className="text-sm text-slate-600 sm:col-span-2">
-                {vi ? 'Mỗi khung giờ kéo dài 60 phút, ví dụ 07:00–08:00 hoặc 08:00–09:00. Sau khi cố vấn tiếp nhận, hai bên nhận lời mời Google Calendar và link Google Meet.' : 'Each slot lasts 60 minutes, for example 07:00–08:00 or 08:00–09:00. After acceptance, both participants receive Google Calendar invitations and a Google Meet link.'}
+                {vi ? 'Mỗi khung giờ kéo dài 60 phút, ví dụ 07:00–08:00 hoặc 08:15–09:15. Sau khi cố vấn tiếp nhận, hai bên nhận lời mời Google Calendar và link Google Meet.' : 'Each slot lasts 60 minutes, for example 07:00–08:00 or 08:15–09:15. After acceptance, both participants receive Google Calendar invitations and a Google Meet link.'}
               </p>
               <label className="text-sm">
                 {vi ? 'Gói dùng cho buổi này' : 'Use credits from'}

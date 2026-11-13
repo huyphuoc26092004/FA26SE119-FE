@@ -59,6 +59,9 @@ export interface LearningPath {
   createdAt: string;
   missing: { skill: string; status: MissingSkillStatus; reasoning: string; score?: number }[];
   nodes: LearningPathNode[];
+  skillStates: { skill: string; status: 'SATISFIED' | 'MISSING' | 'NEEDS_IMPROVEMENT' | 'DECLARED'; priority: string; action: string; reasoning: string }[];
+  unverifiedRequirements: string[];
+  gapAnalysisVersion: string;
 }
 
 function toAssessment(session: ApiRow): JdAssessment {
@@ -112,6 +115,13 @@ function toLearningPath(roadmap: ApiRow): LearningPath {
       score: g.assessment_score === undefined || g.assessment_score === null ? undefined : Math.round(num(g.assessment_score)),
     })),
     nodes: nodes.sort((a, b) => a.order - b.order),
+    skillStates: rows(roadmap.skill_states).map((row) => ({
+      skill: str(row.skill_name),
+      status: ['SATISFIED', 'MISSING', 'NEEDS_IMPROVEMENT', 'DECLARED'].includes(str(row.status)) ? str(row.status) as 'SATISFIED' | 'MISSING' | 'NEEDS_IMPROVEMENT' : row.declared_evidence === true ? 'DECLARED' : 'MISSING',
+      priority: str(row.priority), action: str(row.action), reasoning: str(row.reasoning),
+    })),
+    unverifiedRequirements: rows(roadmap.unverified_requirements).map((row) => str(row.text)),
+    gapAnalysisVersion: str(roadmap.gap_analysis_version) || 'LEGACY',
   };
 }
 
@@ -125,8 +135,8 @@ export async function getLatestJdAssessment(jobId: string, resumeId = ''): Promi
 }
 
 /** Sinh bài mới gồm 10 câu theo JD, kèm CV nếu có (gọi AI, có thể mất vài phút). */
-export async function startJdAssessment(jobId: string, resumeId?: string): Promise<JdAssessment> {
-  const body = resumeId ? { jobId, resumeId } : { jobId };
+export async function startJdAssessment(jobId: string, resumeId?: string, pasted?: { targetJobTitle: string; jdText: string }): Promise<JdAssessment> {
+  const body = pasted ? { ...pasted, ...(resumeId ? { resumeId } : {}) } : resumeId ? { jobId, resumeId } : { jobId };
   const session = await apiClient.post<ApiRow>('/assessments', body, { timeout: AI_TIMEOUT }).then((res) => res.data);
   return toAssessment(session);
 }
@@ -147,10 +157,12 @@ export async function getLatestLearningPath(jobId: string, resumeId = ''): Promi
 }
 
 /** Lập lộ trình cho kỹ năng bắt buộc của JD mà CV chưa có hoặc bài đánh giá dưới 70 điểm. */
-export async function createLearningPath(params: { jobId: string; resumeId?: string; assessmentId?: string }): Promise<LearningPath> {
+export async function createLearningPath(params: { jobId?: string; resumeId?: string; assessmentId?: string }): Promise<LearningPath> {
   const roadmap = await apiClient
     .post<ApiRow>('/roadmaps', params, { timeout: AI_TIMEOUT })
     .then((res) => res.data);
+    console.log(roadmap);
+
   return toLearningPath(roadmap);
 }
 

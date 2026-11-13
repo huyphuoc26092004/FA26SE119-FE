@@ -138,7 +138,9 @@ export default function JobDetailsPage() {
   };
 
   // Điểm lấy từ kết quả matching; chưa có thì không hiển thị 0%.
-  const matchScore: number | null = semantic?.overallScore ?? (job.match > 0 ? job.match : null);
+  const insufficientRequirements = semantic?.method?.startsWith('SKILL_OVERLAP')
+    && (semantic.requirementCoverageAvailable === false || ['MISSING_SOURCE', 'TRUNCATED'].includes(semantic.extractionStatus ?? ''));
+  const matchScore: number | null = insufficientRequirements ? null : semantic?.overallScore ?? (job.match > 0 ? job.match : null);
   const matchText = matchScore === null ? '—' : `${matchScore}%`;
 
   const fitHref = isCandidate ? `/candidate/cv-job-fit?jobId=${job.id}` : '/login';
@@ -154,15 +156,10 @@ export default function JobDetailsPage() {
     { label: 'Hạn nộp', value: externalSource.applicationDeadline },
   ].filter((f) => !!f.value);
 
-  const dims = semantic
-    ? [
-        { label: 'Kỹ năng', value: semantic.skillsScore },
-        { label: 'Kinh nghiệm', value: semantic.experienceScore },
-        { label: 'Mức lương', value: semantic.salaryScore },
-        { label: 'Lĩnh vực', value: semantic.domainScore },
-      ]
+  // Matching returns an overall score and optional recognized-skill coverage, not four dimension scores.
+  const dims = semantic?.skillCoverageScore !== undefined && !insufficientRequirements
+    ? [{ label: 'Bao phủ kỹ năng đã nhận diện', value: semantic.skillCoverageScore }]
     : [];
-
   // Khi mô tả đã có các mục riêng (trách nhiệm, yêu cầu, quyền lợi) thì các danh sách
   // parsed_* chỉ lặp lại nội dung đó, nên bỏ đi.
   const contentHasSections = contentSections.filter((s) => s.title).length >= 2;
@@ -357,7 +354,7 @@ export default function JobDetailsPage() {
           <div className="border-t border-ink pt-5">
             <p className="text-[13px] text-slate-600">
               {t('jobs.yourJobMatch')}
-              {matchScore !== null && <> · {matchScore >= 85 ? 'Phù hợp xuất sắc' : 'Tiềm năng tốt'}</>}
+              {matchScore !== null && <> · {matchScore >= 85 ? 'Phù hợp cao' : matchScore >= 50 ? 'Phù hợp một phần' : 'Mức phù hợp thấp'}</>}
             </p>
             {matchScore !== null ? (
               <p className="mt-2 flex items-baseline gap-1 leading-none text-brand">

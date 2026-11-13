@@ -117,10 +117,14 @@ const fitLevel = (score: number): SemanticMatchingDetail['fitLevel'] => {
 
 /** Một dòng `results[]` của POST /matching. Backend chỉ có một điểm tổng (0..1). */
 export function toSemanticMatch(result: ApiRow): SemanticMatchingDetail {
-  const score = Math.round(num(result.final_score) * 100);
+  const rawScore = num(result.final_score) * 100;
+  // A fractional result below full coverage must never round up to a displayed 100%.
+  const score = Math.trunc(Number(rawScore.toFixed(8)) * 10) / 10;
   const explanation = obj(result.match_reason_json);
   const assessment = obj(explanation.assessment);
-  const reason = str(explanation.reason);
+  const reviewNote = assessment.extraction_status && assessment.extraction_status !== 'PARSED'
+    ? ' Còn yêu cầu chưa xác minh hoặc thiếu nguồn; điểm này không xác nhận đáp ứng toàn bộ JD.' : '';
+  const reason = str(explanation.reason) + reviewNote;
   const experienceStatuses: NonNullable<SemanticMatchingDetail['experienceStatus']>[] = [
     'MATCHED', 'INSUFFICIENT', 'UNVERIFIED', 'NOT_SPECIFIED',
   ];
@@ -137,6 +141,14 @@ export function toSemanticMatch(result: ApiRow): SemanticMatchingDetail {
     matchResultId: str(result.id),
     method: optStr(explanation.method),
     skillCoverageScore: skillCoverage !== undefined && skillCoverage <= 1 ? Math.round(skillCoverage * 100) : undefined,
+    requirementCoverageScore: nonnegativeNumber(assessment.requirement_coverage) !== undefined
+      ? Math.trunc(num(assessment.requirement_coverage) * 1000) / 10 : undefined,
+    requirementCoverageAvailable: typeof assessment.requirement_coverage_available === 'boolean'
+      ? assessment.requirement_coverage_available : undefined,
+    extractionStatus: optStr(assessment.extraction_status),
+    unverifiedRequirements: nonnegativeNumber(assessment.unverified_requirements),
+    scoreKind: optStr(assessment.score_kind),
+    catalogVersion: optStr(assessment.catalog_version),
     experienceStatus: experienceStatuses.find((status) => status === experienceStatus),
     candidateYears: nonnegativeNumber(assessment.candidate_years),
     requiredYears: nonnegativeNumber(assessment.required_years),
