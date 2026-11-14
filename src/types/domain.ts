@@ -227,6 +227,12 @@ export interface SemanticMatchingDetail {
   matchResultId?: string;
   method?: string;
   skillCoverageScore?: number;
+  requirementCoverageScore?: number;
+  requirementCoverageAvailable?: boolean;
+  extractionStatus?: string;
+  unverifiedRequirements?: number;
+  scoreKind?: string;
+  catalogVersion?: string;
   experienceStatus?: 'MATCHED' | 'INSUFFICIENT' | 'UNVERIFIED' | 'NOT_SPECIFIED';
   candidateYears?: number;
   requiredYears?: number;

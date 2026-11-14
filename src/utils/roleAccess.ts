@@ -1,4 +1,4 @@
-export const managerSections = ['', 'subscriptions', 'subscribers', 'consultation-services', 'payments', 'templates', 'jobs', 'consultants', 'crawl-reports', 'notifications', 'feedback', 'support', 'analytics', 'account', 'inbox'];
+export const managerSections = ['', 'subscriptions', 'subscribers', 'consultation-services', 'payments', 'templates', 'jobs', 'vector', 'consultants', 'work-schedule', 'crawl-reports', 'notifications', 'feedback', 'support', 'analytics', 'account', 'inbox'];
 
 export function managerCanOpen(pathname: string) {
   const parts = pathname.split('/').filter(Boolean);

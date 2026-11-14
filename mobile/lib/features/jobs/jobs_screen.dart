@@ -71,7 +71,7 @@ class JobCard extends ConsumerWidget {
   }
 }
 
-/// Bookmark tap: saves to / removes from the wishlist on the server.
+/// Bookmark tap: saves to / removes from the saved jobs on the server.
 Future<void> toggleSavedJob(BuildContext context, WidgetRef ref, String jobId) async {
   try {
     final now = await ref.read(savedJobsProvider.notifier).toggle(jobId);
@@ -137,7 +137,7 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
     final matches = ref.watch(matchesProvider).value ?? const <JobMatch>[];
     final scoreOf = {for (final m in matches) m.job.id: m.score};
 
-    // "For you" lists the latest matching run, "Saved" the server wishlist;
+    // "For you" lists the latest matching run, "Saved" the server saved jobs;
     // the other tabs use the job search.
     final AsyncValue<List<Job>> source = switch (_tab) {
       _Tab.recommended => ref.watch(matchesProvider).whenData((m) => m.map((x) => x.job).toList()),
