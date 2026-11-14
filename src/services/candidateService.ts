@@ -60,9 +60,9 @@ export async function getJobById(id: string): Promise<Job | undefined> {
   return toJob(await get(`/jobs/${id}`));
 }
 
-// ---- Wishlist và việc đã ứng tuyển ----
+// ---- Việc làm đã lưu và việc đã ứng tuyển ----
 
-/** Việc trong wishlist, mới lưu trước; mỗi dòng có cột như GET /jobs kèm `saved_at`. */
+/** Danh sách việc làm đã lưu, mới lưu trước; mỗi dòng có cột như GET /jobs kèm `saved_at`. */
 export async function getSavedJobRows(): Promise<ApiRow[]> {
   return isSignedIn() ? get<ApiRow[]>('/saved-jobs', { limit: 100, offset: 0 }) : [];
 }
@@ -777,7 +777,17 @@ export async function getPersonalizedRoadmap(params: {
   gapAnalysisId?: string;
 }): Promise<LearningRoadmap> {
   if (!params.targetRoleId) throw new Error('Chọn một việc làm để tạo lộ trình.');
+  console.log('========== ROADMAP BE REQUEST ==========');
+  console.log('Job ID:', params.targetRoleId);
+  console.log('Gap Analysis ID:', params.gapAnalysisId);
+  console.log('=========================================');
   const roadmap = await apiClient.post<ApiRow>('/roadmaps', { jobId: params.targetRoleId }, { timeout: 600_000 }).then((res) => res.data);
+  console.log('========== ROADMAP BE RESPONSE ==========');
+  console.log('Job ID:', params.targetRoleId);
+  console.log('Full Response:', roadmap);
+  console.log('JSON Response:', JSON.stringify(roadmap, null, 2));
+  console.log('Roadmap Nodes:', roadmap.nodes);
+  console.log('=========================================');
   let week = 1;
   return {
     id: str(roadmap.id),

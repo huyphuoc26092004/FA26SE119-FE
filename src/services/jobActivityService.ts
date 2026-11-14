@@ -26,7 +26,7 @@ export const JOB_ACTIVITY_QUERY_KEY = ['jobActivity'] as const;
 
 const DEPENDENT_QUERY_KEYS = [['savedJobs'], ['appliedJobs'], JOB_ACTIVITY_QUERY_KEY];
 
-/** Việc đã ứng tuyển và wishlist của ứng viên, dùng chung cho trang việc làm, độ phù hợp CV và trợ lý. */
+/** Việc đã ứng tuyển và việc làm đã lưu của ứng viên, dùng chung cho trang việc làm, độ phù hợp CV và trợ lý. */
 export async function getJobActivity(): Promise<JobActivity> {
   const [appliedRows, savedRows] = await Promise.all([getAppliedJobRows(), getSavedJobRows()]);
   const savedAt = new Map(savedRows.map((row) => [str(row.id), str(row.saved_at)]));

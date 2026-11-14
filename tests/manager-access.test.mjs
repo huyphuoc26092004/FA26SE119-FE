@@ -9,14 +9,14 @@ const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.Modu
 const { managerCanOpen, homeForRole } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
 
 test('manager can open exactly the requested operating sections and personal account', () => {
-  for (const section of ['', 'subscriptions', 'subscribers', 'consultation-services', 'payments', 'templates', 'jobs', 'consultants', 'work-schedule', 'crawl-reports', 'notifications', 'feedback', 'support', 'analytics', 'account', 'inbox']) {
+  for (const section of ['', 'subscriptions', 'subscribers', 'consultation-services', 'payments', 'templates', 'jobs', 'vector', 'consultants', 'work-schedule', 'crawl-reports', 'notifications', 'feedback', 'support', 'analytics', 'account', 'inbox']) {
     assert.equal(managerCanOpen(`/manager${section ? `/${section}` : ''}`), true);
     assert.equal(managerCanOpen(`/admin${section ? `/${section}` : ''}`), true);
   }
 });
 
 test('manager cannot inherit account administration or AI configuration via shared links', () => {
-  for (const path of ['/admin/users', '/admin/users/some-id', '/admin/ai', '/admin/ai/prompts', '/admin/vector', '/manager/vector', '/admin/logs', '/admin/audit', '/candidate', '/manager/jobs/unknown', '/manager-evil/jobs', '/manager/staff', '/admin/staff']) {
+  for (const path of ['/admin/users', '/admin/users/some-id', '/admin/ai', '/admin/ai/prompts', '/admin/logs', '/admin/audit', '/candidate', '/manager/jobs/unknown', '/manager-evil/jobs', '/manager/staff', '/admin/staff']) {
     assert.equal(managerCanOpen(path), false, path);
   }
 });

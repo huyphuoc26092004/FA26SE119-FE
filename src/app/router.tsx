@@ -194,6 +194,7 @@ export const router = createBrowserRouter([
           { path: 'payments', element: <ManagerPaymentsPage /> },
           { path: 'templates', element: <ResumeTemplateManagementPage /> },
           { path: 'jobs', element: <JobCrawlManagementPage /> },
+          { path: 'vector', element: <KnowledgeBasePage /> },
           { path: 'consultants', element: <ManagerConsultantsPage /> },
           { path: 'work-schedule', element: <ManagerWorkSchedulePage /> },
           { path: 'crawl-reports', element: <ManagerCrawlReportsPage /> },

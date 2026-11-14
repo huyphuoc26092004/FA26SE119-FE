@@ -1,3 +1,4 @@
+import { ManagerRatingAppeals } from '../../components/consultation/RatingAppeals';
 import { Link } from 'react-router-dom';
 import WorkShiftPanel from '../../components/consultation/WorkShiftPanel';
 import { useState } from 'react';
@@ -34,5 +35,6 @@ export default function ManagerConsultantsPage() {
       ]} />}
       <OperationalPagination offset={bookingOffset} count={bookings.data?.length ?? 0} busy={bookings.isFetching} onChange={setBookingOffset} />
     </section>}
+    <ManagerRatingAppeals />
   </main>;
 }
