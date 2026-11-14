@@ -63,7 +63,7 @@ export default function ConsultationServicesPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm text-slate-500">Quản lý dịch vụ</p>
-          <h1 className="text-3xl font-semibold">Gói lượt tư vấn</h1>
+          <h1 className="text-3xl font-semibold">Lượt tư vấn</h1>
         </div>
         <div className="flex gap-4">
           <Link className="underline" to="/admin/subscriptions">
