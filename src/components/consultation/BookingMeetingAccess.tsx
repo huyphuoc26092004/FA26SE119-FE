@@ -35,7 +35,7 @@ export default function BookingMeetingAccess({ booking }: { booking: Consultatio
       : ended
         ? (vi ? 'Khung giờ tư vấn đã kết thúc. Không thể mở lại cuộc họp từ đây.' : 'The consultation time has ended. You cannot rejoin from here.')
         : booking.status === 'PENDING'
-          ? (vi ? 'Sau khi cố vấn tiếp nhận, hệ thống sẽ tạo Google Meet và gửi lời mời Google Calendar cho hai bên.' : 'After the advisor accepts, the system creates a Google Meet and sends Google Calendar invitations to both participants.')
+          ? (vi ? 'Sau khi tư vấn viên tiếp nhận, hệ thống sẽ tạo Google Meet và gửi lời mời Google Calendar cho hai bên.' : 'After the advisor accepts, the system creates a Google Meet and sends Google Calendar invitations to both participants.')
           : failed
             ? (vi ? 'Chưa tạo được cuộc họp. Cập nhật trạng thái hoặc liên hệ hỗ trợ nếu lỗi vẫn còn; không đặt thêm lịch trùng.' : 'The meeting could not be created. Refresh its status or contact support if the problem continues; do not create a duplicate booking.')
             : pending
