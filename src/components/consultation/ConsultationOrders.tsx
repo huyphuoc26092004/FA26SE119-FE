@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n';
@@ -38,17 +38,17 @@ export default function ConsultationOrders() {
       .reduce((sum, order) => sum + (order.sessions_remaining ?? 0), 0);
   const labels: Record<string, string> = vi
     ? {
-        PENDING_PAYMENT: 'Chờ thanh toán',
-        PAID: 'Đã thanh toán',
-        COMPLETED: 'Hoàn tất',
-        CANCELLED: 'Đã hủy',
-      }
+      PENDING_PAYMENT: 'Chờ thanh toán',
+      PAID: 'Đã thanh toán',
+      COMPLETED: 'Hoàn tất',
+      CANCELLED: 'Đã hủy',
+    }
     : {
-        PENDING_PAYMENT: 'Awaiting payment',
-        PAID: 'Paid',
-        COMPLETED: 'Completed',
-        CANCELLED: 'Cancelled',
-      };
+      PENDING_PAYMENT: 'Awaiting payment',
+      PAID: 'Paid',
+      COMPLETED: 'Completed',
+      CANCELLED: 'Cancelled',
+    };
   const purchase = useMutation({
     mutationFn: async (service: ConsultationServiceItem) => {
       const order = await createConsultationOrder(service.id);
@@ -79,7 +79,7 @@ export default function ConsultationOrders() {
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-ink pb-3">
         <h2 id="consultation-packs-title" className="text-2xl font-normal text-ink">
           <span className="mr-3 text-xs text-slate-500">01</span>
-          {vi ? 'Gói lượt tư vấn' : 'Session packs'}
+          {vi ? 'Lượt tư vấn' : 'Session packs'}
         </h2>
         <p className="text-sm text-brand">
           {vi ? 'Còn lại' : 'Available'}: {remaining} {vi ? 'lượt' : 'credits'}

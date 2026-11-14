@@ -320,7 +320,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <p className="text-sm text-slate-600 sm:col-span-2">
-                {vi ? 'Mỗi khung giờ kéo dài 60 phút, ví dụ 07:00–08:00 hoặc 08:00–09:00. Sau khi cố vấn tiếp nhận, hai bên nhận lời mời Google Calendar và link Google Meet.' : 'Each slot lasts 60 minutes, for example 07:00–08:00 or 08:00–09:00. After acceptance, both participants receive Google Calendar invitations and a Google Meet link.'}
+                {vi ? 'Mỗi khung giờ kéo dài 60 phút, ví dụ 07:00–08:00 hoặc 08:00–09:00. Sau khi tư vấn viên tiếp nhận, hai bên nhận lời mời Google Calendar và link Google Meet.' : 'Each slot lasts 60 minutes, for example 07:00–08:00 or 08:00–09:00. After acceptance, both participants receive Google Calendar invitations and a Google Meet link.'}
               </p>
               <label className="text-sm">
                 {vi ? 'Gói dùng cho buổi này' : 'Use credits from'}
