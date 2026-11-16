@@ -23,6 +23,69 @@ import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 
 // Design tokens (CCV template): ink #14231e, accent #0b6b52, muted #5d6b65, rule #14231e/15
+const LOCATION_OPTIONS = [
+  { value: 'Ho Chi Minh', label: 'TP. Hồ Chí Minh' },
+  { value: 'Hanoi', label: 'Hà Nội' },
+  { value: 'Da Nang', label: 'Đà Nẵng' },
+  { value: 'Remote', label: 'Từ xa (Remote)' },
+];
+const LEVEL_OPTIONS = [
+  { value: 'Fresher', label: 'Fresher' },
+  { value: 'Junior', label: 'Junior (1–2 năm)' },
+  { value: 'Middle', label: 'Middle (2–4 năm)' },
+  { value: 'Senior', label: 'Senior (4+ năm)' },
+  { value: 'Lead', label: 'Lead / Architect' },
+];
+const TYPE_OPTIONS = [
+  { value: 'Full-time', label: 'Toàn thời gian' },
+  { value: 'Hybrid', label: 'Linh hoạt (Hybrid)' },
+  { value: 'Remote', label: 'Từ xa (Remote)' },
+];
+const LOCATION_ALIASES: Record<string, string[]> = {
+  'Ho Chi Minh': ['ho chi minh', 'hồ chí minh', 'hcm', 'sài gòn', 'saigon'],
+  Hanoi: ['hanoi', 'ha noi', 'hà nội'],
+  'Da Nang': ['da nang', 'đà nẵng'],
+  Remote: ['remote', 'từ xa'],
+};
+function matchesLocation(job: Job, value: string) {
+  const text = job.location.toLowerCase();
+  return (LOCATION_ALIASES[value] ?? [value.toLowerCase()]).some((alias) => text.includes(alias));
+}
+
+function CheckGroup({ title, options, selected, onToggle }: {
+  title: string;
+  options: { value: string; label: string; count: number }[];
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-[13px] font-medium text-ink">{title}</legend>
+      <ul className="space-y-1.5">
+        {options.map((option) => {
+          const checked = selected.includes(option.value);
+          const empty = option.count === 0 && !checked;
+          return (
+            <li key={option.value}>
+              <label className={`flex cursor-pointer items-center gap-2.5 text-sm ${empty ? 'text-slate-400' : 'text-slate-700'}`}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={empty}
+                  onChange={() => onToggle(option.value)}
+                  className="h-4 w-4 accent-[var(--color-brand,#2f5d50)]"
+                />
+                <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                <span className="text-xs tabular-nums text-slate-500">{option.count}</span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </fieldset>
+  );
+}
+
 const fieldBase =
   'w-full appearance-none border-0 border-b border-ink/40 bg-transparent py-3 pr-6 text-base text-ink outline-none transition focus:border-brand cursor-pointer md:text-[1.0625rem]';
 const textLink =
@@ -44,9 +107,11 @@ export default function JobsPage() {
 
   // Multi-criteria filters
   const [search, setSearch] = useState('');
-  const [location, setLocation] = useState('All');
-  const [experienceLevel, setExperienceLevel] = useState('All');
-  const [jobType, setJobType] = useState('All');
+  // Bộ lọc dạng checkbox: chọn nhiều giá trị trong một nhóm (OR), giữa các nhóm là AND.
+  const [locations, setLocations] = useState<string[]>([]);
+  const [levels, setLevels] = useState<string[]>([]);
+  const [jobTypes, setJobTypes] = useState<string[]>([]);
+  const [skillsPicked, setSkillsPicked] = useState<string[]>([]);
   const [salaryMin, setSalaryMin] = useState<number>(0);
   const [sortBy, setSortBy] = useState<'match' | 'salary' | 'newest'>('match');
 
@@ -158,20 +223,24 @@ export default function JobsPage() {
   const isFilterActive = useMemo(() => {
     return (
       search.trim() !== '' ||
-      location !== 'All' ||
-      experienceLevel !== 'All' ||
-      jobType !== 'All' ||
+      locations.length > 0 ||
+      levels.length > 0 ||
+      jobTypes.length > 0 ||
+      skillsPicked.length > 0 ||
       salaryMin > 0
     );
-  }, [search, location, experienceLevel, jobType, salaryMin]);
+  }, [search, locations, levels, jobTypes, skillsPicked, salaryMin]);
 
   const resetFilters = () => {
     setSearch('');
-    setLocation('All');
-    setExperienceLevel('All');
-    setJobType('All');
+    setLocations([]);
+    setLevels([]);
+    setJobTypes([]);
+    setSkillsPicked([]);
     setSalaryMin(0);
   };
+  const toggleIn = (setter: (fn: (prev: string[]) => string[]) => void, value: string) =>
+    setter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
 
   // Filtered and sorted jobs list
   const filteredJobs = useMemo(() => {
@@ -184,15 +253,10 @@ export default function JobsPage() {
           .toLowerCase()
           .includes(search.toLowerCase());
 
-      // Location
-      const locationMatch =
-        location === 'All' || job.location.toLowerCase().includes(location.toLowerCase());
-
-      // Experience Level
-      const expMatch = experienceLevel === 'All' || job.experienceLevel === experienceLevel;
-
-      // Job Type
-      const typeMatch = jobType === 'All' || job.type.toLowerCase().includes(jobType.toLowerCase());
+      const locationMatch = !locations.length || locations.some((value) => matchesLocation(job, value));
+      const expMatch = !levels.length || (!!job.experienceLevel && levels.includes(job.experienceLevel));
+      const typeMatch = !jobTypes.length || jobTypes.some((value) => job.type.toLowerCase().includes(value.toLowerCase()));
+      const skillMatch = !skillsPicked.length || skillsPicked.every((skill) => job.skills.some((s) => s.toLowerCase() === skill.toLowerCase()));
 
       // Salary Min
       const salaryMatch = !salaryMin || (job.salaryMax && job.salaryMax >= salaryMin);
@@ -205,7 +269,7 @@ export default function JobsPage() {
         tabMatch = appliedIds.includes(job.id);
       }
 
-      return searchMatch && locationMatch && expMatch && typeMatch && salaryMatch && tabMatch;
+      return searchMatch && locationMatch && expMatch && typeMatch && skillMatch && salaryMatch && tabMatch;
     });
 
     // Sort
@@ -216,7 +280,23 @@ export default function JobsPage() {
     }
 
     return list;
-  }, [rankedJobs, scoredCatalog, search, location, experienceLevel, jobType, salaryMin, activeTab, savedIds, appliedIds, sortBy]);
+  }, [rankedJobs, scoredCatalog, search, locations, levels, jobTypes, skillsPicked, salaryMin, activeTab, savedIds, appliedIds, sortBy]);
+
+  // Số việc cho từng ô checkbox, tính trên kết quả sau khi tìm kiếm (và tab đang xem).
+  const facetBase = useMemo(() => {
+    const source = activeTab === 'recommended' ? rankedJobs : scoredCatalog;
+    const needle = search.toLowerCase();
+    return source.filter((job) => {
+      if (activeTab === 'saved' && !savedIds.includes(job.id)) return false;
+      if (activeTab === 'applied' && !appliedIds.includes(job.id)) return false;
+      return !needle || `${job.title} ${job.company} ${job.skills.join(' ')}`.toLowerCase().includes(needle);
+    });
+  }, [rankedJobs, scoredCatalog, search, activeTab, savedIds, appliedIds]);
+  const topSkills = useMemo(() => {
+    const counts = new Map<string, number>();
+    facetBase.forEach((job) => new Set(job.skills).forEach((skill) => counts.set(skill, (counts.get(skill) ?? 0) + 1)));
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 10);
+  }, [facetBase]);
 
   const recommendedCount = rankedJobs.length;
   const recommendedCountLabel = recommendationsLoading ? '…' : recommendationsFailed ? '!' : String(recommendedCount);
@@ -253,44 +333,38 @@ export default function JobsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 xl:grid-cols-1">
-        <div className="relative">
-          <select
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className={fieldBase}
-          >
-            <option value="All">{t('jobs.allLocations')}</option>
-            <option value="Ho Chi Minh">TP. Hồ Chí Minh</option>
-            <option value="Hanoi">Hà Nội</option>
-            <option value="Da Nang">Đà Nẵng</option>
-            <option value="Remote">Làm việc từ xa (Remote)</option>
-          </select>
-          <ChevronDown
-            size={14}
-            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-600"
+      <p className="text-[13px] text-slate-500">
+        {search.trim() ? `Lọc tiếp ${facetBase.length} kết quả cho “${search.trim()}”` : 'Tick để lọc nhanh, không cần gõ lại.'}
+      </p>
+      <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-1">
+        <CheckGroup
+          title="Địa điểm"
+          options={LOCATION_OPTIONS.map((o) => ({ ...o, count: facetBase.filter((job) => matchesLocation(job, o.value)).length }))}
+          selected={locations}
+          onToggle={(value) => toggleIn(setLocations, value)}
+        />
+        <CheckGroup
+          title="Cấp bậc"
+          options={LEVEL_OPTIONS.map((o) => ({ ...o, count: facetBase.filter((job) => job.experienceLevel === o.value).length }))}
+          selected={levels}
+          onToggle={(value) => toggleIn(setLevels, value)}
+        />
+        <CheckGroup
+          title="Hình thức làm việc"
+          options={TYPE_OPTIONS.map((o) => ({ ...o, count: facetBase.filter((job) => job.type.toLowerCase().includes(o.value.toLowerCase())).length }))}
+          selected={jobTypes}
+          onToggle={(value) => toggleIn(setJobTypes, value)}
+        />
+        {topSkills.length > 0 && (
+          <CheckGroup
+            title="Kỹ năng"
+            options={topSkills.map(([skill, count]) => ({ value: skill, label: skill, count }))}
+            selected={skillsPicked}
+            onToggle={(value) => toggleIn(setSkillsPicked, value)}
           />
-        </div>
-
+        )}
         <div className="relative">
-          <select
-            value={experienceLevel}
-            onChange={(e) => setExperienceLevel(e.target.value)}
-            className={fieldBase}
-          >
-            <option value="All">Tất cả cấp bậc kinh nghiệm</option>
-            <option value="Junior">Junior (1-2 năm)</option>
-            <option value="Middle">Middle (2-4 năm)</option>
-            <option value="Senior">Senior (4+ năm)</option>
-            <option value="Lead">Lead / Architect</option>
-          </select>
-          <ChevronDown
-            size={14}
-            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-600"
-          />
-        </div>
-
-        <div className="relative">
+          <p className="mb-2 text-[13px] font-medium text-ink">Mức lương</p>
           <select
             value={salaryMin}
             onChange={(e) => setSalaryMin(Number(e.target.value))}
@@ -303,24 +377,7 @@ export default function JobsPage() {
           </select>
           <ChevronDown
             size={14}
-            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-600"
-          />
-        </div>
-
-        <div className="relative">
-          <select
-            value={jobType}
-            onChange={(e) => setJobType(e.target.value)}
-            className={fieldBase}
-          >
-            <option value="All">Tất cả hình thức làm việc</option>
-            <option value="Full-time">Toàn thời gian (Full-time)</option>
-            <option value="Hybrid">Linh hoạt (Hybrid)</option>
-            <option value="Remote">Từ xa (Remote)</option>
-          </select>
-          <ChevronDown
-            size={14}
-            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-slate-600"
+            className="pointer-events-none absolute bottom-3 right-0 text-slate-600"
           />
         </div>
       </div>
@@ -410,10 +467,10 @@ export default function JobsPage() {
           </div>
         </header>
 
-        <div className="grid gap-[clamp(2rem,4vw,4rem)] xl:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)]">
+        <div className="grid gap-[clamp(2rem,4vw,4rem)] lg:grid-cols-[minmax(15rem,19rem)_minmax(0,1fr)]">
           {/* Search & Filters: sidebar on wide screens, stacked above results otherwise */}
-          <aside className="xl:sticky xl:top-24 xl:self-start">
-            <p className="mb-4 hidden text-sm font-medium uppercase tracking-[0.12em] text-slate-500 xl:block">
+          <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
+            <p className="mb-4 hidden text-sm font-medium uppercase tracking-[0.12em] text-slate-500 lg:block">
               Bộ lọc
             </p>
             {filters}

@@ -167,8 +167,9 @@ test('enriching catalog jobs with matching scores preserves skills and employmen
   page.render();
   assert.match(page.text(), /React Engineer/);
   assert.match(page.text(), /Catalog description and skills remain searchable/);
-  const typeFilter = page.one((node) => node.type === 'select' && page.nodes((child) => child.type === 'option' && child.props.value === 'Full-time', node).length > 0);
-  typeFilter.props.onChange({ target: { value: 'Full-time' } });
+  const typeFilter = page.one((node) => node.props?.title === 'Hình thức làm việc' && typeof node.props.onToggle === 'function');
+  assert.ok(typeFilter.props.options.find((option) => option.value === 'Full-time').count > 0);
+  typeFilter.props.onToggle('Full-time');
   page.render();
   assert.match(page.text(), /React Engineer/);
 });
