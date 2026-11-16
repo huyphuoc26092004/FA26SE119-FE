@@ -125,6 +125,25 @@
   --shadow-2xl: 0 12px 32px rgb(23 32 28 / 12%);
 }
 
+/*
+ * Kích cỡ mặc định: trên màn hình máy tính, toàn bộ giao diện hiển thị như khi trình duyệt zoom ~87,5%
+ * (yêu cầu: trang nhìn như mức 85–90%). Điện thoại/máy tính bảng giữ 100% để chữ không quá nhỏ.
+ * --app-zoom dùng để bù cho các chiều cao theo viewport (vh/dvh) vốn cũng bị thu theo zoom.
+ */
+:root {
+  --app-zoom: 1;
+  /* Chiều cao đầy màn hình sau khi bù zoom; dùng thay cho 100vh/100dvh/h-screen. */
+  --vh100: calc(100dvh / var(--app-zoom));
+}
+@media (min-width: 1024px) {
+  :root {
+    --app-zoom: 0.875;
+  }
+  html {
+    zoom: var(--app-zoom);
+  }
+}
+
 @layer base {
   :root {
     font-family: var(--font-sans);

@@ -150,7 +150,7 @@ export default function PublicLayout() {
     );
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas text-ink">
+    <div className="flex min-h-[var(--vh100)] flex-col bg-canvas text-ink">
       <header className="sticky top-0 z-40 border-b border-border bg-canvas">
         <div className="relative mx-auto flex h-16 w-full max-w-[1680px] items-center justify-between gap-6 px-5 sm:px-8 lg:px-[clamp(2rem,4vw,5rem)]">
           <Link

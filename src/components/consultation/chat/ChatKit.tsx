@@ -58,7 +58,7 @@ function dayLabel(iso: string, vi: boolean) {
 /** Khung chat cao bằng màn hình; trên mobile chỉ hiện một cột tuỳ `view`. */
 export function ChatFrame({
   children,
-  height = 'h-[calc(100dvh-7.5rem)] lg:h-[calc(100dvh-5rem)]',
+  height = 'h-[calc(var(--vh100)-7.5rem)] lg:h-[calc(var(--vh100)-5rem)]',
 }: {
   children: ReactNode;
   height?: string;

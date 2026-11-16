@@ -155,7 +155,7 @@ export function GuestAiChatWidget({ onOpenSaveModal }: GuestAiChatWidgetProps) {
         <div
           role="dialog"
           aria-label={isVietnamese ? 'Trò chuyện với trợ lý nghề nghiệp' : 'Chat with the career assistant'}
-          className="fixed inset-0 z-40 flex flex-col bg-surface sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[min(40rem,calc(100dvh-8rem))] sm:w-[clamp(22rem,26vw,27rem)] sm:overflow-hidden sm:rounded-3xl sm:border sm:border-border sm:shadow-[0_24px_60px_-28px_rgba(23,32,28,0.35)]"
+          className="fixed inset-0 z-40 flex flex-col bg-surface sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[min(40rem,calc(var(--vh100)-8rem))] sm:w-[clamp(22rem,26vw,27rem)] sm:overflow-hidden sm:rounded-3xl sm:border sm:border-border sm:shadow-[0_24px_60px_-28px_rgba(23,32,28,0.35)]"
         >
           {/* Header */}
           <div className="flex items-start justify-between gap-4 border-b border-border px-5 pb-4 pt-5">

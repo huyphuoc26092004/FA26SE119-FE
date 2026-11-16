@@ -1113,7 +1113,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                 {cv.templateId ? c.localTemplateSavedPdf : c.localTemplateDefaultPdf}
               </p>
             )}
-            <div className="mt-5 max-h-none overflow-y-auto border border-border bg-slate-100 p-[clamp(0.75rem,1.5vw,1.25rem)] lg:max-h-[calc(100dvh-9rem)]">
+            <div className="mt-5 max-h-none overflow-y-auto border border-border bg-slate-100 p-[clamp(0.75rem,1.5vw,1.25rem)] lg:max-h-[calc(var(--vh100)-9rem)]">
               <div
                 className={`mx-auto max-w-[794px] shadow-[0_1px_2px_rgba(23,32,28,0.08)] ${guest ? 'select-none print:hidden [&_iframe]:pointer-events-none' : ''}`}
                 onContextMenu={guest ? (e) => e.preventDefault() : undefined}

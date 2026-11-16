@@ -172,12 +172,12 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
     >
       {isStandalone ? (
         <div
-          className={`min-h-screen lg:grid ${
+          className={`min-h-[var(--vh100)] lg:grid ${
             collapsed ? 'lg:grid-cols-[4.75rem_minmax(0,1fr)]' : 'lg:grid-cols-[clamp(18.5rem,21vw,28rem)_minmax(0,1fr)]'
           }`}
         >
           <aside
-            className={`border-b border-border px-6 py-8 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:py-10 ${
+            className={`border-b border-border px-6 py-8 lg:sticky lg:top-0 lg:flex lg:h-[var(--vh100)] lg:flex-col lg:border-b-0 lg:border-r lg:py-10 ${
               collapsed ? 'lg:items-center lg:px-0' : 'lg:px-[clamp(1.5rem,2vw,2.5rem)]'
             }`}
           >

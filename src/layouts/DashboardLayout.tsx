@@ -157,7 +157,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
     'border-b border-slate-400 pb-px text-[13px] text-slate-700 transition-colors hover:border-ink hover:text-ink';
 
   return (
-    <div className={`min-h-screen bg-canvas text-ink transition-[padding] duration-200 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-[280px]'}`}>
+    <div className={`min-h-[var(--vh100)] bg-canvas text-ink transition-[padding] duration-200 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-[280px]'}`}>
       <button
         type="button"
         className={`fixed inset-0 z-40 bg-ink/30 transition-opacity lg:hidden ${
@@ -171,7 +171,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
       <aside
         id="workspace-sidebar"
         aria-label={areaLabel}
-        className={`invisible fixed inset-y-0 left-0 z-50 flex h-dvh w-[280px] max-w-[86vw] -translate-x-full flex-col border-r border-border bg-canvas transition-[transform,width] duration-200 ease-out lg:visible lg:translate-x-0 ${
+        className={`invisible fixed inset-y-0 left-0 z-50 flex h-[var(--vh100)] w-[280px] max-w-[86vw] -translate-x-full flex-col border-r border-border bg-canvas transition-[transform,width] duration-200 ease-out lg:visible lg:translate-x-0 ${
           collapsed ? 'lg:w-[76px]' : ''
         } ${
           open ? 'visible translate-x-0' : ''
@@ -366,7 +366,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
         </div>
       </aside>
 
-      <div className="min-h-screen min-w-0">
+      <div className="min-h-[var(--vh100)] min-w-0">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-canvas px-4 sm:px-5 lg:hidden">
           <button
             type="button"

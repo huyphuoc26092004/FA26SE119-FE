@@ -8,7 +8,7 @@ export default function GuestTrialPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-canvas text-ink">
+    <div className="min-h-[var(--vh100)] bg-canvas text-ink">
       <GuestTrialSection isStandalone={true} />
     </div>
   );

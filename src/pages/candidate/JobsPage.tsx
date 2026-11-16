@@ -412,7 +412,7 @@ export default function JobsPage() {
   );
 
   return (
-    <div className={!isCandidate ? 'min-h-[calc(100vh-theme(spacing.18))] bg-canvas' : ''}>
+    <div className={!isCandidate ? 'min-h-[calc(var(--vh100)-theme(spacing.18))] bg-canvas' : ''}>
       <div
         className={
           !isCandidate
