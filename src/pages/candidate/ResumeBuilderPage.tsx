@@ -5,7 +5,7 @@ import {
   ChevronDown,
   Plus,
   X,
-  Upload,
+  Camera,
   Globe,
   Award,
   FolderGit2,
@@ -41,6 +41,7 @@ import { renderTemplateWithResume } from '../../utils/resumeTemplateRender';
 import { useTranslation } from '../../i18n';
 import { ExperienceDescriptionEditor, StepTipsPanel } from './resume-builder/BuilderAssist';
 import { STEP_TIPS, stepChecks } from './resume-builder/builderTips';
+import { UploadPhotoModal } from './resume-builder/UploadPhotoModal';
 
 // Short page-only strings that have no i18n key yet.
 const copy = {
@@ -541,6 +542,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
   const resumeId = guest ? undefined : params.resumeId;
   const isEdit = Boolean(resumeId);
   const { isVietnamese } = useTranslation();
+  const isVi = isVietnamese;
   const uiLang = isVietnamese ? 'vi' : 'en';
   const c = copy[uiLang];
   const navigate = useNavigate();
@@ -581,6 +583,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
   const [postCode, setPostCode] = useState('');
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
 
   useEffect(() => {
     if (resumeQuery.data && !cv) {
@@ -765,31 +768,41 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
               />
               <div>
                 <span className="mb-1.5 block text-[13px] font-medium text-slate-700 opacity-0 select-none hidden sm:block">Upload</span>
-                <div className="flex h-[46px] items-center gap-3 rounded-lg border border-slate-300 bg-white px-3.5 shadow-sm">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                    <Upload size={16} />
+                <div
+                  onClick={() => setShowPhotoModal(true)}
+                  className="flex h-[46px] items-center gap-3 rounded-lg border border-slate-300 bg-white px-3.5 shadow-sm cursor-pointer hover:border-[#0091ff] transition-colors group"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden bg-slate-100 text-slate-400 border border-slate-200">
+                    {cv.avatarUrl ? (
+                      <img src={cv.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      <Camera size={16} className="text-slate-400 group-hover:text-[#0091ff] transition-colors" />
+                    )}
                   </div>
-                  <label className="cursor-pointer text-sm font-medium text-[#0091ff] hover:underline">
-                    <span>{f.uploadPhoto}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            if (typeof ev.target?.result === 'string') {
-                              update({ avatarUrl: ev.target.result });
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPhotoModal(true);
+                    }}
+                    className="cursor-pointer text-sm font-medium text-[#0091ff] hover:underline"
+                  >
+                    <span>{cv.avatarUrl ? (isVi ? 'Đổi ảnh' : 'Change photo') : f.uploadPhoto}</span>
+                  </button>
+                  {cv.avatarUrl && (
+                    <button
+                      type="button"
+                      title={isVi ? 'Gỡ ảnh' : 'Remove photo'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        update({ avatarUrl: undefined });
                       }}
-                    />
-                  </label>
-                  {cv.avatarUrl && <span className="ml-auto text-xs font-medium text-brand">✓ Đã tải ảnh</span>}
+                      className="ml-auto flex items-center gap-1 text-xs text-slate-400 hover:text-danger cursor-pointer p-1 rounded hover:bg-slate-100"
+                    >
+                      <X size={14} />
+                      <span className="hidden sm:inline">{isVi ? 'Gỡ' : 'Remove'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1484,6 +1497,14 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
           </div>
         </aside>
       </div>
+
+      <UploadPhotoModal
+        isOpen={showPhotoModal}
+        onClose={() => setShowPhotoModal(false)}
+        avatarUrl={cv.avatarUrl}
+        onSaveAvatar={(url) => update({ avatarUrl: url })}
+        uiLang={uiLang}
+      />
     </div>
   );
 }

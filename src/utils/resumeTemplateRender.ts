@@ -188,7 +188,7 @@ export function renderTemplateWithResume(html: string, cv: Partial<Resume>, opti
       .join(' ');
   });
 
-  // Ô ảnh đại diện chữ "CV" ở mẫu hai cột: thay bằng chữ cái đầu của tên.
+  // Ô ảnh đại diện:
   const initials = (cv.fullName ?? '')
     .trim()
     .split(/\s+/)
@@ -196,13 +196,28 @@ export function renderTemplateWithResume(html: string, cv: Partial<Resume>, opti
     .slice(-2)
     .map((w) => w[0]?.toUpperCase())
     .join('');
-  doc.querySelectorAll('.cv-avatar').forEach((el) => {
-    if (cv.avatarUrl) {
-      el.innerHTML = `<img src="${escapeHtml(cv.avatarUrl)}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
+  const existingAvatars = doc.querySelectorAll('.cv-avatar');
+  if (existingAvatars.length > 0) {
+    existingAvatars.forEach((el) => {
+      if (cv.avatarUrl) {
+        el.innerHTML = `<img src="${escapeHtml(cv.avatarUrl)}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
+      } else {
+        el.textContent = initials || 'CV';
+      }
+    });
+  } else if (cv.avatarUrl) {
+    // Với các mẫu 1 cột hoặc chưa có khung avatar: chèn ảnh đại diện tròn tinh tế vào header khi người dùng đã tải ảnh
+    const header = doc.querySelector('.cv-header, .cv-header-card, .cv-main-header, .cv-top, header');
+    const avatarHtml = `<div class="cv-avatar" style="width: 64px; height: 64px; min-width: 64px; border-radius: 50%; overflow: hidden; margin: 0 auto 10px auto; border: 2px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.06); flex-shrink: 0;"><img src="${escapeHtml(cv.avatarUrl)}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;" /></div>`;
+    if (header) {
+      header.insertAdjacentHTML('afterbegin', avatarHtml);
     } else {
-      el.textContent = initials || 'CV';
+      const nameEl = doc.querySelector('[data-cv-field="fullName"]');
+      if (nameEl?.parentElement) {
+        nameEl.parentElement.insertAdjacentHTML('afterbegin', avatarHtml);
+      }
     }
-  });
+  }
 
   fillSection(
     'summary',
