@@ -455,7 +455,6 @@ export function RegisterPage() {
   const registerAction = useAuthStore((s) => s.register);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [registrationRole, setRegistrationRole] = useState<'CANDIDATE' | 'CAREER_CONSULTANT'>('CANDIDATE');
   const { isVietnamese } = useTranslation();
 
   const google = useGoogleAuth(setError);
@@ -479,7 +478,7 @@ export function RegisterPage() {
     if (google.isSigningIn) return;
     setError('');
     try {
-      const res = await registerAction(data.name, data.email, data.password, registrationRole);
+      const res = await registerAction(data.name, data.email, data.password, 'CANDIDATE');
       navigate(`/verify-otp?email=${encodeURIComponent(data.email)}&code=${res.otp}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Đăng ký thất bại. Vui lòng thử lại.');
@@ -492,7 +491,7 @@ export function RegisterPage() {
         eyebrow={isVietnamese ? 'Đăng ký' : 'Create account'}
         title={isVietnamese ? 'Tạo tài khoản.' : 'Create your account.'}
         accent={isVietnamese ? 'Đúng người, đúng việc.' : 'The right people, the right fit.'}
-        description={isVietnamese ? 'Chọn vai trò của bạn và bắt đầu trong vài phút.' : 'Choose your role and get started in minutes.'}
+        description={isVietnamese ? 'Tạo tài khoản ứng viên và bắt đầu trong vài phút.' : 'Create your candidate account in minutes.'}
       />
 
       <GoogleSignInButton
@@ -503,31 +502,9 @@ export function RegisterPage() {
         onError={setError}
       />
       <p className="mt-2 text-sm text-slate-600">
-        {isVietnamese ? 'Đăng ký bằng Google tạo tài khoản ứng viên.' : 'Google sign-up creates a candidate account.'}
+        {isVietnamese ? 'Tài khoản đăng ký mới là tài khoản ứng viên.' : 'New accounts are candidate accounts.'}
       </p>
       <OrDivider label={isVietnamese ? 'hoặc dùng email' : 'or use email'} />
-
-      <div className="mb-6 border-b border-[#aeb7b0]">
-        <p className="text-sm text-slate-700 md:text-[0.9375rem]">{isVietnamese ? 'Bạn đăng ký với tư cách' : 'I am joining as'}</p>
-        <div className="mt-2 flex gap-8" role="group" aria-label={isVietnamese ? 'Chọn vai trò' : 'Choose a role'}>
-          {([
-            ['CANDIDATE', isVietnamese ? 'Ứng viên' : 'Candidate'],
-            ['CAREER_CONSULTANT', isVietnamese ? 'Nhà tuyển dụng' : 'Recruiter'],
-          ] as const).map(([role, label]) => (
-            <button
-              key={role}
-              type="button"
-              aria-pressed={registrationRole === role}
-              onClick={() => setRegistrationRole(role)}
-              className={`-mb-px border-b-2 pb-3 text-base transition-colors md:text-[1.0625rem] ${
-                registrationRole === role ? 'border-brand text-brand' : 'border-transparent text-slate-600 hover:text-brand'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <form onSubmit={handleSubmit(submit)} className="space-y-6">
         <Field label={isVietnamese ? 'Họ và tên' : 'Full name'} htmlFor="reg-name" error={errors.name?.message}>
