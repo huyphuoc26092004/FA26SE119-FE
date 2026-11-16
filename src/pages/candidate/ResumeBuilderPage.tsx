@@ -1014,6 +1014,32 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
             <div className="mt-8">{renderStep()}</div>
           </div>
 
+          {stepKey === 'experience' && !(cv.experience ?? []).some((e) => e.role?.trim() || e.company?.trim()) && (
+            <div role="note" className="mt-10 rounded-xl border border-warning/40 bg-amber-50/60 p-4 text-sm leading-6 text-ink">
+              <p className="font-medium">
+                {uiLang === 'vi' ? 'Bạn đang bỏ qua phần Kinh nghiệm' : 'You are skipping Experience'}
+              </p>
+              <p className="mt-1 text-slate-700">
+                {uiLang === 'vi' ? 'CV không có kinh nghiệm thường gặp các vấn đề sau:' : 'A CV without experience usually runs into:'}
+              </p>
+              <ul className="mt-1 list-disc pl-5 text-slate-700">
+                {(uiLang === 'vi'
+                  ? ['Khó đánh giá CV: hệ thống và nhà tuyển dụng không có bằng chứng về kỹ năng.', 'Khó tìm được công việc phù hợp: gợi ý việc làm và điểm ATS sẽ thấp hơn.', 'Tư vấn viên khó góp ý cụ thể cho bạn.']
+                  : ['Hard to evaluate: no evidence of your skills for the system or recruiters.', 'Harder to find a matching job: recommendations and ATS scores drop.', 'Consultants have less to give specific feedback on.']
+                ).map((line) => <li key={line}>{line}</li>)}
+              </ul>
+              <p className="mt-2 text-slate-700">
+                {uiLang === 'vi'
+                  ? 'Chưa đi làm? Bạn có thể ghi thực tập, dự án môn học, đồ án, việc làm thêm hoặc hoạt động câu lạc bộ.'
+                  : 'No job yet? Add internships, course projects, a capstone, part-time work or club activities.'}
+              </p>
+              <button type="button" onClick={experience.add} className="mt-3 inline-flex items-center gap-1.5 text-sm text-brand underline underline-offset-4">
+                <Plus size={14} aria-hidden="true" />
+                {f.addExperience}
+              </button>
+            </div>
+          )}
+
           <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
             {step > 0 ? (
               <button type="button" onClick={() => goTo(step - 1)} className={`${textLink} text-ink`}>
