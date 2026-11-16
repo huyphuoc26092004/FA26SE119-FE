@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LearningResourcesTab } from './LearningResourcesTab';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -35,7 +36,7 @@ import {
   type RagDocument,
 } from '../../services/ragService';
 
-type Tab = 'documents' | 'courses';
+type Tab = 'documents' | 'courses' | 'resources';
 const errorText = (error: unknown) => (error instanceof Error ? error.message : 'Có lỗi xảy ra.');
 
 const EMBED_LABEL: Record<string, string> = { PENDING: 'Chờ lập chỉ mục', PROCESSING: 'Đang xử lý', COMPLETED: 'Đã lập chỉ mục', FAILED: 'Lỗi' };
@@ -44,7 +45,7 @@ const COURSE_LABEL: Record<string, string> = { PENDING_REVIEW: 'Chờ duyệt', 
 /** /admin/vector — trang "Tài liệu": tài liệu và khoá học để AI tra cứu (tư vấn, lộ trình học). */
 export default function KnowledgeBasePage() {
   const [params, setParams] = useSearchParams();
-  const tab: Tab = params.get('tab') === 'courses' ? 'courses' : 'documents';
+  const tab: Tab = params.get('tab') === 'resources' ? 'resources' : params.get('tab') === 'courses' ? 'courses' : 'documents';
   const queryClient = useQueryClient();
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (m: string) => {
@@ -54,10 +55,10 @@ export default function KnowledgeBasePage() {
   const [creating, setCreating] = useState<Tab | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
 
-  const docsQuery = useQuery({ queryKey: ['admin', 'rag-docs'], queryFn: getRagDocuments });
+  const docsQuery = useQuery({ queryKey: ['admin', 'rag-docs'], queryFn: getRagDocuments, refetchInterval: 5000 });
   const coursesQuery = useQuery({ queryKey: ['admin', 'rag-courses'], queryFn: getRagCourses });
   const viewQuery = useQuery({ queryKey: ['admin', 'rag-doc', viewId], queryFn: () => getRagDocument(viewId!), enabled: Boolean(viewId) });
-  const docs = docsQuery.data ?? [];
+  const docs = (docsQuery.data ?? []).filter((document) => !document.metadata.course_id);
   const courses = coursesQuery.data ?? [];
 
   const action = useMutation({
@@ -91,10 +92,11 @@ export default function KnowledgeBasePage() {
         tabs={[
           { value: 'documents', label: 'Tài liệu', count: docs.length },
           { value: 'courses', label: 'Khoá học', count: courses.length },
+          { value: 'resources', label: 'Tài nguyên học' },
         ]}
       />
 
-      {tab === 'documents' ? (
+      {tab === 'resources' ? <LearningResourcesTab /> : tab === 'documents' ? (
         <section className="space-y-4">
           <SectionHead index="01" title="Tài liệu" action={<button type="button" className={smallPrimary} onClick={() => setCreating('documents')}>Thêm tài liệu</button>} />
           {docsQuery.isError && <Note tone="danger">{errorText(docsQuery.error)}</Note>}
@@ -146,7 +148,7 @@ export default function KnowledgeBasePage() {
                   <span className={`text-[13px] ${c.status === 'APPROVED' ? 'text-brand' : 'text-slate-600'}`}>{COURSE_LABEL[c.status] ?? c.status}</span>
                   <span className="flex gap-5">
                     {c.status === 'PENDING_REVIEW' && (
-                      <button type="button" className={brandLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => approveRagCourse(c.id), done: 'Đã duyệt khoá học', key: 'rag-courses' })}>Duyệt</button>
+                      <button type="button" className={brandLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => approveRagCourse(c.id), done: 'Đã duyệt khoá học, hệ thống sẽ tự lập chỉ mục nền', key: 'rag-courses' })}>Duyệt</button>
                     )}
                     {c.status === 'APPROVED' && (
                       <button type="button" className={brandLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => indexRagCourse(c.id), done: 'Đã gửi lập chỉ mục', key: 'rag-courses' })}>Lập chỉ mục</button>
@@ -168,7 +170,7 @@ export default function KnowledgeBasePage() {
           onSaved={() => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'rag-docs'] });
             setCreating(null);
-            showToast('Đã thêm tài liệu');
+            showToast('Đã thêm tài liệu, hệ thống sẽ tự lập chỉ mục nền');
           }}
         />
       )}
@@ -218,30 +220,23 @@ function kindOf(url: string): 'PDF' | 'DOCS' | 'LINK' {
   return 'LINK';
 }
 
-/** Thêm tài liệu giống thêm khoá học: link, tên, dùng để làm gì, mô tả; nội dung văn bản là tuỳ chọn. */
+/** Thêm tài liệu từ nội dung văn bản, kèm đường dẫn và thông tin phân loại. */
 function DocumentModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ url: '', title: '', purpose: 'CAREER_ADVICE', description: '', skills: '', language: 'vi', content: '' });
-  const purpose = DOC_PURPOSES.find((p) => p.value === form.purpose)?.label ?? '';
+  const [form, setForm] = useState({ url: '', title: '', purpose: 'CAREER_ADVICE', skills: '', language: 'vi', content: '' });
   const save = useMutation({
     mutationFn: () => {
       const url = form.url.trim();
       const skills = form.skills.split(',').map((s) => s.trim()).filter(Boolean);
-      // Backend chưa tự đọc được file từ link, nên AI tra cứu trên phần chữ gửi kèm.
-      // Không dán nội dung thì gửi phần mô tả để tài liệu vẫn tra cứu được theo mục đích và link.
-      const content =
-        form.content.trim() ||
-        [form.title.trim(), `Mục đích: ${purpose}`, form.description.trim(), skills.length ? `Kỹ năng liên quan: ${skills.join(', ')}` : '', url ? `Đường dẫn: ${url}` : '']
-          .filter(Boolean)
-          .join('\n');
+      const content = form.content.trim();
       return createRagDocument({
         title: form.title.trim(),
         content,
-        metadata: { url, kind: url ? kindOf(url) : undefined, purpose: form.purpose, description: form.description.trim(), skills, language: form.language },
+        metadata: { url, kind: url ? kindOf(url) : undefined, purpose: form.purpose,  skills, language: form.language },
       });
     },
     onSuccess: onSaved,
   });
-  const canSave = form.title.trim() && (form.url.trim() || form.content.trim()) && form.description.trim();
+  const canSave = form.title.trim() && form.content.trim();
   return (
     <Modal
       title="Thêm tài liệu"
@@ -280,18 +275,14 @@ function DocumentModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
             <option value="en">English</option>
           </select>
         </label>
-        <label className="block md:col-span-2">
-          <span className={fieldLabel}>Mô tả ngắn (tài liệu nói về gì, dành cho ai)</span>
-          <textarea rows={3} className={`${boxInput} mt-2 text-[14px]`} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        </label>
-        <label className="block md:col-span-2">
+<label className="block md:col-span-2">
           <span className={fieldLabel}>Kỹ năng liên quan (tuỳ chọn, cách nhau bằng dấu phẩy)</span>
           <input className={underlineInput} value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} placeholder="Phỏng vấn, React, SQL" />
         </label>
         <label className="block md:col-span-2">
-          <span className={fieldLabel}>Nội dung để AI tra cứu (tuỳ chọn, dán phần chữ chính của tài liệu)</span>
-          <textarea rows={6} className={`${boxInput} mt-2 text-[14px]`} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
-          <span className="mt-1 block text-[12px] text-slate-500">Để trống thì AI chỉ biết tên, mục đích, mô tả và link của tài liệu.</span>
+          <span className={fieldLabel}>Nội dung tài liệu để AI tra cứu (bắt buộc)</span>
+          <textarea required maxLength={100000} rows={8} className={`${boxInput} mt-2 text-[14px]`} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
+          <span className="mt-1 block text-[12px] text-slate-500">Dán nội dung kiến thức để AI tra cứu. Hệ thống chưa tự đọc nội dung từ đường dẫn tài liệu.</span>
         </label>
       </div>
       {save.isError && <p className="mt-3 text-sm text-danger">{errorText(save.error)}</p>}

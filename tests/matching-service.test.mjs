@@ -336,3 +336,36 @@ test('signed-out callers retain the legacy empty dashboard list while explicit r
   await assert.rejects(service.getRecommendationResult(), /Đăng nhập/);
   assert.equal(requests.length, 0);
 });
+
+test('uncertain extraction remains visible even when recognized skill coverage is complete', async () => {
+  respond = () => ({ data: matchingRun({ results: [matchedJob({
+    final_score: 0.5,
+    match_reason_json: {
+      method: 'SKILL_OVERLAP_QUICK', reason: 'Xác minh 1/2 yêu cầu',
+      assessment: { skill_coverage: 1, extraction_status: 'REVIEW_REQUIRED', unverified_requirements: 1 },
+    },
+  })] }) });
+  const result = await service.getRecommendationResult({ basis: 'CAREER_PROFILE' });
+  assert.equal(result.jobs[0].match, 50);
+  assert.equal(result.jobs[0].semanticMatch.skillCoverageScore, 100);
+  assert.match(result.jobs[0].semanticMatch.recommendation, /chưa xác minh/);
+});
+test('incomplete fractional coverage is never rounded up to full compatibility', async () => {
+  respond = () => ({ data: matchingRun({ results: [matchedJob({ final_score: 0.999 })] }) });
+  const result = await service.getRecommendationResult({ basis: 'CAREER_PROFILE' });
+  assert.equal(result.jobs[0].match, 99.9);
+});
+test('catalog assessment distinguishes recognized skill coverage from requirement coverage', async () => {
+  respond = () => ({ data: matchingRun({ results: [matchedJob({ final_score: 0.4,
+    match_reason_json: { method: 'SKILL_OVERLAP_QUICK', assessment: {
+      skill_coverage: 1, requirement_coverage: 0.4, extraction_status: 'REVIEW_REQUIRED',
+      unverified_requirements: 3, score_kind: 'VERIFIED_REQUIREMENT_COVERAGE', catalog_version: 'test-catalog',
+    } },
+  })] }) });
+  const result = await service.getRecommendationResult({ basis: 'CAREER_PROFILE' });
+  const detail = result.jobs[0].semanticMatch;
+  assert.equal(detail.skillCoverageScore, 100);
+  assert.equal(detail.requirementCoverageScore, 40);
+  assert.equal(detail.unverifiedRequirements, 3);
+  assert.equal(detail.catalogVersion, 'test-catalog');
+});

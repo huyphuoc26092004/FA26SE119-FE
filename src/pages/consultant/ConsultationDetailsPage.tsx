@@ -1,3 +1,4 @@
+import { ConsultantRatingAppeal } from '../../components/consultation/RatingAppeals';
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -484,6 +485,7 @@ export default function ConsultationDetailsPage() {
             <p className="mt-3 text-sm text-slate-500">{isVietnamese ? 'Lịch sử chỉ xem lại. Buổi tư vấn đã đặt diễn ra trên Google Meet.' : 'Read-only history. Booked consultations take place on Google Meet.'}</p>
           </section>}
 
+          {booking && <ConsultantRatingAppeal bookingId={booking.id} hasRating={booking.rating != null} />}
           {/* 05 Candidate rating */}
           {request.ratingByCandidate && (
             <section>

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { bookingPollInterval } from '../../utils/bookingMeeting';
@@ -63,7 +63,7 @@ export default function ConsultationsPage() {
         </h1>
         <p className="mt-4 text-base leading-7 text-slate-600">
           {vi
-            ? 'Chọn cố vấn và lịch tư vấn 30–60 phút. Sau khi cố vấn tiếp nhận, hệ thống tạo Google Meet và gửi lời mời Google Calendar cho hai bên.'
+            ? 'Chọn cố vấn và lịch tư vấn 30–60 phút. Sau khi tư vấn viên tiếp nhận, hệ thống tạo Google Meet và gửi lời mời Google Calendar cho hai bên.'
             : 'Choose an advisor and a 30–60 minute slot. Once the advisor accepts, the system creates Google Meet and sends Google Calendar invitations to both participants.'}
         </p>
         <ol className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600">

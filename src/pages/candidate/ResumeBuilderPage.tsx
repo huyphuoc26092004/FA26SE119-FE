@@ -867,7 +867,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
         return (
           <>
             <ul className="space-y-4">
-              {experience.items.map((e, i) => {
+              {experience.items.map((e) => {
                 const handleDescChange = (val: string) => {
                   const bullets = val
                     .split('\n')
@@ -997,8 +997,8 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                       disabled={isAdded}
                       onClick={() => update({ skills: [...(cv.skills ?? []), sk] })}
                       className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${isAdded
-                          ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-default'
-                          : 'border-slate-300 bg-white text-slate-700 hover:border-[#0091ff] hover:text-[#0091ff] cursor-pointer'
+                        ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-default'
+                        : 'border-slate-300 bg-white text-slate-700 hover:border-[#0091ff] hover:text-[#0091ff] cursor-pointer'
                         }`}
                     >
                       <Plus size={12} />
@@ -1377,10 +1377,10 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                       {c.steps[key]}
                     </span>
                     <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center transition-all bg-white ${isActive
-                        ? 'border-[#0091ff] ring-4 ring-blue-100'
-                        : isPast
-                          ? 'border-[#0091ff] bg-[#0091ff]'
-                          : 'border-slate-300'
+                      ? 'border-[#0091ff] ring-4 ring-blue-100'
+                      : isPast
+                        ? 'border-[#0091ff] bg-[#0091ff]'
+                        : 'border-slate-300'
                       }`}>
                       {isPast ? (
                         <span className="h-1.5 w-1.5 rounded-full bg-white" />

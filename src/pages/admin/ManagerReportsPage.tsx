@@ -23,7 +23,7 @@ export default function ManagerReportsPage({ analytics = false }: { analytics?: 
   const consultations = obj(report.data?.consultations);
   const stats = [
     ['Người dùng', overview.users], ['Gói đang hoạt động', overview.activeSubscriptions],
-    ['Phiếu hỗ trợ đang mở', overview.openSupportTickets], ['Cố vấn hoạt động', services.active_consultants],
+    ['Phiếu hỗ trợ đang mở', overview.openSupportTickets], ['Tư vấn viên', services.active_consultants],
     ['Lịch đang chờ', services.pending_bookings], ['Lịch đã tiếp nhận', services.accepted_bookings],
     ['Lịch đã hoàn tất', services.completed_bookings], ['Báo cáo thanh toán đang mở', services.open_payment_reports],
     ['Lượt gọi AI tháng này', monthlyUsage.requests], ['Token AI tháng này', monthlyUsage.total_tokens],

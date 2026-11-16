@@ -1,3 +1,5 @@
+import ManagerWorkSchedulePage from '../pages/admin/ManagerWorkSchedulePage';
+import ConsultantWorkSchedulePage from '../pages/consultant/ConsultantWorkSchedulePage';
 import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerPaymentsPage from '../pages/admin/ManagerPaymentsPage';
 import ManagerPlansPage from '../pages/admin/ManagerPlansPage';
@@ -173,6 +175,7 @@ export const router = createBrowserRouter([
               { index: true, element: <ConsultantDashboardPage /> },
               { path: 'consultations', element: <ConsultationListPage /> },
               { path: 'consultations/:id', element: <ConsultationDetailsPage /> },
+              { path: 'work-schedule', element: <ConsultantWorkSchedulePage /> },
               { path: 'candidates', element: <ConsultantCandidatesPage /> },
               { path: 'candidates/:candidateId', element: <CandidateCareerAnalysisPage /> },
               { path: 'account', element: <AccountPage /> },
@@ -191,7 +194,9 @@ export const router = createBrowserRouter([
           { path: 'payments', element: <ManagerPaymentsPage /> },
           { path: 'templates', element: <ResumeTemplateManagementPage /> },
           { path: 'jobs', element: <JobCrawlManagementPage /> },
+          { path: 'vector', element: <KnowledgeBasePage /> },
           { path: 'consultants', element: <ManagerConsultantsPage /> },
+          { path: 'work-schedule', element: <ManagerWorkSchedulePage /> },
           { path: 'crawl-reports', element: <ManagerCrawlReportsPage /> },
           { path: 'notifications', element: <AnnouncementsPage /> },
           { path: 'feedback', element: <OperationsReportsPage mode="feedback" /> },
@@ -209,6 +214,7 @@ export const router = createBrowserRouter([
             element: <AdminLayout />,
             children: [
               { index: true, element: <AdminDashboardPage /> },
+              { path: 'work-schedule', element: <ManagerWorkSchedulePage /> },
               { path: 'users', element: <UserManagementPage /> },
               { path: 'users/:id', element: <UserDetailsPage /> },
               { path: 'subscriptions', element: <SubscriptionQuotaManagementPage /> },
