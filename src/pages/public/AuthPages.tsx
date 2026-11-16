@@ -494,18 +494,6 @@ export function RegisterPage() {
         description={isVietnamese ? 'Tạo tài khoản ứng viên và bắt đầu trong vài phút.' : 'Create your candidate account in minutes.'}
       />
 
-      <GoogleSignInButton
-        variant="signup"
-        language={isVietnamese ? 'vi' : 'en'}
-        disabled={isSubmitting || google.isSigningIn}
-        onCredential={google.handleCredential}
-        onError={setError}
-      />
-      <p className="mt-2 text-sm text-slate-600">
-        {isVietnamese ? 'Tài khoản đăng ký mới là tài khoản ứng viên.' : 'New accounts are candidate accounts.'}
-      </p>
-      <OrDivider label={isVietnamese ? 'hoặc dùng email' : 'or use email'} />
-
       <form onSubmit={handleSubmit(submit)} className="space-y-6">
         <Field label={isVietnamese ? 'Họ và tên' : 'Full name'} htmlFor="reg-name" error={errors.name?.message}>
           <input id="reg-name" placeholder={isVietnamese ? 'Nguyễn Văn An' : 'Your full name'} autoComplete="name" className={inputClass} {...register('name')} />
@@ -565,6 +553,21 @@ export function RegisterPage() {
           label={isVietnamese ? 'Tạo tài khoản' : 'Create account'}
         />
       </form>
+
+      {/* Đăng ký nhanh bằng Google đặt dưới form email. */}
+      <OrDivider label={isVietnamese ? 'hoặc đăng ký nhanh' : 'or sign up faster'} />
+      <div>
+        <GoogleSignInButton
+          variant="signup"
+          language={isVietnamese ? 'vi' : 'en'}
+          disabled={isSubmitting || google.isSigningIn}
+          onCredential={google.handleCredential}
+          onError={setError}
+        />
+        <p className="mt-3 text-center text-[13px] text-slate-500">
+          {isVietnamese ? 'Không cần mật khẩu. Tài khoản tạo mới là tài khoản ứng viên.' : 'No password needed. New accounts are candidate accounts.'}
+        </p>
+      </div>
 
       <FooterLinks>
         <p>

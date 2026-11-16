@@ -46,7 +46,8 @@ export function GoogleSignInButton({
       clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
       variant,
       language,
-      width: element.getBoundingClientRect().width || 400,
+      // offsetWidth là chiều rộng bố cục (không bị thu theo zoom của trang), để nút Google rộng bằng form.
+      width: element.offsetWidth || 400,
       signal: controller.signal,
       isDisabled: () => handlers.current.disabled,
       onCredential: async (credential) => {

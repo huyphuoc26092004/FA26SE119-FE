@@ -15,7 +15,8 @@ interface GoogleIdentityApi {
       theme: 'outline';
       size: 'large';
       text: 'signin_with' | 'signup_with';
-      shape: 'rectangular';
+      shape: 'rectangular' | 'pill';
+      logo_alignment: 'left' | 'center';
       width: number;
       locale: 'vi' | 'en';
       click_listener: () => void;
@@ -152,7 +153,9 @@ export async function mountGoogleButton(
       theme: 'outline',
       size: 'large',
       text: options.variant === 'signup' ? 'signup_with' : 'signin_with',
-      shape: 'rectangular',
+      // Bo tròn và căn giữa logo cho khớp nút "Tạo tài khoản" (rounded-full) của trang.
+      shape: 'pill',
+      logo_alignment: 'center',
       width: Math.min(400, Math.max(200, Math.floor(options.width))),
       locale: options.language,
       click_listener: () => {
