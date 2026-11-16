@@ -228,3 +228,50 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-rise { animation: none; }
 }
+
+/* ---- Trang chủ: hiện dần khi cuộn tới (chỉ bật khi JS đã gắn .hp-motion, nên không bao giờ ẩn nội dung nếu JS lỗi) ---- */
+.hp-motion [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.hp-motion [data-reveal='fade'] { transform: none; }
+.hp-motion [data-reveal='left'] { transform: translate3d(-32px, 0, 0); }
+.hp-motion [data-reveal='right'] { transform: translate3d(32px, 0, 0); }
+.hp-motion [data-reveal='scale'] { transform: scale(0.96); }
+.hp-motion [data-reveal].is-visible { opacity: 1; transform: none; }
+
+/* Thanh độ khớp chạy từ 0 khi khối hiện ra */
+.hp-motion [data-reveal] .hp-bar { transform: scaleX(0); transform-origin: left; transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); transition-delay: calc(var(--reveal-delay, 0ms) + 300ms); }
+.hp-motion [data-reveal].is-visible .hp-bar { transform: scaleX(1); }
+
+/* Dòng chữ nhấn của tiêu đề: ánh sáng lướt nhẹ */
+@keyframes hp-sheen {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+.hp-sheen {
+  background: linear-gradient(100deg, var(--color-brand) 40%, #6fb79a 50%, var(--color-brand) 60%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hp-sheen 5s ease-in-out 1.2s infinite;
+}
+
+/* Thẻ ví dụ ở hero bồng bềnh nhẹ */
+@keyframes hp-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.hp-float { animation: hp-float 7s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-motion [data-reveal], .hp-motion [data-reveal] .hp-bar { opacity: 1; transform: none; transition: none; }
+  .hp-sheen { animation: none; color: var(--color-brand); background: none; }
+  .hp-float { animation: none; }
+}

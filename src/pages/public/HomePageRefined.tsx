@@ -1,6 +1,7 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Minus, Plus } from 'lucide-react';
+import { revealDelay, useRevealOnScroll } from './useRevealOnScroll';
 
 const stats = [
   ['94%', 'Độ chính xác khớp nối'],
@@ -135,7 +136,7 @@ function Section({
       <div
         className={`${container} grid gap-[clamp(2.5rem,5vw,5rem)] xl:grid-cols-[minmax(18rem,0.42fr)_minmax(0,1fr)]`}
       >
-        <header className="xl:sticky xl:top-28 xl:self-start">
+        <header data-reveal className="xl:sticky xl:top-28 xl:self-start">
           <p className={eyebrowClass}>{eyebrow}</p>
           <h2 className={`mt-4 max-w-3xl text-ink xl:text-[clamp(2rem,2.6vw,3.25rem)] ${h2Class}`}>
             {title}
@@ -163,7 +164,7 @@ function ActionLink({
     return (
       <Link
         to={to}
-        className={`inline-flex min-h-12 items-center gap-2 text-[clamp(1rem,0.94rem+0.2vw,1.125rem)] underline decoration-1 underline-offset-[6px] transition-colors ${
+        className={`group inline-flex min-h-12 items-center gap-2 text-[clamp(1rem,0.94rem+0.2vw,1.125rem)] underline decoration-1 underline-offset-[6px] transition-colors ${
           tone === 'dark' ? 'text-white hover:text-mint' : 'text-ink hover:text-brand'
         }`}
       >
@@ -174,7 +175,7 @@ function ActionLink({
   return (
     <Link
       to={to}
-      className={`inline-flex min-h-[clamp(3rem,2.6rem+0.8vw,3.75rem)] items-center justify-between gap-8 rounded-full px-[clamp(1.5rem,1.2rem+0.6vw,2rem)] text-[clamp(1rem,0.94rem+0.2vw,1.125rem)] font-medium transition-colors ${
+      className={`group inline-flex min-h-[clamp(3rem,2.6rem+0.8vw,3.75rem)] items-center justify-between gap-8 rounded-full transition-transform hover:-translate-y-0.5 active:translate-y-0 px-[clamp(1.5rem,1.2rem+0.6vw,2rem)] text-[clamp(1rem,0.94rem+0.2vw,1.125rem)] font-medium transition-colors ${
         tone === 'dark'
           ? 'bg-mint text-night hover:bg-white'
           : 'bg-ink text-white hover:bg-brand-800'
@@ -192,29 +193,32 @@ export default function HomePageRefined({
   openFaq: number | null;
   setOpenFaq: Dispatch<SetStateAction<number | null>>;
 }) {
+  const root = useRevealOnScroll<HTMLDivElement>();
   return (
-    <div className="overflow-x-clip bg-canvas text-ink">
+    <div ref={root} className="overflow-x-clip bg-canvas text-ink">
       {/* Hero: fills the first screen on any device */}
       <section className="flex min-h-[calc(100svh-4rem)] flex-col">
         <div
           className={`${container} grid flex-1 content-center gap-[clamp(3rem,6vw,6rem)] py-[clamp(3.5rem,8vh,7rem)] xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:items-center`}
         >
           <div>
-            <p className={eyebrowClass}>Đồ án tốt nghiệp ĐH FPT · FA26SE119</p>
-            <h1 className="mt-6 text-balance text-[clamp(2.75rem,4.8vw,6rem)] font-normal leading-[1.02] tracking-[-0.035em] text-ink">
+            <p data-reveal style={revealDelay(0)} className={eyebrowClass}>Đồ án tốt nghiệp ĐH FPT · FA26SE119</p>
+            <h1 data-reveal style={revealDelay(1)} className="mt-6 text-balance text-[clamp(2.75rem,4.8vw,6rem)] font-normal leading-[1.02] tracking-[-0.035em] text-ink">
               Đúng người, đúng việc.
               <br />
-              <span className="text-brand">Phần tìm kiếm để CCV lo.</span>
+              <span className="hp-sheen text-brand">Phần tìm kiếm để CCV lo.</span>
             </h1>
             <p
+              data-reveal
+              style={revealDelay(2)}
               className={`mt-[clamp(1.5rem,2.5vw,2.5rem)] max-w-2xl text-pretty text-slate-600 ${leadClass}`}
             >
               Nền tảng khớp nối CV với việc làm, gợi ý lộ trình nghề nghiệp và đồng hành cùng bạn
               trong từng bước ứng tuyển.
             </p>
-            <div className="mt-[clamp(2rem,3vw,3rem)] flex flex-wrap items-center gap-x-8 gap-y-4">
+            <div data-reveal style={revealDelay(3)} className="mt-[clamp(2rem,3vw,3rem)] flex flex-wrap items-center gap-x-8 gap-y-4">
               <ActionLink to="/register">
-                Bắt đầu miễn phí <ArrowRight className="h-[1.1em] w-[1.1em]" aria-hidden="true" />
+                Bắt đầu miễn phí <ArrowRight className="h-[1.1em] w-[1.1em] transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
               </ActionLink>
               <ActionLink to="/guest-trial" variant="text">
                 Dùng thử không cần tài khoản
@@ -222,18 +226,21 @@ export default function HomePageRefined({
             </div>
           </div>
 
+          <div data-reveal="right" style={revealDelay(2)}>
           <div
             aria-label="Ví dụ kết quả khớp nối"
-            className="rounded-panel border border-border bg-surface p-[clamp(1.25rem,2.4vw,2.5rem)]"
+            className="hp-float rounded-panel border border-border bg-surface p-[clamp(1.25rem,2.4vw,2.5rem)]"
           >
             <div className="flex items-baseline justify-between border-b border-ink/80 pb-4 text-[clamp(0.875rem,0.82rem+0.15vw,1rem)]">
               <span className="text-slate-700">Việc làm phù hợp với bạn</span>
               <span className="text-slate-500">Độ khớp</span>
             </div>
             <ul>
-              {sampleMatches.map(([title, meta, score]) => (
+              {sampleMatches.map(([title, meta, score], i) => (
                 <li
                   key={title}
+                  data-reveal="fade"
+                  style={revealDelay(i, 140, 400)}
                   className="grid grid-cols-[minmax(0,1fr)_clamp(5.5rem,8vw,8rem)] items-center gap-6 border-b border-border py-[clamp(1.1rem,1.8vw,1.75rem)] last:border-b-0"
                 >
                   <div className="min-w-0">
@@ -249,12 +256,13 @@ export default function HomePageRefined({
                       {score}%
                     </p>
                     <div className="mt-2.5 h-0.5 bg-slate-200">
-                      <div className="h-0.5 bg-brand" style={{ width: `${score}%` }} />
+                      <div className="hp-bar h-0.5 bg-brand" style={{ width: `${score}%` }} />
                     </div>
                   </div>
                 </li>
               ))}
             </ul>
+          </div>
           </div>
         </div>
 
@@ -263,6 +271,8 @@ export default function HomePageRefined({
             {stats.map(([value, label], index) => (
               <div
                 key={label}
+                data-reveal
+                style={revealDelay(index, 100, 300)}
                 className={`border-border py-[clamp(1.5rem,3vh,2.5rem)] pr-4 ${
                   index % 2 === 1 ? 'border-l pl-[clamp(1rem,2vw,2rem)]' : ''
                 } ${index >= 2 ? 'max-lg:border-t' : ''} ${
@@ -284,7 +294,7 @@ export default function HomePageRefined({
       <Section eyebrow="Cách hoạt động" title="Ba bước để tìm thấy công việc phù hợp">
         <ol className="grid gap-x-[clamp(1.5rem,3vw,3.5rem)] md:grid-cols-3">
           {steps.map(([title, description], index) => (
-            <li key={title} className="border-t border-ink/80 pb-6 pt-[clamp(1.25rem,2vw,2rem)]">
+            <li key={title} data-reveal style={revealDelay(index, 120)} className="border-t border-ink/80 pb-6 pt-[clamp(1.25rem,2vw,2rem)]">
               <span className="block text-[clamp(2.75rem,4.5vw,5rem)] font-light leading-none tabular-nums text-brand-300">
                 0{index + 1}
               </span>
@@ -300,7 +310,9 @@ export default function HomePageRefined({
           {features.map(([title, description], index) => (
             <article
               key={title}
-              className="border-b border-r border-border p-[clamp(1.5rem,2.4vw,2.75rem)]"
+              data-reveal
+              style={revealDelay(index % 3, 100)}
+              className="border-b border-r border-border p-[clamp(1.5rem,2.4vw,2.75rem)] transition-colors duration-300 hover:bg-brand-50/70"
             >
               <span className="text-sm tabular-nums text-slate-500">0{index + 1}</span>
               <h3 className={`mt-4 text-ink ${h3Class}`}>{title}</h3>
@@ -314,7 +326,7 @@ export default function HomePageRefined({
         <div
           className={`${container} grid gap-[clamp(2.5rem,5vw,6rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start`}
         >
-          <div className="lg:sticky lg:top-28">
+          <div data-reveal="left" className="lg:sticky lg:top-28">
             <p className="text-[clamp(0.875rem,0.82rem+0.15vw,1rem)] text-mint">
               Trợ lý nghề nghiệp
             </p>
@@ -327,7 +339,7 @@ export default function HomePageRefined({
             </p>
             <div className="mt-[clamp(2rem,3vw,3rem)]">
               <ActionLink to="/guest-trial" tone="dark">
-                Dùng thử ngay <ArrowRight className="h-[1.1em] w-[1.1em]" aria-hidden="true" />
+                Dùng thử ngay <ArrowRight className="h-[1.1em] w-[1.1em] transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
               </ActionLink>
             </div>
           </div>
@@ -335,6 +347,8 @@ export default function HomePageRefined({
             {agentSteps.map(([title, description], index) => (
               <li
                 key={title}
+                data-reveal
+                style={revealDelay(index, 110)}
                 className="grid grid-cols-[clamp(2.5rem,4vw,4rem)_minmax(0,1fr)] gap-4 border-t border-white/15 py-[clamp(1.25rem,2.2vw,2.25rem)] last:border-b"
               >
                 <span className="pt-1 text-[clamp(0.875rem,0.82rem+0.15vw,1rem)] tabular-nums text-mint">
@@ -356,10 +370,12 @@ export default function HomePageRefined({
         className="border-t-0"
       >
         <div className="grid gap-[clamp(1.25rem,2vw,2rem)] lg:grid-cols-2">
-          {audiences.map((audience) => (
+          {audiences.map((audience, index) => (
             <article
               key={audience.label}
-              className="flex flex-col rounded-panel border border-border bg-surface p-[clamp(1.5rem,2.8vw,3rem)]"
+              data-reveal
+              style={revealDelay(index, 140)}
+              className="flex flex-col rounded-panel border border-border bg-surface p-[clamp(1.5rem,2.8vw,3rem)] transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-brand-300"
             >
               <p className={eyebrowClass}>{audience.label}</p>
               <h3 className="mt-3 max-w-xl text-balance text-[clamp(1.5rem,1.2rem+1vw,2.25rem)] font-normal leading-tight tracking-[-0.015em] text-ink">
@@ -378,7 +394,7 @@ export default function HomePageRefined({
               <div className="mt-4 border-t border-border pt-2">
                 <ActionLink to={audience.to} variant="text">
                   {audience.action}{' '}
-                  <ArrowRight className="h-[1.1em] w-[1.1em]" aria-hidden="true" />
+                  <ArrowRight className="h-[1.1em] w-[1.1em] transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
                 </ActionLink>
               </div>
             </article>
@@ -391,7 +407,7 @@ export default function HomePageRefined({
           {faqs.map(([question, answer], index) => {
             const open = openFaq === index;
             return (
-              <article key={question} className="border-t border-border first:border-ink/80">
+              <article key={question} data-reveal="fade" style={revealDelay(index, 70)} className="border-t border-border first:border-ink/80">
                 <button
                   type="button"
                   className="flex min-h-[clamp(4rem,3.4rem+1.5vw,5.5rem)] w-full items-center justify-between gap-6 py-4 text-left text-[clamp(1.0625rem,0.98rem+0.4vw,1.5rem)] text-ink transition-colors hover:text-brand"
@@ -409,7 +425,7 @@ export default function HomePageRefined({
                 {open && (
                   <div
                     id={`faq-answer-${index}`}
-                    className={`max-w-3xl pb-[clamp(1.5rem,2vw,2rem)] text-slate-600 ${bodyClass}`}
+                    className={`auth-rise max-w-3xl pb-[clamp(1.5rem,2vw,2rem)] text-slate-600 ${bodyClass}`}
                   >
                     {answer}
                   </div>
@@ -424,19 +440,19 @@ export default function HomePageRefined({
         <div
           className={`${container} grid gap-[clamp(2rem,4vw,4rem)] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end`}
         >
-          <div>
+          <div data-reveal>
             <p className={eyebrowClass}>Bắt đầu</p>
             <h2 className={`mt-4 max-w-4xl text-ink ${h2Class}`}>
               Tải CV lên và nhận gợi ý việc làm phù hợp trong vài giây.
             </h2>
             <p className={`mt-5 text-slate-600 ${bodyClass}`}>Miễn phí. Không cần thẻ tín dụng.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+          <div data-reveal style={revealDelay(1, 150)} className="flex flex-wrap items-center gap-x-8 gap-y-4">
             <ActionLink to="/guest-trial" variant="text">
               Dùng thử trước
             </ActionLink>
             <ActionLink to="/register">
-              Bắt đầu miễn phí <ArrowRight className="h-[1.1em] w-[1.1em]" aria-hidden="true" />
+              Bắt đầu miễn phí <ArrowRight className="h-[1.1em] w-[1.1em] transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
             </ActionLink>
           </div>
         </div>
