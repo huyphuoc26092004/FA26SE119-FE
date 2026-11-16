@@ -2,6 +2,7 @@ import type { AssessmentQuestion, LearningResource } from '../types/assessment';
 import { apiClient } from './apiClient';
 import { toQuestion, toResource } from './candidateService';
 import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
+import { orderLearningNodes } from '../utils/learningOrder';
 
 // Bài đánh giá kỹ năng và lộ trình học theo JD của một công việc (trang /candidate/skill-assessment).
 // CV không bắt buộc: POST /assessments { jobId, resumeId? } sinh 10 câu theo JD (và CV nếu có);
@@ -114,7 +115,7 @@ function toLearningPath(roadmap: ApiRow): LearningPath {
       reasoning: str(g.reasoning),
       score: g.assessment_score === undefined || g.assessment_score === null ? undefined : Math.round(num(g.assessment_score)),
     })),
-    nodes: nodes.sort((a, b) => a.order - b.order),
+    nodes: orderLearningNodes(nodes),
     skillStates: rows(roadmap.skill_states).map((row) => ({
       skill: str(row.skill_name),
       status: ['SATISFIED', 'MISSING', 'NEEDS_IMPROVEMENT', 'DECLARED'].includes(str(row.status)) ? str(row.status) as 'SATISFIED' | 'MISSING' | 'NEEDS_IMPROVEMENT' : row.declared_evidence === true ? 'DECLARED' : 'MISSING',
