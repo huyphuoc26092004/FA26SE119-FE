@@ -25,7 +25,8 @@ import { ResumePaper } from '../../components/resume/ResumePaper';
 import { renderTemplateWithResume } from '../../utils/resumeTemplateRender';
 import { useTranslation } from '../../i18n';
 import { AiSuggest, StepTipsPanel } from './resume-builder/BuilderAssist';
-import { STEP_TIPS, stepChecks } from './resume-builder/builderTips';
+import { STEP_TIPS, stepChecks, type BuilderStep } from './resume-builder/builderTips';
+import { ContactFields } from './resume-builder/ContactFields';
 
 // Short page-only strings that have no i18n key yet.
 const copy = {
@@ -63,22 +64,24 @@ const copy = {
     present: 'Hiện tại',
     namePlaceholder: 'Họ và tên',
     steps: {
-      personal: 'Thông tin cá nhân',
-      summary: 'Giới thiệu',
+      personal: 'Liên hệ',
+      summary: 'Tóm tắt',
       experience: 'Kinh nghiệm',
       education: 'Học vấn',
       skills: 'Kỹ năng',
       projects: 'Dự án',
       certifications: 'Chứng chỉ',
+      finish: 'Hoàn tất',
     },
     hints: {
-      personal: 'Nhà tuyển dụng liên hệ bạn qua email và số điện thoại, hãy điền chính xác.',
-      summary: '2–4 câu về bạn là ai, thế mạnh chính và mục tiêu nghề nghiệp.',
-      experience: 'Bắt đầu từ công việc gần nhất. Mỗi dòng ở ô "Điểm nổi bật" là một gạch đầu dòng.',
+      personal: 'Thêm thông tin liên hệ cập nhật để nhà tuyển dụng và nhà chiêu mộ dễ dàng liên lạc với bạn.',
+      summary: '2–4 câu tóm tắt bạn là ai, thế mạnh chính và mục tiêu nghề nghiệp.',
+      experience: 'Bắt đầu từ công việc gần nhất. Trong ô Mô tả, mỗi dòng là một gạch đầu dòng.',
       education: 'Trường, bằng cấp và chuyên ngành. GPA có thể bỏ trống.',
       skills: 'Gõ kỹ năng rồi nhấn Enter. Nên có 6–12 kỹ năng sát với vị trí ứng tuyển.',
       projects: 'Dự án cá nhân, đồ án hoặc dự án ở công ty mà bạn muốn nêu bật.',
       certifications: 'Chứng chỉ và giải thưởng, nếu có.',
+      finish: 'Thêm dự án, chứng chỉ hoặc giải thưởng nếu có, rồi lưu CV.',
     },
     f: {
       position: 'Vị trí mong muốn',
@@ -166,22 +169,24 @@ const copy = {
     present: 'Present',
     namePlaceholder: 'Your name',
     steps: {
-      personal: 'Personal details',
+      personal: 'Contact',
       summary: 'Summary',
       experience: 'Experience',
       education: 'Education',
       skills: 'Skills',
       projects: 'Projects',
       certifications: 'Certifications',
+      finish: 'Finish',
     },
     hints: {
-      personal: 'Recruiters reach you by email and phone, so double-check them.',
+      personal: 'Add up-to-date contact details so employers and recruiters can easily reach you.',
       summary: '2–4 sentences on who you are, your main strengths and your goal.',
-      experience: 'Start with your latest job. Each line in "Highlights" becomes a bullet.',
+      experience: 'Start with your latest job. Each line in Description becomes a bullet.',
       education: 'School, degree and major. GPA is optional.',
       skills: 'Type a skill and press Enter. Aim for 6–12 skills that fit the role.',
       projects: 'Personal, school or work projects worth showing.',
       certifications: 'Certificates and awards, if any.',
+      finish: 'Add projects, certificates or awards if you have them, then save your CV.',
     },
     f: {
       position: 'Target position',
@@ -239,7 +244,8 @@ const copy = {
 
 type Copy = (typeof copy)['vi'];
 type StepKey = keyof Copy['steps'];
-const STEPS: StepKey[] = ['personal', 'summary', 'experience', 'education', 'skills', 'projects', 'certifications'];
+// Bố cục theo mẫu: Liên hệ → Kinh nghiệm → Học vấn → Kỹ năng → Tóm tắt → Hoàn tất (dự án, chứng chỉ, lưu).
+const STEPS: StepKey[] = ['personal', 'experience', 'education', 'skills', 'summary', 'finish'];
 
 const primaryButton =
   'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
@@ -624,24 +630,14 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
 
   const percent = completeness(cv);
   const stepKey = STEPS[step];
+  const tipsKey: BuilderStep = stepKey === 'finish' ? 'projects' : stepKey;
   const isLast = step === STEPS.length - 1;
   const f = c.f;
 
-  const renderStep = () => {
-    switch (stepKey) {
+  const renderStep = (key: StepKey = stepKey): ReactNode => {
+    switch (key) {
       case 'personal':
-        return (
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Field className="sm:col-span-2" label={f.position} value={cv.position} placeholder={f.positionPh} onChange={(v) => update({ position: v })} />
-            <Field className="sm:col-span-2" label={f.fullName} value={cv.fullName} onChange={(v) => update({ fullName: v })} />
-            <Field label={f.email} type="email" value={cv.email} onChange={(v) => update({ email: v })} />
-            <Field label={f.phone} type="tel" value={cv.phone} onChange={(v) => update({ phone: v })} />
-            <Field className="sm:col-span-2" label={f.location} value={cv.location} placeholder={f.locationPh} onChange={(v) => update({ location: v })} />
-            <Field label={f.linkedin} value={cv.linkedin} placeholder="linkedin.com/in/…" onChange={(v) => update({ linkedin: v })} />
-            <Field label={f.github} value={cv.github} placeholder="github.com/…" onChange={(v) => update({ github: v })} />
-            <Field className="sm:col-span-2" label={f.website} value={cv.website} onChange={(v) => update({ website: v })} />
-          </div>
-        );
+        return <ContactFields cv={cv} lang={uiLang} onChange={update} />;
       case 'summary':
         return (
           <>
@@ -709,19 +705,25 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                   </div>
                   <Field className="sm:col-span-2" label={f.expLocation} value={e.location} onChange={(v) => experience.change(e.id, { location: v })} />
                   <div className="sm:col-span-2">
-                    <TextArea label={f.description} rows={3} value={e.description} onChange={(v) => experience.change(e.id, { description: v })} />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <TextArea
-                      label={f.highlights}
-                      rows={4}
-                      value={(e.highlights ?? []).join('\n')}
-                      onChange={(v) => experience.change(e.id, { highlights: v.split('\n') })}
-                    />
+                    <TextArea label={f.description} rows={5} value={e.description} onChange={(v) => experience.change(e.id, { description: v })} />
+                    {(e.highlights ?? []).some((h) => h.trim()) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          experience.change(e.id, {
+                            description: [e.description?.trim(), ...(e.highlights ?? []).filter((h) => h.trim())].filter(Boolean).join('\n'),
+                            highlights: [],
+                          })
+                        }
+                        className="mt-2 text-[13px] text-brand underline underline-offset-4"
+                      >
+                        {uiLang === 'vi' ? 'Gộp “điểm nổi bật” cũ vào mô tả' : 'Merge old highlights into the description'}
+                      </button>
+                    )}
                     <AiSuggest
                       guest={!!guest}
                       lang={uiLang}
-                      onApply={(text) => experience.change(e.id, { highlights: text.split('\n') })}
+                      onApply={(text) => experience.change(e.id, { description: text })}
                       params={() => ({
                         resumeId,
                         field: 'experience',
@@ -787,6 +789,17 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
               ))}
             </ul>
             <AddButton label={f.addLanguage} onClick={languages.add} />
+          </>
+        );
+      case 'finish':
+        return (
+          <>
+            <h3 className="text-[15px] font-medium text-ink">{c.steps.projects}</h3>
+            <p className="mt-1 text-[13px] text-slate-500">{c.hints.projects}</p>
+            <div className="mt-4">{renderStep('projects')}</div>
+            <h3 className="mt-12 text-[15px] font-medium text-ink">{c.steps.certifications}</h3>
+            <p className="mt-1 text-[13px] text-slate-500">{c.hints.certifications}</p>
+            <div className="mt-4">{renderStep('certifications')}</div>
           </>
         );
       case 'projects':
@@ -1010,7 +1023,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
           <div className="mt-8">
             <h2 className="text-[clamp(1.375rem,2.2vw,1.75rem)] font-normal tracking-[-0.01em] text-ink">{c.steps[stepKey]}</h2>
             <p className="mt-2 max-w-[36rem] text-[15px] leading-7 text-slate-600">{c.hints[stepKey]}</p>
-            <StepTipsPanel tips={STEP_TIPS[uiLang][stepKey]} checks={stepChecks(stepKey, cv, uiLang)} lang={uiLang} />
+            <StepTipsPanel tips={STEP_TIPS[uiLang][tipsKey]} checks={stepChecks(tipsKey, cv, uiLang)} lang={uiLang} />
             <div className="mt-8">{renderStep()}</div>
           </div>
 
