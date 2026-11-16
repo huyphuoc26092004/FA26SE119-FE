@@ -197,7 +197,11 @@ export function renderTemplateWithResume(html: string, cv: Partial<Resume>, opti
     .map((w) => w[0]?.toUpperCase())
     .join('');
   doc.querySelectorAll('.cv-avatar').forEach((el) => {
-    el.textContent = initials || 'CV';
+    if (cv.avatarUrl) {
+      el.innerHTML = `<img src="${escapeHtml(cv.avatarUrl)}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
+    } else {
+      el.textContent = initials || 'CV';
+    }
   });
 
   fillSection(
@@ -211,15 +215,34 @@ export function renderTemplateWithResume(html: string, cv: Partial<Resume>, opti
     'experience',
     (cv.experience ?? [])
       .filter((e) => hasText(e.role) || hasText(e.company) || hasText(e.description))
-      .map((e) =>
-        entryHtml({
+      .map((e) => {
+        const rawLines = (e.description ?? '')
+          .split('\n')
+          .map((l) => l.trim())
+          .filter(Boolean);
+        const hasBulletLines = rawLines.length > 0 && rawLines.some((l) => /^[-*•–]/.test(l));
+
+        let text: string | undefined = e.description;
+        let bullets: string[] = (e.highlights ?? []).map((b) => b.trim()).filter(Boolean);
+
+        if (hasBulletLines) {
+          bullets = rawLines.map((l) => l.replace(/^[-*•–]\s*/, '').trim()).filter(Boolean);
+          text = undefined;
+        } else if (bullets.length > 0 && e.description) {
+          const cleanLines = rawLines.map((l) => l.replace(/^[-*•–]\s*/, '').trim()).filter(Boolean);
+          if (cleanLines.join('\n') === bullets.join('\n')) {
+            text = undefined;
+          }
+        }
+
+        return entryHtml({
           title: e.role || e.company,
           subtitle: [e.role ? e.company : '', e.location].filter(hasText).join(' • '),
           period: period(e.startDate, e.endDate, e.isCurrent, labels.present),
-          text: e.description,
-          bullets: e.highlights,
-        }),
-      )
+          text,
+          bullets,
+        });
+      })
       .join(''),
   );
 

@@ -226,8 +226,8 @@ const SUGGEST_INSTRUCTIONS: Record<CvSuggestField, Record<'vi' | 'en', string>> 
     en: 'Rewrite the CV "Professional summary": 2–4 sentences, implied first person, using supplied strengths and goals. Mention years of experience only when provided; do not invent figures.',
   },
   experience: {
-    vi: 'Viết tối đa 5 gạch đầu dòng "Điểm nổi bật" cho kinh nghiệm này: mỗi dòng mở đầu bằng động từ và dùng đúng thông tin người dùng cung cấp. Không thêm số liệu hoặc thông tin thay thế khi chưa có dữ kiện.',
-    en: 'Write up to five "Highlights" bullets for this job using only supplied facts. Begin with an action verb; omit unsupported figures and do not add placeholders.',
+    vi: 'Viết tối đa 5 gạch đầu dòng mô tả công việc và thành tích cho kinh nghiệm này: mỗi dòng mở đầu bằng động từ hành động và dùng đúng thông tin người dùng cung cấp. Không thêm số liệu hoặc thông tin thay thế khi chưa có dữ kiện.',
+    en: 'Write up to five bullet points for this job using only supplied facts. Begin with an action verb; omit unsupported figures and do not add placeholders.',
   },
   project: {
     vi: 'Viết lại mô tả dự án cho CV: 2–3 câu, nêu bài toán, vai trò và công nghệ, kết quả đạt được, không bịa số liệu.',
@@ -245,6 +245,7 @@ function cleanSuggestion(text: string, field: CvSuggestField): string {
       .split('\n')
       .map((line) => line.replace(/^\s*(?:[-*•–]|\d+[.)])\s*/, '').trim())
       .filter(Boolean)
+      .map((line) => `• ${line}`)
       .join('\n');
   }
   return out.trim();

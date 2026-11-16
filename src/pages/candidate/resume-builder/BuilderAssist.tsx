@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ChevronDown, List, Sparkles } from 'lucide-react';
 import { suggestCvText, type CvSuggestParams } from '../../../services/assistantService';
 import { authErrorMessage } from '../../../services/authService';
 import { guestErrorMessage } from '../../../services/guestService';
@@ -21,6 +21,10 @@ const copy = {
     dismiss: 'Bỏ qua',
     aiNote: 'Đọc lại và sửa cho đúng với bạn trước khi lưu, nhất là các chỗ [số liệu].',
     aiError: 'Không lấy được gợi ý từ AI.',
+    aiGenerate: 'Tạo ra với AI',
+    bulletTooltip: 'Gạch đầu dòng',
+    bulletHint: 'Mỗi dòng là một gạch đầu dòng công việc',
+    descLabel: 'Mô tả',
   },
   en: {
     tips: 'Writing tips',
@@ -35,6 +39,10 @@ const copy = {
     dismiss: 'Dismiss',
     aiNote: 'Review and adjust it before saving, especially any [number] placeholders.',
     aiError: 'Could not get a suggestion from AI.',
+    aiGenerate: 'Generate with AI',
+    bulletTooltip: 'Bullet list',
+    bulletHint: 'Each line is a bullet point',
+    descLabel: 'Description',
   },
 };
 
@@ -148,6 +156,162 @@ export function AiSuggest({ params, onApply, lang, guest = false }: { params: ()
               {c.retry}
             </button>
             <button type="button" onClick={() => setState({ status: 'idle' })} className="cursor-pointer text-slate-500 hover:text-ink">
+              {c.dismiss}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Trình soạn thảo ô Mô tả kinh nghiệm theo chuẩn Better CV:
+ * - Có nút chèn nhanh gạch đầu dòng (bullet) và tự động nối gạch đầu dòng khi Enter.
+ * - Tích hợp nút gradient "Tạo ra với AI" trực tiếp ở thanh tiêu đề.
+ */
+export function ExperienceDescriptionEditor({
+  value,
+  onChange,
+  guest = false,
+  lang = 'vi',
+  placeholder,
+  suggestParams,
+}: {
+  value?: string;
+  onChange: (val: string) => void;
+  guest?: boolean;
+  lang?: Lang;
+  placeholder?: string;
+  suggestParams?: () => CvSuggestParams;
+}) {
+  const c = copy[lang];
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [aiState, setAiState] = useState<{ status: 'idle' | 'loading' | 'done' | 'error'; text?: string }>({ status: 'idle' });
+
+  const runAi = async () => {
+    if (!suggestParams) return;
+    setAiState({ status: 'loading' });
+    try {
+      setAiState({ status: 'done', text: await suggestCvText(suggestParams(), { guest }) });
+    } catch (error) {
+      setAiState({ status: 'error', text: guest ? guestErrorMessage(error, lang === 'vi') : authErrorMessage(error, c.aiError) });
+    }
+  };
+
+  const insertBullet = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const text = el.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    const needsNewline = before.length > 0 && !before.endsWith('\n');
+    const insertion = (needsNewline ? '\n' : '') + '• ';
+    const nextVal = before + insertion + after;
+    onChange(nextVal);
+    setTimeout(() => {
+      el.focus();
+      el.selectionStart = el.selectionEnd = start + insertion.length;
+    }, 0);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter') {
+      const el = textareaRef.current;
+      if (!el) return;
+      const start = el.selectionStart;
+      const text = el.value;
+      const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+      const currentLine = text.substring(lineStart, start);
+      const bulletMatch = currentLine.match(/^(\s*[-*•–]\s*)/);
+      if (bulletMatch) {
+        if (currentLine.trim() === '•' || currentLine.trim() === '-' || currentLine.trim() === '*') {
+          e.preventDefault();
+          const before = text.substring(0, lineStart);
+          const after = text.substring(start);
+          onChange(before + after);
+          return;
+        }
+        e.preventDefault();
+        const bulletStr = '• ';
+        const before = text.substring(0, start);
+        const after = text.substring(start);
+        onChange(before + '\n' + bulletStr + after);
+        setTimeout(() => {
+          el.selectionStart = el.selectionEnd = start + 1 + bulletStr.length;
+        }, 0);
+      }
+    }
+  };
+
+  return (
+    <div className="block">
+      <div className="flex items-center justify-between pb-1.5">
+        <span className="text-[13px] text-slate-500">{c.descLabel}</span>
+        {suggestParams && (
+          <button
+            type="button"
+            onClick={runAi}
+            disabled={aiState.status === 'loading'}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 px-3 py-1 text-xs font-medium text-white shadow-sm transition-all hover:from-purple-700 hover:to-indigo-700 disabled:opacity-60"
+          >
+            <Sparkles size={13} className={aiState.status === 'loading' ? 'animate-spin' : ''} aria-hidden="true" />
+            <span>{aiState.status === 'loading' ? (lang === 'vi' ? 'Đang tạo…' : 'Generating…') : c.aiGenerate}</span>
+          </button>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-slate-300 bg-white/70 focus-within:border-ink focus-within:bg-white focus-within:ring-1 focus-within:ring-ink">
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-slate-50/80 px-2.5 py-1 text-slate-600">
+          <button
+            type="button"
+            title={c.bulletTooltip}
+            onClick={insertBullet}
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-slate-200 hover:text-ink"
+          >
+            <List size={15} />
+          </button>
+          <span className="mx-1 h-3.5 w-px bg-slate-300" />
+          <span className="text-[11px] text-slate-400">{c.bulletHint}</span>
+        </div>
+
+        <textarea
+          ref={textareaRef}
+          rows={5}
+          value={value ?? ''}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="w-full resize-y rounded-b-lg border-0 bg-transparent px-3 py-2.5 text-[15px] leading-7 text-ink placeholder:text-slate-400 focus:outline-none focus:ring-0"
+        />
+      </div>
+
+      {aiState.status === 'error' && (
+        <p className="mt-1 text-xs text-danger">{aiState.text}</p>
+      )}
+
+      {aiState.status === 'done' && aiState.text && (
+        <div className="mt-2 border-l-2 border-brand bg-brand-50/60 px-4 py-3">
+          <p className="text-xs uppercase tracking-[0.08em] text-brand">{c.aiTitle}</p>
+          <p className="mt-2 whitespace-pre-line text-[15px] leading-7 text-ink">{aiState.text}</p>
+          <p className="mt-2 text-xs text-slate-500">{c.aiNote}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <button
+              type="button"
+              onClick={() => {
+                onChange(aiState.text!);
+                setAiState({ status: 'idle' });
+              }}
+              className="inline-flex min-h-9 cursor-pointer items-center rounded-full bg-ink px-4 text-white hover:bg-brand-800"
+            >
+              {c.use}
+            </button>
+            <button type="button" onClick={runAi} className="cursor-pointer border-b border-current pb-px text-ink hover:text-brand">
+              {c.retry}
+            </button>
+            <button type="button" onClick={() => setAiState({ status: 'idle' })} className="cursor-pointer text-slate-500 hover:text-ink">
               {c.dismiss}
             </button>
           </div>
