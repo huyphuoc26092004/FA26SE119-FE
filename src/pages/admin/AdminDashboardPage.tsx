@@ -550,8 +550,7 @@ export default function AdminDashboardPage() {
           `1. HẠ TẦNG KỸ THUẬT\n` +
           `Trạng thái: ${systemHealth.overallStatus}\n` +
           `Uptime: ${systemHealth.uptimePercentage}%\n` +
-          `CPU: ${systemHealth.resources.cpuUsagePercent}%\n` +
-          `RAM: ${systemHealth.resources.memoryUsedGB}GB / ${systemHealth.resources.memoryTotalGB}GB\n\n` +
+          `\n` +
           `2. SỬ DỤNG AI\n` +
           `Tổng yêu cầu: ${aiMetrics.totalRequests}\n` +
           `Tổng tokens: ${aiMetrics.totalTokens}\n` +
@@ -863,32 +862,6 @@ export default function AdminDashboardPage() {
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div>
-              <h3 className="border-b border-ink pb-2 text-[15px] font-medium">{c.system.resources}</h3>
-              <div className="grid gap-x-10 sm:grid-cols-2">
-                {[
-                  { label: `${c.system.cpu} (${systemHealth.resources.cpuCores} cores)`, value: `${systemHealth.resources.cpuUsagePercent}%`, pct: systemHealth.resources.cpuUsagePercent },
-                  { label: c.system.ram, value: `${systemHealth.resources.memoryUsedGB} / ${systemHealth.resources.memoryTotalGB} GB`, pct: systemHealth.resources.memoryUsagePercent },
-                  { label: c.system.disk, value: `${systemHealth.resources.diskUsedGB} / ${systemHealth.resources.diskTotalGB} GB`, pct: systemHealth.resources.diskUsagePercent },
-                  {
-                    label: c.system.db,
-                    value: `${systemHealth.resources.dbPoolActive} / ${systemHealth.resources.dbPoolMax}`,
-                    pct: Math.round((systemHealth.resources.dbPoolActive / systemHealth.resources.dbPoolMax) * 100),
-                  },
-                ].map((r) => (
-                  <div key={r.label} className="border-b border-border py-4">
-                    <div className="flex items-baseline justify-between gap-4 text-sm">
-                      <span className="text-ink">{r.label}</span>
-                      <span className="tabular-nums text-slate-600">{r.value}</span>
-                    </div>
-                    <div className="mt-2.5">
-                      <ThinBar value={r.pct} tone={r.pct > 85 ? 'warning' : 'brand'} />
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
 
             <div>
