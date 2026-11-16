@@ -55,7 +55,7 @@ export const candidateNav: NavItem[] = [
   { label: 'Job discovery', labelVi: 'Khám phá việc làm', translationKey: 'nav.jobDiscovery', to: '/candidate/jobs', icon: BriefcaseBusiness, group: 'main' },
   { label: 'CV fit', labelVi: 'Độ phù hợp CV', translationKey: 'nav.cvJobFit', to: '/candidate/cv-job-fit', icon: CircleDot, group: 'apply' },
   { label: 'Application help', labelVi: 'Hỗ trợ ứng tuyển', translationKey: 'nav.applicationAssistance', to: '/candidate/applications', icon: Mail, group: 'apply' },
-  { label: 'Skill assessment', labelVi: 'Đánh giá kỹ năng', translationKey: 'nav.skillAssessment', to: '/candidate/skill-assessment', icon: GraduationCap, group: 'grow' },
+  { label: 'Interview preparation', labelVi: 'Chuẩn bị phỏng vấn', translationKey: 'nav.skillAssessment', to: '/candidate/skill-assessment', icon: GraduationCap, group: 'grow' },
   { label: 'Learning path', labelVi: 'Lộ trình học', translationKey: 'nav.learningPath', to: '/candidate/learning-path', icon: Route, group: 'grow' },
   { label: 'Career consultation', labelVi: 'Tư vấn nghề nghiệp', translationKey: 'nav.careerConsultation', to: '/candidate/consultations', icon: MessageSquare, group: 'grow' },
   { label: 'Plans & tokens', labelVi: 'Gói đăng ký & token', translationKey: 'nav.subscription', to: '/candidate/subscription', icon: CreditCard, group: 'account' },

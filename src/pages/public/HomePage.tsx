@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     q: 'Nhà tuyển dụng đăng tin như thế nào?',
-    a: 'Nhà tuyển dụng đăng ký và được quản trị viên cấp quyền Cố vấn. Sau đó có thể đăng tin, lọc hồ sơ và sử dụng AI Agent hỗ trợ tuyển dụng.',
+    a: 'Nhà tuyển dụng đăng ký và được quản trị viên cấp quyền Tư vấn viên. Sau đó có thể đăng tin, lọc hồ sơ và sử dụng AI Agent hỗ trợ tuyển dụng.',
   },
 ];
 

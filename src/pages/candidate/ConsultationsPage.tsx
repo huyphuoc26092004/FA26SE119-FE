@@ -59,20 +59,20 @@ export default function ConsultationsPage() {
           {vi ? 'Tư vấn nghề nghiệp' : 'Career consultation'}
         </p>
         <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-normal leading-tight tracking-tight text-ink">
-          {vi ? 'Đúng chuyên môn. Đúng khung giờ.' : 'The right advisor. A time that works.'}
+          {vi ? 'Đúng chuyên môn. Đúng khung giờ.' : 'The right consultant. A time that works.'}
         </h1>
         <p className="mt-4 text-base leading-7 text-slate-600">
           {vi
-            ? 'Chọn cố vấn và lịch tư vấn 30–60 phút. Sau khi tư vấn viên tiếp nhận, hệ thống tạo Google Meet và gửi lời mời Google Calendar cho hai bên.'
-            : 'Choose an advisor and a 30–60 minute slot. Once the advisor accepts, the system creates Google Meet and sends Google Calendar invitations to both participants.'}
+            ? 'Chọn tư vấn viên và lịch tư vấn 30–60 phút. Sau khi tư vấn viên tiếp nhận, hệ thống tạo Google Meet và gửi lời mời Google Calendar cho hai bên.'
+            : 'Choose a consultant and a 30–60 minute slot. Once the consultant accepts, the system creates Google Meet and sends Google Calendar invitations to both participants.'}
         </p>
         <ol className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600">
           {(vi
-            ? ['Mua lượt tư vấn', 'Chọn cố vấn và giờ', 'Cố vấn tiếp nhận', 'Tư vấn và đánh giá']
+            ? ['Mua lượt tư vấn', 'Chọn tư vấn viên và giờ', 'Tư vấn viên tiếp nhận', 'Tư vấn và đánh giá']
             : [
                 'Buy session credits',
-                'Choose an advisor and time',
-                'Advisor accepts',
+                'Choose a consultant and time',
+                'Consultant accepts',
                 'Attend and review',
               ]
           ).map((step, index) => (
@@ -96,7 +96,7 @@ export default function ConsultationsPage() {
             {historicalThreads.map((thread) => (
               <li key={thread.id} className="flex items-center justify-between gap-4 py-3 text-sm">
                 <span>
-                  {thread.topicLabel} · {thread.consultantName || (vi ? 'Cố vấn' : 'Advisor')}
+                  {thread.topicLabel} · {thread.consultantName || (vi ? 'Tư vấn viên' : 'Consultant')}
                 </span>
                 <button
                   className="text-brand underline underline-offset-4"

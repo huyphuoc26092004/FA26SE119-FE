@@ -36,7 +36,7 @@ const copy = {
   vi: {
     back: 'Quay lại danh sách người dùng',
     joined: 'Tham gia',
-    roles: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn nghề nghiệp', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' } as Record<UserRole, string>,
+    roles: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên nghề nghiệp', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' } as Record<UserRole, string>,
     status: { ACTIVE: 'Hoạt động', SUSPENDED: 'Bị khoá', PENDING: 'Chờ kích hoạt' } as Record<AdminManagedUser['status'], string>,
     verified: 'Đã xác thực OTP',
     unverified: 'Chờ xác thực OTP',

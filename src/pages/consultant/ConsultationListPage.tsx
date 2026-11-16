@@ -78,7 +78,7 @@ const copy = {
     attachedCv: 'CV đính kèm',
     candidate: 'Ứng viên',
     quick: [
-      'Chào bạn, mình là cố vấn phụ trách. Mình đã xem hồ sơ của bạn.',
+      'Chào bạn, mình là tư vấn viên phụ trách. Mình đã xem hồ sơ của bạn.',
       'Bạn gửi giúp mình JD của vị trí bạn đang nhắm tới nhé.',
       'Mình sẽ gửi nhận xét chi tiết về CV cho bạn trong hôm nay.',
       'Bạn còn câu hỏi nào khác không?',

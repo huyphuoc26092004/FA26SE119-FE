@@ -39,6 +39,24 @@ export const KEYWORD_SUGGESTIONS = [
   'UI/UX',
 ];
 
+/** Ngôn ngữ / công nghệ gợi ý theo từng nhóm vai trò: chọn vai trò trước rồi mới chọn từ khoá. */
+export const ROLE_KEYWORDS: Record<string, string[]> = {
+  Backend: ['Java', 'Spring Boot', 'Node.js', 'Python', '.NET', 'C#', 'PHP', 'Golang', 'Ruby', 'Kotlin'],
+  Frontend: ['React', 'Angular', 'Vue', 'JavaScript', 'TypeScript', 'Next.js', 'HTML/CSS'],
+  Fullstack: ['React', 'Node.js', 'Java', 'Spring Boot', 'Angular', 'Vue', '.NET', 'PHP', 'TypeScript'],
+  Mobile: ['Flutter', 'React Native', 'Android', 'Kotlin', 'iOS', 'Swift'],
+  Data: ['Data Engineer', 'Data Analyst', 'SQL', 'Python', 'Spark', 'Power BI'],
+  'AI/ML': ['Machine Learning', 'Python', 'Deep Learning', 'NLP', 'LLM', 'Computer Vision'],
+  DevOps: ['DevOps', 'AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Linux'],
+  'QA/Tester': ['Tester', 'Automation Test', 'Selenium', 'Manual Test', 'Performance Test'],
+  'Business Analyst': ['Business Analyst', 'BA', 'Requirement', 'SQL'],
+  Product: ['Product Owner', 'Product Manager', 'Scrum'],
+  'UI/UX Design': ['UI/UX', 'Figma', 'UX Research', 'Product Design'],
+};
+
+/** Từ khoá gợi ý cho các vai trò đã chọn (không trùng, giữ thứ tự). */
+export const keywordsForRoles = (roles: string[]) => [...new Set(roles.flatMap((role) => ROLE_KEYWORDS[role] ?? []))];
+
 export const LOCATION_OPTIONS = ['Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng', 'Cần Thơ', 'Hải Phòng', 'Remote'];
 
 /** Lựa chọn nhiều giá trị trên form; mỗi tổ hợp trang × từ khoá × vai trò × địa điểm là một lượt tìm của backend. */

@@ -10,8 +10,12 @@ const end = source.indexOf('export async function', start);
 const code = ts.transpileModule(source.slice(start, end) + '\nglobalThis.mapRoadmap = toLearningPath;', {
   compilerOptions: { target: ts.ScriptTarget.ES2022 },
 }).outputText;
+const orderSource = ts.transpileModule(readFileSync(new URL('../src/utils/learningOrder.ts', import.meta.url), 'utf8').replace('export function', 'function'), {
+  compilerOptions: { target: ts.ScriptTarget.ES2022 },
+}).outputText;
 const scope = { rows: (value) => Array.isArray(value) ? value : [],
   str: (value) => value == null ? '' : String(value), num: (value) => Number(value) || 0, toResource: (value) => value };
+runInNewContext(orderSource + '\nglobalThis.orderLearningNodes = orderLearningNodes;', scope);
 runInNewContext(code, scope);
 
 test('all 20 JD skill states and 18 learning nodes survive frontend mapping', () => {

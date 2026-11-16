@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
 import { createServer } from 'vite';
 
-let server, apiClient, service, PreparationContent, mappers, selectableJobs, buildBookingSlots;
+let server, apiClient, service, PreparationContent, mappers, selectableJobs;
 const oldStorage = globalThis.sessionStorage;
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const cv = { id: 'shared-cv', name: 'CV Frontend', status: 'Ready', position: 'Frontend',
@@ -26,7 +26,6 @@ before(async () => {
   ({ PreparationContent } = await server.ssrLoadModule('/src/components/consultation/ConsultationPreparation.tsx'));
   mappers = await server.ssrLoadModule('/src/services/consultationMappers.ts');
   ({ selectableJobs } = await server.ssrLoadModule('/src/pages/candidate/cv-job-fit/jobSelection.ts'));
-  ({ buildBookingSlots } = await server.ssrLoadModule('/src/utils/bookingSlots.ts'));
   apiClient.defaults.adapter = async () => { throw new Error('Unexpected HTTP request'); };
 });
 after(async () => { await server?.close(); globalThis.sessionStorage = oldStorage; });
@@ -63,7 +62,6 @@ function mountBookingForm({ resumes = [cv, { ...cv, id: 'draft', name: 'Draft CV
     '../../../i18n': { useTranslation: () => ({ isVietnamese: false }) },
     '../../../constants/consultationRoles': { CONSULTATION_TARGET_ROLES: ['Frontend', 'Backend'] },
     '../../../components/consultation/useBookingClock': { useBookingClock: () => clock.now },
-    '../../../utils/bookingSlots': { buildBookingSlots },
     '../../../services/workShiftService': { getConsultantSlots() {} },
     '../../../services/bookingService': { createBooking: async (input) => { requests.push(plain(input)); return input; }, getConsultantAvailability() {}, listConsultants() {} },
     '../../../services/consultationCatalogService': { listConsultationOrders() {} },
@@ -73,6 +71,7 @@ function mountBookingForm({ resumes = [cv, { ...cv, id: 'draft', name: 'Draft CV
     '../cv-job-fit/jobSelection': { selectableJobs },
     '@tanstack/react-query': {
       useQuery: ({ queryKey }) => ({ isPending: false, isError: false, isSuccess: true, isFetching: false, refetch() {}, ...queryData[queryKey[0]] }),
+      useQueries: ({ queries }) => queries.map(({ queryKey }) => ({ isPending: false, isError: false, isSuccess: true, fetchStatus: 'idle', error: null, ...queryData[queryKey[0]] })),
       useQueryClient: () => ({ invalidateQueries() {} }),
       useMutation: ({ mutationFn }) => ({ isPending: false, error: null, mutate() { pending = mutationFn(); } }),
     },
@@ -88,22 +87,31 @@ function mountBookingForm({ resumes = [cv, { ...cv, id: 'draft', name: 'Draft CV
   const one = (predicate) => { const list = nodes(predicate); assert.equal(list.length, 1); return list[0]; };
   const change = (node, value) => { node.props.onChange({ target: { value } }); render(); };
   const chooseCv = (id = cv.id) => change(one((node) => node.type === 'select' && node.props['aria-label'] === 'CV for this session'), id);
-  const slotSelect = () => one((node) => node.type === 'select' && node.props['aria-label'] === 'Consultation time slot');
+  const slotButtons = () => nodes((node) => node.type === 'button' && node.props.role === 'radio' && typeof node.key === 'string' && node.key.includes('T'));
+  const hourOf = (iso) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   const chooseSlot = (value = '09:00') => {
-    const slot = queryData['consultant-availability'].data.find(s => new Date(s.starts_at).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) === value);
-    change(slotSelect(), slot?.starts_at ?? value);
+    const button = slotButtons().find((node) => hourOf(node.key) === value);
+    assert.ok(button, `slot ${value} is offered`);
+    button.props.onClick(); render();
+  };
+  const selectedSlot = () => slotButtons().find((node) => node.props['aria-checked'])?.key ?? '';
+  const roleSelect = () => one((node) => node.type === 'select' && node.props['aria-label'] === 'Target application role');
+  const consultantRows = () => nodes((node) => node.type === 'li' && typeof node.key === 'string');
+  const chooseConsultant = (id = 'advisor-1') => {
+    const row = consultantRows().find((node) => node.key === id);
+    assert.ok(row, `consultant ${id} is listed`);
+    nodes((node) => node.props.role === 'radio', row)[0].props.onClick(); render();
   };
   const fill = () => {
-    change(nodes((node) => node.type === 'select')[0], 'Frontend');
-    one((node) => node.props.role === 'radio').props.onClick(); render();
-    change(one((node) => node.type === 'input' && node.props.maxLength === 255), 'Prepare for frontend role');
-    change(one((node) => node.type === 'textarea'), 'Please review my experience and skills');
     chooseSlot();
+    change(roleSelect(), 'Frontend');
+    chooseConsultant();
+    change(one((node) => node.type === 'textarea'), 'Please review my experience and skills');
   };
   const submit = async () => { one((node) => node.type === 'form').props.onSubmit({ preventDefault() {} }); await pending; render(); };
   const disabled = () => one((node) => node.type === 'button' && node.props.type === 'submit').props.disabled;
   render();
-  return { nodes, one, render, change, chooseCv, chooseSlot, slotSelect, fill, submit, disabled, requests, queryData, clock };
+  return { nodes, one, render, change, chooseCv, chooseSlot, selectedSlot, slotButtons, roleSelect, chooseConsultant, consultantRows, fill, submit, disabled, requests, queryData, clock };
 }
 
 test('booking requires an explicitly selected ready CV and permits no job even when the job catalog fails', async () => {
@@ -147,76 +155,61 @@ test('a selected expired job blocks submission until removed; selecting a job is
   assert.equal('jobId' in form.requests[0], false);
 });
 
-test('time slots require an explicit server-provided selection and reset after changing date, advisor, or role', async () => {
+test('booking order is time, role, consultant then description; subject is derived and no credit pack is chosen', async () => {
+  const form = mountBookingForm();
+  assert.equal(form.consultantRows().length, 0);
+  form.chooseSlot();
+  assert.equal(form.consultantRows().length, 0);
+  form.change(form.roleSelect(), 'Frontend');
+  form.chooseConsultant();
+  form.change(form.one((node) => node.type === 'textarea'), 'Need help preparing for interviews');
+  form.chooseCv();
+  assert.equal(form.nodes((node) => node.type === 'input' && node.props.maxLength === 255).length, 0);
+  assert.equal(form.disabled(), false);
+  await form.submit();
+  assert.equal(form.requests[0].creditOrderId, 'pack-1');
+  assert.equal(form.requests[0].subject, 'Frontend · Need help preparing for interviews');
+  assert.equal(form.requests[0].consultantId, 'advisor-1');
+});
+
+test('changing the date or time clears the chosen consultant', async () => {
   const form = mountBookingForm();
   form.fill(); form.chooseCv();
-  form.chooseSlot('');
+  assert.equal(form.disabled(), false);
+  form.chooseSlot('10:15');
   assert.equal(form.disabled(), true);
-  await form.submit();
-  assert.equal(form.requests.length, 0);
-  form.chooseSlot('09:15');
-  assert.equal(form.disabled(), true);
-  form.chooseSlot();
+  form.chooseConsultant();
   assert.equal(form.disabled(), false);
   const dateInput = form.one((node) => node.type === 'input' && node.props.type === 'date');
   const next = new Date(`${dateInput.props.value}T12:00:00`);
   next.setDate(next.getDate() + 1);
   form.change(dateInput, `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`);
-  assert.equal(form.slotSelect().props.value, '');
-  assert.equal(form.disabled(), true);
-  form.chooseSlot();
-  form.queryData['matching-consultants'].data.push({ ...form.queryData['matching-consultants'].data[0], id: 'advisor-2', full_name: 'Another advisor' });
-  form.render();
-  form.one((node) => node.props.role === 'radio' && node.key === 'advisor-2').props.onClick(); form.render();
-  assert.equal(form.slotSelect().props.value, '');
-  form.chooseSlot();
-  assert.equal(form.disabled(), false);
-  form.change(form.nodes((node) => node.type === 'select')[0], 'Backend');
-  assert.equal(form.slotSelect().props.value, '');
+  assert.equal(form.selectedSlot(), '');
   assert.equal(form.disabled(), true);
 });
 
-test('background refresh retains availability; a removed server slot cannot be submitted', async () => {
+test('a slot removed by the server or already started cannot be submitted', async () => {
   const form = mountBookingForm();
   form.fill(); form.chooseCv();
-  assert.equal(form.disabled(), false);
-  form.queryData['consultant-availability'].isFetching = true; form.render();
-  assert.equal(form.slotSelect().props.disabled, false);
-  assert.equal(form.disabled(), false);
-  form.queryData['consultant-availability'].isFetching = false;
   form.queryData['consultant-availability'].data = form.queryData['consultant-availability'].data.slice(1);
   form.render();
   assert.equal(form.disabled(), true);
-  assert.equal(form.nodes((node) => node.type === 'option' && node.props.value && new Date(node.props.value).getHours() === 9).length, 0);
   await form.submit();
   assert.equal(form.requests.length, 0);
-  form.chooseSlot('10:15');
-  assert.equal(form.disabled(), false);
-  await form.submit();
-  assert.equal(form.requests[0].durationMinutes, 60);
-  assert.equal(new Date(form.requests[0].startsAt).getHours(), 10);
+  form.chooseSlot('10:15'); form.chooseConsultant();
+  const day = form.one((node) => node.type === 'input' && node.props.type === 'date').props.value;
+  form.clock.now = new Date(`${day}T10:30:00`).getTime(); form.render();
+  assert.equal(form.slotButtons().length, 0);
+  assert.equal(form.disabled(), true);
 });
 
-test('failed availability and a slot whose start time has passed remain unavailable', async () => {
+test('each time slot shows at most three free consultants and the list is capped at three', async () => {
   const form = mountBookingForm();
-  form.fill(); form.chooseCv();
-  form.queryData['consultant-availability'].isSuccess = false;
-  form.queryData['consultant-availability'].isError = true;
-  form.queryData['consultant-availability'].error = new Error('Availability unavailable');
+  const base = form.queryData['matching-consultants'].data[0];
+  form.queryData['matching-consultants'].data = ['advisor-1', 'a2', 'a3', 'a4'].map((id) => ({ ...base, id, full_name: id }));
   form.render();
-  assert.equal(form.disabled(), true);
-  assert.equal(form.slotSelect().props.disabled, true);
-  await form.submit();
-  assert.equal(form.requests.length, 0);
-  form.queryData['consultant-availability'].isSuccess = true;
-  form.queryData['consultant-availability'].isError = false;
-  form.queryData['consultant-availability'].error = null;
-  const day = form.one((node) => node.type === 'input' && node.props.type === 'date').props.value;
-  form.clock.now = new Date(`${day}T09:00:00`).getTime(); form.render();
-  assert.equal(form.one((node) => node.type === 'option' && node.props.value && new Date(node.props.value).getHours() === 9).props.disabled, true);
-  assert.equal(form.disabled(), true);
-  await form.submit();
-  assert.equal(form.requests.length, 0);
+  form.chooseSlot(); form.change(form.roleSelect(), 'Frontend');
+  assert.equal(form.consultantRows().length, 3);
 });
 
 test('preparation performs only the scoped GET and preserves legacy null attachments', async () => {

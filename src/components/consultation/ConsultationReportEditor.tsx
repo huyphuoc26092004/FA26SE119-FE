@@ -59,7 +59,7 @@ function ReportWorkspace({ initialReport, initialNotes, reload, ...props }: Repo
     await saveReport.mutateAsync({ status, advice: content });
   };
   return <div className="space-y-10">
-    <section className="space-y-4"><h2 className="text-xl font-medium">{vi ? 'Ghi chú riêng của cố vấn' : 'Consultant private notes'}</h2><p className="text-sm text-slate-500">{vi ? 'Chỉ cố vấn phụ trách được đọc. Ứng viên không thấy nội dung này.' : 'Visible only to the assigned consultant.'}</p>
+    <section className="space-y-4"><h2 className="text-xl font-medium">{vi ? 'Ghi chú riêng của tư vấn viên' : 'Consultant private notes'}</h2><p className="text-sm text-slate-500">{vi ? 'Chỉ tư vấn viên phụ trách được đọc. Ứng viên không thấy nội dung này.' : 'Visible only to the assigned consultant.'}</p>
       <fieldset disabled={!props.writable || saveNotes.isPending} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2">{(Object.keys(rubricLabels) as (keyof ConsultationRubric)[]).map((key) => <label key={key} className="text-sm">{rubricLabels[key]} · {rubric[key]}/10<input type="range" className="mt-2 block w-full" min={0} max={10} step={1} value={rubric[key]} onChange={(event) => setRubric({ ...rubric, [key]: Number(event.target.value) })} /></label>)}</div>
         <label className="block text-sm">{vi ? 'Nhận xét nội bộ' : 'Internal notes'}<textarea className={field} rows={4} maxLength={10000} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
         {props.writable && <button className="rounded-lg bg-ink px-4 py-2 text-sm text-white" type="button" onClick={() => saveNotes.mutate()}>{saveNotes.isPending ? 'Đang lưu…' : 'Lưu ghi chú riêng'}</button>}

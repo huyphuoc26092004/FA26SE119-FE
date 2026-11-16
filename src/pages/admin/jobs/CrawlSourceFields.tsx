@@ -1,7 +1,7 @@
 import { fieldLabel, underlineInput } from '../../../components/admin/AdminKit';
 import { MultiSelect } from '../../../components/admin/MultiSelect';
 import type { CrawlSource, CrawlSourceSite } from '../../../types/jobCrawl';
-import { KEYWORD_SUGGESTIONS, LOCATION_OPTIONS, ROLE_SUGGESTIONS, SITE_LABEL, clamp, type CrawlSelection } from './crawlFormat';
+import { KEYWORD_SUGGESTIONS, LOCATION_OPTIONS, ROLE_SUGGESTIONS, SITE_LABEL, clamp, keywordsForRoles, type CrawlSelection } from './crawlFormat';
 
 const SITES: CrawlSourceSite[] = ['ITVIEC', 'TOPCV'];
 
@@ -17,6 +17,7 @@ export function CrawlSelectionFields({
 }) {
   const set = <K extends keyof CrawlSelection>(key: K, v: CrawlSelection[K]) => onChange({ ...value, [key]: v });
   const siteLabels = SITES.map((s) => SITE_LABEL[s]);
+  const keywordOptions = keywordsForRoles(value.roles);
 
   return (
     <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-6">
@@ -33,22 +34,28 @@ export function CrawlSelectionFields({
       </div>
       <div className="xl:col-span-2">
         <MultiSelect
-          label="Từ khoá tìm kiếm"
-          options={KEYWORD_SUGGESTIONS}
+          label="1. Nhóm vai trò"
+          options={ROLE_SUGGESTIONS}
           disabled={disabled}
-          value={value.keywords}
-          onChange={(v) => set('keywords', v.map((k) => k.slice(0, 255)))}
-          placeholder="Chọn một hoặc nhiều từ khoá"
+          value={value.roles}
+          onChange={(v) => {
+            const roles = v.map((r) => r.slice(0, 100));
+            // Bỏ các ngôn ngữ gợi ý không còn thuộc vai trò nào đã chọn; giữ từ khoá tự gõ.
+            const allowed = keywordsForRoles(roles);
+            const keywords = value.keywords.filter((k) => allowed.includes(k) || (!KEYWORD_SUGGESTIONS.includes(k) && !keywordsForRoles(value.roles).includes(k)));
+            onChange({ ...value, roles, keywords });
+          }}
+          placeholder="Chọn vai trò trước"
         />
       </div>
       <div className="xl:col-span-2">
         <MultiSelect
-          label="Nhóm vai trò"
-          options={ROLE_SUGGESTIONS}
-          disabled={disabled}
-          value={value.roles}
-          onChange={(v) => set('roles', v.map((r) => r.slice(0, 100)))}
-          placeholder="Chọn một hoặc nhiều vai trò"
+          label="2. Ngôn ngữ / từ khoá"
+          options={keywordOptions}
+          disabled={disabled || value.roles.length === 0}
+          value={value.keywords}
+          onChange={(v) => set('keywords', v.map((k) => k.slice(0, 255)))}
+          placeholder={value.roles.length ? 'Chọn ngôn ngữ của vai trò đã chọn' : 'Chọn nhóm vai trò trước'}
         />
       </div>
       <div className="xl:col-span-2">

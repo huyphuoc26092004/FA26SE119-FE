@@ -72,9 +72,34 @@ const SENIORITY: Record<string, NonNullable<Job['experienceLevel']>> = {
   lead: 'Lead',
 };
 
+const SOURCE_SITES: Record<string, { name: string; home: string }> = {
+  ITVIEC: { name: 'ITviec', home: 'https://itviec.com' },
+  TOPCV: { name: 'TopCV', home: 'https://www.topcv.vn' },
+};
+
+/** Tên nguồn hiển thị (ITVIEC → ITviec, TOPCV → TopCV). */
+export function sourceSiteName(site: unknown): string {
+  const key = str(site).trim().toUpperCase();
+  return SOURCE_SITES[key]?.name ?? (str(site).trim() || 'Nguồn tuyển dụng');
+}
+
+/** Link tin gốc an toàn: thêm https:// khi thiếu, chỉ nhận http(s); nếu hỏng thì về trang chủ của nguồn. */
+export function sourceLink(url: unknown, site: unknown): string {
+  let value = str(url).trim();
+  if (value.startsWith('//')) value = `https:${value}`;
+  else if (value && !/^[a-z][a-z0-9+.-]*:/i.test(value)) value = `https://${value.replace(/^\/+/, '')}`;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.toString();
+  } catch {
+    /* fall through */
+  }
+  return SOURCE_SITES[str(site).trim().toUpperCase()]?.home ?? '';
+}
+
 export function toJob(row: ApiRow): Job {
   const seniority = str(row.parsed_seniority).toLowerCase();
-  const sourceUrl = str(row.source_url || row.original_source_url);
+  const sourceUrl = sourceLink(row.source_url || row.original_source_url, row.source_site || row.original_source_site);
   const skills = rows(row.skills);
   return {
     id: str(row.id || row.market_job_id),
@@ -95,9 +120,12 @@ export function toJob(row: ApiRow): Job {
     responsibilities: splitLines(row.parsed_responsibilities),
     requirements: splitLines(row.parsed_requirements),
     benefits: splitLines(row.parsed_benefits),
+    ...(row.requirement_extraction && typeof row.requirement_extraction === 'object'
+      ? { requirementExtraction: row.requirement_extraction }
+      : {}),
     externalSource: sourceUrl
       ? {
-          sourceName: str(row.source_site || row.original_source_site) || 'Nguồn tuyển dụng',
+          sourceName: sourceSiteName(row.source_site || row.original_source_site),
           sourceUrl,
           applicationDeadline: formatDate(row.valid_through) || undefined,
           directApplyAvailable: true,

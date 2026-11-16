@@ -152,7 +152,7 @@ const categoryLabels: Record<TicketCategory, { vi: string; en: string }> = {
   technical: { vi: 'Lỗi kỹ thuật', en: 'Technical issue' },
   billing: { vi: 'Gói cước & Thanh toán', en: 'Plans & billing' },
   ai_accuracy: { vi: 'Độ chính xác AI', en: 'AI accuracy' },
-  consultation: { vi: 'Cố vấn nghề nghiệp', en: 'Career advisor' },
+  consultation: { vi: 'Tư vấn viên nghề nghiệp', en: 'Career consultant' },
   feature_request: { vi: 'Đề xuất tính năng', en: 'Feature request' },
   other: { vi: 'Hỗ trợ chung', en: 'General' },
 };
@@ -167,7 +167,7 @@ const relatedFeatures = [
   'Khớp nối CV–Job Fit',
   'Trợ lý sự nghiệp AI',
   'Hỗ trợ ứng tuyển (Cover Letter)',
-  'Đánh giá kỹ năng',
+  'Chuẩn bị phỏng vấn',
   'Gói cước & Thanh toán',
   'Khác',
 ];

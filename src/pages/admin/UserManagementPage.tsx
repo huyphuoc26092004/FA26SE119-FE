@@ -102,7 +102,7 @@ const copy = {
       free: 'Miễn phí (20k token)',
       pro: 'Pro (250k token)',
       executive: 'Premium (1M token)',
-      consultant: 'Đối tác cố vấn (500k token)',
+      consultant: 'Đối tác tư vấn viên (500k token)',
       enterprise: 'Enterprise (2M token)',
     } as Record<UserSubscriptionTier, string>,
     statusOptions: { ACTIVE: 'Hoạt động', PENDING: 'Chờ xác thực OTP', SUSPENDED: 'Khoá tạm thời' } as Record<UserAccountStatus, string>,
@@ -255,7 +255,7 @@ const copy = {
 };
 
 const ROLE_LABEL: Record<'vi' | 'en', Record<UserRole, string>> = {
-  vi: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' },
+  vi: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' },
   en: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Consultant', ADMIN: 'Administrator', MANAGER: 'Operations manager' },
 };
 

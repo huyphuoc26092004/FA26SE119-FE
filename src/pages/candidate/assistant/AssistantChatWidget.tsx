@@ -657,8 +657,8 @@ export function AssistantChatWidget() {
   const isFreshChat = (activeSession?.messages.length ?? 0) <= 1;
 
   const panelSize = expanded
-    ? 'sm:h-[calc(100dvh-8rem)] sm:w-[min(52rem,calc(100vw-3rem))]'
-    : 'sm:h-[min(44rem,calc(100dvh-8rem))] sm:w-[clamp(26rem,30vw,30rem)]';
+    ? 'sm:h-[calc(var(--vh100)-8rem)] sm:w-[min(52rem,calc(100vw-3rem))]'
+    : 'sm:h-[min(44rem,calc(var(--vh100)-8rem))] sm:w-[clamp(26rem,30vw,30rem)]';
 
   const selectClass =
     'min-w-0 flex-1 truncate border-0 border-b border-slate-300 bg-transparent py-1 pr-6 text-sm text-ink outline-none transition-colors focus-visible:border-brand';

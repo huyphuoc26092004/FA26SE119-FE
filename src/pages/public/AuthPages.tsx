@@ -25,8 +25,8 @@ function AuthPageShell({ children }: { children: React.ReactNode }) {
     : 'FA26SE119 · FPT University Capstone';
 
   return (
-    <div className="min-h-[100dvh] bg-canvas text-ink lg:grid lg:grid-cols-2">
-      <aside className="hidden bg-night text-[#f2f3ef] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:flex-col lg:justify-between lg:px-[clamp(3rem,6vw,7.5rem)] lg:py-[clamp(2.5rem,4.5vh,4rem)]">
+    <div className="min-h-[var(--vh100)] bg-canvas text-ink lg:grid lg:grid-cols-2">
+      <aside className="hidden bg-night text-[#f2f3ef] lg:sticky lg:top-0 lg:flex lg:h-[var(--vh100)] lg:flex-col lg:justify-between lg:px-[clamp(3rem,6vw,7.5rem)] lg:py-[clamp(2.5rem,4.5vh,4rem)]">
         <Link to="/" aria-label="CCV" className="inline-flex self-start">
           <CcvLogo tone="dark" height={44} />
         </Link>
@@ -72,7 +72,7 @@ function AuthPageShell({ children }: { children: React.ReactNode }) {
         <p className="text-sm text-[#aebfb6]">{footnote}</p>
       </aside>
 
-      <section className="flex min-h-[100dvh] flex-col">
+      <section className="flex min-h-[var(--vh100)] flex-col">
         <header className="flex items-center justify-between gap-4 px-5 py-5 sm:px-10 sm:py-7 min-[2300px]:[zoom:1.3] lg:justify-end lg:px-[clamp(2rem,4vw,4.5rem)]">
           <Link to="/" aria-label="CCV" className="inline-flex lg:hidden">
             <CcvLogo height={32} />

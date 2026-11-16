@@ -139,7 +139,7 @@ export function PreparationContent({ data, booking, vi, pending, onAnalyze }: {
             {data.resume && canAnalyze && jobAvailable && onAnalyze && <button type="button" disabled={pending} className={secondary} onClick={() => onAnalyze('ats')}>{vi ? (data.ats_analysis ? 'Phân tích lại ATS CV với job' : 'Phân tích ATS CV với job') : (data.ats_analysis ? 'Re-analyze CV against job' : 'Analyze CV against job')}</button>}
           </>}
     </section>
-    {canAnalyze && data.resume && onAnalyze && <p className="text-xs leading-5 text-slate-500">{vi ? 'Phân tích chỉ chạy khi bạn bấm nút và sử dụng hạn mức AI của tài khoản cố vấn.' : 'Analysis runs only when you select it and uses the advisor account’s AI allowance.'}</p>}
+    {canAnalyze && data.resume && onAnalyze && <p className="text-xs leading-5 text-slate-500">{vi ? 'Phân tích chỉ chạy khi bạn bấm nút và sử dụng hạn mức AI của tài khoản tư vấn viên.' : 'Analysis runs only when you select it and uses the consultant account’s AI allowance.'}</p>}
     {booking.status === 'PENDING' && data.resume && <p className="text-xs leading-5 text-slate-500">{vi ? 'Bạn có thể đọc tài liệu trước khi tiếp nhận. Sau khi xác nhận lịch, bạn có thể yêu cầu đánh giá CV và ATS.' : 'Review these documents before accepting. CV and ATS analysis can be requested after confirming the booking.'}</p>}
     {pending && <p role="status" className="text-sm text-brand">{vi ? 'Đang phân tích tài liệu đã chia sẻ…' : 'Analyzing the shared documents…'}</p>}
   </div>;

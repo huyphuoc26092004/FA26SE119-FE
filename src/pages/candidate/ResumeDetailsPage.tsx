@@ -129,7 +129,7 @@ export default function ResumeDetailsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<'topcv-plum' | 'standard-ats'>('topcv-plum');
+  const [selectedTemplate, setSelectedTemplate] = useState<'two-column' | 'standard-ats'>('two-column');
 
   const { data: cv, isPending, isError } = useQuery({
     queryKey: ['resume', resumeId],
@@ -308,9 +308,9 @@ export default function ResumeDetailsPage() {
             <span className="text-[13px] text-slate-600">{c.template}</span>
             <button
               type="button"
-              aria-pressed={selectedTemplate === 'topcv-plum'}
-              onClick={() => setSelectedTemplate('topcv-plum')}
-              className={toggle(selectedTemplate === 'topcv-plum')}
+              aria-pressed={selectedTemplate === 'two-column'}
+              onClick={() => setSelectedTemplate('two-column')}
+              className={toggle(selectedTemplate === 'two-column')}
             >
               {c.templatePlum}
             </button>
@@ -327,8 +327,8 @@ export default function ResumeDetailsPage() {
           <p className="text-[13px] leading-6 text-slate-600 print:hidden">{c.savedPdfTemplate}</p>
 
           <div className="overflow-x-auto">
-          {selectedTemplate === 'topcv-plum' ? (
-            /* TOPCV 2-COLUMN PLUM / BURGUNDY TEMPLATE */
+          {selectedTemplate === 'two-column' ? (
+            /* 2-COLUMN PLUM / BURGUNDY TEMPLATE */
             <div className="rounded-2xl border border-slate-200 bg-surface overflow-hidden flex flex-col md:flex-row print:border-none print:shadow-none min-h-[960px]">
               {/* Left Column: Dark Burgundy/Plum Background (#382329) */}
               <div className="w-full md:w-[36%] bg-[#382329] text-white p-6 sm:p-7 flex flex-col justify-between shrink-0 print:bg-[#382329] print:text-white">
@@ -478,7 +478,7 @@ export default function ResumeDetailsPage() {
                 </div>
 
                 <div className="pt-6 border-t border-white/10 text-3xs text-white/50 text-center">
-                  © TopCV.vn Template · Standard ATS Verified
+                  CCV · Mẫu CV hai cột chuẩn ATS
                 </div>
               </div>
 
