@@ -76,6 +76,11 @@ export async function getAppliedJobRows(): Promise<ApiRow[]> {
   return pending([], 'BE chưa có API');
 }
 
+/** Việc đã lưu (đủ thông tin hiển thị), kể cả việc nằm ngoài 100 tin mới nhất của danh sách chung. */
+export async function getSavedJobs(): Promise<Job[]> {
+  return (await getSavedJobRows()).map(toJob);
+}
+
 export async function getSavedJobIds(): Promise<string[]> {
   return isSignedIn() ? (await get<ApiRow[]>('/saved-jobs/ids')).map((row) => str(row.job_id)) : [];
 }

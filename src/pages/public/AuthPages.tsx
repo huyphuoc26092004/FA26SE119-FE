@@ -9,6 +9,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTranslation } from '../../i18n';
 import { CcvLogo } from '../../components/brand/CcvLogo';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
+import { AuthShowcase } from '../../components/auth/AuthShowcase';
 
 // ==========================================
 // SHARED AUTH PRESENTATIONAL COMPONENTS
@@ -20,57 +21,10 @@ const inputClass =
 
 function AuthPageShell({ children }: { children: React.ReactNode }) {
   const { isVietnamese, toggleLanguage } = useTranslation();
-  const footnote = isVietnamese
-    ? 'Mã đồ án: FA26SE119 · Đồ án Tốt nghiệp Đại học FPT'
-    : 'FA26SE119 · FPT University Capstone';
 
   return (
     <div className="min-h-[var(--vh100)] bg-canvas text-ink lg:grid lg:grid-cols-2">
-      <aside className="hidden bg-night text-[#f2f3ef] lg:sticky lg:top-0 lg:flex lg:h-[var(--vh100)] lg:flex-col lg:justify-between lg:px-[clamp(3rem,6vw,7.5rem)] lg:py-[clamp(2.5rem,4.5vh,4rem)]">
-        <Link to="/" aria-label="CCV" className="inline-flex self-start">
-          <CcvLogo tone="dark" height={44} />
-        </Link>
-
-        <div className="max-w-[40rem]">
-          <h2 className="text-[clamp(2.75rem,4.4vw,5rem)] font-normal leading-[1.06] tracking-[-0.035em]">
-            {isVietnamese ? (
-              <>
-                Tìm việc đúng.
-                <br />
-                <span className="text-mint">Phát triển đúng hướng.</span>
-              </>
-            ) : (
-              <>
-                Find the right work.
-                <br />
-                <span className="text-mint">Grow with direction.</span>
-              </>
-            )}
-          </h2>
-          <p className="mt-[clamp(1.25rem,2.5vh,2rem)] max-w-[32rem] text-[clamp(1rem,1.15vw,1.25rem)] leading-relaxed text-[#c2d1ca]">
-            {isVietnamese
-              ? 'Nền tảng AI Agent giúp bạn hoàn thiện CV, tìm việc phù hợp và có lộ trình nghề nghiệp rõ ràng.'
-              : 'An AI Agent platform to strengthen your CV, find a fitting role, and build a clear career path.'}
-          </p>
-          <ul className="mt-[clamp(2rem,5vh,3.5rem)] divide-y divide-[#31443c] border-y border-[#31443c]">
-            {[
-              isVietnamese ? 'Khớp CV với việc làm bằng AI Agent' : 'Match your CV to jobs with AI Agents',
-              isVietnamese ? 'Điểm ATS và gợi ý chỉnh sửa tức thì' : 'ATS scoring with instant improvement tips',
-              isVietnamese ? 'Lộ trình học dựa trên JD bạn ứng tuyển' : 'Learning paths tailored to your target role',
-            ].map((benefit, index) => (
-              <li
-                key={benefit}
-                className="flex items-baseline gap-5 py-[clamp(1rem,2.2vh,1.5rem)] text-[clamp(1rem,1.15vw,1.25rem)] text-[#e0e8e3]"
-              >
-                <span className="w-6 shrink-0 text-sm tabular-nums text-[#91a79c]">0{index + 1}</span>
-                <span>{benefit}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="text-sm text-[#aebfb6]">{footnote}</p>
-      </aside>
+      <AuthShowcase vi={isVietnamese} />
 
       <section className="flex min-h-[var(--vh100)] flex-col">
         <header className="flex items-center justify-between gap-4 px-5 py-5 sm:px-10 sm:py-7 min-[2300px]:[zoom:1.3] lg:justify-end lg:px-[clamp(2rem,4vw,4.5rem)]">
@@ -81,11 +35,11 @@ function AuthPageShell({ children }: { children: React.ReactNode }) {
             aria-label={isVietnamese ? 'Điều hướng phụ' : 'Secondary navigation'}
             className="flex items-center gap-5 whitespace-nowrap text-sm text-slate-600 sm:gap-7 md:text-[0.9375rem]"
           >
-            <Link to="/guest-trial" className="hidden underline underline-offset-4 transition-colors hover:text-brand sm:inline">
-              {isVietnamese ? 'Dùng thử không cần tài khoản' : 'Try without an account'}
-            </Link>
             <Link to="/" className="underline underline-offset-4 transition-colors hover:text-brand">
               {isVietnamese ? '← Trang chủ' : '← Home'}
+            </Link>
+            <Link to="/guest-trial" className="hidden underline underline-offset-4 transition-colors hover:text-brand sm:inline">
+              {isVietnamese ? 'Dùng thử không cần tài khoản' : 'Try without an account'}
             </Link>
             <button type="button" onClick={toggleLanguage} className="underline underline-offset-4 transition-colors hover:text-brand">
               {isVietnamese ? 'Tiếng Việt' : 'English'}
@@ -97,7 +51,7 @@ function AuthPageShell({ children }: { children: React.ReactNode }) {
           <div className="w-full max-w-[30rem] 2xl:max-w-[32rem] min-[1800px]:[zoom:1.12] min-[2300px]:[zoom:1.35]">{children}</div>
         </main>
 
-        <footer className="px-5 pb-6 text-center text-xs leading-5 text-slate-600 lg:hidden">{footnote}</footer>
+        <footer className="px-5 pb-6 text-center text-xs leading-5 text-slate-600 lg:hidden">{isVietnamese ? 'Mã đồ án: FA26SE119 · Đồ án Tốt nghiệp Đại học FPT' : 'FA26SE119 · FPT University Capstone'}</footer>
       </section>
     </div>
   );
@@ -179,6 +133,7 @@ function PrimaryButton({
   type = 'submit',
   disabled,
   onClick,
+  centered = false,
 }: {
   loading?: boolean;
   loadingLabel?: string;
@@ -186,13 +141,17 @@ function PrimaryButton({
   type?: 'submit' | 'button';
   disabled?: boolean;
   onClick?: () => void;
+  /** Chữ và mũi tên đặt giữa nút (form đăng ký theo mẫu). */
+  centered?: boolean;
 }) {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled ?? loading}
-      className="btn btn-p btn-m min-h-[3.25rem] w-full justify-between! disabled:opacity-70! md:min-h-14 md:text-[1.0625rem]!"
+      className={`btn btn-p btn-m min-h-[3.25rem] w-full disabled:opacity-70! md:min-h-14 md:text-[1.0625rem]! ${
+        centered ? 'justify-center! gap-3 disabled:bg-[#8a978f]! disabled:opacity-100!' : 'justify-between!'
+      }`}
     >
       {loading ? (
         <span className="flex items-center gap-2.5">
@@ -337,16 +296,17 @@ export function LoginPage() {
 
   return (
     <AuthPageShell>
-      <AuthHeading
-        eyebrow={isVietnamese ? 'Đăng nhập' : 'Sign in'}
-        title={isVietnamese ? 'Chào mừng quay lại.' : 'Welcome back.'}
-        accent={isVietnamese ? 'Tiếp tục hành trình.' : 'Pick up where you left off.'}
-        description={
-          isVietnamese
-            ? 'Đăng nhập để xem việc làm phù hợp, CV đã lưu và gợi ý mới nhất.'
-            : 'Sign in to see matching jobs, your saved CVs and the latest suggestions.'
-        }
-      />
+      <header className="mb-7">
+        <h1 className="text-[clamp(2rem,2.6vw,2.5rem)] font-normal leading-tight tracking-[-0.02em] text-ink">
+          {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+        </h1>
+        <p className="mt-2 text-[15px] text-slate-600">
+          {isVietnamese ? 'Chưa có tài khoản?' : "Don't have an account?"}{' '}
+          <Link to="/register" className="font-medium text-brand underline underline-offset-4">
+            {isVietnamese ? 'Đăng ký' : 'Sign up'}
+          </Link>
+        </p>
+      </header>
 
       {resetSuccess && (
         <div className="mb-6">
@@ -363,15 +323,6 @@ export function LoginPage() {
           </SuccessNote>
         </div>
       )}
-      <GoogleSignInButton
-        variant="signin"
-        language={isVietnamese ? 'vi' : 'en'}
-        disabled={isSubmitting || google.isSigningIn}
-        onCredential={google.handleCredential}
-        onError={setError}
-      />
-      <OrDivider label={isVietnamese ? 'hoặc dùng email' : 'or use email'} />
-
       <form onSubmit={handleSubmit(submit)} className="space-y-6">
         <Field
           label="Email"
@@ -403,7 +354,7 @@ export function LoginPage() {
         </Field>
 
         <label className="flex cursor-pointer select-none items-center gap-3 text-base text-slate-700">
-          <input type="checkbox" className="h-5 w-5 shrink-0 rounded border-slate-400" {...register('rememberMe')} />
+          <input type="checkbox" className="h-5 w-5 shrink-0 rounded border-slate-400 accent-[var(--color-brand)]" {...register('rememberMe')} />
           <span>{isVietnamese ? 'Ghi nhớ đăng nhập trên thiết bị này' : 'Remember me on this device'}</span>
         </label>
 
@@ -412,19 +363,21 @@ export function LoginPage() {
         <PrimaryButton
           loading={isSubmitting}
           disabled={isSubmitting || google.isSigningIn}
+          centered
           loadingLabel={isVietnamese ? 'Đang đăng nhập…' : 'Signing in…'}
           label={isVietnamese ? 'Đăng nhập' : 'Sign in'}
         />
       </form>
 
-      <FooterLinks>
-        <p>
-          {isVietnamese ? 'Chưa có tài khoản?' : "Don't have an account?"}{' '}
-          <Link to="/register" className={footerLinkClass}>
-            {isVietnamese ? 'Đăng ký' : 'Sign up'}
-          </Link>
-        </p>
-      </FooterLinks>
+      {/* Đăng nhập bằng Google đặt dưới form email, giống trang đăng ký. */}
+      <OrDivider label={isVietnamese ? 'hoặc đăng nhập nhanh' : 'or sign in faster'} />
+      <GoogleSignInButton
+        variant="signin"
+        language={isVietnamese ? 'vi' : 'en'}
+        disabled={isSubmitting || google.isSigningIn}
+        onCredential={google.handleCredential}
+        onError={setError}
+      />
     </AuthPageShell>
   );
 }
@@ -455,7 +408,6 @@ export function RegisterPage() {
   const registerAction = useAuthStore((s) => s.register);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [registrationRole, setRegistrationRole] = useState<'CANDIDATE' | 'CAREER_CONSULTANT'>('CANDIDATE');
   const { isVietnamese } = useTranslation();
 
   const google = useGoogleAuth(setError);
@@ -463,6 +415,7 @@ export function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -475,11 +428,13 @@ export function RegisterPage() {
     },
   });
 
+  const acceptedTerms = watch('acceptTerms');
+
   const submit = async (data: RegisterForm) => {
     if (google.isSigningIn) return;
     setError('');
     try {
-      const res = await registerAction(data.name, data.email, data.password, registrationRole);
+      const res = await registerAction(data.name, data.email, data.password, 'CANDIDATE');
       navigate(`/verify-otp?email=${encodeURIComponent(data.email)}&code=${res.otp}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Đăng ký thất bại. Vui lòng thử lại.');
@@ -488,46 +443,17 @@ export function RegisterPage() {
 
   return (
     <AuthPageShell>
-      <AuthHeading
-        eyebrow={isVietnamese ? 'Đăng ký' : 'Create account'}
-        title={isVietnamese ? 'Tạo tài khoản.' : 'Create your account.'}
-        accent={isVietnamese ? 'Đúng người, đúng việc.' : 'The right people, the right fit.'}
-        description={isVietnamese ? 'Chọn vai trò của bạn và bắt đầu trong vài phút.' : 'Choose your role and get started in minutes.'}
-      />
-
-      <GoogleSignInButton
-        variant="signup"
-        language={isVietnamese ? 'vi' : 'en'}
-        disabled={isSubmitting || google.isSigningIn}
-        onCredential={google.handleCredential}
-        onError={setError}
-      />
-      <p className="mt-2 text-sm text-slate-600">
-        {isVietnamese ? 'Đăng ký bằng Google tạo tài khoản ứng viên.' : 'Google sign-up creates a candidate account.'}
-      </p>
-      <OrDivider label={isVietnamese ? 'hoặc dùng email' : 'or use email'} />
-
-      <div className="mb-6 border-b border-[#aeb7b0]">
-        <p className="text-sm text-slate-700 md:text-[0.9375rem]">{isVietnamese ? 'Bạn đăng ký với tư cách' : 'I am joining as'}</p>
-        <div className="mt-2 flex gap-8" role="group" aria-label={isVietnamese ? 'Chọn vai trò' : 'Choose a role'}>
-          {([
-            ['CANDIDATE', isVietnamese ? 'Ứng viên' : 'Candidate'],
-            ['CAREER_CONSULTANT', isVietnamese ? 'Nhà tuyển dụng' : 'Recruiter'],
-          ] as const).map(([role, label]) => (
-            <button
-              key={role}
-              type="button"
-              aria-pressed={registrationRole === role}
-              onClick={() => setRegistrationRole(role)}
-              className={`-mb-px border-b-2 pb-3 text-base transition-colors md:text-[1.0625rem] ${
-                registrationRole === role ? 'border-brand text-brand' : 'border-transparent text-slate-600 hover:text-brand'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <header className="mb-7">
+        <h1 className="text-[clamp(2rem,2.6vw,2.5rem)] font-normal leading-tight tracking-[-0.02em] text-ink">
+          {isVietnamese ? 'Tạo tài khoản' : 'Create your account'}
+        </h1>
+        <p className="mt-2 text-[15px] text-slate-600">
+          {isVietnamese ? 'Đã có tài khoản?' : 'Already have an account?'}{' '}
+          <Link to="/login" className="font-medium text-brand underline underline-offset-4">
+            {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+          </Link>
+        </p>
+      </header>
 
       <form onSubmit={handleSubmit(submit)} className="space-y-6">
         <Field label={isVietnamese ? 'Họ và tên' : 'Full name'} htmlFor="reg-name" error={errors.name?.message}>
@@ -538,32 +464,38 @@ export function RegisterPage() {
           <input id="reg-email" type="email" placeholder="ten@email.com" autoComplete="email" className={inputClass} {...register('email')} />
         </Field>
 
-        <Field label={isVietnamese ? 'Mật khẩu' : 'Password'} htmlFor="reg-password" error={errors.password?.message}>
-          <input
-            id="reg-password"
-            type={showPassword ? 'text' : 'password'}
-            placeholder={isVietnamese ? 'Tạo mật khẩu (tối thiểu 8 ký tự)' : 'Create a password (8+ characters)'}
-            autoComplete="new-password"
-            className={`${inputClass} pr-14`}
-            {...register('password')}
-          />
-          <RevealToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />
-        </Field>
-
-        <Field label={isVietnamese ? 'Xác nhận mật khẩu' : 'Confirm password'} htmlFor="reg-confirm" error={errors.confirmPassword?.message}>
-          <input
-            id="reg-confirm"
-            type={showPassword ? 'text' : 'password'}
-            placeholder={isVietnamese ? 'Nhập lại mật khẩu' : 'Re-enter your password'}
-            autoComplete="new-password"
-            className={inputClass}
-            {...register('confirmPassword')}
-          />
-        </Field>
+        <div>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Field label={isVietnamese ? 'Mật khẩu' : 'Password'} htmlFor="reg-password" error={errors.password?.message}>
+              <input
+                id="reg-password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder={isVietnamese ? 'Tối thiểu 10 ký tự' : 'At least 10 characters'}
+                autoComplete="new-password"
+                className={`${inputClass} pr-14`}
+                {...register('password')}
+              />
+              <RevealToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />
+            </Field>
+            <Field label={isVietnamese ? 'Xác nhận mật khẩu' : 'Confirm password'} htmlFor="reg-confirm" error={errors.confirmPassword?.message}>
+              <input
+                id="reg-confirm"
+                type={showPassword ? 'text' : 'password'}
+                placeholder={isVietnamese ? 'Nhập lại mật khẩu' : 'Re-enter password'}
+                autoComplete="new-password"
+                className={inputClass}
+                {...register('confirmPassword')}
+              />
+            </Field>
+          </div>
+          <p className="mt-2 text-[13px] text-slate-500">
+            {isVietnamese ? 'Dùng ít nhất 10 ký tự, nên gồm cả chữ và số.' : 'Use at least 10 characters, ideally letters and numbers.'}
+          </p>
+        </div>
 
         <div>
-          <label className="flex cursor-pointer select-none items-start gap-3 text-base leading-relaxed text-slate-700">
-            <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 rounded border-slate-400" {...register('acceptTerms')} />
+          <label className="flex cursor-pointer select-none items-start gap-3 text-[15px] leading-relaxed text-slate-700">
+            <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 rounded border-slate-400 accent-[var(--color-brand)]" {...register('acceptTerms')} />
             <span>
               {isVietnamese ? 'Tôi đồng ý với' : 'I agree to the'}{' '}
               <span className="underline underline-offset-4">{isVietnamese ? 'Điều khoản sử dụng' : 'Terms of Use'}</span>{' '}
@@ -583,20 +515,28 @@ export function RegisterPage() {
 
         <PrimaryButton
           loading={isSubmitting}
-          disabled={isSubmitting || google.isSigningIn}
+          disabled={isSubmitting || google.isSigningIn || !acceptedTerms}
+          centered
           loadingLabel={isVietnamese ? 'Đang xử lý…' : 'Creating account…'}
           label={isVietnamese ? 'Tạo tài khoản' : 'Create account'}
         />
       </form>
 
-      <FooterLinks>
-        <p>
-          {isVietnamese ? 'Đã có tài khoản?' : 'Already have an account?'}{' '}
-          <Link to="/login" className={footerLinkClass}>
-            {isVietnamese ? 'Đăng nhập' : 'Sign in'}
-          </Link>
+      {/* Đăng ký nhanh bằng Google đặt dưới form email. */}
+      <OrDivider label={isVietnamese ? 'hoặc đăng ký nhanh' : 'or sign up faster'} />
+      <div>
+        <GoogleSignInButton
+          variant="signup"
+          language={isVietnamese ? 'vi' : 'en'}
+          disabled={isSubmitting || google.isSigningIn}
+          onCredential={google.handleCredential}
+          onError={setError}
+        />
+        <p className="mt-3 text-center text-[13px] text-slate-500">
+          {isVietnamese ? 'Không cần mật khẩu. Tài khoản tạo mới là tài khoản ứng viên.' : 'No password needed. New accounts are candidate accounts.'}
         </p>
-      </FooterLinks>
+      </div>
+
     </AuthPageShell>
   );
 }

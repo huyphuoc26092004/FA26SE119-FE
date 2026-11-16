@@ -34,8 +34,8 @@ const faqs = [
     a: 'Có. Bạn có thể trải nghiệm tính năng khớp nối CV và xem gợi ý việc làm miễn phí. Các tính năng nâng cao cần tài khoản đăng ký.',
   },
   {
-    q: 'Nhà tuyển dụng đăng tin như thế nào?',
-    a: 'Nhà tuyển dụng đăng ký và được quản trị viên cấp quyền Tư vấn viên. Sau đó có thể đăng tin, lọc hồ sơ và sử dụng AI Agent hỗ trợ tuyển dụng.',
+    q: 'Ai có thể đăng ký tài khoản?',
+    a: 'Đăng ký trên trang là tài khoản ứng viên. Tài khoản tư vấn viên, quản lý và quản trị do quản trị viên cấp.',
   },
 ];
 
