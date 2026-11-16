@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   House,
   UserRound,
   File,
@@ -63,12 +64,14 @@ export const candidateNav: NavItem[] = [
 ];
 
 export const consultantNav: NavItem[] = [
+  { label: 'Work schedule', labelVi: 'Ca làm việc', translationKey: '', to: '/consultant/work-schedule', icon: CalendarDays, group: 'main' },
   { label: 'Dashboard', labelVi: 'Bảng điều khiển', translationKey: 'nav.dashboard', to: '/consultant', icon: House, group: 'main' },
   { label: 'Consultation requests', labelVi: 'Yêu cầu tư vấn', translationKey: 'nav.consultationRequests', to: '/consultant/consultations', icon: Inbox, group: 'main' },
   { label: 'Candidates', labelVi: 'Danh sách ứng viên', translationKey: 'nav.candidates', to: '/consultant/candidates', icon: Users, group: 'main' },
 ];
 
 export const adminNav: NavItem[] = [
+  { label: 'Work assignments', labelVi: 'Phân công ca làm việc', translationKey: '', to: '/admin/work-schedule', icon: CalendarDays, group: 'management' },
   { label: 'Dashboard', labelVi: 'Bảng điều khiển', translationKey: 'nav.dashboard', to: '/admin', icon: House, group: 'main' },
   { label: 'Users', labelVi: 'Người dùng', translationKey: 'nav.users', to: '/admin/users', icon: Users, group: 'management' },
   { label: 'Subscriptions', labelVi: 'Quản lý gói dịch vụ', translationKey: 'nav.subscriptions', to: '/admin/subscriptions', icon: CreditCard, group: 'management' },
@@ -88,7 +91,7 @@ export const adminNav: NavItem[] = [
 
 export const managerNav: NavItem[] = [
   ...adminNav
-    .filter((item) => !['/admin/users', '/admin/ai', '/admin/vector', '/admin/logs', '/admin/audit'].includes(item.to))
+    .filter((item) => !['/admin/users', '/admin/ai', '/admin/logs', '/admin/audit'].includes(item.to))
     .map((item) => ({ ...item, to: item.to.replace('/admin', '/manager') })),
   { label: 'Subscribers', labelVi: 'Đăng ký người dùng', translationKey: '', to: '/manager/subscribers', icon: CreditCard, group: 'management' },
   { label: 'Consultant quality', labelVi: 'Chất lượng tư vấn', translationKey: '', to: '/manager/consultants', icon: Users, group: 'management' },
