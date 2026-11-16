@@ -218,3 +218,44 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ---- Auth showcase (trang đăng nhập/đăng ký) ---- */
+@keyframes auth-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(2%, -4%, 0) scale(1.06); }
+}
+@keyframes auth-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes auth-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes auth-ring {
+  from { stroke-dashoffset: 251; }
+}
+@keyframes auth-bar {
+  from { transform: scaleX(0); }
+}
+@keyframes auth-shine {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.auth-blob { animation: auth-float 14s ease-in-out infinite; }
+.auth-rise { animation: auth-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.auth-bob { animation: auth-bob 6s ease-in-out infinite; }
+.auth-ring { animation: auth-ring 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.4s both; }
+.auth-bar { transform-origin: left; animation: auth-bar 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.auth-shine {
+  background: linear-gradient(110deg, #ffffff 30%, #c8f1de 45%, #ffffff 60%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: auth-shine 6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-blob, .auth-rise, .auth-bob, .auth-ring, .auth-bar, .auth-shine { animation: none; }
+  .auth-shine { color: #c8f1de; }
+}

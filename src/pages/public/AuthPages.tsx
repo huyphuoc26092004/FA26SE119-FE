@@ -9,6 +9,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTranslation } from '../../i18n';
 import { CcvLogo } from '../../components/brand/CcvLogo';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
+import { AuthShowcase } from '../../components/auth/AuthShowcase';
 
 // ==========================================
 // SHARED AUTH PRESENTATIONAL COMPONENTS
@@ -20,57 +21,10 @@ const inputClass =
 
 function AuthPageShell({ children }: { children: React.ReactNode }) {
   const { isVietnamese, toggleLanguage } = useTranslation();
-  const footnote = isVietnamese
-    ? 'Mã đồ án: FA26SE119 · Đồ án Tốt nghiệp Đại học FPT'
-    : 'FA26SE119 · FPT University Capstone';
 
   return (
     <div className="min-h-[var(--vh100)] bg-canvas text-ink lg:grid lg:grid-cols-2">
-      <aside className="hidden bg-night text-[#f2f3ef] lg:sticky lg:top-0 lg:flex lg:h-[var(--vh100)] lg:flex-col lg:justify-between lg:px-[clamp(3rem,6vw,7.5rem)] lg:py-[clamp(2.5rem,4.5vh,4rem)]">
-        <Link to="/" aria-label="CCV" className="inline-flex self-start">
-          <CcvLogo tone="dark" height={44} />
-        </Link>
-
-        <div className="max-w-[40rem]">
-          <h2 className="text-[clamp(2.75rem,4.4vw,5rem)] font-normal leading-[1.06] tracking-[-0.035em]">
-            {isVietnamese ? (
-              <>
-                Tìm việc đúng.
-                <br />
-                <span className="text-mint">Phát triển đúng hướng.</span>
-              </>
-            ) : (
-              <>
-                Find the right work.
-                <br />
-                <span className="text-mint">Grow with direction.</span>
-              </>
-            )}
-          </h2>
-          <p className="mt-[clamp(1.25rem,2.5vh,2rem)] max-w-[32rem] text-[clamp(1rem,1.15vw,1.25rem)] leading-relaxed text-[#c2d1ca]">
-            {isVietnamese
-              ? 'Nền tảng AI Agent giúp bạn hoàn thiện CV, tìm việc phù hợp và có lộ trình nghề nghiệp rõ ràng.'
-              : 'An AI Agent platform to strengthen your CV, find a fitting role, and build a clear career path.'}
-          </p>
-          <ul className="mt-[clamp(2rem,5vh,3.5rem)] divide-y divide-[#31443c] border-y border-[#31443c]">
-            {[
-              isVietnamese ? 'Khớp CV với việc làm bằng AI Agent' : 'Match your CV to jobs with AI Agents',
-              isVietnamese ? 'Điểm ATS và gợi ý chỉnh sửa tức thì' : 'ATS scoring with instant improvement tips',
-              isVietnamese ? 'Lộ trình học dựa trên JD bạn ứng tuyển' : 'Learning paths tailored to your target role',
-            ].map((benefit, index) => (
-              <li
-                key={benefit}
-                className="flex items-baseline gap-5 py-[clamp(1rem,2.2vh,1.5rem)] text-[clamp(1rem,1.15vw,1.25rem)] text-[#e0e8e3]"
-              >
-                <span className="w-6 shrink-0 text-sm tabular-nums text-[#91a79c]">0{index + 1}</span>
-                <span>{benefit}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="text-sm text-[#aebfb6]">{footnote}</p>
-      </aside>
+      <AuthShowcase vi={isVietnamese} />
 
       <section className="flex min-h-[var(--vh100)] flex-col">
         <header className="flex items-center justify-between gap-4 px-5 py-5 sm:px-10 sm:py-7 min-[2300px]:[zoom:1.3] lg:justify-end lg:px-[clamp(2rem,4vw,4.5rem)]">
@@ -97,7 +51,7 @@ function AuthPageShell({ children }: { children: React.ReactNode }) {
           <div className="w-full max-w-[30rem] 2xl:max-w-[32rem] min-[1800px]:[zoom:1.12] min-[2300px]:[zoom:1.35]">{children}</div>
         </main>
 
-        <footer className="px-5 pb-6 text-center text-xs leading-5 text-slate-600 lg:hidden">{footnote}</footer>
+        <footer className="px-5 pb-6 text-center text-xs leading-5 text-slate-600 lg:hidden">{isVietnamese ? 'Mã đồ án: FA26SE119 · Đồ án Tốt nghiệp Đại học FPT' : 'FA26SE119 · FPT University Capstone'}</footer>
       </section>
     </div>
   );
