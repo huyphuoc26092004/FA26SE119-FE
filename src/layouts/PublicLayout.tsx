@@ -37,7 +37,7 @@ export default function PublicLayout() {
   const getRoleLabel = () => {
     if (role === 'MANAGER') return 'Manager';
     if (role === 'ADMIN') return t('common.roleAdmin', 'Quản trị viên');
-    if (role === 'CAREER_CONSULTANT') return t('common.roleConsultant', 'Cố vấn');
+    if (role === 'CAREER_CONSULTANT') return t('common.roleConsultant', 'Tư vấn viên');
     return t('common.roleCandidate', 'Ứng viên');
   };
 

@@ -76,7 +76,7 @@ const faqs = [
   ],
   [
     'Nhà tuyển dụng đăng tin như thế nào?',
-    'Nhà tuyển dụng đăng ký và được quản trị viên cấp quyền Cố vấn. Sau đó có thể đăng tin, lọc hồ sơ và dùng công cụ hỗ trợ tuyển dụng.',
+    'Nhà tuyển dụng đăng ký và được quản trị viên cấp quyền Tư vấn viên. Sau đó có thể đăng tin, lọc hồ sơ và dùng công cụ hỗ trợ tuyển dụng.',
   ],
 ] as const;
 

@@ -78,7 +78,7 @@ export default function AdminSupportPage() {
 
   return (
     <div className="space-y-[clamp(2.5rem,5vw,4rem)]">
-      <Headline eyebrow="Vận hành" line1="Phiếu hỗ trợ." line2="Từ ứng viên và cố vấn." />
+      <Headline eyebrow="Vận hành" line1="Phiếu hỗ trợ." line2="Từ ứng viên và tư vấn viên." />
       <StatRow
         items={[
           { label: 'Mới', value: count('open'), valueTone: 'warning' },

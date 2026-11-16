@@ -34,7 +34,7 @@ export default function CandidateBookings({
           className="rounded-xl bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900"
         >
           {vi
-            ? `Bạn có ${reviewsDue.length} buổi đã hoàn tất đang chờ đánh giá. Hãy cho cố vấn biết cảm nhận của bạn qua số sao và nhận xét bên dưới.`
+            ? `Bạn có ${reviewsDue.length} buổi đã hoàn tất đang chờ đánh giá. Hãy cho tư vấn viên biết cảm nhận của bạn qua số sao và nhận xét bên dưới.`
             : `${reviewsDue.length} completed session(s) are ready for your review. Share your star rating and comments below.`}
         </p>
       )}
@@ -75,14 +75,14 @@ function BookingCard({
   const [comment, setComment] = useState('');
   const status: Record<BookingStatus, string> = vi
     ? {
-        PENDING: 'Chờ cố vấn tiếp nhận',
+        PENDING: 'Chờ tư vấn viên tiếp nhận',
         ACCEPTED: 'Đã xác nhận',
-        DECLINED: 'Cố vấn từ chối',
+        DECLINED: 'Tư vấn viên từ chối',
         CANCELLED: 'Đã hủy',
         COMPLETED: 'Đã hoàn tất',
       }
     : {
-        PENDING: 'Awaiting advisor',
+        PENDING: 'Awaiting consultant',
         ACCEPTED: 'Confirmed',
         DECLINED: 'Declined',
         CANCELLED: 'Cancelled',
@@ -165,7 +165,7 @@ function BookingCard({
       {booking.credit_refunded && (
         <p className="mt-3 text-xs text-emerald-700">
           {vi
-            ? 'Đã hoàn 1 lượt vào gói tư vấn của bạn.'
+            ? 'Đã hoàn 1 lượt tư vấn cho bạn.'
             : 'One credit has been returned to your pack.'}
         </p>
       )}
@@ -235,8 +235,8 @@ function BookingCard({
               onChange={(event) => setComment(event.target.value)}
               placeholder={
                 vi
-                  ? 'Chia sẻ điều hữu ích và những điểm cố vấn có thể cải thiện…'
-                  : 'Share what helped and what your advisor could improve…'
+                  ? 'Chia sẻ điều hữu ích và những điểm tư vấn viên có thể cải thiện…'
+                  : 'Share what helped and what your consultant could improve…'
               }
               className="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm outline-none focus:border-brand"
             />

@@ -14,11 +14,11 @@ export default function ManagerConsultantsPage() {
   const consultants = useQuery({ queryKey: ['manager-consultants', consultantOffset], queryFn: () => getManagerConsultants(consultantOffset), refetchInterval: 30_000 });
   const bookings = useQuery({ queryKey: ['manager-consultant-bookings', selected, bookingOffset], queryFn: () => getManagerConsultantBookings(selected, bookingOffset), enabled: !!selected, refetchInterval: 30_000 });
   return <main className="space-y-7">
-    <header><h1 className="text-3xl font-medium">Cố vấn và chất lượng dịch vụ</h1><p className="mt-3 text-sm text-slate-600">Theo dõi chuyên môn, lịch tư vấn, trạng thái cuộc họp và đánh giá từ ứng viên.</p></header>
+    <header><h1 className="text-3xl font-medium">Tư vấn viên và chất lượng dịch vụ</h1><p className="mt-3 text-sm text-slate-600">Theo dõi chuyên môn, lịch tư vấn, trạng thái cuộc họp và đánh giá từ ứng viên.</p></header>
     <Link to="/manager/work-schedule" className="inline-flex rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white">Phân công ca làm việc</Link>
-    {consultants.isPending && <p>Đang tải cố vấn…</p>}{consultants.error && <p role="alert" className="text-danger">{consultants.error.message}</p>}
+    {consultants.isPending && <p>Đang tải tư vấn viên…</p>}{consultants.error && <p role="alert" className="text-danger">{consultants.error.message}</p>}
     {consultants.data && <OperationalTable rows={consultants.data} onSelect={(row) => { setSelected(str(row.user_id || row.id)); setBookingOffset(0); }} columns={[
-      { key: 'full_name', label: 'Cố vấn' }, { key: 'email', label: 'Email' },
+      { key: 'full_name', label: 'Tư vấn viên' }, { key: 'email', label: 'Email' },
       { key: 'target_roles', label: 'Chuyên môn', render: (row) => texts(row.target_roles).join(', ') || '—' },
       { key: 'total_bookings', label: 'Lịch đã đặt' }, { key: 'completed_bookings', label: 'Hoàn tất' },
       { key: 'average_rating', label: 'Chất lượng', render: (row) => num(row.rating_count) ? `${num(row.average_rating).toFixed(1)}/5 (${num(row.rating_count)} đánh giá)` : 'Chưa có đánh giá' },

@@ -106,7 +106,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
       case 'candidate':
         return isVietnamese ? 'Không gian ứng viên' : 'Candidate workspace';
       case 'consultant':
-        return isVietnamese ? 'Không gian cố vấn' : 'Consultant workspace';
+        return isVietnamese ? 'Không gian tư vấn viên' : 'Consultant workspace';
       case 'manager':
         return isVietnamese ? 'Quản lý vận hành' : 'Operations management';
       case 'admin':
@@ -121,7 +121,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
       case 'candidate':
         return isVietnamese ? 'Ứng viên' : 'Candidate';
       case 'consultant':
-        return isVietnamese ? 'Cố vấn' : 'Consultant';
+        return isVietnamese ? 'Tư vấn viên' : 'Consultant';
       case 'manager':
         return isVietnamese ? 'Quản lý' : 'Manager';
       case 'admin':

@@ -98,7 +98,7 @@ export function PaymentReturnStatus({ details, onSettled }: {
   let message: string;
   if (confirmed) {
     message = order.orderType === 'CONSULTATION'
-      ? (vi ? 'Thanh toán gói tư vấn đã được xác nhận. Xem số lượt còn lại bên dưới.'
+      ? (vi ? 'Thanh toán lượt tư vấn đã được xác nhận. Xem số lượt còn lại bên dưới.'
         : 'Payment confirmed. See your remaining consultation credits below.')
       : (vi ? 'Thanh toán đã được xác nhận. Gói đăng ký của bạn đã được cập nhật.'
         : 'Payment confirmed. Your subscription has been updated.');

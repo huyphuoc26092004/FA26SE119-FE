@@ -6,10 +6,10 @@ import { TOPIC_LABELS, buildDescription, toConsultationRequest } from './consult
 
 export const DEFAULT_CONSULTANT = {
   id: '',
-  name: 'Đội ngũ cố vấn CCV',
+  name: 'Đội ngũ tư vấn viên CCV',
   title: 'Career Consultant',
-  bio: 'Chọn cố vấn phù hợp và khung giờ tư vấn. Sau khi được tiếp nhận, hai bên nhận lịch Google Calendar và tham gia qua Google Meet.',
-  bioEn: 'Choose an advisor and time. Once accepted, both participants receive Google Calendar invitations and join through Google Meet.',
+  bio: 'Chọn tư vấn viên phù hợp và khung giờ tư vấn. Sau khi được tiếp nhận, hai bên nhận lịch Google Calendar và tham gia qua Google Meet.',
+  bioEn: 'Choose a consultant and time. Once accepted, both participants receive Google Calendar invitations and join through Google Meet.',
   responseTime: '24',
 };
 

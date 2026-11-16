@@ -105,7 +105,7 @@ const copy = {
     report: 'Phiếu tư vấn sự nghiệp',
     print: 'In / xuất PDF',
     close: 'Đóng',
-    consultant: 'Cố vấn',
+    consultant: 'Tư vấn viên',
     date: 'Ngày lập',
     candidate: 'Ứng viên',
     role: 'Vị trí mục tiêu',
@@ -346,7 +346,7 @@ export default function ConsultationAdviceBuilder({
     const text = `
 === PHIẾU LỜI KHUYÊN TƯ VẤN SỰ NGHIỆP - CAREERPILOT ===
 Ứng viên: ${candidateName} | Vị trí mục tiêu: ${candidateRole}
-Cố vấn phụ trách: ${advice.consultantName || '-'}
+Tư vấn viên phụ trách: ${advice.consultantName || '-'}
 Thời gian: ${new Date(advice.lastUpdated || Date.now()).toLocaleDateString()}
 
 1. CẢI THIỆN CV & ATS:

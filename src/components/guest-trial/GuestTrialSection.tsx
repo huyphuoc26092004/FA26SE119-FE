@@ -322,7 +322,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
                 <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                 <span>
                   {isVietnamese
-                    ? 'Trò chuyện không giới hạn cùng Trợ lý AI và Cố vấn nghề nghiệp'
+                    ? 'Trò chuyện không giới hạn cùng Trợ lý AI và Tư vấn viên nghề nghiệp'
                     : 'Unlimited consultation with AI Career Assistant'}
                 </span>
               </div>

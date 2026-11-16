@@ -87,8 +87,8 @@ export default function ConsultationOrders() {
       </div>
       <p className="text-sm leading-6 text-slate-600">
         {vi
-          ? 'Mỗi buổi Google Meet dùng 1 lượt và kéo dài tối đa 60 phút. Chọn cố vấn và giờ tư vấn; sau khi được tiếp nhận, bạn nhận lời mời Google Calendar.'
-          : 'Each Google Meet session uses one credit and lasts up to 60 minutes. Choose an advisor and time; after acceptance, you receive a Google Calendar invitation.'}
+          ? 'Mỗi buổi Google Meet dùng 1 lượt và kéo dài tối đa 60 phút. Chọn tư vấn viên và giờ tư vấn; sau khi được tiếp nhận, bạn nhận lời mời Google Calendar.'
+          : 'Each Google Meet session uses one credit and lasts up to 60 minutes. Choose a consultant and time; after acceptance, you receive a Google Calendar invitation.'}
       </p>
       {services.isPending && <p className="text-sm">{vi ? 'Đang tải gói…' : 'Loading packs…'}</p>}
       {(services.error || orders.error || error || purchase.error) && (
@@ -98,7 +98,7 @@ export default function ConsultationOrders() {
       )}
       {services.isSuccess && !packages.length && (
         <p className="rounded-xl bg-slate-50 p-4 text-sm">
-          {vi ? 'Chưa có gói tư vấn đang mở bán.' : 'No session packs are currently on sale.'}
+          {vi ? 'Chưa có lượt tư vấn đang mở bán.' : 'No session packs are currently on sale.'}
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -146,7 +146,7 @@ export default function ConsultationOrders() {
         )}
         {orders.data?.length === 0 && (
           <p className="mt-3 text-sm text-slate-500">
-            {vi ? 'Bạn chưa mua gói tư vấn.' : 'You have not purchased a session pack yet.'}
+            {vi ? 'Bạn chưa mua lượt tư vấn.' : 'You have not purchased a session pack yet.'}
           </p>
         )}
         {orders.data?.map((order) => (

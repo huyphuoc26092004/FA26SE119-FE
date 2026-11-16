@@ -31,7 +31,7 @@ export function ConsultantExpertiseForm({ profile, onSave, isSaving, onEdit }: {
       <p className="max-w-3xl text-sm leading-6 text-slate-600">
         {vi
           ? 'Chọn lĩnh vực bạn có thể tư vấn. Ứng viên sẽ thấy chuyên môn và phần giới thiệu này khi chọn người tư vấn phù hợp.'
-          : 'Choose the areas you can advise on. Candidates see these specialties and your introduction when choosing an advisor.'}
+          : 'Choose the areas you can advise on. Candidates see these specialties and your introduction when choosing a consultant.'}
       </p>
       {profile.target_roles.length === 0 && (
         <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">

@@ -91,7 +91,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
   };
   const slotReason = (reason: BookingSlot['reason']) => {
     if (reason === 'past') return vi ? 'Đã qua giờ bắt đầu' : 'Start time has passed';
-    if (reason === 'advisor-busy') return vi ? 'Cố vấn bận' : 'Advisor unavailable';
+    if (reason === 'advisor-busy') return vi ? 'Tư vấn viên bận' : 'Consultant unavailable';
     if (reason === 'candidate-busy') return vi ? 'Trùng lịch của bạn' : 'Conflicts with your schedule';
     return '';
   };
@@ -99,7 +99,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
     mutationFn: async () => {
       if (!creditOrder || !chosenConsultant || !selectedResume || (jobId && !selectedJob))
         throw new Error(
-          vi ? 'Chọn CV sẵn sàng, cố vấn và gói còn lượt. Kiểm tra lại công việc nếu đã chọn.' : 'Choose a ready CV, an advisor and a pack with credits. Check the job if selected.',
+          vi ? 'Chọn CV sẵn sàng, tư vấn viên và gói còn lượt. Kiểm tra lại công việc nếu đã chọn.' : 'Choose a ready CV, a consultant and a pack with credits. Check the job if selected.',
         );
       const currentSlot = slots.filter(slot => Date.parse(slot.startsAt) > Date.now())
         .find((slot) => slot.value === time);
@@ -152,7 +152,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
       <div className="border-b border-ink pb-3">
         <h2 id="booking-title" className="text-2xl font-normal text-ink">
           <span className="mr-3 text-xs text-slate-500">02</span>
-          {vi ? 'Đặt lịch với cố vấn' : 'Request a session'}
+          {vi ? 'Đặt lịch với tư vấn viên' : 'Request a session'}
         </h2>
       </div>
       <form
@@ -185,14 +185,14 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
           </select>
           <span className="mt-2 block text-xs font-normal text-slate-500">
             {vi
-              ? 'Chỉ hiển thị cố vấn có chuyên môn phù hợp với vị trí bạn chọn.'
-              : 'Only advisors whose expertise matches your role are shown.'}
+              ? 'Chỉ hiển thị tư vấn viên có chuyên môn phù hợp với vị trí bạn chọn.'
+              : 'Only consultants whose expertise matches your role are shown.'}
           </span>
         </label>
 
         <fieldset>
           <legend className="text-sm font-medium">
-            {vi ? 'Chọn người tư vấn' : 'Choose your advisor'}
+            {vi ? 'Chọn người tư vấn' : 'Choose your consultant'}
           </legend>
           <p className="mt-1 text-xs text-slate-500">
             {vi
@@ -202,11 +202,11 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
           {targetRole.trim().length < 2 ? (
             <p className="mt-4 text-sm text-slate-500">
               {vi
-                ? 'Chọn vị trí ứng tuyển để tìm cố vấn.'
-                : 'Choose your target role to find advisors.'}
+                ? 'Chọn vị trí ứng tuyển để tìm tư vấn viên.'
+                : 'Choose your target role to find consultants.'}
             </p>
           ) : consultants.isPending ? (
-            <p className="mt-4 text-sm">{vi ? 'Đang tìm cố vấn…' : 'Finding advisors…'}</p>
+            <p className="mt-4 text-sm">{vi ? 'Đang tìm tư vấn viên…' : 'Finding consultants…'}</p>
           ) : consultants.error ? (
             <p role="alert" className="mt-3 text-sm text-danger">
               {consultants.error.message}
@@ -214,8 +214,8 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
           ) : consultants.data?.length === 0 ? (
             <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
               {vi
-                ? 'Chưa có cố vấn phù hợp. Bạn có thể thử tên vị trí khác hoặc quay lại sau.'
-                : 'No matching advisors yet. Try another role name or come back later.'}
+                ? 'Chưa có tư vấn viên phù hợp. Bạn có thể thử tên vị trí khác hoặc quay lại sau.'
+                : 'No matching consultants yet. Try another role name or come back later.'}
             </p>
           ) : (
             <div role="radiogroup" className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -270,12 +270,12 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
 
         <section className="space-y-4 rounded-2xl border border-border p-5" aria-labelledby="booking-documents-title">
           <h3 id="booking-documents-title" className="font-medium">
-            {vi ? 'Tài liệu gửi cố vấn' : 'Documents for your advisor'}
+            {vi ? 'Tài liệu gửi tư vấn viên' : 'Documents for your consultant'}
           </h3>
           <p className="text-sm leading-6 text-slate-600">
             {vi
-              ? 'Chọn CV để cố vấn đọc và xem kết quả đánh giá trước buổi tư vấn. Bạn có thể gửi thêm một tin tuyển dụng để cố vấn xem công việc và độ phù hợp ATS với CV này.'
-              : 'Share a CV so your advisor can review it and its evaluation before the session. You can also share a job posting to discuss the role and its ATS match with this CV.'}
+              ? 'Chọn CV để tư vấn viên đọc và xem kết quả đánh giá trước buổi tư vấn. Bạn có thể gửi thêm một tin tuyển dụng để tư vấn viên xem công việc và độ phù hợp ATS với CV này.'
+              : 'Share a CV so your consultant can review it and its evaluation before the session. You can also share a job posting to discuss the role and its ATS match with this CV.'}
           </p>
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
@@ -407,7 +407,7 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
                   : 'Buy a pack with available credits to book. Each 60-minute slot uses one credit. See section 01.'}
               </p>
             )}
-            {!chosenConsultant && <p className="text-sm text-slate-500">{vi ? 'Chọn cố vấn để xem các khung giờ có thể đặt.' : 'Choose an advisor to see time slots.'}</p>}
+            {!chosenConsultant && <p className="text-sm text-slate-500">{vi ? 'Chọn tư vấn viên để xem các khung giờ có thể đặt.' : 'Choose a consultant to see time slots.'}</p>}
             {chosenConsultant && !validDay && <p className="text-sm text-danger">{vi ? 'Chọn ngày tư vấn hợp lệ.' : 'Choose a valid consultation date.'}</p>}
             {chosenConsultant && validDay && availability.isFetching && <p role="status" className="text-sm text-slate-500">{vi ? 'Đang kiểm tra lịch trống…' : 'Checking available times…'}</p>}
             {chosenConsultant && validDay && availability.error && (
@@ -450,16 +450,16 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
                 rows={7}
                 placeholder={
                   vi
-                    ? 'Mô tả vị trí đang ứng tuyển, kinh nghiệm, khó khăn và câu hỏi bạn muốn cố vấn hỗ trợ…'
-                    : 'Describe the job you are applying for, your experience, challenges and questions for the advisor…'
+                    ? 'Mô tả vị trí đang ứng tuyển, kinh nghiệm, khó khăn và câu hỏi bạn muốn tư vấn viên hỗ trợ…'
+                    : 'Describe the job you are applying for, your experience, challenges and questions for the consultant…'
                 }
                 className={inputClass}
               />
             </label>
             <p className="text-sm leading-6 text-slate-600">
               {vi
-                ? 'Một lượt được giữ khi gửi yêu cầu. Cố vấn cần tiếp nhận để xác nhận lịch. Lượt được hoàn khi yêu cầu bị từ chối hoặc bạn hủy trước giờ bắt đầu.'
-                : 'One credit is reserved when you request a session. Your advisor must accept to confirm it. The credit is returned if the request is declined or you cancel before it starts.'}
+                ? 'Một lượt được giữ khi gửi yêu cầu. Tư vấn viên cần tiếp nhận để xác nhận lịch. Lượt được hoàn khi yêu cầu bị từ chối hoặc bạn hủy trước giờ bắt đầu.'
+                : 'One credit is reserved when you request a session. Your consultant must accept to confirm it. The credit is returned if the request is declined or you cancel before it starts.'}
             </p>
             <button type="submit" disabled={!ready || create.isPending} className={buttonClass}>
               {create.isPending
@@ -478,8 +478,8 @@ export default function CandidateBookingForm({ bookings }: { bookings: Consultat
             {success && (
               <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">
                 {vi
-                  ? 'Đã gửi yêu cầu. Bạn có thể theo dõi xác nhận của cố vấn ở mục lịch tư vấn bên dưới.'
-                  : 'Request sent. Follow your advisor’s confirmation in your sessions below.'}
+                  ? 'Đã gửi yêu cầu. Bạn có thể theo dõi xác nhận của tư vấn viên ở mục lịch tư vấn bên dưới.'
+                  : 'Request sent. Follow your consultant’s confirmation in your sessions below.'}
               </p>
             )}
           </div>

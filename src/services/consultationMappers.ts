@@ -139,7 +139,7 @@ export function toConsultationRequest(
     extra.consultantName ??
     (str(row.consultant_name) ||
       messages.find((m) => m.senderRole === 'CAREER_CONSULTANT')?.senderName ||
-      (row.consultant_user_id ? 'Cố vấn được phân công' : ''));
+      (row.consultant_user_id ? 'Tư vấn viên được phân công' : ''));
   const candidate =
     extra.candidate ??
     emptyCandidate(candidateUserId, extra.candidateName ?? (str(row.candidate_name) || messages.find((m) => m.senderRole === 'CANDIDATE')?.senderName || ''));
@@ -151,7 +151,7 @@ export function toConsultationRequest(
     { id: `${id}-created`, status: 'PENDING', title: 'Gửi yêu cầu tư vấn', description: str(row.subject), timestamp: str(row.created_at), actor: candidate.name || 'Ứng viên' },
   ];
   if (row.consultant_user_id) {
-    timeline.push({ id: `${id}-assigned`, status: 'IN_PROGRESS', title: 'Đã phân công cố vấn', description: consultantName, timestamp: messages[0]?.timestamp ?? str(row.created_at), actor: 'Quản trị viên' });
+    timeline.push({ id: `${id}-assigned`, status: 'IN_PROGRESS', title: 'Đã phân công tư vấn viên', description: consultantName, timestamp: messages[0]?.timestamp ?? str(row.created_at), actor: 'Quản trị viên' });
   }
   if (row.closed_at) {
     timeline.push({ id: `${id}-closed`, status: 'COMPLETED', title: 'Đã đóng cuộc tư vấn', description: '', timestamp: str(row.closed_at), actor: '' });
