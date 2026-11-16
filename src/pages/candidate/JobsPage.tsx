@@ -5,6 +5,7 @@ import { ArrowRight, Bookmark, Check, ChevronDown, RotateCcw, Search, X } from '
 import {
   getJobs,
   getSavedJobIds,
+  getSavedJobs,
   getAppliedJobIds,
   getResumes,
   getCandidateProfile,
@@ -208,6 +209,18 @@ export default function JobsPage() {
     queryFn: getSavedJobIds,
   });
 
+  // Tab "Đã lưu" đọc thẳng danh sách đã lưu: việc đã lưu có thể nằm ngoài 100 tin mới nhất của trang "Tất cả".
+  const { data: savedRows = [] } = useQuery({
+    queryKey: ['savedJobs', 'rows', savedIds.join(',')],
+    queryFn: getSavedJobs,
+    enabled: savedIds.length > 0,
+  });
+  const savedJobs = useMemo(() => {
+    const known = new Map(scoredCatalog.map((job) => [job.id, job]));
+    const rows = savedIds.length ? savedRows.filter((job) => savedIds.includes(job.id)) : [];
+    return rows.map((job) => known.get(job.id) ?? job);
+  }, [savedRows, savedIds, scoredCatalog]);
+
   const { data: appliedIds = [] } = useQuery({
     queryKey: ['appliedJobs'],
     queryFn: getAppliedJobIds,
@@ -261,7 +274,7 @@ export default function JobsPage() {
 
   // Filtered and sorted jobs list
   const filteredJobs = useMemo(() => {
-    const source = activeTab === 'recommended' ? rankedJobs : scoredCatalog;
+    const source = activeTab === 'recommended' ? rankedJobs : activeTab === 'saved' ? savedJobs : scoredCatalog;
     let list = source.filter((job) => {
       // Search
       const searchMatch =
@@ -297,18 +310,18 @@ export default function JobsPage() {
     }
 
     return list;
-  }, [rankedJobs, scoredCatalog, search, locations, levels, jobTypes, skillsPicked, salaryMin, activeTab, savedIds, appliedIds, sortBy]);
+  }, [rankedJobs, scoredCatalog, savedJobs, search, locations, levels, jobTypes, skillsPicked, salaryMin, activeTab, savedIds, appliedIds, sortBy]);
 
   // Số việc cho từng ô checkbox, tính trên kết quả sau khi tìm kiếm (và tab đang xem).
   const facetBase = useMemo(() => {
-    const source = activeTab === 'recommended' ? rankedJobs : scoredCatalog;
+    const source = activeTab === 'recommended' ? rankedJobs : activeTab === 'saved' ? savedJobs : scoredCatalog;
     const needle = search.toLowerCase();
     return source.filter((job) => {
       if (activeTab === 'saved' && !savedIds.includes(job.id)) return false;
       if (activeTab === 'applied' && !appliedIds.includes(job.id)) return false;
       return !needle || `${job.title} ${job.company} ${job.skills.join(' ')}`.toLowerCase().includes(needle);
     });
-  }, [rankedJobs, scoredCatalog, search, activeTab, savedIds, appliedIds]);
+  }, [rankedJobs, scoredCatalog, savedJobs, search, activeTab, savedIds, appliedIds]);
   const topSkills = useMemo(() => {
     const counts = new Map<string, number>();
     facetBase.forEach((job) => new Set(job.skills).forEach((skill) => counts.set(skill, (counts.get(skill) ?? 0) + 1)));

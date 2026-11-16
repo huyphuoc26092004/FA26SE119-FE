@@ -70,7 +70,7 @@ function mountJobsPage(options = {}) {
   };
   const service = {
     getJobs: async () => options.catalog ?? catalog,
-    getSavedJobIds: async () => [], getAppliedJobIds: async () => [],
+    getSavedJobIds: async () => [], getSavedJobs: async () => [], getAppliedJobIds: async () => [],
     getResumes: async () => [], getCandidateProfile: async () => ({}),
     getRecommendationResult: async (params) => {
       calls.recommendations.push(params);
