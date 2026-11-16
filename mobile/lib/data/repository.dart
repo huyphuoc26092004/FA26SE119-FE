@@ -53,7 +53,7 @@ class CandidateRepository {
 
   Future<Job> job(String id) async => Job.fromJson(asMap(await api.get('/jobs/$id')));
 
-  // Saved jobs (wishlist)
+  // Saved jobs (saved jobs)
   Future<Set<String>> savedJobIds() async =>
       asList(await api.get('/saved-jobs/ids')).map((r) => str(r, ['job_id'])).whereType<String>().toSet();
   /// Newest first; each row has the GET /jobs columns plus `saved_at`.
@@ -291,7 +291,7 @@ final ticketProvider = FutureProvider.autoDispose.family<SupportTicket, String>(
   (ref, id) => ref.watch(repositoryProvider).ticket(id),
 );
 
-/// Ids of the jobs in the wishlist (GET /saved-jobs/ids), updated
+/// Ids of the jobs in the saved jobs (GET /saved-jobs/ids), updated
 /// optimistically when the user taps the bookmark.
 class SavedJobs extends Notifier<Set<String>> {
   CandidateRepository get _repo => ref.read(repositoryProvider);

@@ -561,8 +561,10 @@ export default function JobsPage() {
                 {filteredJobs.map((job) => {
                   const isSaved = savedIds.includes(job.id);
                   const isApplied = appliedIds.includes(job.id);
-                  const quickMatch = job.semanticMatch?.method === 'SKILL_OVERLAP_QUICK';
-                  const displayedScore = quickMatch ? job.semanticMatch?.skillCoverageScore ?? job.match : job.match;
+                  const quickMatch = job.semanticMatch?.method?.startsWith('SKILL_OVERLAP') ?? false;
+                  const insufficientRequirements = quickMatch && (job.semanticMatch?.requirementCoverageAvailable === false
+                    || ['MISSING_SOURCE', 'TRUNCATED'].includes(job.semanticMatch?.extractionStatus ?? ''));
+                  const displayedScore = job.match;
                   const externalSource = job.externalSource || {
                     sourceName: 'ITviec',
                     sourceUrl: 'https://itviec.com',
@@ -608,15 +610,15 @@ export default function JobsPage() {
                         <div>
                           {job.semanticMatch ? (
                             <>
-                              <p className="text-[clamp(2rem,2.4vw,2.75rem)] font-light leading-none text-brand">{displayedScore}%</p>
+                              <p className="text-[clamp(2rem,2.4vw,2.75rem)] font-light leading-none text-brand">{insufficientRequirements ? 'Chưa đủ dữ liệu' : `${displayedScore}%`}</p>
                               <div className="mt-3 h-0.5 w-full bg-ink/10">
-                                <div className="h-full bg-brand" style={{ width: `${displayedScore}%` }} />
+                                <div className="h-full bg-brand" style={{ width: `${insufficientRequirements ? 0 : displayedScore}%` }} />
                               </div>
                               <p className="mt-2 text-sm text-slate-600">
-                                {quickMatch ? 'Khớp kỹ năng' : <>Độ phù hợp · {job.match >= 85 ? 'Rất phù hợp'
+                                {quickMatch ? 'Đối chiếu yêu cầu' : <>Độ phù hợp · {job.match >= 85 ? 'Rất phù hợp'
                                   : job.match >= 70 ? 'Phù hợp tốt' : job.match >= 50 ? 'Phù hợp một phần' : 'Cần bổ sung kỹ năng'}</>}
                               </p>
-                              {quickMatch && job.semanticMatch.recommendation && (
+                              {job.semanticMatch.recommendation && (
                                 <p className="mt-2 text-xs leading-5 text-slate-500">{job.semanticMatch.recommendation}</p>
                               )}
                               {quickMatch && job.semanticMatch.experienceStatus === 'UNVERIFIED' && (

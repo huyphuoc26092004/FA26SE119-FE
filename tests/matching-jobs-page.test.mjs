@@ -183,15 +183,15 @@ test('catalog jobs without a matching result are shown as unassessed', () => {
 test('quick skill coverage is not presented as an overall suitability or experience guarantee', () => {
   const page = mountJobsPage({ recommendations: {
     ...defaultRecommendations,
-    jobs: [{ ...ranked, match: 100, semanticMatch: {
+    jobs: [{ ...ranked, match: 60, semanticMatch: {
       ...ranked.semanticMatch, method: 'SKILL_OVERLAP_QUICK', skillCoverageScore: 100,
       experienceStatus: 'UNVERIFIED', recommendation: 'Khớp 2/2 kỹ năng bắt buộc',
     } }],
   } });
   page.click(page.tab('Được đề xuất'));
   const job = page.one((node) => node.type === 'li');
-  assert.match(page.text(job), /100\s*%/);
-  assert.match(page.text(job), /Khớp kỹ năng/);
+  assert.match(page.text(job), /60\s*%/);
+  assert.match(page.text(job), /Đối chiếu yêu cầu/);
   assert.match(page.text(job), /Khớp 2\/2 kỹ năng bắt buộc/);
   assert.match(page.text(job), /Chưa đủ thông tin để đánh giá kinh nghiệm/);
   assert.doesNotMatch(page.text(job), /Rất phù hợp|Độ phù hợp ·/);
@@ -320,4 +320,15 @@ test('signed-out visitors cannot start personal matching and receive a sign-in a
   assert.match(page.text(), /Đăng nhập bằng tài khoản ứng viên/);
   assert.ok(page.nodes((node) => node.type === 'Link' && node.props.to === '/login').length > 0);
   assert.doesNotMatch(page.text(), /Không tìm thấy việc làm phù hợp\. Hãy thử thay đổi bộ lọc/);
+});
+
+test('missing JD extraction is shown as unavailable rather than a full compatibility percentage', () => {
+  const page = mountJobsPage({ recommendations: { ...defaultRecommendations, jobs: [{ ...ranked, match: 100,
+    semanticMatch: { ...ranked.semanticMatch, method: 'SKILL_OVERLAP_QUICK', skillCoverageScore: 100,
+      extractionStatus: 'MISSING_SOURCE', requirementCoverageAvailable: false } }],
+  } });
+  page.click(page.tab('Được đề xuất'));
+  const job = page.one((node) => node.type === 'li');
+  assert.match(page.text(job), /Chưa đủ dữ liệu/);
+  assert.doesNotMatch(page.text(job), /100\s*%/);
 });
