@@ -296,16 +296,17 @@ export function LoginPage() {
 
   return (
     <AuthPageShell>
-      <AuthHeading
-        eyebrow={isVietnamese ? 'Đăng nhập' : 'Sign in'}
-        title={isVietnamese ? 'Chào mừng quay lại.' : 'Welcome back.'}
-        accent={isVietnamese ? 'Tiếp tục hành trình.' : 'Pick up where you left off.'}
-        description={
-          isVietnamese
-            ? 'Đăng nhập để xem việc làm phù hợp, CV đã lưu và gợi ý mới nhất.'
-            : 'Sign in to see matching jobs, your saved CVs and the latest suggestions.'
-        }
-      />
+      <header className="mb-7">
+        <h1 className="text-[clamp(2rem,2.6vw,2.5rem)] font-normal leading-tight tracking-[-0.02em] text-ink">
+          {isVietnamese ? 'Đăng nhập' : 'Sign in'}
+        </h1>
+        <p className="mt-2 text-[15px] text-slate-600">
+          {isVietnamese ? 'Chưa có tài khoản?' : "Don't have an account?"}{' '}
+          <Link to="/register" className="font-medium text-brand underline underline-offset-4">
+            {isVietnamese ? 'Đăng ký' : 'Sign up'}
+          </Link>
+        </p>
+      </header>
 
       {resetSuccess && (
         <div className="mb-6">
@@ -322,15 +323,6 @@ export function LoginPage() {
           </SuccessNote>
         </div>
       )}
-      <GoogleSignInButton
-        variant="signin"
-        language={isVietnamese ? 'vi' : 'en'}
-        disabled={isSubmitting || google.isSigningIn}
-        onCredential={google.handleCredential}
-        onError={setError}
-      />
-      <OrDivider label={isVietnamese ? 'hoặc dùng email' : 'or use email'} />
-
       <form onSubmit={handleSubmit(submit)} className="space-y-6">
         <Field
           label="Email"
@@ -362,7 +354,7 @@ export function LoginPage() {
         </Field>
 
         <label className="flex cursor-pointer select-none items-center gap-3 text-base text-slate-700">
-          <input type="checkbox" className="h-5 w-5 shrink-0 rounded border-slate-400" {...register('rememberMe')} />
+          <input type="checkbox" className="h-5 w-5 shrink-0 rounded border-slate-400 accent-[var(--color-brand)]" {...register('rememberMe')} />
           <span>{isVietnamese ? 'Ghi nhớ đăng nhập trên thiết bị này' : 'Remember me on this device'}</span>
         </label>
 
@@ -371,19 +363,21 @@ export function LoginPage() {
         <PrimaryButton
           loading={isSubmitting}
           disabled={isSubmitting || google.isSigningIn}
+          centered
           loadingLabel={isVietnamese ? 'Đang đăng nhập…' : 'Signing in…'}
           label={isVietnamese ? 'Đăng nhập' : 'Sign in'}
         />
       </form>
 
-      <FooterLinks>
-        <p>
-          {isVietnamese ? 'Chưa có tài khoản?' : "Don't have an account?"}{' '}
-          <Link to="/register" className={footerLinkClass}>
-            {isVietnamese ? 'Đăng ký' : 'Sign up'}
-          </Link>
-        </p>
-      </FooterLinks>
+      {/* Đăng nhập bằng Google đặt dưới form email, giống trang đăng ký. */}
+      <OrDivider label={isVietnamese ? 'hoặc đăng nhập nhanh' : 'or sign in faster'} />
+      <GoogleSignInButton
+        variant="signin"
+        language={isVietnamese ? 'vi' : 'en'}
+        disabled={isSubmitting || google.isSigningIn}
+        onCredential={google.handleCredential}
+        onError={setError}
+      />
     </AuthPageShell>
   );
 }
