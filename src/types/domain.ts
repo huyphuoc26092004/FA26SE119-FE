@@ -281,6 +281,8 @@ export interface Job {
   responsibilities?: string[];
   requirements?: string[];
   benefits?: string[];
+  /** Kết quả bóc tách yêu cầu JD của BE (requirement_extraction): câu yêu cầu, kỹ năng và mức Bloom. */
+  requirementExtraction?: unknown;
   externalSource?: ExternalApplicationSource;
   semanticMatch?: SemanticMatchingDetail;
 }

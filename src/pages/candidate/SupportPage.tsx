@@ -167,7 +167,7 @@ const relatedFeatures = [
   'Khớp nối CV–Job Fit',
   'Trợ lý sự nghiệp AI',
   'Hỗ trợ ứng tuyển (Cover Letter)',
-  'Đánh giá kỹ năng',
+  'Chuẩn bị phỏng vấn',
   'Gói cước & Thanh toán',
   'Khác',
 ];

@@ -229,3 +229,31 @@ export function skillAssessmentHref(jobId?: string, cvId?: string) {
   const query = params.toString();
   return `/candidate/skill-assessment${query ? `?${query}` : ''}`;
 }
+
+export interface AssessmentHistoryItem extends JdAssessmentSummary {
+  /** 'JOB' khi tạo từ tin tuyển dụng, 'PASTED' khi dán JD. */
+  source: 'JOB' | 'PASTED';
+}
+
+/** Toàn bộ bài đã làm (mới nhất trước), kể cả bài từ JD tự dán — dùng cho lịch sử chia theo tiêu đề. */
+export async function listAssessmentHistory(): Promise<AssessmentHistoryItem[]> {
+  return (await get<ApiRow[]>('/assessments'))
+    .map((s) => {
+      const scores = rows(s.skill_scores);
+      const total = scores.reduce((sum, x) => sum + num(x.total), 0);
+      const correct = scores.reduce((sum, x) => sum + num(x.correct), 0);
+      const completed = str(s.status) === 'completed';
+      const jobId = str(s.market_job_id);
+      return {
+        id: str(s.id),
+        jobId,
+        resumeId: str(s.resume_id),
+        jobTitle: str(s.target_job_title) || '—',
+        status: completed ? ('completed' as const) : ('in_progress' as const),
+        score: completed && total ? Math.round((correct / total) * 100) : undefined,
+        createdAt: str(s.created_at),
+        source: jobId ? ('JOB' as const) : ('PASTED' as const),
+      };
+    })
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+}

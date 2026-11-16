@@ -95,6 +95,9 @@ export function toJob(row: ApiRow): Job {
     responsibilities: splitLines(row.parsed_responsibilities),
     requirements: splitLines(row.parsed_requirements),
     benefits: splitLines(row.parsed_benefits),
+    ...(row.requirement_extraction && typeof row.requirement_extraction === 'object'
+      ? { requirementExtraction: row.requirement_extraction }
+      : {}),
     externalSource: sourceUrl
       ? {
           sourceName: str(row.source_site || row.original_source_site) || 'Nguồn tuyển dụng',

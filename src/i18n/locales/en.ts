@@ -48,7 +48,7 @@ export const en: Translations = {
     cvJobFit: 'CV fit',
     careerIntelligence: 'Career Intelligence',
     salaryEstimation: 'Salary Estimation',
-    skillAssessment: 'Skill Assessment',
+    skillAssessment: 'Interview Preparation',
     learningPath: 'Learning path',
     learningRoadmap: 'Learning Roadmap',
     skillGapAnalysis: 'Skill Gap Analysis',
