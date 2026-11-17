@@ -51,7 +51,7 @@ export function PaymentReportsTab() {
                 {r.resolution && <span className="mt-1 block text-[13px] text-brand">Cách xử lý: {r.resolution}</span>}
               </span>
               {r.status !== 'RESOLVED' && (
-                <button type="button" className={brandLink} onClick={() => setResolving(r)}>
+                <button type="button" className={`${brandLink} self-start`} onClick={() => setResolving(r)}>
                   Đánh dấu đã xử lý
                 </button>
               )}
