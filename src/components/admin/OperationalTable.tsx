@@ -5,13 +5,17 @@ export type OperationalColumn = { key: string; label: string; render?: (row: Api
 export default function OperationalTable({ rows, columns, onSelect }: {
   rows: ApiRow[]; columns: OperationalColumn[]; onSelect?: (row: ApiRow) => void;
 }) {
+  const colCount = columns.length + (onSelect ? 1 : 0);
+
   return <div className="overflow-x-auto"><table className="w-full text-left text-sm">
     <thead><tr>{columns.map((column) => <th key={column.key} className="border-b border-border px-3 py-3 font-medium">{column.label}</th>)}{onSelect && <th className="border-b border-border px-3 py-3">Chi tiết</th>}</tr></thead>
     <tbody>{rows.map((row, index) => <tr key={`${str(row.id || row.user_id)}-${str(row.feature_code)}-${index}`}>
       {columns.map((column) => <td key={column.key} className="border-b border-border px-3 py-3 align-top">{column.render ? column.render(row) : str(row[column.key]) || '—'}</td>)}
       {onSelect && <td className="border-b border-border px-3 py-3"><button type="button" className="text-brand underline" onClick={() => onSelect(row)}>Xem</button></td>}
-    </tr>)}</tbody>
-  </table>{!rows.length && <p className="py-5 text-sm text-slate-500">Chưa có dữ liệu phù hợp.</p>}</div>;
+    </tr>)}
+    {!rows.length && <tr><td colSpan={colCount} className="py-8 text-center text-sm text-slate-500">Chưa có dữ liệu phù hợp.</td></tr>}
+    </tbody>
+  </table></div>;
 }
 
 export const operationalDate = (value: unknown) => {
