@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { EmptyRow, Headline, Modal, Note, UnderlineTabs, boxInput } from '../../components/admin/AdminKit';
+import { EmptyRow, Headline, Modal, Note, UnderlineTabs } from '../../components/admin/AdminKit';
 import { getMonitoring } from '../../services/adminService';
 import { formatDateTime } from '../../services/supportService';
+import { getManagedUsers } from '../../services/userService';
 import { str, type ApiRow } from '../../services/candidateMappers';
+import { LogFilters, applyLogFilters, emptyLogFilters, hasLogFilters, type FilterField, type LogFilterState } from './logs/LogFilters';
 
 type Category = 'logs' | 'ai-usage' | 'indexing-jobs' | 'vector-stores' | 'crawl-runs' | 'audit';
 
@@ -25,6 +27,38 @@ const COLUMNS: Partial<Record<Category, string[]>> = {
   'crawl-runs': ['started_at', 'source_site', 'keyword', 'status', 'inserted_count', 'error_message'],
 };
 
+/** Bộ lọc chọn cho từng nhóm; chỉ hiện khi cột có dữ liệu. */
+const FILTERS: Record<Category, FilterField[]> = {
+  logs: [
+    { key: 'level', label: 'Mức độ' },
+    { key: 'component', label: 'Thành phần' },
+    { key: 'event_type', label: 'Sự kiện' },
+  ],
+  audit: [
+    { key: 'action', label: 'Hành động' },
+    { key: 'entity_type', label: 'Loại đối tượng' },
+    { key: 'actor_user_id', label: 'Người thực hiện' },
+  ],
+  'ai-usage': [
+    { key: 'feature_code', label: 'Tính năng' },
+    { key: 'provider', label: 'Nhà cung cấp' },
+    { key: 'model_name', label: 'Mô hình' },
+    { key: 'status', label: 'Trạng thái' },
+  ],
+  'indexing-jobs': [
+    { key: 'entity_type', label: 'Loại đối tượng' },
+    { key: 'status', label: 'Trạng thái' },
+  ],
+  'vector-stores': [
+    { key: 'provider', label: 'Nhà cung cấp' },
+    { key: 'status', label: 'Trạng thái' },
+  ],
+  'crawl-runs': [
+    { key: 'source_site', label: 'Nguồn' },
+    { key: 'status', label: 'Trạng thái' },
+  ],
+};
+
 const isTime = (key: string) => key.endsWith('_at');
 const cell = (row: ApiRow, key: string) => {
   const value = row[key];
@@ -38,13 +72,22 @@ export default function SystemLogsPage() {
   const isAudit = useLocation().pathname.endsWith('/audit');
   const [tab, setTab] = useState<Category>('logs');
   const category: Category = isAudit ? 'audit' : tab;
-  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<LogFilterState>(emptyLogFilters);
   const [open, setOpen] = useState<ApiRow | null>(null);
   const query = useQuery({ queryKey: ['admin', 'monitoring', category], queryFn: () => getMonitoring(category) });
+  const usersQuery = useQuery({ queryKey: ['admin', 'users-lite'], queryFn: () => getManagedUsers(), staleTime: 60_000, enabled: isAudit });
   const list = useMemo(() => query.data ?? [], [query.data]);
   const columns = COLUMNS[category] ?? Object.keys(list[0] ?? {}).slice(0, 6);
-  const q = search.trim().toLowerCase();
-  const shown = q ? list.filter((r) => JSON.stringify(r).toLowerCase().includes(q)) : list;
+  const timeKey = columns.find(isTime) ?? Object.keys(list[0] ?? {}).find(isTime);
+  const shown = useMemo(() => applyLogFilters(list, filters, timeKey), [list, filters, timeKey]);
+  const actorLabel = useMemo(() => {
+    const users = new Map((usersQuery.data ?? []).map((u) => [u.id, u.email ? `${u.name} (${u.email})` : u.name]));
+    return (key: string, value: string) => (key === 'actor_user_id' ? (users.get(value) ?? value) : value);
+  }, [usersQuery.data]);
+  const changeTab = (next: Category) => {
+    setTab(next);
+    setFilters(emptyLogFilters);
+  };
 
   return (
     <div className="space-y-[clamp(2rem,4vw,3rem)]">
@@ -54,11 +97,19 @@ export default function SystemLogsPage() {
         line2={isAudit ? 'Ai đã thay đổi gì.' : 'Lỗi, lượt gọi AI và tác vụ nền.'}
         intro="Hiển thị 100 bản ghi mới nhất. Bấm một dòng để xem đầy đủ."
       />
-      {!isAudit && <UnderlineTabs value={tab} onChange={setTab} tabs={LOG_TABS} />}
-      <input className={`${boxInput} max-w-md`} placeholder="Lọc theo nội dung..." value={search} onChange={(e) => setSearch(e.target.value)} />
+      {!isAudit && <UnderlineTabs value={tab} onChange={changeTab} tabs={LOG_TABS} />}
+      <LogFilters
+        list={list}
+        fields={FILTERS[category]}
+        value={filters}
+        onChange={setFilters}
+        showDates={Boolean(timeKey)}
+        optionLabel={isAudit ? actorLabel : undefined}
+        shown={shown.length}
+      />
       {query.isError && <Note tone="danger">Không tải được dữ liệu giám sát.</Note>}
       {shown.length === 0 ? (
-        <EmptyRow>{query.isLoading ? 'Đang tải...' : 'Chưa có bản ghi nào.'}</EmptyRow>
+        <EmptyRow>{query.isLoading ? 'Đang tải...' : hasLogFilters(filters) && list.length > 0 ? 'Không có bản ghi nào khớp bộ lọc.' : 'Chưa có bản ghi nào.'}</EmptyRow>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-[13px]">
