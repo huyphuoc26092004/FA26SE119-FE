@@ -64,28 +64,44 @@ function AppealReview({ appeal }: { appeal: Appeal }) {
   const client = useQueryClient();
   const decision = useMutation({ mutationFn: (value: string) => apiClient.post(`/manager/rating-appeals/${appeal.id}/decision`, { decision: value, reason }),
     onSuccess: async () => { await client.invalidateQueries({ queryKey: ['rating-appeals'] }); await client.invalidateQueries({ queryKey: ['manager-consultants'] }); await client.invalidateQueries({ queryKey: ['manager-consultant-bookings'] }); } });
-  return <article className="space-y-3 rounded-xl border border-border p-5">
-    <h3 className="font-medium">{appeal.consultant_name} · {appeal.rating}/5 từ {appeal.candidate_name}</h3>
-    <p className="whitespace-pre-wrap text-sm">Nhận xét: {appeal.comment || '(Không có nhận xét)'}</p>
+  const tone = appeal.status === 'PENDING' ? 'text-orange-600' : appeal.status === 'ACCEPTED' ? 'text-brand' : 'text-slate-500';
+  return <article className="space-y-3 py-5">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <h3 className="text-[15px] font-medium text-ink">{appeal.consultant_name} · {appeal.rating}/5 từ {appeal.candidate_name}</h3>
+      <span className={`text-[12px] ${tone}`}>{labels[appeal.status] ?? appeal.status}</span>
+    </div>
+    <p className="whitespace-pre-wrap text-sm text-slate-600">Nhận xét: {appeal.comment || '(Không có nhận xét)'}</p>
     <p className="whitespace-pre-wrap text-sm">Lý do báo cáo: {appeal.reason}</p>
     <AppealSteps status={appeal.status} />
-    <a href={appeal.evidence_url} target="_blank" rel="noopener noreferrer" className="text-sm underline">Mở bằng chứng Google Drive</a>
-    <p className="text-sm">{labels[appeal.status] ?? appeal.status}</p>
+    <a href={appeal.evidence_url} target="_blank" rel="noopener noreferrer" className="inline-block border-b border-current pb-px text-sm text-ink hover:text-brand">Mở bằng chứng Google Drive</a>
     {appeal.status === 'PENDING' ? <>
-      <label className="block text-sm">Lý do quyết định<textarea rows={3} maxLength={5000} className={input} value={reason} onChange={(e) => setReason(e.target.value)} /></label>
+      <label className="block text-[12px] text-slate-500">Lý do quyết định<textarea rows={2} maxLength={5000} className={managerInput} value={reason} onChange={(e) => setReason(e.target.value)} /></label>
       <p className="text-xs text-slate-500">Chấp nhận sẽ ẩn đánh giá này khỏi hồ sơ tư vấn viên và tính lại trung bình sao từ các đánh giá còn hiệu lực.</p>
       {decision.isError && <p role="alert" className="text-sm text-danger">{decision.error.message}</p>}
-      <div className="flex gap-3"><button className={button} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate('ACCEPTED')}>Chấp nhận và ẩn đánh giá</button>
-        <button className={button} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate('REJECTED')}>Không chấp nhận</button></div>
-    </> : <p className="whitespace-pre-wrap text-sm">Lý do quyết định: {appeal.decision_reason}</p>}
+      <div className="flex flex-wrap gap-3"><button className={managerPrimary} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate('ACCEPTED')}>Chấp nhận và ẩn đánh giá</button>
+        <button className={managerOutline} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate('REJECTED')}>Không chấp nhận</button></div>
+    </> : appeal.decision_reason && <p className="whitespace-pre-wrap text-sm text-slate-600">Lý do quyết định: {appeal.decision_reason}</p>}
   </article>;
 }
 
+const managerInput = 'mt-1 w-full resize-y border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm text-ink outline-none focus:border-brand';
+const managerPrimary = 'rounded-full bg-ink px-4 py-2 text-sm text-white transition-colors hover:bg-brand disabled:opacity-40';
+const managerOutline = 'rounded-full border border-ink px-4 py-2 text-sm text-ink transition-colors hover:border-brand hover:text-brand disabled:opacity-40';
+
 export function ManagerRatingAppeals() {
   const query = useQuery({ queryKey: ['rating-appeals'], queryFn: async () => (await apiClient.get<Appeal[]>('/manager/rating-appeals')).data, refetchInterval: 15000 });
-  return <section className="space-y-4"><h2 className="text-xl font-medium">Báo cáo đánh giá</h2>
-    {query.isPending && <p>Đang tải…</p>}{query.isError && <p role="alert">Không tải được báo cáo đánh giá.</p>}
-    {query.data?.length === 0 && <p className="text-sm text-slate-500">Chưa có báo cáo đánh giá.</p>}
-    {query.data?.map((appeal) => <AppealReview key={appeal.id} appeal={appeal} />)}
+  const count = query.data?.length ?? 0;
+  return <section>
+    <div className="flex items-end justify-between gap-4 border-b border-ink pb-3">
+      <h2 className="text-[clamp(1.125rem,1.7vw,1.375rem)] font-normal tracking-[-0.01em] text-ink">Báo cáo đánh giá</h2>
+      <span className="text-[13px] text-slate-500">{count} báo cáo</span>
+    </div>
+    {query.isPending && <p className="py-5 text-sm text-slate-500">Đang tải…</p>}
+    {query.isError && <p role="alert" className="py-5 text-sm text-danger">Không tải được báo cáo đánh giá.</p>}
+    {query.data?.length === 0 && <div className="py-10 text-center">
+      <p className="text-[15px] text-ink">Chưa có báo cáo đánh giá</p>
+      <p className="mx-auto mt-1 max-w-xs text-[13px] leading-6 text-slate-500">Ứng viên đánh giá sau khi buổi tư vấn hoàn tất. Tư vấn viên có thể báo cáo đánh giá sai sự thật để bạn xem xét tại đây.</p>
+    </div>}
+    {!!count && <div className="divide-y divide-border">{query.data?.map((appeal) => <AppealReview key={appeal.id} appeal={appeal} />)}</div>}
   </section>;
 }

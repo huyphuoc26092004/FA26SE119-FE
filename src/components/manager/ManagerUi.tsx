@@ -99,3 +99,65 @@ export const pillPrimary =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-6 text-sm font-medium text-white transition-colors hover:bg-brand-800 disabled:pointer-events-none disabled:bg-slate-400';
 export const inkLink = 'border-b border-current pb-px text-sm text-ink transition-colors hover:text-brand disabled:opacity-40';
 export const dangerTextLink = 'border-b border-current pb-px text-sm text-orange-700 transition-colors hover:text-danger disabled:opacity-40';
+
+/** Ô chữ cái đầu tên, nền mực. */
+export function Initials({ name, size = 'h-10 w-10' }: { name: string; size?: string }) {
+  const text =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(-2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || '—';
+  return <span className={`grid ${size} shrink-0 place-items-center rounded-full bg-ink text-[12px] font-medium text-white`}>{text}</span>;
+}
+
+/** Dòng cuối bảng: số bản ghi bên trái, phân trang bên phải. */
+export function PagerRow({
+  summary,
+  offset,
+  count,
+  pageSize = 20,
+  busy = false,
+  onChange,
+}: {
+  summary: ReactNode;
+  offset: number;
+  count: number;
+  pageSize?: number;
+  busy?: boolean;
+  onChange: (offset: number) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 pt-4 text-[13px] text-slate-500">
+      <span>{summary}</span>
+      <span className="flex items-center gap-5">
+        <button type="button" className="hover:text-ink disabled:opacity-40" disabled={offset === 0 || busy} onClick={() => onChange(Math.max(0, offset - pageSize))}>
+          ← Trang trước
+        </button>
+        <span className="text-ink">Trang {Math.floor(offset / pageSize) + 1}</span>
+        <button type="button" className="hover:text-ink disabled:opacity-40" disabled={count < pageSize || busy} onClick={() => onChange(offset + pageSize)}>
+          Trang tiếp →
+        </button>
+      </span>
+    </div>
+  );
+}
+
+/** Hàng số liệu lớn có dòng chú thích nhỏ bên dưới. */
+export function SummaryRow({ items }: { items: { label: string; value: ReactNode; detail?: ReactNode; tone?: 'ink' | 'brand' | 'danger' | 'muted' | 'orange' }[] }) {
+  const tone = { ink: 'text-ink', brand: 'text-brand', danger: 'text-danger', muted: 'text-slate-400', orange: 'text-orange-600' };
+  return (
+    <dl className={`grid grid-cols-2 gap-x-8 border-y border-t-ink border-b-border ${items.length >= 5 ? 'sm:grid-cols-3 lg:grid-cols-5' : 'sm:grid-cols-4'}`}>
+      {items.map((item) => (
+        <div key={item.label} className="min-w-0 py-4">
+          <dt className="text-[12px] text-slate-500">{item.label}</dt>
+          <dd className={`mt-1 text-[clamp(1.5rem,2.4vw,1.875rem)] font-light leading-tight tabular-nums ${tone[item.tone ?? 'ink']}`}>{item.value}</dd>
+          {item.detail && <dd className="mt-1 text-[12px] text-slate-500">{item.detail}</dd>}
+        </div>
+      ))}
+    </dl>
+  );
+}

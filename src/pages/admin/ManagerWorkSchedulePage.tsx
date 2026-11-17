@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { operationalDate, OperationalPagination } from '../../components/admin/OperationalTable';
 import { Note, textLink, underlineSelect } from '../../components/admin/AdminKit';
 import { getManagerConsultants, getManagerConsultantBookings } from '../../services/managerService';
@@ -44,7 +45,8 @@ export default function ManagerWorkSchedulePage() {
   const today = vnDate(new Date().toISOString());
   const tomorrow = vnDate(new Date(Date.now() + 86_400_000).toISOString());
 
-  const [selectedId, setSelectedId] = useState('');
+  const [searchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState(() => searchParams.get('consultant') ?? '');
   const [consultantOffset, setConsultantOffset] = useState(0);
   const [bookingOffset, setBookingOffset] = useState(0);
   const [month, setMonth] = useState(() => today.slice(0, 7));
