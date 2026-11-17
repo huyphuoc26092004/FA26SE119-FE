@@ -55,7 +55,7 @@ export const candidateNav: NavItem[] = [
   { label: 'Job discovery', labelVi: 'Khám phá việc làm', translationKey: 'nav.jobDiscovery', to: '/candidate/jobs', icon: BriefcaseBusiness, group: 'main' },
   { label: 'CV fit', labelVi: 'Độ phù hợp CV', translationKey: 'nav.cvJobFit', to: '/candidate/cv-job-fit', icon: CircleDot, group: 'apply' },
   { label: 'Application help', labelVi: 'Hỗ trợ ứng tuyển', translationKey: 'nav.applicationAssistance', to: '/candidate/applications', icon: Mail, group: 'apply' },
-  { label: 'Skill assessment', labelVi: 'Đánh giá kỹ năng', translationKey: 'nav.skillAssessment', to: '/candidate/skill-assessment', icon: GraduationCap, group: 'grow' },
+  { label: 'Interview preparation', labelVi: 'Chuẩn bị phỏng vấn', translationKey: 'nav.skillAssessment', to: '/candidate/skill-assessment', icon: GraduationCap, group: 'grow' },
   { label: 'Learning path', labelVi: 'Lộ trình học', translationKey: 'nav.learningPath', to: '/candidate/learning-path', icon: Route, group: 'grow' },
   { label: 'Career consultation', labelVi: 'Tư vấn nghề nghiệp', translationKey: 'nav.careerConsultation', to: '/candidate/consultations', icon: MessageSquare, group: 'grow' },
   { label: 'Plans & tokens', labelVi: 'Gói đăng ký & token', translationKey: 'nav.subscription', to: '/candidate/subscription', icon: CreditCard, group: 'account' },
@@ -64,16 +64,16 @@ export const candidateNav: NavItem[] = [
 ];
 
 export const consultantNav: NavItem[] = [
-  { label: 'Work schedule', labelVi: 'Ca làm việc', translationKey: '', to: '/consultant/work-schedule', icon: CalendarDays, group: 'main' },
   { label: 'Dashboard', labelVi: 'Bảng điều khiển', translationKey: 'nav.dashboard', to: '/consultant', icon: House, group: 'main' },
+  { label: 'Work schedule', labelVi: 'Ca làm việc', translationKey: '', to: '/consultant/work-schedule', icon: CalendarDays, group: 'main' },
   { label: 'Consultation requests', labelVi: 'Yêu cầu tư vấn', translationKey: 'nav.consultationRequests', to: '/consultant/consultations', icon: Inbox, group: 'main' },
   { label: 'Candidates', labelVi: 'Danh sách ứng viên', translationKey: 'nav.candidates', to: '/consultant/candidates', icon: Users, group: 'main' },
 ];
 
 export const adminNav: NavItem[] = [
-  { label: 'Work assignments', labelVi: 'Phân công ca làm việc', translationKey: '', to: '/admin/work-schedule', icon: CalendarDays, group: 'management' },
   { label: 'Dashboard', labelVi: 'Bảng điều khiển', translationKey: 'nav.dashboard', to: '/admin', icon: House, group: 'main' },
   { label: 'Users', labelVi: 'Người dùng', translationKey: 'nav.users', to: '/admin/users', icon: Users, group: 'management' },
+  { label: 'Work assignments', labelVi: 'Phân công ca làm việc', translationKey: '', to: '/admin/work-schedule', icon: CalendarDays, group: 'management' },
   { label: 'Subscriptions', labelVi: 'Quản lý gói dịch vụ', translationKey: 'nav.subscriptions', to: '/admin/subscriptions', icon: CreditCard, group: 'management' },
   { label: 'Consultation pricing', labelVi: 'Bảng giá tư vấn', translationKey: 'nav.consultationServices', to: '/admin/consultation-services', icon: CreditCard, group: 'management' },
   { label: 'Payments', labelVi: 'Lịch sử thanh toán', translationKey: 'nav.payments', to: '/admin/payments', icon: Wallet, group: 'management' },
@@ -90,10 +90,18 @@ export const adminNav: NavItem[] = [
 ];
 
 export const managerNav: NavItem[] = [
-  ...adminNav
-    .filter((item) => !['/admin/users', '/admin/ai', '/admin/logs', '/admin/audit'].includes(item.to))
-    .map((item) => ({ ...item, to: item.to.replace('/admin', '/manager') })),
+  { label: 'Dashboard', labelVi: 'Bảng điều khiển', translationKey: 'nav.dashboard', to: '/manager', icon: House, group: 'main' },
+  { label: 'Work assignments', labelVi: 'Phân công ca làm việc', translationKey: '', to: '/manager/work-schedule', icon: CalendarDays, group: 'management' },
+  { label: 'Subscriptions', labelVi: 'Quản lý gói dịch vụ', translationKey: 'nav.subscriptions', to: '/manager/subscriptions', icon: CreditCard, group: 'management' },
   { label: 'Subscribers', labelVi: 'Đăng ký người dùng', translationKey: '', to: '/manager/subscribers', icon: CreditCard, group: 'management' },
   { label: 'Consultant quality', labelVi: 'Chất lượng tư vấn', translationKey: '', to: '/manager/consultants', icon: Users, group: 'management' },
+  { label: 'Consultation pricing', labelVi: 'Bảng giá tư vấn', translationKey: 'nav.consultationServices', to: '/manager/consultation-services', icon: CreditCard, group: 'management' },
+  { label: 'Payments', labelVi: 'Lịch sử thanh toán', translationKey: 'nav.payments', to: '/manager/payments', icon: Wallet, group: 'management' },
+  { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/manager/templates', icon: LayoutTemplate, group: 'management' },
+  { label: 'Job collection', labelVi: 'Thu thập việc làm', translationKey: 'nav.jobProcessing', to: '/manager/jobs', icon: BriefcaseBusiness, group: 'platform' },
   { label: 'Collection reports', labelVi: 'Báo cáo thu thập', translationKey: '', to: '/manager/crawl-reports', icon: ScrollText, group: 'operations' },
+  { label: 'Notifications', labelVi: 'Thông báo', translationKey: 'nav.notifications', to: '/manager/notifications', icon: Bell, group: 'operations' },
+  { label: 'Feedback', labelVi: 'Ý kiến phản hồi', translationKey: 'nav.feedback', to: '/manager/feedback', icon: MessagesSquare, group: 'operations' },
+  { label: 'Support tickets', labelVi: 'Phiếu hỗ trợ', translationKey: 'nav.supportTickets', to: '/manager/support', icon: LifeBuoy, group: 'operations' },
+  { label: 'Analytics', labelVi: 'Phân tích & thống kê', translationKey: 'nav.analytics', to: '/manager/analytics', icon: ChartColumn, group: 'operations' },
 ];

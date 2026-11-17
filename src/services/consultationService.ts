@@ -67,7 +67,7 @@ export async function getConsultationRequests(params: ConsultationFilterParams =
 }
 
 /**
- * Hộp thư của cố vấn. GET /consultations chỉ trả dữ liệu thread (không có tên ứng viên, tin cuối hay số chưa đọc),
+ * Hộp thư của tư vấn viên. GET /consultations chỉ trả dữ liệu thread (không có tên ứng viên, tin cuối hay số chưa đọc),
  * nên đọc thêm tin nhắn và hồ sơ ứng viên của từng thread; tin cuối và số chưa đọc tính từ tin nhắn.
  */
 export async function getConsultantInbox(): Promise<ConsultationRequest[]> {

@@ -106,7 +106,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
       case 'candidate':
         return isVietnamese ? 'Không gian ứng viên' : 'Candidate workspace';
       case 'consultant':
-        return isVietnamese ? 'Không gian cố vấn' : 'Consultant workspace';
+        return isVietnamese ? 'Không gian tư vấn viên' : 'Consultant workspace';
       case 'manager':
         return isVietnamese ? 'Quản lý vận hành' : 'Operations management';
       case 'admin':
@@ -121,7 +121,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
       case 'candidate':
         return isVietnamese ? 'Ứng viên' : 'Candidate';
       case 'consultant':
-        return isVietnamese ? 'Cố vấn' : 'Consultant';
+        return isVietnamese ? 'Tư vấn viên' : 'Consultant';
       case 'manager':
         return isVietnamese ? 'Quản lý' : 'Manager';
       case 'admin':
@@ -157,7 +157,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
     'border-b border-slate-400 pb-px text-[13px] text-slate-700 transition-colors hover:border-ink hover:text-ink';
 
   return (
-    <div className={`min-h-screen bg-canvas text-ink transition-[padding] duration-200 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-[280px]'}`}>
+    <div className={`min-h-[var(--vh100)] bg-canvas text-ink transition-[padding] duration-200 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-[300px]'}`}>
       <button
         type="button"
         className={`fixed inset-0 z-40 bg-ink/30 transition-opacity lg:hidden ${
@@ -171,13 +171,13 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
       <aside
         id="workspace-sidebar"
         aria-label={areaLabel}
-        className={`invisible fixed inset-y-0 left-0 z-50 flex h-dvh w-[280px] max-w-[86vw] -translate-x-full flex-col border-r border-border bg-canvas transition-[transform,width] duration-200 ease-out lg:visible lg:translate-x-0 ${
+        className={`invisible fixed inset-y-0 left-0 z-50 flex h-[var(--vh100)] w-[300px] max-w-[86vw] -translate-x-full flex-col border-r border-border bg-canvas transition-[transform,width] duration-200 ease-out lg:visible lg:translate-x-0 ${
           collapsed ? 'lg:w-[76px]' : ''
         } ${
           open ? 'visible translate-x-0' : ''
         }`}
       >
-        <div className={`flex shrink-0 items-start px-7 pb-7 pt-9 ${collapsed ? 'lg:flex-col lg:items-center lg:gap-4 lg:px-0' : ''}`}>
+        <div className={`flex shrink-0 items-start px-6 pb-7 pt-9 ${collapsed ? 'lg:flex-col lg:items-center lg:gap-4 lg:px-0' : ''}`}>
           <div className="min-w-0">
             <Link
               to="/"
@@ -214,10 +214,10 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
           </button>
         </div>
 
-        <nav aria-label={areaLabel} className={`flex-1 overflow-y-auto px-7 pb-6 ${collapsed ? 'lg:px-3' : ''}`}>
+        <nav aria-label={areaLabel} className={`flex-1 overflow-y-auto px-6 pb-6 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 ${collapsed ? 'lg:px-3' : ''}`}>
           {groups.map(({ group, items }, groupIndex) => (
             <div key={`${group}-${groupIndex}`} className={groupIndex === 0 ? '' : 'mt-5'}>
-              {groupIndex > 0 && (
+              {(groupIndex > 0 || ((areaKey === 'admin' || areaKey === 'manager') && group === 'main')) && (
                 <p className={`pb-1.5 pl-[15px] text-[12px] text-slate-500 ${full}`}>
                   {isVietnamese ? navGroupLabels[group].vi : navGroupLabels[group].en}
                 </p>
@@ -232,7 +232,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
                         to={item.to}
                         aria-current={isActive ? 'page' : undefined}
                         title={collapsed ? (isVietnamese ? item.labelVi : item.label) : undefined}
-                        className={`relative -ml-px flex min-h-[37px] items-center gap-3 border-l-2 py-1.5 pl-[14px] pr-2 text-[15px] transition-colors duration-150 focus-visible:outline-offset-2 ${
+                        className={`relative -ml-px flex min-h-[37px] items-center gap-2.5 border-l-2 py-1.5 pl-[14px] pr-2 text-[15px] transition-colors duration-150 focus-visible:outline-offset-2 ${
                           collapsed ? 'lg:ml-0 lg:justify-center lg:rounded-lg lg:border-l-0 lg:px-0 lg:hover:bg-slate-100' : ''
                         } ${isActive && collapsed ? 'lg:bg-brand-50' : ''} ${
                           isActive
@@ -294,7 +294,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
           </div>
         )}
 
-        <div className={`shrink-0 px-7 pb-6 ${full}`}>
+        <div className={`shrink-0 px-6 pb-6 ${full}`}>
           <div className="border-t border-border pt-5">
             <div className="flex items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-ink text-[13px] font-medium text-ink">
@@ -366,7 +366,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
         </div>
       </aside>
 
-      <div className="min-h-screen min-w-0">
+      <div className="min-h-[var(--vh100)] min-w-0">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-canvas px-4 sm:px-5 lg:hidden">
           <button
             type="button"

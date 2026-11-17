@@ -59,7 +59,7 @@ const copy = {
     todos: {
       pendingConsult: (n: number) => `${n} yêu cầu tư vấn chờ tiếp nhận`,
       pendingConsultDetail: (u: number) =>
-        u > 0 ? `${u} yêu cầu khẩn cấp, chưa có cố vấn nhận.` : 'Cố vấn cần tiếp nhận và xếp lịch cho ứng viên.',
+        u > 0 ? `${u} yêu cầu khẩn cấp, chưa có tư vấn viên nhận.` : 'Tư vấn viên cần tiếp nhận và xếp lịch cho ứng viên.',
       pendingConsultAction: 'Xem yêu cầu',
       failedTx: (n: number) => `${n} giao dịch thanh toán thất bại`,
       failedTxDetail: 'Cần kiểm tra lại với cổng thanh toán.',
@@ -77,11 +77,11 @@ const copy = {
     },
     chart: 'Lượt dùng AI',
     chartMeta: (n: number, d: number) => `${n.toLocaleString('vi-VN')} lượt trong ${d} ngày`,
-    consultants: 'Cố vấn',
+    consultants: 'Tư vấn viên',
     consultantLine: (active: number, done: number) => `${active} yêu cầu đang xử lý · ${done} đã hoàn tất`,
     noRating: 'Chưa có đánh giá',
-    manageConsultants: 'Quản lý cố vấn',
-    noConsultants: 'Chưa có tài khoản cố vấn.',
+    manageConsultants: 'Quản lý tư vấn viên',
+    noConsultants: 'Chưa có tài khoản tư vấn viên.',
     plans: 'Gói đăng ký',
     tokenUsed: 'Token đã dùng',
     planLink: 'Xem gói và bảng quy đổi token',
@@ -147,7 +147,7 @@ const copy = {
     },
     users: {
       candidates: 'Ứng viên',
-      consultants: 'Cố vấn',
+      consultants: 'Tư vấn viên',
       stickiness: 'Độ gắn kết (DAU/MAU)',
       verified: 'Đã xác thực OTP',
       churn: (p: number) => `Tỉ lệ rời bỏ ${p}%`,
@@ -161,7 +161,7 @@ const copy = {
       unlock: 'Mở khoá',
       empty: 'Không có người dùng phù hợp.',
     },
-    roles: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Cố vấn', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' } as Record<UserRole, string>,
+    roles: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' } as Record<UserRole, string>,
     userStatus: { ACTIVE: 'Hoạt động', SUSPENDED: 'Bị khoá', PENDING: 'Chờ kích hoạt' } as Record<string, string>,
     receipt: {
       title: 'Biên lai giao dịch',
@@ -190,7 +190,7 @@ const copy = {
       title: 'Chế độ bảo trì',
       enableText:
         'Khi bật chế độ bảo trì, các tính năng tạo CV, chat AI và thanh toán sẽ tạm thời bị khoá với người dùng thông thường để phục vụ nâng cấp hệ thống.',
-      disableText: 'Tắt chế độ bảo trì và mở lại toàn bộ hệ thống cho ứng viên và cố vấn?',
+      disableText: 'Tắt chế độ bảo trì và mở lại toàn bộ hệ thống cho ứng viên và tư vấn viên?',
       cancel: 'Huỷ',
       enable: 'Bật bảo trì ngay',
       disable: 'Mở lại hệ thống',
@@ -199,7 +199,7 @@ const copy = {
       eyebrow: 'Yêu cầu tư vấn',
       title: 'Yêu cầu tư vấn.',
       line2: (n: number) => (n > 0 ? `${n} yêu cầu đang chờ tiếp nhận.` : 'Không có yêu cầu nào đang chờ.'),
-      intro: 'Theo dõi yêu cầu ứng viên gửi cho cố vấn, mức độ ưu tiên và lịch hẹn của từng phiên.',
+      intro: 'Theo dõi yêu cầu ứng viên gửi cho tư vấn viên, mức độ ưu tiên và lịch hẹn của từng phiên.',
       total: 'Tổng yêu cầu',
       pending: 'Chờ tiếp nhận',
       active: 'Đang xử lý',
@@ -214,7 +214,7 @@ const copy = {
         CANCELLED: 'Đã huỷ',
       } as Record<ConsultationStatus, string>,
       priority: { URGENT: 'Khẩn cấp', HIGH: 'Ưu tiên cao', NORMAL: 'Bình thường' } as Record<string, string>,
-      cols: { request: 'Yêu cầu', consultant: 'Cố vấn', meeting: 'Lịch hẹn', status: 'Trạng thái' },
+      cols: { request: 'Yêu cầu', consultant: 'Tư vấn viên', meeting: 'Lịch hẹn', status: 'Trạng thái' },
       empty: 'Không có yêu cầu nào ở mục này.',
       back: 'Về tổng quan',
       requested: 'Gửi lúc',
@@ -550,8 +550,7 @@ export default function AdminDashboardPage() {
           `1. HẠ TẦNG KỸ THUẬT\n` +
           `Trạng thái: ${systemHealth.overallStatus}\n` +
           `Uptime: ${systemHealth.uptimePercentage}%\n` +
-          `CPU: ${systemHealth.resources.cpuUsagePercent}%\n` +
-          `RAM: ${systemHealth.resources.memoryUsedGB}GB / ${systemHealth.resources.memoryTotalGB}GB\n\n` +
+          `\n` +
           `2. SỬ DỤNG AI\n` +
           `Tổng yêu cầu: ${aiMetrics.totalRequests}\n` +
           `Tổng tokens: ${aiMetrics.totalTokens}\n` +
@@ -564,7 +563,7 @@ export default function AdminDashboardPage() {
           `4. NGƯỜI DÙNG\n` +
           `Tổng tài khoản: ${userMetrics.totalUsers}\n` +
           `Ứng viên: ${userMetrics.candidateCount}\n` +
-          `Cố vấn: ${userMetrics.consultantCount}\n` +
+          `Tư vấn viên: ${userMetrics.consultantCount}\n` +
           `Quản trị viên: ${userMetrics.adminCount}\n`
       );
 
@@ -863,32 +862,6 @@ export default function AdminDashboardPage() {
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div>
-              <h3 className="border-b border-ink pb-2 text-[15px] font-medium">{c.system.resources}</h3>
-              <div className="grid gap-x-10 sm:grid-cols-2">
-                {[
-                  { label: `${c.system.cpu} (${systemHealth.resources.cpuCores} cores)`, value: `${systemHealth.resources.cpuUsagePercent}%`, pct: systemHealth.resources.cpuUsagePercent },
-                  { label: c.system.ram, value: `${systemHealth.resources.memoryUsedGB} / ${systemHealth.resources.memoryTotalGB} GB`, pct: systemHealth.resources.memoryUsagePercent },
-                  { label: c.system.disk, value: `${systemHealth.resources.diskUsedGB} / ${systemHealth.resources.diskTotalGB} GB`, pct: systemHealth.resources.diskUsagePercent },
-                  {
-                    label: c.system.db,
-                    value: `${systemHealth.resources.dbPoolActive} / ${systemHealth.resources.dbPoolMax}`,
-                    pct: Math.round((systemHealth.resources.dbPoolActive / systemHealth.resources.dbPoolMax) * 100),
-                  },
-                ].map((r) => (
-                  <div key={r.label} className="border-b border-border py-4">
-                    <div className="flex items-baseline justify-between gap-4 text-sm">
-                      <span className="text-ink">{r.label}</span>
-                      <span className="tabular-nums text-slate-600">{r.value}</span>
-                    </div>
-                    <div className="mt-2.5">
-                      <ThinBar value={r.pct} tone={r.pct > 85 ? 'warning' : 'brand'} />
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
 
             <div>
@@ -1414,14 +1387,14 @@ function ConsultationsView({
                 <span className="text-sm text-ink">{r.consultantName || '—'}</span>
               ) : (
                 <label className="block">
-                  <span className="sr-only">{lang === 'vi' ? 'Phân công cố vấn' : 'Assign consultant'}</span>
+                  <span className="sr-only">{lang === 'vi' ? 'Phân công tư vấn viên' : 'Assign consultant'}</span>
                   <select
                     value={r.consultantId}
                     disabled={assignMutation.isPending}
                     onChange={(e) => e.target.value && assignMutation.mutate({ id: r.id, consultantId: e.target.value })}
                     className={underlineSelect}
                   >
-                    <option value="">{lang === 'vi' ? 'Chọn cố vấn…' : 'Pick a consultant…'}</option>
+                    <option value="">{lang === 'vi' ? 'Chọn tư vấn viên…' : 'Pick a consultant…'}</option>
                     {consultants.map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.name}

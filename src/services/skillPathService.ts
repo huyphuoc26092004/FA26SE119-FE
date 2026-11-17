@@ -2,6 +2,7 @@ import type { AssessmentQuestion, LearningResource } from '../types/assessment';
 import { apiClient } from './apiClient';
 import { toQuestion, toResource } from './candidateService';
 import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
+import { orderLearningNodes } from '../utils/learningOrder';
 
 // Bài đánh giá kỹ năng và lộ trình học theo JD của một công việc (trang /candidate/skill-assessment).
 // CV không bắt buộc: POST /assessments { jobId, resumeId? } sinh 10 câu theo JD (và CV nếu có);
@@ -114,7 +115,7 @@ function toLearningPath(roadmap: ApiRow): LearningPath {
       reasoning: str(g.reasoning),
       score: g.assessment_score === undefined || g.assessment_score === null ? undefined : Math.round(num(g.assessment_score)),
     })),
-    nodes: nodes.sort((a, b) => a.order - b.order),
+    nodes: orderLearningNodes(nodes),
     skillStates: rows(roadmap.skill_states).map((row) => ({
       skill: str(row.skill_name),
       status: ['SATISFIED', 'MISSING', 'NEEDS_IMPROVEMENT', 'DECLARED'].includes(str(row.status)) ? str(row.status) as 'SATISFIED' | 'MISSING' | 'NEEDS_IMPROVEMENT' : row.declared_evidence === true ? 'DECLARED' : 'MISSING',
@@ -228,4 +229,32 @@ export function skillAssessmentHref(jobId?: string, cvId?: string) {
   if (cvId) params.set('cvId', cvId);
   const query = params.toString();
   return `/candidate/skill-assessment${query ? `?${query}` : ''}`;
+}
+
+export interface AssessmentHistoryItem extends JdAssessmentSummary {
+  /** 'JOB' khi tạo từ tin tuyển dụng, 'PASTED' khi dán JD. */
+  source: 'JOB' | 'PASTED';
+}
+
+/** Toàn bộ bài đã làm (mới nhất trước), kể cả bài từ JD tự dán — dùng cho lịch sử chia theo tiêu đề. */
+export async function listAssessmentHistory(): Promise<AssessmentHistoryItem[]> {
+  return (await get<ApiRow[]>('/assessments'))
+    .map((s) => {
+      const scores = rows(s.skill_scores);
+      const total = scores.reduce((sum, x) => sum + num(x.total), 0);
+      const correct = scores.reduce((sum, x) => sum + num(x.correct), 0);
+      const completed = str(s.status) === 'completed';
+      const jobId = str(s.market_job_id);
+      return {
+        id: str(s.id),
+        jobId,
+        resumeId: str(s.resume_id),
+        jobTitle: str(s.target_job_title) || '—',
+        status: completed ? ('completed' as const) : ('in_progress' as const),
+        score: completed && total ? Math.round((correct / total) * 100) : undefined,
+        createdAt: str(s.created_at),
+        source: jobId ? ('JOB' as const) : ('PASTED' as const),
+      };
+    })
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }

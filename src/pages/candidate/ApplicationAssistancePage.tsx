@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, ChevronDown, X } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { getCandidateProfile, getResumes, getJobs } from '../../services/candidateService';
-import { generateApplicationDrafts, getStoredApplications, saveApplicationDraft } from '../../services/applicationService';
+import { createOwnDrafts, getStoredApplications, saveApplicationDraft } from '../../services/applicationService';
+import { ProofreadPanel } from './application/ProofreadPanel';
 import { authErrorMessage } from '../../services/authService';
 import type { ApplicationContentType, ApplicationDraft, ApplicationLanguage } from '../../types/domain';
 import { ApplicationEditor } from './application/ApplicationEditor';
@@ -14,14 +15,14 @@ const copy = {
   vi: {
     eyebrow: 'Hỗ trợ ứng tuyển',
     title: 'Thư ứng tuyển.',
-    titleAccent: 'AI viết nháp, bạn hoàn thiện.',
-    intro: 'Chọn công việc và CV, AI viết sẵn một email ứng tuyển và một thư xin việc. Bạn chỉnh lại theo giọng của mình rồi lưu.',
-    steps: ['Chọn công việc & CV', 'AI viết nháp', 'Chỉnh sửa', 'Lưu'],
+    titleAccent: 'Bạn tự viết, AI soát lỗi.',
+    intro: 'Chọn công việc và CV, rồi tự viết email ứng tuyển và thư xin việc bằng giọng của bạn. AI chỉ kiểm tra chính tả, ngữ pháp và gợi ý chỉnh sửa, không viết giùm.',
+    steps: ['Chọn công việc & CV', 'Tự viết thư', 'AI soát lỗi', 'Lưu'],
     tabCompose: 'Soạn thư',
     tabSaved: 'Thư đã lưu',
     s1: 'Ứng tuyển cho',
     jobLabel: 'Công việc',
-    cvLabel: 'CV dùng để viết',
+    cvLabel: 'CV tham khảo (không bắt buộc)',
     pickCv: 'Chọn CV',
     typeLabel: 'Loại văn bản',
     types: { cover_letter: 'Thư xin việc', application_email: 'Email ứng tuyển' } as Record<string, string>,
@@ -29,20 +30,20 @@ const copy = {
     lockedNote: 'Thư đã lưu gắn với công việc và CV này. Muốn đổi, hãy tạo thư mới.',
     s2: 'Chỉnh sửa thư',
     newLetter: 'Tạo thư mới',
-    generate: 'Viết nháp bằng AI',
-    regenerate: 'Viết lại bằng AI',
-    generating: 'AI đang viết…',
+    generate: 'Bắt đầu viết',
+    regenerate: 'Bắt đầu bộ thư mới',
+    generating: 'Đang chuẩn bị…',
     needJob: 'Chọn công việc trước.',
-    needCv: 'Chọn một CV đã xác nhận để AI viết thư.',
+    needCv: 'Chọn một CV đã xác nhận để tham khảo khi viết.',
     emptyTitle: 'Chưa có thư cho lựa chọn này.',
-    emptyBody: 'Bấm “Viết nháp bằng AI”. Hệ thống tạo cùng lúc email ứng tuyển và thư xin việc, sau đó bạn chỉnh và lưu từng bản.',
-    missingType: 'Lần tạo này không có loại văn bản đó. Bấm “Viết lại bằng AI” để tạo bộ mới.',
+    emptyBody: 'Bấm “Bắt đầu viết” để mở khung email ứng tuyển và thư xin việc. Bạn có thể chèn dàn ý mẫu, tự viết, rồi nhờ AI kiểm tra chính tả trước khi lưu.',
+    missingType: 'Bộ thư này không có loại văn bản đó. Bấm “Bắt đầu bộ thư mới”.',
     save: 'Lưu thay đổi',
     saving: 'Đang lưu…',
     saved: 'Đã lưu',
     unsaved: 'Chưa lưu',
     savedToast: 'Đã lưu thư.',
-    generatedToast: 'AI đã viết xong email và thư xin việc.',
+    generatedToast: 'Đã mở khung viết email và thư xin việc.',
     generateFail: 'Không tạo được thư.',
     saveFail: 'Không lưu được thư.',
     confirmNew: 'Thư hiện tại có thay đổi chưa lưu. Bỏ thay đổi?',
@@ -51,14 +52,14 @@ const copy = {
   en: {
     eyebrow: 'Application assistance',
     title: 'Cover letter.',
-    titleAccent: 'AI drafts, you finish.',
-    intro: 'Pick a job and a CV. AI drafts an application email and a cover letter; you edit them in your own voice and save.',
-    steps: ['Pick job & CV', 'AI draft', 'Edit', 'Save'],
+    titleAccent: 'You write, AI proofreads.',
+    intro: 'Pick a job and a CV, then write your application email and cover letter in your own voice. AI only checks spelling and grammar and suggests fixes; it never writes for you.',
+    steps: ['Pick job & CV', 'Write', 'AI proofread', 'Save'],
     tabCompose: 'Write',
     tabSaved: 'Saved letters',
     s1: 'Applying for',
     jobLabel: 'Job',
-    cvLabel: 'CV to write from',
+    cvLabel: 'CV for reference (optional)',
     pickCv: 'Pick a CV',
     typeLabel: 'Document type',
     types: { cover_letter: 'Cover letter', application_email: 'Application email' } as Record<string, string>,
@@ -66,20 +67,20 @@ const copy = {
     lockedNote: 'A saved letter stays tied to this job and CV. Create a new letter to change them.',
     s2: 'Edit your letter',
     newLetter: 'New letter',
-    generate: 'Draft with AI',
-    regenerate: 'Redraft with AI',
-    generating: 'AI is writing…',
+    generate: 'Start writing',
+    regenerate: 'Start a new set',
+    generating: 'Preparing…',
     needJob: 'Pick a job first.',
-    needCv: 'Pick a confirmed CV for AI to write from.',
+    needCv: 'Pick a confirmed CV to refer to while writing.',
     emptyTitle: 'No letter for this selection yet.',
-    emptyBody: 'Press “Draft with AI”. It creates an application email and a cover letter together; then edit and save each one.',
-    missingType: 'This draft set has no document of that type. Press “Redraft with AI” for a new set.',
+    emptyBody: 'Press “Start writing” to open an application email and a cover letter. Insert an outline, write it yourself, then let AI proofread before saving.',
+    missingType: 'This set has no document of that type. Press “Start a new set”.',
     save: 'Save changes',
     saving: 'Saving…',
     saved: 'Saved',
     unsaved: 'Not saved',
     savedToast: 'Letter saved.',
-    generatedToast: 'AI drafted the email and the cover letter.',
+    generatedToast: 'Your email and cover letter are ready to write.',
     generateFail: 'Could not create the letters.',
     saveFail: 'Could not save the letter.',
     confirmNew: 'The current letter has unsaved changes. Discard them?',
@@ -293,8 +294,9 @@ export default function ApplicationAssistancePage() {
   const hasUnsaved = TYPES.some((t) => state.drafts[t] && !state.drafts[t]?.isSaved);
   const locked = hasDrafts;
   const selectedJob = jobs.find((j) => j.id === state.jobId);
-  const blocker = !state.jobId ? c.needJob : !state.cvId ? c.needCv : null;
-  const step = !state.jobId || !state.cvId ? 0 : !hasDrafts ? 1 : hasUnsaved ? 2 : 3;
+  // CV chỉ để tham khảo khi tự viết, không bắt buộc.
+  const blocker = !state.jobId ? c.needJob : null;
+  const step = !state.jobId ? 0 : !hasDrafts ? 1 : hasUnsaved ? 2 : 3;
 
   const updateDraft = (patch: Partial<ApplicationDraft>) =>
     setState((prev) => {
@@ -311,12 +313,13 @@ export default function ApplicationAssistancePage() {
   };
 
   const handleGenerate = async () => {
-    if (blocker || !state.jobId || !state.cvId) return;
+    if (blocker || !state.jobId) return;
     if (hasUnsaved && !window.confirm(c.confirmNew)) return;
     setIsGenerating(true);
     setError(null);
     try {
-      const created = await generateApplicationDrafts({ jobId: state.jobId, resumeId: state.cvId, language: state.language });
+      // AI không viết giùm: mở khung trống để người dùng tự viết.
+      const created = createOwnDrafts({ jobId: state.jobId, resumeId: state.cvId, language: state.language });
       const drafts: DraftSet = {};
       for (const d of created) drafts[d.contentType] = d;
       setState((prev) => ({ ...prev, drafts }));
@@ -547,6 +550,22 @@ export default function ApplicationAssistancePage() {
                   candidateName={profile?.name}
                   fitHref={fitHref}
                   disabled={isGenerating}
+                />
+                <ProofreadPanel
+                  key={draft.id}
+                  text={[draft.subject, draft.content].filter(Boolean).join('\n\n')}
+                  language={state.language}
+                  vi={isVietnamese}
+                  disabled={isGenerating}
+                  onApply={(original, suggestion) =>
+                    setState((prev) => {
+                      const current = prev.drafts[prev.activeType];
+                      if (!current) return prev;
+                      const content = current.content.includes(original) ? current.content.replace(original, suggestion) : current.content;
+                      const subject = content === current.content && current.subject?.includes(original) ? current.subject.replace(original, suggestion) : current.subject;
+                      return { ...prev, drafts: { ...prev.drafts, [prev.activeType]: { ...current, content, subject, isSaved: false } } };
+                    })
+                  }
                 />
                 <div className="mt-7 flex flex-col gap-3 border-t border-ink pt-5 sm:flex-row sm:flex-wrap sm:items-center">
                   <button

@@ -96,7 +96,7 @@ export const ALL_SYSTEM_PERMISSIONS: UserPermission[] = [
   },
 ];
 
-/** Quyền nào thuộc vai trò nào: chỉ hiện và chỉ cấp đúng quyền của vai trò đó (ứng viên không thấy quyền của cố vấn…). */
+/** Quyền nào thuộc vai trò nào: chỉ hiện và chỉ cấp đúng quyền của vai trò đó (ứng viên không thấy quyền của tư vấn viên…). */
 const ROLE_PERMISSION_KEYS: Record<UserRole, string[]> = {
   CANDIDATE: ['upload_resumes', 'match_jobs', 'book_consultation', 'access_ai_assistant', 'run_ats_audit', 'generate_cover_letter'],
   CAREER_CONSULTANT: ['view_assigned_consultations', 'review_candidate_cv', 'provide_career_advice', 'access_ai_assistant'],

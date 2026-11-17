@@ -69,7 +69,7 @@ export function toSubscriptionPlan(row: ApiRow): SubscriptionPlan {
     tierId: str(row.id),
     tierCode: code,
     name: str(row.display_name) || code,
-    description: monthly > 0 ? `${fmt(monthly)} ${str(row.currency) || 'VND'} mỗi 30 ngày. Dịch vụ cố vấn thanh toán riêng.` : 'Dùng thử các tính năng AI cơ bản',
+    description: monthly > 0 ? `${fmt(monthly)} ${str(row.currency) || 'VND'} mỗi 30 ngày. Dịch vụ tư vấn viên thanh toán riêng.` : 'Dùng thử các tính năng AI cơ bản',
     monthlyPriceVND: monthly,
     // Backend tính tiền theo số tháng, không có giá năm riêng.
     yearlyPriceVND: monthly * 12,

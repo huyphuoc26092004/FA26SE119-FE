@@ -6,7 +6,7 @@ export function UnauthorizedPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="relative grid min-h-screen place-items-center bg-slate-50 p-5">
+    <div className="relative grid min-h-[var(--vh100)] place-items-center bg-slate-50 p-5">
       <div className="absolute top-6 right-6">
         <LanguageSwitcher />
       </div>
@@ -26,7 +26,7 @@ export function NotFoundPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="relative grid min-h-screen place-items-center bg-slate-50 p-5">
+    <div className="relative grid min-h-[var(--vh100)] place-items-center bg-slate-50 p-5">
       <div className="absolute top-6 right-6">
         <LanguageSwitcher />
       </div>
