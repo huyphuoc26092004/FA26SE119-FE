@@ -53,6 +53,24 @@ const COLUMN_LABELS_VI: Record<string, string> = {
   inserted_count: 'Đã nạp',
 };
 
+/** Bộ lọc thêm cho các tab nhật ký hệ thống (ngoài mức độ, tính năng, trạng thái). */
+const TAB_FILTERS: Partial<Record<Category, { key: string; label: string }[]>> = {
+  logs: [
+    { key: 'component', label: 'Thành phần' },
+    { key: 'event_type', label: 'Sự kiện' },
+  ],
+  'ai-usage': [
+    { key: 'provider', label: 'Nhà cung cấp' },
+    { key: 'model_name', label: 'Mô hình' },
+  ],
+  'indexing-jobs': [{ key: 'entity_type', label: 'Đối tượng' }],
+  'vector-stores': [
+    { key: 'provider', label: 'Nhà cung cấp' },
+    { key: 'status', label: 'Trạng thái' },
+  ],
+  'crawl-runs': [{ key: 'source_site', label: 'Nguồn' }],
+};
+
 const isTime = (key: string) => key.endsWith('_at') || key === 'timestamp';
 const cell = (row: ApiRow, key: string) => {
   const value = row[key];
@@ -104,6 +122,7 @@ export default function SystemLogsPage() {
   const [selectedLevel, setSelectedLevel] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [selectedFeature, setSelectedFeature] = useState<string>('ALL');
+  const [extra, setExtra] = useState<Record<string, string>>({});
 
   // Modal detail
   const [open, setOpen] = useState<ApiRow | null>(null);
@@ -186,6 +205,14 @@ export default function SystemLogsPage() {
     return Array.from(set).sort();
   }, [list]);
 
+  const extraOptions = useMemo(
+    () =>
+      (isAudit ? [] : (TAB_FILTERS[tab] ?? []))
+        .map((f) => ({ ...f, values: Array.from(new Set(list.map((r) => str(r[f.key])).filter(Boolean))).sort() }))
+        .filter((f) => f.values.length > 0),
+    [isAudit, tab, list],
+  );
+
   // Filter application
   const q = search.trim().toLowerCase();
   const shown = useMemo(() => {
@@ -220,35 +247,6 @@ export default function SystemLogsPage() {
       if (selectedActor !== 'ALL') {
         result = result.filter((r) => str(r.actor_user_id) === selectedActor);
       }
-
-      // Time Range
-      if (timeFilter !== 'ALL') {
-        const now = Date.now();
-        const getRowTime = (r: ApiRow) => {
-          const raw = r.created_at || r.started_at || r.timestamp;
-          return raw ? new Date(str(raw)).getTime() : 0;
-        };
-
-        if (timeFilter === '24h') {
-          const since = now - 24 * 60 * 60 * 1000;
-          result = result.filter((r) => getRowTime(r) >= since);
-        } else if (timeFilter === '7d') {
-          const since = now - 7 * 24 * 60 * 60 * 1000;
-          result = result.filter((r) => getRowTime(r) >= since);
-        } else if (timeFilter === '30d') {
-          const since = now - 30 * 24 * 60 * 60 * 1000;
-          result = result.filter((r) => getRowTime(r) >= since);
-        } else if (timeFilter === 'custom') {
-          if (dateFrom) {
-            const fromTs = new Date(`${dateFrom}T00:00:00`).getTime();
-            result = result.filter((r) => getRowTime(r) >= fromTs);
-          }
-          if (dateTo) {
-            const toTs = new Date(`${dateTo}T23:59:59.999`).getTime();
-            result = result.filter((r) => getRowTime(r) <= toTs);
-          }
-        }
-      }
     } else {
       // Other tabs
       if (selectedLevel !== 'ALL') {
@@ -259,6 +257,38 @@ export default function SystemLogsPage() {
       }
       if (selectedFeature !== 'ALL') {
         result = result.filter((r) => str(r.feature_code) === selectedFeature);
+      }
+      for (const [key, value] of Object.entries(extra)) {
+        if (value !== 'ALL') result = result.filter((r) => str(r[key]) === value);
+      }
+    }
+
+    // Time Range
+    if (timeFilter !== 'ALL') {
+      const now = Date.now();
+      const getRowTime = (r: ApiRow) => {
+        const raw = r.created_at || r.started_at || r.timestamp;
+        return raw ? new Date(str(raw)).getTime() : 0;
+      };
+
+      if (timeFilter === '24h') {
+        const since = now - 24 * 60 * 60 * 1000;
+        result = result.filter((r) => getRowTime(r) >= since);
+      } else if (timeFilter === '7d') {
+        const since = now - 7 * 24 * 60 * 60 * 1000;
+        result = result.filter((r) => getRowTime(r) >= since);
+      } else if (timeFilter === '30d') {
+        const since = now - 30 * 24 * 60 * 60 * 1000;
+        result = result.filter((r) => getRowTime(r) >= since);
+      } else if (timeFilter === 'custom') {
+        if (dateFrom) {
+          const fromTs = new Date(`${dateFrom}T00:00:00`).getTime();
+          result = result.filter((r) => getRowTime(r) >= fromTs);
+        }
+        if (dateTo) {
+          const toTs = new Date(`${dateTo}T23:59:59.999`).getTime();
+          result = result.filter((r) => getRowTime(r) <= toTs);
+        }
       }
     }
 
@@ -277,6 +307,7 @@ export default function SystemLogsPage() {
     selectedLevel,
     selectedStatus,
     selectedFeature,
+    extra,
     userMap,
   ]);
 
@@ -291,7 +322,8 @@ export default function SystemLogsPage() {
       dateTo ||
       selectedLevel !== 'ALL' ||
       selectedStatus !== 'ALL' ||
-      selectedFeature !== 'ALL'
+      selectedFeature !== 'ALL' ||
+      Object.values(extra).some((v) => v !== 'ALL')
   );
 
   const resetFilters = () => {
@@ -306,6 +338,7 @@ export default function SystemLogsPage() {
     setSelectedLevel('ALL');
     setSelectedStatus('ALL');
     setSelectedFeature('ALL');
+    setExtra({});
   };
 
   const handleCopyJson = (data: unknown) => {
@@ -346,7 +379,16 @@ export default function SystemLogsPage() {
         intro="Hiển thị 100 bản ghi mới nhất. Bấm một dòng để xem đầy đủ."
       />
 
-      {!isAudit && <UnderlineTabs value={tab} onChange={setTab} tabs={LOG_TABS} />}
+      {!isAudit && (
+        <UnderlineTabs
+          value={tab}
+          onChange={(next) => {
+            setTab(next);
+            resetFilters();
+          }}
+          tabs={LOG_TABS}
+        />
+      )}
 
       {/* Bộ lọc kiểm toán */}
       <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 space-y-4">
@@ -476,42 +518,6 @@ export default function SystemLogsPage() {
                   })}
                 </select>
               </label>
-
-              {/* Lọc theo Khoảng thời gian */}
-              <label className="flex items-center gap-2">
-                <span className="text-slate-500">Thời gian:</span>
-                <select
-                  value={timeFilter}
-                  onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
-                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[13px] text-ink outline-none focus:border-brand"
-                >
-                  <option value="ALL">Tất cả thời gian</option>
-                  <option value="24h">24 giờ qua</option>
-                  <option value="7d">7 ngày qua</option>
-                  <option value="30d">30 ngày qua</option>
-                  <option value="custom">Tuỳ chọn ngày…</option>
-                </select>
-              </label>
-
-              {timeFilter === 'custom' && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[13px]"
-                    aria-label="Từ ngày"
-                  />
-                  <span className="text-slate-400">—</span>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[13px]"
-                    aria-label="Đến ngày"
-                  />
-                </div>
-              )}
             </>
           ) : (
             <>
@@ -569,7 +575,61 @@ export default function SystemLogsPage() {
                   </select>
                 </label>
               )}
+
+              {extraOptions.map((f) => (
+                <label key={f.key} className="flex items-center gap-2">
+                  <span className="text-slate-500">{f.label}:</span>
+                  <select
+                    value={extra[f.key] ?? 'ALL'}
+                    onChange={(e) => setExtra((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[13px] text-ink outline-none focus:border-brand"
+                  >
+                    <option value="ALL">Tất cả</option>
+                    {f.values.map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
             </>
+          )}
+
+          {/* Lọc theo Khoảng thời gian */}
+          <label className="flex items-center gap-2">
+            <span className="text-slate-500">Thời gian:</span>
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
+              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[13px] text-ink outline-none focus:border-brand"
+            >
+              <option value="ALL">Tất cả thời gian</option>
+              <option value="24h">24 giờ qua</option>
+              <option value="7d">7 ngày qua</option>
+              <option value="30d">30 ngày qua</option>
+              <option value="custom">Tuỳ chọn ngày…</option>
+            </select>
+          </label>
+
+          {timeFilter === 'custom' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[13px]"
+                aria-label="Từ ngày"
+              />
+              <span className="text-slate-400">—</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[13px]"
+                aria-label="Đến ngày"
+              />
+            </div>
           )}
 
           <span className="ml-auto text-slate-500">
