@@ -126,9 +126,11 @@
 }
 
 /*
- * Kích cỡ mặc định: trên màn hình máy tính, toàn bộ giao diện hiển thị như khi trình duyệt zoom ~87,5%
- * (yêu cầu: trang nhìn như mức 85–90%). Điện thoại/máy tính bảng giữ 100% để chữ không quá nhỏ.
- * --app-zoom dùng để bù cho các chiều cao theo viewport (vh/dvh) vốn cũng bị thu theo zoom.
+ * Tự co giãn theo màn hình: trên máy tính, toàn bộ giao diện được phóng to/thu nhỏ theo độ rộng màn hình
+ * để bố cục luôn hiển thị như trên một màn hình rộng khoảng 1.700–1.760px (laptop 13–14" giữ mức ~87,5% như cũ,
+ * màn 24" Full HD, 27" 2K, 4K được phóng to tương ứng nên không còn khoảng trống hai bên và chữ không bị nhỏ).
+ * Điện thoại/máy tính bảng giữ 100% để chữ không quá nhỏ; bố cục tự xếp lại theo breakpoint.
+ * --app-zoom dùng để bù cho các chiều cao theo viewport (vh/dvh) vốn cũng bị thu/phóng theo zoom.
  */
 :root {
   --app-zoom: 1;
@@ -141,6 +143,52 @@
   }
   html {
     zoom: var(--app-zoom);
+  }
+}
+@media (min-width: 1600px) {
+  :root {
+    --app-zoom: 0.92;
+  }
+}
+@media (min-width: 1760px) {
+  :root {
+    --app-zoom: 1;
+  }
+}
+@media (min-width: 1900px) {
+  :root {
+    --app-zoom: 1.08;
+  }
+}
+@media (min-width: 2200px) {
+  :root {
+    --app-zoom: 1.25;
+  }
+}
+@media (min-width: 2500px) {
+  :root {
+    --app-zoom: 1.42;
+  }
+}
+@media (min-width: 2900px) {
+  :root {
+    --app-zoom: 1.65;
+  }
+}
+@media (min-width: 3400px) {
+  :root {
+    --app-zoom: 1.95;
+  }
+}
+/* Màn hình thấp (cửa sổ nhỏ, màn ultrawide): không phóng to quá mức khiến nội dung theo chiều dọc bị chật. */
+@media (min-width: 1900px) and (max-height: 900px) {
+  :root {
+    --app-zoom: 1;
+  }
+}
+@media (min-width: 2500px) and (max-height: 1200px) {
+  :root {
+    --app-zoom: 1.2;
   }
 }
 

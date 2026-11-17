@@ -110,7 +110,7 @@ export default function LearningPathPage() {
   };
 
   return (
-    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+    <div className="w-full max-w-[min(100%,84rem)] pb-[clamp(2rem,5vw,4rem)]">
       <nav className="flex flex-wrap items-baseline gap-1.5 text-[13px] text-slate-600">
         <span>{c.crumbGroup}</span>
         <span>/</span>

@@ -535,7 +535,7 @@ export default function CvJobFitPage() {
   if (resumesError || jobsError) return <ErrorState message={authErrorMessage(resumesError || jobsError, c.fitError)} />;
   if (!resumes?.length || !jobs?.length) {
     return (
-      <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+      <div className="w-full max-w-[min(100%,84rem)] pb-[clamp(2rem,5vw,4rem)]">
         <h1 className="text-[clamp(2.25rem,5vw,4.25rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
           {c.idleTitle}
           <span className="block text-brand">{c.idleLine}</span>
@@ -607,7 +607,7 @@ export default function CvJobFitPage() {
     : [];
 
   return (
-    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+    <div className="w-full max-w-[min(100%,84rem)] pb-[clamp(2rem,5vw,4rem)]">
       {toastMessage && (
         <div
           role="status"

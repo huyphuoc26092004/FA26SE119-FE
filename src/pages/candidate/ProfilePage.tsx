@@ -449,7 +449,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
   const currentLocations = formData.preferredLocations || profile.preferredLocations || [];
 
   return (
-    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+    <div className="w-full max-w-[min(100%,84rem)] pb-[clamp(2rem,5vw,4rem)]">
       {/* Header */}
       <header>
         <div className="flex flex-wrap items-center justify-between gap-3">

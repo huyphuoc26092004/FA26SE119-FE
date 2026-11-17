@@ -215,7 +215,7 @@ export default function ResumesPage() {
   );
 
   return (
-    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+    <div className="w-full max-w-[min(100%,84rem)] pb-[clamp(2rem,5vw,4rem)]">
       {/* Headline */}
       <header>
         <p className="text-sm text-brand">{c.pageLabel}</p>

@@ -351,7 +351,7 @@ export default function UploadResumePage() {
       : { label: c.pageLabel, main: c.headline, accent: c.headlineAccent, intro: c.intro };
 
   return (
-    <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
+    <div className="w-full max-w-[min(100%,84rem)] pb-[clamp(2rem,5vw,4rem)]">
       <Link to="/candidate/resumes" className={`${textLink} text-slate-600 hover:text-ink`}>
         <ArrowLeft size={14} aria-hidden="true" />
         {c.back}
