@@ -17,7 +17,7 @@ export default function ManagerWorkSchedulePage() {
     refetchInterval: 30_000,
   });
 
-  // Tự động chọn consultant đầu tiên khi danh sách tải xong nếu chưa chọn ai
+  // Tự động chọn consultant đầu tiên khi danh sách tải xong nếu chưa có lựa chọn
   const activeId =
     selectedId || (consultants.data && consultants.data.length > 0 ? str(consultants.data[0].user_id || consultants.data[0].id) : '');
 
@@ -35,7 +35,7 @@ export default function ManagerWorkSchedulePage() {
 
   return (
     <main className="space-y-6 pb-10">
-      {/* ── HEADER CHUẨN TRANG (TƯƠNG TỰ BÊN CA LÀM VIỆC CỦA TÔI, KHÔNG DÙNG CARD) ── */}
+      {/* ── HEADER TRANG TRÊN NỀN XÁM CANVAS (ĐỒNG BỘ CHUẨN CÁC TRANG DASHBOARD) ── */}
       <header>
         <h1 className="text-3xl font-medium text-ink">Phân công ca làm việc</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
@@ -43,127 +43,125 @@ export default function ManagerWorkSchedulePage() {
         </p>
       </header>
 
-      {/* ── KHUNG SPLIT-PANE ĐỒNG NHẤT, VỪA KHÍT (FLAT SPLIT-PANE) ── */}
+      {/* ── KHUNG SPLIT-PANE TRẮNG ĐỒNG NHẤT (VỪA KHÍT KHUNG, KHÔNG DÙNG CARD LỒNG NHAU) ── */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
         <div className="flex flex-col lg:flex-row">
           {/* ── CỘT TRÁI: DANH SÁCH CONSULTANT (w-80, BORDER-R) ── */}
-          <aside className="flex w-full shrink-0 flex-col justify-between border-b border-slate-200 bg-white lg:w-80 lg:border-b-0 lg:border-r">
-            <div className="flex flex-col">
-              {/* Tiêu đề cột trái */}
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
-                  <Users size={16} className="text-brand" aria-hidden="true" />
-                  <span>Chọn Consultant</span>
-                </h2>
-                {consultants.data && (
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                    {consultantCount} nhân sự
-                  </span>
-                )}
-              </div>
-
-              {/* Trạng thái tải */}
-              {consultants.isPending && (
-                <div className="py-8 text-center text-xs text-slate-500">
-                  <div className="mx-auto mb-2 h-5 w-5 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-                  <p>Đang tải danh sách Consultant…</p>
-                </div>
+          <aside className="w-full shrink-0 border-b border-slate-200 bg-white lg:w-80 lg:border-b-0 lg:border-r lg:sticky lg:top-4 lg:self-start">
+            {/* Header cột trái */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+                <Users size={16} className="text-brand" aria-hidden="true" />
+                <span>Chọn Consultant</span>
+              </h2>
+              {consultants.data && (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                  {consultantCount} nhân sự
+                </span>
               )}
-
-              {/* Trạng thái lỗi */}
-              {consultants.error && (
-                <div role="alert" className="m-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-danger">
-                  <p>{consultants.error.message}</p>
-                  <button
-                    type="button"
-                    className="mt-2 font-medium underline cursor-pointer"
-                    onClick={() => void consultants.refetch()}
-                  >
-                    Thử lại
-                  </button>
-                </div>
-              )}
-
-              {/* Danh sách trống */}
-              {!consultants.isPending && !consultants.error && consultantCount === 0 && (
-                <div className="py-8 text-center text-xs text-slate-500">
-                  Chưa có Consultant trong danh sách.
-                </div>
-              )}
-
-              {/* Flat List Consultant (Không viền hộp, hover bg-slate-50, active bg-emerald-50/70 kèm vạch điểm nhấn) */}
-              <div className="divide-y divide-slate-100 overflow-y-auto" role="group" aria-label="Consultant cần phân công">
-                {consultants.data?.map((row) => {
-                  const id = str(row.user_id || row.id);
-                  const isSelected = id === activeId;
-                  const name = str(row.full_name);
-                  const email = str(row.email);
-                  const roles = texts(row.target_roles).join(', ') || 'Consultant';
-                  const initials = name
-                    ? name
-                        .trim()
-                        .split(/\s+/)
-                        .slice(-2)
-                        .map((w) => w[0])
-                        .join('')
-                        .toUpperCase()
-                    : 'CV';
-
-                  return (
-                    <button
-                      type="button"
-                      key={id}
-                      aria-pressed={isSelected}
-                      onClick={() => {
-                        setSelectedId(id);
-                        setBookingOffset(0);
-                      }}
-                      className={`relative flex w-full cursor-pointer items-start gap-3 border-l-4 px-4 py-3 text-left transition-colors ${
-                        isSelected
-                          ? 'border-brand bg-emerald-50/70 text-ink'
-                          : 'border-transparent bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div
-                        className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-semibold ${
-                          isSelected ? 'bg-brand text-white shadow-xs' : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {initials}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1.5">
-                          <span
-                            className={`block truncate text-sm ${
-                              isSelected ? 'font-semibold text-brand' : 'font-medium text-ink'
-                            }`}
-                          >
-                            {name || 'Chưa đặt tên'}
-                          </span>
-                          {isSelected && (
-                            <span className="h-2 w-2 shrink-0 rounded-full bg-brand" title="Đang chọn" />
-                          )}
-                        </div>
-                        <span className="mt-0.5 block truncate text-xs text-slate-500">{email || '—'}</span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          <span
-                            className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-medium ${
-                              isSelected ? 'bg-brand/10 text-brand' : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {roles}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
-            {/* Thanh phân trang gọn 1 hàng ở đáy cột trái */}
-            <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3">
+            {/* Trạng thái tải */}
+            {consultants.isPending && (
+              <div className="py-8 text-center text-xs text-slate-500">
+                <div className="mx-auto mb-2 h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+                <p>Đang tải danh sách…</p>
+              </div>
+            )}
+
+            {/* Trạng thái lỗi */}
+            {consultants.error && (
+              <div role="alert" className="m-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-danger">
+                <p>{consultants.error.message}</p>
+                <button
+                  type="button"
+                  className="mt-1 font-medium underline cursor-pointer"
+                  onClick={() => void consultants.refetch()}
+                >
+                  Thử lại
+                </button>
+              </div>
+            )}
+
+            {/* Danh sách rỗng */}
+            {!consultants.isPending && !consultants.error && consultantCount === 0 && (
+              <div className="py-8 text-center text-xs text-slate-500">
+                Chưa có Consultant trong danh sách.
+              </div>
+            )}
+
+            {/* Danh sách Consultant dạng phẳng (Hover bg-slate-50, Active bg-emerald-50/70 kèm vạch điểm nhấn) */}
+            <div className="divide-y divide-slate-100 overflow-y-auto max-h-[calc(100vh-16rem)]" role="group" aria-label="Consultant cần phân công">
+              {consultants.data?.map((row) => {
+                const id = str(row.user_id || row.id);
+                const isSelected = id === activeId;
+                const name = str(row.full_name);
+                const email = str(row.email);
+                const roles = texts(row.target_roles).join(', ') || 'Consultant';
+                const initials = name
+                  ? name
+                      .trim()
+                      .split(/\s+/)
+                      .slice(-2)
+                      .map((w) => w[0])
+                      .join('')
+                      .toUpperCase()
+                  : 'CV';
+
+                return (
+                  <button
+                    type="button"
+                    key={id}
+                    aria-pressed={isSelected}
+                    onClick={() => {
+                      setSelectedId(id);
+                      setBookingOffset(0);
+                    }}
+                    className={`relative flex w-full cursor-pointer items-start gap-3 border-l-4 px-4 py-3 text-left transition-colors ${
+                      isSelected
+                        ? 'border-brand bg-emerald-50/70 text-ink'
+                        : 'border-transparent bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-semibold ${
+                        isSelected ? 'bg-brand text-white shadow-xs' : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {initials}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span
+                          className={`block truncate text-sm ${
+                            isSelected ? 'font-semibold text-brand' : 'font-medium text-ink'
+                          }`}
+                        >
+                          {name || 'Chưa đặt tên'}
+                        </span>
+                        {isSelected && (
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-brand" title="Đang chọn" />
+                        )}
+                      </div>
+                      <span className="mt-0.5 block truncate text-xs text-slate-500">{email || '—'}</span>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <span
+                          className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                            isSelected ? 'bg-brand/10 text-brand' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {roles}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Thanh phân trang gom gọn ngay dưới danh sách */}
+            <div className="border-t border-slate-100 bg-slate-50/70 px-4 py-2.5">
               <div className="flex items-center justify-between text-xs text-slate-600">
                 <button
                   type="button"
@@ -204,7 +202,7 @@ export default function ManagerWorkSchedulePage() {
             </div>
           </aside>
 
-          {/* ── CỘT PHẢI: NỘI DUNG CHÍNH (VỪA KHÍT, HIỂN THỊ ĐẦY ĐỦ NHƯ BÊN CA LÀM VIỆC CỦA TÔI) ── */}
+          {/* ── CỘT PHẢI: NỘI DUNG CHÍNH (VỪA KHÍT, HIỂN THỊ ĐẦY ĐỦ NHƯ CA LÀM VIỆC CỦA TÔI) ── */}
           <div className="min-w-0 flex-1 bg-white p-5 sm:p-6 space-y-6">
             {activeId ? (
               <>
@@ -231,7 +229,7 @@ export default function ManagerWorkSchedulePage() {
                   </div>
                 </div>
 
-                {/* Bảng phân công ca làm việc (chuẩn giao diện bảng + bộ lọc như Ca làm việc của tôi) */}
+                {/* Bảng phân công ca làm việc (giao diện bảng phẳng chuẩn, không bọc card con) */}
                 <WorkShiftPanel key={activeId} consultantId={activeId} flat />
 
                 {/* Bảng booking của Consultant */}
