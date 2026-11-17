@@ -9,13 +9,9 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  LayoutGrid,
-  List,
-  Calendar,
   RotateCcw,
   CheckCircle2,
   AlertCircle,
-  Layers,
 } from 'lucide-react';
 import { listWorkShifts, saveWorkShift, cancelWorkShift, type WorkShift } from '../../services/workShiftService';
 
@@ -24,14 +20,13 @@ const labels = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'
 const shortDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 const field = 'mt-2 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/10';
-const primary = 'inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-800 disabled:opacity-50 cursor-pointer';
-const secondary = 'inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 py-2.5 text-sm text-ink transition-colors hover:bg-slate-50 disabled:opacity-50 cursor-pointer';
+const primary = 'inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-800 disabled:opacity-50 cursor-pointer';
+const secondary = 'inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 py-2 text-sm text-ink transition-colors hover:bg-slate-50 disabled:opacity-50 cursor-pointer';
 
 const vnDate = (value: string) => new Date(value).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 const vnTime = (value: string) => new Date(value).toLocaleTimeString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' });
 
 type TimePreset = 'ALL' | 'today' | 'this-week' | 'upcoming' | 'started' | 'cancelled';
-type ViewMode = 'grid' | 'grouped' | 'list';
 
 function getShiftDuration(startsAt: string, endsAt: string, lunchStart?: string | null, lunchEnd?: string | null) {
   const start = new Date(startsAt).getTime();
@@ -67,12 +62,20 @@ function parseShiftDate(iso: string) {
   const dateStr = d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' });
   const dayNum = d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit' });
   const monthNum = d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', month: '2-digit' });
-  const dayIndex = (d.getDay() + 6) % 7; // 0=Mon, 6=Sun
+  const dayIndex = (d.getDay() + 6) % 7;
   const isWeekend = d.getDay() === 0 || d.getDay() === 6;
   return { weekday, dateStr, dayNum, monthNum, shortDay: shortDays[dayIndex], isWeekend };
 }
 
-export default function WorkShiftPanel({ consultantId = '', readOnly = false }: { consultantId?: string; readOnly?: boolean }) {
+export default function WorkShiftPanel({
+  consultantId = '',
+  readOnly = false,
+  flat = false,
+}: {
+  consultantId?: string;
+  readOnly?: boolean;
+  flat?: boolean;
+}) {
   const client = useQueryClient();
   const formRef = useRef<HTMLFormElement>(null);
   const today = vnDate(new Date().toISOString());
@@ -84,11 +87,11 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
   const [weekdayFilter, setWeekdayFilter] = useState<string>('ALL');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   // Form & Interaction States
+  const [showAddForm, setShowAddForm] = useState(false);
   const [editing, setEditing] = useState<WorkShift | null>(null);
-  const [cancelId, setCancelId] = useState('');
+  const [cancelShift, setCancelShift] = useState<WorkShift | null>(null);
   const [message, setMessage] = useState('');
   const [validation, setValidation] = useState('');
 
@@ -110,7 +113,8 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
     mutationFn: async (action: () => Promise<unknown>) => action(),
     onSuccess: () => {
       setEditing(null);
-      setCancelId('');
+      setCancelShift(null);
+      setShowAddForm(false);
       setMessage('Đã cập nhật lịch làm việc.');
       void client.invalidateQueries({ queryKey: ['work-shifts'] });
       void client.invalidateQueries({ queryKey: ['consultant-availability'] });
@@ -177,15 +181,16 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
     mutation.mutate(() => saveWorkShift(input, editing?.id));
   }
 
-  function editShift(shift: WorkShift) {
+  function handleStartEdit(shift: WorkShift) {
     setEditing(shift);
+    setShowAddForm(true);
     setValidation('');
     setMessage('');
     mutation.reset();
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  // Raw counts
+  // Counts
   const rawShifts = useMemo(() => query.data ?? [], [query.data]);
   const activeCount = rawShifts.filter((shift) => !shift.cancelled_at).length;
   const nowTs = Date.now();
@@ -256,48 +261,20 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
     setCustomTo('');
   };
 
-  // Group by week helper
-  const weeklyGroups = useMemo(() => {
-    if (viewMode !== 'grouped') return [];
-    const groups: { title: string; shifts: WorkShift[] }[] = [];
-    const map = new Map<string, WorkShift[]>();
-
-    for (const shift of filteredShifts) {
-      const d = new Date(shift.starts_at);
-      const day = (d.getDay() + 6) % 7;
-      const mon = new Date(d);
-      mon.setDate(d.getDate() - day);
-      const sun = new Date(mon);
-      sun.setDate(mon.getDate() + 6);
-      const key = `${mon.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} – ${sun.toLocaleDateString(
-        'vi-VN',
-        { day: '2-digit', month: '2-digit', year: 'numeric' }
-      )}`;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(shift);
-    }
-
-    map.forEach((shifts, title) => {
-      groups.push({ title, shifts });
-    });
-
-    return groups;
-  }, [filteredShifts, viewMode]);
-
   return (
-    <section className="min-w-0 space-y-6 rounded-2xl border border-slate-200 bg-white p-5 sm:p-7 shadow-xs">
+    <section className={`min-w-0 ${flat ? 'space-y-6' : 'space-y-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs'}`}>
       {/* ── Tiêu đề & Chọn tháng ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-ink">
-            {readOnly ? 'Ca làm việc được phân công' : 'Thiết lập ca làm việc'}
+            {readOnly ? 'Ca làm việc được phân công' : flat ? 'Lịch ca trong tháng' : 'Phân công ca làm việc'}
           </h2>
-          <p className="mt-1.5 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500">
             Giờ Việt Nam (UTC+7) · Định dạng 24 giờ · Nghỉ 15 phút giữa các slot tư vấn.
           </p>
         </div>
 
-        {/* Thanh điều hướng tháng */}
+        {/* Điều hướng tháng */}
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -309,23 +286,21 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
             <ChevronLeft size={16} />
           </button>
 
-          <div className="relative">
-            <input
-              type="month"
-              required
-              value={month}
-              onChange={(e) => {
-                if (e.target.value) {
-                  setMonth(e.target.value);
-                  setEditing(null);
-                  setValidation('');
-                  setMessage('');
-                }
-              }}
-              className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 text-center text-sm font-medium text-ink outline-none transition-colors hover:border-slate-300 focus:border-brand focus:bg-white"
-              aria-label="Tháng xem lịch"
-            />
-          </div>
+          <input
+            type="month"
+            required
+            value={month}
+            onChange={(e) => {
+              if (e.target.value) {
+                setMonth(e.target.value);
+                setEditing(null);
+                setValidation('');
+                setMessage('');
+              }
+            }}
+            className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-slate-50/80 px-3 text-center text-sm font-medium text-ink outline-none transition-colors hover:border-slate-300 focus:border-brand focus:bg-white"
+            aria-label="Tháng xem lịch"
+          />
 
           <button
             type="button"
@@ -346,37 +321,57 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
               Hôm nay
             </button>
           )}
+
+          {!readOnly && !showAddForm && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setShowAddForm(true);
+              }}
+              className="ml-2 inline-flex items-center gap-1.5 rounded-xl bg-brand px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-800 cursor-pointer"
+            >
+              <Plus size={14} />
+              <span>Thêm ca</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── Thống kê tổng quan nhanh ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3.5 transition-colors">
-          <span className="text-[12px] text-slate-500">Tổng ca trong tháng</span>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">
-            {activeCount} <span className="text-xs font-normal text-slate-500">ca</span>
-          </p>
+      {/* ── Thống kê tóm tắt dạng dải ngang gọn gàng (Không dùng thẻ card) ── */}
+      <div className="flex flex-wrap items-center gap-2.5 text-xs">
+        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-700">
+          <CalendarDays size={14} className="text-slate-500" />
+          <span>
+            Tổng số: <strong className="font-semibold text-ink">{activeCount}</strong> ca
+          </span>
         </div>
 
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3.5 transition-colors">
-          <span className="text-[12px] text-emerald-800">Sắp tới</span>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-emerald-700">
-            {upcomingCount} <span className="text-xs font-normal text-emerald-600">ca</span>
-          </p>
+        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-emerald-800">
+          <span>
+            Sắp tới: <strong className="font-semibold text-emerald-700">{upcomingCount}</strong>
+          </span>
         </div>
 
-        <div className="rounded-xl border border-sky-100 bg-sky-50/40 p-3.5 transition-colors">
-          <span className="text-[12px] text-sky-800">Đã diễn ra / Bắt đầu</span>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-sky-700">
-            {startedCount} <span className="text-xs font-normal text-sky-600">ca</span>
-          </p>
+        <div className="flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-sky-800">
+          <span>
+            Đã bắt đầu: <strong className="font-semibold text-sky-700">{startedCount}</strong>
+          </span>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3.5 transition-colors">
-          <span className="text-[12px] text-slate-500">Tổng giờ tư vấn</span>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-brand">
-            {totalWorkingHours} <span className="text-xs font-normal text-slate-500">giờ</span>
-          </p>
+        {cancelledCount > 0 && (
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-slate-600">
+            <span>
+              Đã hủy: <strong className="font-semibold">{cancelledCount}</strong>
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-700">
+          <Clock size={13} className="text-slate-500" />
+          <span>
+            Tổng giờ làm: <strong className="font-semibold text-brand">{totalWorkingHours}h</strong>
+          </span>
         </div>
       </div>
 
@@ -388,29 +383,36 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
         })}
       </datalist>
 
-      {/* ── Form phân công / Chỉnh sửa ca (Chỉ cho Manager) ── */}
-      {!readOnly && (
+      {/* ── Form phân công ca làm việc (Chỉ hiển thị khi Manager bấm "Thêm ca" hoặc "Sửa") ── */}
+      {!readOnly && showAddForm && (
         <form
           ref={formRef}
           key={(editing?.id || 'new') + month}
           onSubmit={submit}
-          className="space-y-5 rounded-2xl border border-brand/20 bg-brand/[0.02] p-5 sm:p-6"
+          className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5"
         >
-          <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 font-medium text-ink">
-              {editing ? <Pencil size={17} className="text-brand" /> : <Plus size={17} className="text-brand" />}
-              {editing ? 'Chỉnh sửa ca đã phân công' : 'Thêm ca làm việc mới'}
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
+              {editing ? <Pencil size={15} className="text-brand" /> : <Plus size={15} className="text-brand" />}
+              {editing ? 'Chỉnh sửa ca làm việc' : 'Thêm ca làm việc mới'}
             </h3>
-            {editing && (
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                Đang chỉnh sửa
-              </span>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setEditing(null);
+                setValidation('');
+              }}
+              className="text-slate-400 hover:text-ink cursor-pointer"
+              title="Đóng form"
+            >
+              <X size={16} />
+            </button>
           </div>
 
-          <fieldset disabled={mutation.isPending} className="space-y-5 disabled:opacity-60">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="min-w-0 text-sm text-slate-700">
+          <fieldset disabled={mutation.isPending} className="space-y-4 disabled:opacity-60">
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              <label className="text-xs text-slate-700 font-medium">
                 {editing ? 'Ngày làm việc' : 'Có hiệu lực từ ngày'}
                 <input
                   name="from"
@@ -421,7 +423,7 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                   className={field}
                 />
               </label>
-              <label className="min-w-0 text-sm text-slate-700">
+              <label className="text-xs text-slate-700 font-medium">
                 {editing ? 'Đến ngày' : 'Có hiệu lực đến ngày'}
                 <input
                   name="to"
@@ -432,7 +434,7 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                   className={field}
                 />
               </label>
-              <label className="min-w-0 text-sm text-slate-700">
+              <label className="text-xs text-slate-700 font-medium">
                 Bắt đầu ca
                 <input
                   name="start"
@@ -447,7 +449,7 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                   className={field}
                 />
               </label>
-              <label className="min-w-0 text-sm text-slate-700">
+              <label className="text-xs text-slate-700 font-medium">
                 Kết thúc ca
                 <input
                   name="end"
@@ -464,13 +466,13 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
               </label>
             </div>
 
-            <div className="rounded-xl border border-border bg-white p-4">
-              <h4 className="flex items-center gap-2 text-sm font-medium text-ink">
-                <Coffee size={16} className="text-amber-600" />
+            <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+              <h4 className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+                <Coffee size={14} className="text-amber-600" />
                 Nghỉ trưa <span className="font-normal text-slate-400">(tùy chọn)</span>
               </h4>
-              <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                <label className="min-w-0 text-sm text-slate-700">
+              <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
+                <label className="text-xs text-slate-600">
                   Bắt đầu nghỉ
                   <input
                     name="lunchStart"
@@ -483,7 +485,7 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                     className={field}
                   />
                 </label>
-                <label className="min-w-0 text-sm text-slate-700">
+                <label className="text-xs text-slate-600">
                   Kết thúc nghỉ
                   <input
                     name="lunchEnd"
@@ -497,73 +499,68 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                   />
                 </label>
               </div>
-              <p className="mt-2 text-xs text-slate-500">
-                Bỏ trống cả hai ô nếu không có nghỉ trưa. Slot trùng khoảng nghỉ sẽ không được mở đặt lịch.
+              <p className="mt-2 text-[11px] text-slate-500">
+                Bỏ trống cả hai ô nếu không có nghỉ trưa. Slot trùng khoảng nghỉ sẽ không mở đặt lịch.
               </p>
             </div>
 
             {!editing && (
-              <fieldset>
-                <legend className="text-sm font-medium text-ink">Ngày làm việc trong tuần</legend>
-                <div className="mt-2.5 flex flex-wrap gap-2">
+              <div>
+                <span className="block text-xs font-semibold text-ink">Ngày làm việc trong tuần</span>
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {weekdays.map((day, index) => (
                     <label
                       key={day}
-                      className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition-colors hover:border-brand/40"
+                      className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 hover:border-brand"
                     >
                       <input type="checkbox" name="weekdays" value={day} defaultChecked={index < 5} className="accent-brand" />
                       {labels[index]}
                     </label>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-slate-500">
-                  Ca làm việc được áp dụng cố định vào các thứ đã chọn mỗi tuần, trong thời gian hiệu lực.
-                </p>
-              </fieldset>
+              </div>
             )}
 
-            <div className="flex flex-wrap gap-3 pt-1">
+            <div className="flex items-center gap-2 pt-1">
               <button type="submit" className={primary}>
                 {mutation.isPending ? 'Đang lưu…' : editing ? 'Lưu thay đổi' : 'Phân công ca'}
               </button>
-              {editing && (
-                <button
-                  type="button"
-                  className={secondary}
-                  onClick={() => {
-                    setEditing(null);
-                    setValidation('');
-                    mutation.reset();
-                  }}
-                >
-                  Bỏ chỉnh sửa
-                </button>
-              )}
+              <button
+                type="button"
+                className={secondary}
+                onClick={() => {
+                  setShowAddForm(false);
+                  setEditing(null);
+                  setValidation('');
+                }}
+              >
+                Đóng
+              </button>
             </div>
           </fieldset>
         </form>
       )}
 
       {(validation || mutation.error) && (
-        <div role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 p-3.5 text-sm text-danger border border-red-200">
-          <AlertCircle size={16} className="shrink-0" />
+        <div role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-danger border border-red-200">
+          <AlertCircle size={15} className="shrink-0" />
           <span>{validation || mutation.error?.message}</span>
         </div>
       )}
 
       {message && (
-        <div role="status" className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3.5 text-sm text-emerald-800 border border-emerald-200">
-          <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+        <div role="status" className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 border border-emerald-200">
+          <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
           <span>{message}</span>
         </div>
       )}
 
-      {/* ── THANH BỘ LỌC THỜI GIAN & CHẾ ĐỘ XEM ── */}
-      <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4 space-y-3.5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Lọc nhanh theo thời gian */}
-          <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
-            <span className="mr-1.5 font-medium text-slate-500">Lọc:</span>
+      {/* ── BỘ LỌC THỜI GIAN (Time Filter Bar) ── */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3">
+        {/* Hàng 1: Nút lọc nhanh theo mốc thời gian */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-1 text-xs">
+            <span className="mr-1.5 font-medium text-slate-500">Lọc nhanh:</span>
             {(
               [
                 { value: 'ALL', label: 'Tất cả' },
@@ -582,7 +579,7 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                   onClick={() => setTimePreset(preset.value)}
                   className={`rounded-full px-3 py-1 transition-colors cursor-pointer text-xs ${
                     active
-                      ? 'bg-ink font-medium text-white shadow-xs'
+                      ? 'bg-ink font-medium text-white'
                       : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-ink border border-slate-200'
                   }`}
                 >
@@ -592,54 +589,27 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
             })}
           </div>
 
-          {/* Chuyển đổi chế độ xem (Lưới / Theo tuần / Danh sách) */}
-          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
+          {hasActiveFilters && (
             <button
               type="button"
-              onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-colors cursor-pointer ${
-                viewMode === 'grid' ? 'bg-ink font-medium text-white' : 'text-slate-600 hover:text-ink'
-              }`}
-              title="Dạng lưới thẻ"
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1 text-xs text-danger hover:text-red-800 cursor-pointer"
             >
-              <LayoutGrid size={13} />
-              <span className="hidden sm:inline">Lưới</span>
+              <RotateCcw size={12} />
+              <span>Xoá lọc</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('grouped')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-colors cursor-pointer ${
-                viewMode === 'grouped' ? 'bg-ink font-medium text-white' : 'text-slate-600 hover:text-ink'
-              }`}
-              title="Gộp theo tuần"
-            >
-              <Layers size={13} />
-              <span className="hidden sm:inline">Theo tuần</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-colors cursor-pointer ${
-                viewMode === 'list' ? 'bg-ink font-medium text-white' : 'text-slate-600 hover:text-ink'
-              }`}
-              title="Dạng danh sách"
-            >
-              <List size={13} />
-              <span className="hidden sm:inline">Danh sách</span>
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* Hàng 2: Lọc chi tiết theo Thứ trong tuần & Khoảng ngày */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-3 text-[13px] text-slate-600">
+        {/* Hàng 2: Lọc chi tiết theo Thứ và Khoảng ngày */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-2.5 text-xs text-slate-600">
           <div className="flex flex-wrap items-center gap-4">
-            {/* Lọc theo thứ */}
-            <label className="flex items-center gap-2">
-              <span className="text-slate-500">Thứ trong tuần:</span>
+            <label className="flex items-center gap-1.5">
+              <span className="text-slate-500">Thứ:</span>
               <select
                 value={weekdayFilter}
                 onChange={(e) => setWeekdayFilter(e.target.value)}
-                className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs text-ink outline-none focus:border-brand"
+                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-ink outline-none focus:border-brand"
               >
                 <option value="ALL">Tất cả các thứ</option>
                 {weekdays.map((day, i) => (
@@ -650,8 +620,7 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
               </select>
             </label>
 
-            {/* Lọc khoảng ngày tùy chọn */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-slate-500">Khoảng ngày:</span>
               <input
                 type="date"
@@ -669,42 +638,55 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                 aria-label="Đến ngày"
               />
             </div>
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="inline-flex items-center gap-1 text-xs text-danger transition-colors hover:text-red-800 cursor-pointer"
-              >
-                <RotateCcw size={12} />
-                <span>Xoá lọc</span>
-              </button>
-            )}
           </div>
 
-          <span className="text-xs text-slate-500">
+          <span className="text-slate-500">
             Hiển thị <strong className="text-ink">{filteredShifts.length}</strong> / {rawShifts.length} ca
           </span>
         </div>
       </div>
 
-      {/* Thông tin hỗ trợ */}
-      {!readOnly && (
-        <p className="text-xs leading-5 text-slate-500">
-          Ca đã bắt đầu hoặc có booking chờ/đã xác nhận không thể sửa hay hủy. Cần giải quyết booking trước khi điều chỉnh ca.
-        </p>
+      {/* Hộp xác nhận hủy ca (nếu đang bấm hủy một ca) */}
+      {cancelShift && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900">
+          <div>
+            <span className="font-semibold">Xác nhận hủy ca làm việc?</span>
+            <p className="mt-0.5 text-amber-800">
+              {parseShiftDate(cancelShift.starts_at).weekday}, {parseShiftDate(cancelShift.starts_at).dateStr} (
+              {vnTime(cancelShift.starts_at)} – {vnTime(cancelShift.ends_at)}). Các slot của ca này sẽ ngừng nhận đặt lịch.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate(() => cancelWorkShift(cancelShift.id))}
+              className="rounded-lg bg-danger px-3 py-1.5 font-medium text-white hover:bg-red-800 disabled:opacity-50 cursor-pointer"
+            >
+              Hủy ca này
+            </button>
+            <button
+              type="button"
+              disabled={mutation.isPending}
+              onClick={() => setCancelShift(null)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50 cursor-pointer"
+            >
+              Giữ ca
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* ── Trạng thái tải & Lỗi ── */}
+      {/* ── TRẠNG THÁI TẢI / LỖI / TRỐNG ── */}
       {query.isPending && (
-        <div className="py-12 text-center text-sm text-slate-500">
-          <CalendarDays size={32} className="mx-auto mb-2 text-slate-300 animate-pulse" />
-          <p>Đang tải ca làm việc…</p>
+        <div className="py-10 text-center text-xs text-slate-500">
+          <CalendarDays size={28} className="mx-auto mb-2 text-slate-300 animate-pulse" />
+          <p>Đang tải lịch làm việc…</p>
         </div>
       )}
 
       {query.error && (
-        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-danger">
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-danger">
           <p>{query.error.message}</p>
           <button type="button" className="mt-2 font-medium underline cursor-pointer" onClick={() => void query.refetch()}>
             Tải lại lịch
@@ -712,87 +694,37 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
         </div>
       )}
 
-      {/* Trạng thái trống */}
       {!query.isPending && !query.error && rawShifts.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
-          <CalendarDays size={36} className="mx-auto text-slate-300" aria-hidden="true" />
-          <p className="mt-3 font-medium text-ink">Chưa có ca làm việc nào trong tháng này.</p>
+        <div className="py-12 text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-slate-50 text-slate-400">
+            <CalendarDays size={26} aria-hidden="true" />
+          </div>
+          <p className="mt-3 text-sm font-medium text-ink">Chưa có ca làm việc nào trong tháng này.</p>
           <p className="mt-1 text-xs text-slate-500">
-            {readOnly ? 'Vui lòng liên hệ Quản lý để được phân công ca làm việc.' : 'Sử dụng biểu mẫu phía trên để tạo ca làm việc.'}
+            {readOnly ? 'Vui lòng liên hệ Quản lý để được phân công ca làm việc.' : 'Sử dụng nút "Thêm ca" phía trên để tạo ca.'}
           </p>
         </div>
       )}
 
       {!query.isPending && !query.error && rawShifts.length > 0 && filteredShifts.length === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-10 text-center">
-          <p className="text-sm font-medium text-ink">Không tìm thấy ca làm việc phù hợp với bộ lọc.</p>
+        <div className="py-10 text-center text-xs text-slate-600">
+          <p className="font-medium text-ink">Không có ca làm việc nào phù hợp với bộ lọc.</p>
           <button
             type="button"
             onClick={resetFilters}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:border-ink hover:text-ink cursor-pointer"
+            className="mt-2.5 inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:border-ink cursor-pointer"
           >
-            <RotateCcw size={13} />
+            <RotateCcw size={12} />
             <span>Xoá điều kiện lọc</span>
           </button>
         </div>
       )}
 
-      {/* ── HIỂN THỊ DẠNG LƯỚI THẺ (GRID VIEW - MẶC ĐỊNH) ── */}
-      {viewMode === 'grid' && filteredShifts.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredShifts.map((shift) => (
-            <ShiftCard
-              key={shift.id}
-              shift={shift}
-              readOnly={readOnly}
-              isPending={mutation.isPending}
-              onCancel={(id) => mutation.mutate(() => cancelWorkShift(id))}
-              cancelId={cancelId}
-              setCancelId={setCancelId}
-              editShift={editShift}
-              setMessage={setMessage}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ── HIỂN THỊ DẠNG GỘP THEO TUẦN (WEEKLY GROUPED VIEW) ── */}
-      {viewMode === 'grouped' && weeklyGroups.length > 0 && (
-        <div className="space-y-6">
-          {weeklyGroups.map((group) => (
-            <div key={group.title} className="space-y-3">
-              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                <Calendar size={15} className="text-brand" />
-                <h4 className="text-sm font-semibold text-ink">Tuần: {group.title}</h4>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                  {group.shifts.length} ca
-                </span>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {group.shifts.map((shift) => (
-                  <ShiftCard
-                    key={shift.id}
-                    shift={shift}
-                    readOnly={readOnly}
-                    isPending={mutation.isPending}
-                    onCancel={(id) => mutation.mutate(() => cancelWorkShift(id))}
-                    cancelId={cancelId}
-                    setCancelId={setCancelId}
-                    editShift={editShift}
-                    setMessage={setMessage}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── HIỂN THỊ DẠNG DANH SÁCH GỌN GÀNG (LIST VIEW) ── */}
-      {viewMode === 'list' && filteredShifts.length > 0 && (
+      {/* ── BẢNG LỊCH CA LÀM VIỆC (GIAO DIỆN BẢNG CHUẨN, KHÔNG DÙNG CARD) ── */}
+      {!query.isPending && filteredShifts.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50/80 text-xs font-medium text-slate-600">
+          <table className="w-full min-w-[700px] text-left text-[13px]">
+            <thead className="border-b border-slate-200 bg-slate-50 text-[12px] font-medium text-slate-600">
               <tr>
                 <th className="py-3 pl-4 pr-3">Thứ / Ngày</th>
                 <th className="py-3 px-3">Khung giờ làm việc</th>
@@ -809,46 +741,68 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                 const duration = getShiftDuration(shift.starts_at, shift.ends_at, shift.lunch_starts_at, shift.lunch_ends_at);
 
                 return (
-                  <tr key={shift.id} className={`transition-colors hover:bg-slate-50/80 ${shift.cancelled_at ? 'opacity-60' : ''}`}>
-                    <td className="py-3.5 pl-4 pr-3">
+                  <tr
+                    key={shift.id}
+                    className={`transition-colors hover:bg-slate-50/90 ${
+                      shift.cancelled_at ? 'bg-slate-50/50 opacity-60' : ''
+                    }`}
+                  >
+                    {/* Cột Thứ / Ngày */}
+                    <td className="py-3 pl-4 pr-3">
                       <div className="flex items-center gap-2.5">
                         <span
-                          className={`grid h-8 w-8 place-items-center rounded-lg text-xs font-semibold ${
-                            dateInfo.isWeekend ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-700'
+                          className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-semibold ${
+                            dateInfo.isWeekend
+                              ? 'bg-amber-100/70 text-amber-900 border border-amber-200/80'
+                              : 'bg-slate-100 text-slate-700'
                           }`}
                         >
                           {dateInfo.shortDay}
                         </span>
                         <div>
-                          <p className="font-medium text-ink">{dateInfo.weekday}</p>
-                          <p className="text-xs text-slate-500">{dateInfo.dateStr}</p>
+                          <span className="font-medium text-ink">{dateInfo.weekday}</span>
+                          <span className="ml-2 font-mono text-[12px] text-slate-500">{dateInfo.dateStr}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-3">
-                      <div className="flex items-center gap-1.5 font-medium text-brand">
-                        <Clock size={14} className="text-brand/70" />
+
+                    {/* Cột Khung giờ */}
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-1.5 font-semibold text-brand">
+                        <Clock size={14} className="text-brand/70 shrink-0" />
                         <span>
                           {vnTime(shift.starts_at)} – {vnTime(shift.ends_at)}
                         </span>
                       </div>
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-slate-600">{duration}</td>
-                    <td className="py-3.5 px-3 text-xs">
+
+                    {/* Cột Thời lượng */}
+                    <td className="py-3 px-3 text-slate-600">
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-medium text-slate-700">
+                        {duration}
+                      </span>
+                    </td>
+
+                    {/* Cột Nghỉ trưa */}
+                    <td className="py-3 px-3">
                       {shift.lunch_starts_at ? (
-                        <span className="flex items-center gap-1 text-slate-600">
-                          <Coffee size={13} className="text-amber-600" />
-                          {vnTime(shift.lunch_starts_at)} – {vnTime(shift.lunch_ends_at!)}
-                        </span>
+                        <div className="flex items-center gap-1.5 text-slate-700">
+                          <Coffee size={13} className="text-amber-600 shrink-0" />
+                          <span>
+                            {vnTime(shift.lunch_starts_at)} – {vnTime(shift.lunch_ends_at!)}
+                          </span>
+                        </div>
                       ) : (
-                        <span className="text-slate-400">Không nghỉ trưa</span>
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="py-3.5 px-3">
+
+                    {/* Cột Trạng thái */}
+                    <td className="py-3 px-3">
                       <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-tight ${
                           shift.cancelled_at
-                            ? 'bg-slate-100 text-slate-600'
+                            ? 'bg-slate-100 text-slate-600 border border-slate-200'
                             : started
                             ? 'bg-sky-50 text-sky-700 border border-sky-200'
                             : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -857,29 +811,37 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
                         {shift.cancelled_at ? 'Đã hủy' : started ? 'Đã bắt đầu' : 'Đã phân công'}
                       </span>
                     </td>
+
+                    {/* Cột Thao tác (Manager) */}
                     {!readOnly && (
-                      <td className="py-3.5 pl-3 pr-4 text-right">
-                        {!shift.cancelled_at && !started && (
-                          <div className="flex items-center justify-end gap-2">
+                      <td className="py-3 pl-3 pr-4 text-right">
+                        {!shift.cancelled_at && !started ? (
+                          <div className="flex items-center justify-end gap-2 text-xs">
                             <button
                               type="button"
-                              onClick={() => editShift(shift)}
-                              className="text-xs text-slate-600 hover:text-brand cursor-pointer"
+                              onClick={() => handleStartEdit(shift)}
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-slate-600 transition-colors hover:bg-slate-100 hover:text-brand cursor-pointer"
+                              title="Chỉnh sửa ca"
                             >
-                              Sửa
+                              <Pencil size={12} />
+                              <span>Sửa</span>
                             </button>
-                            <span className="text-slate-300">|</span>
+                            <span className="text-slate-200">|</span>
                             <button
                               type="button"
                               onClick={() => {
-                                setCancelId(shift.id);
+                                setCancelShift(shift);
                                 setMessage('');
                               }}
-                              className="text-xs text-danger hover:text-red-800 cursor-pointer"
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-danger transition-colors hover:bg-red-50 hover:text-red-800 cursor-pointer"
+                              title="Hủy ca"
                             >
-                              Hủy
+                              <X size={12} />
+                              <span>Hủy</span>
                             </button>
                           </div>
+                        ) : (
+                          <span className="text-slate-300">—</span>
                         )}
                       </td>
                     )}
@@ -891,147 +853,5 @@ export default function WorkShiftPanel({ consultantId = '', readOnly = false }: 
         </div>
       )}
     </section>
-  );
-}
-
-// ── Thành phần thẻ ca làm việc (Shift Card) ──
-interface ShiftCardProps {
-  shift: WorkShift;
-  readOnly: boolean;
-  isPending: boolean;
-  onCancel: (id: string) => void;
-  cancelId: string;
-  setCancelId: (id: string) => void;
-  editShift: (shift: WorkShift) => void;
-  setMessage: (msg: string) => void;
-}
-
-function ShiftCard({ shift, readOnly, isPending, onCancel, cancelId, setCancelId, editShift, setMessage }: ShiftCardProps) {
-  const dateInfo = parseShiftDate(shift.starts_at);
-  const started = Date.parse(shift.starts_at) <= Date.now();
-  const duration = getShiftDuration(shift.starts_at, shift.ends_at, shift.lunch_starts_at, shift.lunch_ends_at);
-
-  return (
-    <div
-      className={`group relative flex flex-col justify-between rounded-2xl border transition-all duration-200 p-4.5 ${
-        shift.cancelled_at
-          ? 'border-slate-200 bg-slate-50/80 opacity-60'
-          : started
-          ? 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-          : 'border-slate-200/90 bg-white hover:border-brand/40 hover:shadow-md'
-      }`}
-    >
-      <div>
-        {/* Hàng trên: Badge ngày + Trạng thái */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            {/* Khối hiển thị ngày số */}
-            <div
-              className={`flex flex-col items-center justify-center rounded-xl px-2.5 py-1 text-center font-bold tracking-tight ${
-                dateInfo.isWeekend
-                  ? 'bg-amber-50 text-amber-800 border border-amber-200/80'
-                  : 'bg-slate-100 text-ink border border-slate-200/80'
-              }`}
-            >
-              <span className="text-[10px] uppercase font-semibold leading-none">{dateInfo.shortDay}</span>
-              <span className="text-base leading-none mt-0.5">{dateInfo.dayNum}</span>
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold text-ink leading-snug">{dateInfo.weekday}</p>
-              <p className="text-xs text-slate-500 leading-snug">{dateInfo.dateStr}</p>
-            </div>
-          </div>
-
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-tight ${
-              shift.cancelled_at
-                ? 'bg-slate-200 text-slate-600'
-                : started
-                ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            }`}
-          >
-            {shift.cancelled_at ? 'Đã hủy' : started ? 'Đã bắt đầu' : 'Đã phân công'}
-          </span>
-        </div>
-
-        {/* Giờ làm việc */}
-        <div className="mt-4 rounded-xl bg-slate-50/80 p-3 border border-slate-100">
-          <div className="flex items-center justify-between gap-1">
-            <div className="flex items-center gap-1.5 text-base font-semibold text-brand tracking-tight">
-              <Clock size={16} className="text-brand/80" />
-              <span>
-                {vnTime(shift.starts_at)} – {vnTime(shift.ends_at)}
-              </span>
-            </div>
-            <span className="text-[11px] text-slate-500 font-medium">{duration}</span>
-          </div>
-
-          {/* Giờ nghỉ trưa */}
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500 border-t border-slate-200/60 pt-2">
-            <Coffee size={13} className={shift.lunch_starts_at ? 'text-amber-600' : 'text-slate-300'} />
-            <span>
-              {shift.lunch_starts_at
-                ? `Nghỉ: ${vnTime(shift.lunch_starts_at)} – ${vnTime(shift.lunch_ends_at!)}`
-                : 'Không có nghỉ trưa'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Thao tác Sửa / Hủy (cho Manager) */}
-      {!readOnly && !shift.cancelled_at && !started && (
-        <div className="mt-3.5 border-t border-slate-100 pt-3">
-          {cancelId === shift.id ? (
-            <div className="rounded-xl bg-amber-50 p-2.5 text-xs text-amber-900 border border-amber-200 space-y-2">
-              <p className="font-medium">Hủy ca làm việc này?</p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => onCancel(shift.id)}
-                  className="rounded-lg bg-danger px-2.5 py-1 text-white font-medium hover:bg-red-800 disabled:opacity-50 cursor-pointer"
-                >
-                  Xác nhận hủy
-                </button>
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => setCancelId('')}
-                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-slate-700 hover:bg-slate-50 cursor-pointer"
-                >
-                  Giữ ca
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-end gap-2 text-xs">
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => editShift(shift)}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-slate-700 transition-colors hover:border-brand hover:text-brand cursor-pointer"
-              >
-                <Pencil size={12} />
-                <span>Sửa ca</span>
-              </button>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => {
-                  setCancelId(shift.id);
-                  setMessage('');
-                }}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-danger transition-colors hover:border-red-300 hover:bg-red-50 cursor-pointer"
-              >
-                <X size={12} />
-                <span>Hủy ca</span>
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
