@@ -20,9 +20,15 @@ const copy = {
     eyebrow: 'Hỗ trợ',
     line1: 'Cần giúp đỡ?',
     line2: 'Chúng tôi luôn ở đây.',
-    intro: 'Gửi yêu cầu hỗ trợ, theo dõi tiến độ xử lý và trao đổi trực tiếp với đội ngũ CareerPilot.',
+    intro:
+      'Gửi yêu cầu hỗ trợ, theo dõi tiến độ xử lý và trao đổi trực tiếp với đội ngũ CareerPilot.',
     newTicket: 'Tạo yêu cầu mới',
-    stats: { total: 'Tổng yêu cầu', open: 'Mới tiếp nhận', in_progress: 'Đang xử lý', resolved: 'Đã giải quyết' },
+    stats: {
+      total: 'Tổng yêu cầu',
+      open: 'Mới tiếp nhận',
+      in_progress: 'Đang xử lý',
+      resolved: 'Đã giải quyết',
+    },
     listTitle: 'Yêu cầu của bạn',
     all: 'Tất cả',
     allCategories: 'Tất cả phân loại',
@@ -72,7 +78,8 @@ const copy = {
     eyebrow: 'Support',
     line1: 'Need a hand?',
     line2: "We're right here.",
-    intro: 'Submit support tickets, track their progress and talk directly with the CareerPilot team.',
+    intro:
+      'Submit support tickets, track their progress and talk directly with the CareerPilot team.',
     newTicket: 'New ticket',
     stats: { total: 'All tickets', open: 'New', in_progress: 'In progress', resolved: 'Resolved' },
     listTitle: 'Your tickets',
@@ -157,7 +164,14 @@ const categoryLabels: Record<TicketCategory, { vi: string; en: string }> = {
   other: { vi: 'Hỗ trợ chung', en: 'General' },
 };
 
-const categoryOrder: TicketCategory[] = ['technical', 'billing', 'ai_accuracy', 'consultation', 'feature_request', 'other'];
+const categoryOrder: TicketCategory[] = [
+  'technical',
+  'billing',
+  'ai_accuracy',
+  'consultation',
+  'feature_request',
+  'other',
+];
 const statusOrder: TicketStatus[] = ['open', 'in_progress', 'resolved', 'closed'];
 const priorityOrder: TicketPriority[] = ['low', 'medium', 'high', 'urgent'];
 
@@ -182,7 +196,15 @@ const primaryButton =
 const outlineButton =
   'inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 px-6 py-2.5 text-sm text-slate-700 transition-colors duration-150 hover:border-ink hover:text-ink cursor-pointer';
 
-function SectionHead({ index, title, action }: { index: string; title: string; action?: ReactNode }) {
+function SectionHead({
+  index,
+  title,
+  action,
+}: {
+  index: string;
+  title: string;
+  action?: ReactNode;
+}) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-ink pb-3">
       <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
@@ -215,7 +237,15 @@ function StatusMark({ status, label }: { status: TicketStatus; label: string }) 
   );
 }
 
-function Drawer({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+function Drawer({
+  label,
+  onClose,
+  children,
+}: {
+  label: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -225,9 +255,21 @@ function Drawer({ label, onClose, children }: { label: string; onClose: () => vo
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end animate-fade-in" role="dialog" aria-modal="true" aria-label={label}>
-      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/40 cursor-default" />
-      <div className="relative flex h-full w-full max-w-[44rem] flex-col border-l border-border bg-canvas">{children}</div>
+    <div
+      className="fixed inset-0 z-50 flex justify-end animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-label={label}
+    >
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute inset-0 bg-ink/40 cursor-default"
+      />
+      <div className="relative flex h-full w-full max-w-[44rem] flex-col border-l border-border bg-canvas">
+        {children}
+      </div>
     </div>
   );
 }
@@ -368,7 +410,11 @@ export const SupportPage: React.FC = () => {
             {c.intro}
           </p>
         </div>
-        <button type="button" onClick={() => setIsCreateOpen(true)} className={`${primaryButton} self-start lg:self-auto`}>
+        <button
+          type="button"
+          onClick={() => setIsCreateOpen(true)}
+          className={`${primaryButton} self-start lg:self-auto`}
+        >
           {c.newTicket}
           <ArrowRight size={16} aria-hidden="true" />
         </button>
@@ -391,14 +437,22 @@ export const SupportPage: React.FC = () => {
         ))}
       </dl>
 
-      {loadError && <p role="alert" className="mt-6 text-[15px] text-danger">{loadError}</p>}
+      {loadError && (
+        <p role="alert" className="mt-6 text-[15px] text-danger">
+          {loadError}
+        </p>
+      )}
 
       {/* 01 Tickets */}
       <section className="mt-[clamp(2.5rem,5vw,4rem)]">
         <SectionHead index="01" title={c.listTitle} />
 
         <div className="mt-5 flex flex-col gap-5">
-          <div role="tablist" aria-label={c.listTitle} className="-mb-px flex gap-6 overflow-x-auto">
+          <div
+            role="tablist"
+            aria-label={c.listTitle}
+            className="-mb-px flex gap-6 overflow-x-auto"
+          >
             {statusTabs.map((tab) => {
               const active = filterStatus === tab.value;
               return (
@@ -409,7 +463,9 @@ export const SupportPage: React.FC = () => {
                   aria-selected={active}
                   onClick={() => setFilterStatus(tab.value)}
                   className={`shrink-0 border-b-2 pb-2 text-[15px] transition-colors cursor-pointer ${
-                    active ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'
+                    active
+                      ? 'border-ink text-ink'
+                      : 'border-transparent text-slate-500 hover:text-ink'
                   }`}
                 >
                   {tab.label}
@@ -422,7 +478,11 @@ export const SupportPage: React.FC = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:max-w-[42rem]">
             <label className="relative block">
               <span className="sr-only">{c.allCategories}</span>
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className={`${selectClass} !py-2 !text-sm`}>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className={`${selectClass} !py-2 !text-sm`}
+              >
                 <option value="all">{c.allCategories}</option>
                 {categoryOrder.map((cat) => (
                   <option key={cat} value={cat}>
@@ -434,7 +494,11 @@ export const SupportPage: React.FC = () => {
             </label>
             <label className="relative block">
               <span className="sr-only">{c.search}</span>
-              <Search size={15} className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-slate-500"
+                aria-hidden="true"
+              />
               <input
                 type="text"
                 value={searchQuery}
@@ -467,15 +531,22 @@ export const SupportPage: React.FC = () => {
                     </span>
                     <span className="mt-1 block text-[13px] text-slate-500 md:truncate">
                       {categoryLabels[ticket.category]?.[lang] ?? categoryLabels.other[lang]}
-                      {ticket.relatedFeature && ticket.relatedFeature !== categoryLabels[ticket.category]?.vi && <> · {ticket.relatedFeature}</>}
+                      {ticket.relatedFeature &&
+                        ticket.relatedFeature !== categoryLabels[ticket.category]?.vi && (
+                          <> · {ticket.relatedFeature}</>
+                        )}
                       {' · '}
-                      <span className={priorityTone[ticket.priority]}>{priorityLabels[ticket.priority][lang]}</span>
+                      <span className={priorityTone[ticket.priority]}>
+                        {priorityLabels[ticket.priority][lang]}
+                      </span>
                     </span>
                   </span>
                   <span className="order-2 justify-self-end md:order-3 md:justify-self-start">
                     <StatusMark status={ticket.status} label={statusLabels[ticket.status][lang]} />
                   </span>
-                  <span className="order-4 hidden whitespace-nowrap text-[13px] tabular-nums text-slate-500 md:block">{ticket.updatedAt}</span>
+                  <span className="order-4 hidden whitespace-nowrap text-[13px] tabular-nums text-slate-500 md:block">
+                    {ticket.updatedAt}
+                  </span>
                   <ArrowUpRight
                     size={16}
                     aria-hidden="true"
@@ -496,7 +567,10 @@ export const SupportPage: React.FC = () => {
             <div className="grid gap-1 border-b border-border py-5 sm:grid-cols-[12rem_1fr] sm:gap-6">
               <dt className="text-[13px] text-slate-600">{c.hotline}</dt>
               <dd>
-                <a href="tel:19006868" className="text-[clamp(1.25rem,2vw,1.5rem)] tabular-nums text-ink hover:text-brand">
+                <a
+                  href="tel:19006868"
+                  className="text-[clamp(1.25rem,2vw,1.5rem)] tabular-nums text-ink hover:text-brand"
+                >
                   1900 6868 <span className="text-base text-slate-500">(Ext: 2)</span>
                 </a>
                 <p className="mt-1 text-sm text-slate-500">{c.hotlineNote}</p>
@@ -505,7 +579,10 @@ export const SupportPage: React.FC = () => {
             <div className="grid gap-1 border-b border-border py-5 sm:grid-cols-[12rem_1fr] sm:gap-6">
               <dt className="text-[13px] text-slate-600">{c.email}</dt>
               <dd>
-                <a href="mailto:support@careerpilot.ai" className="break-all text-[clamp(1.125rem,1.8vw,1.375rem)] text-ink hover:text-brand">
+                <a
+                  href="mailto:support@careerpilot.ai"
+                  className="break-all text-[clamp(1.125rem,1.8vw,1.375rem)] text-ink hover:text-brand"
+                >
                   support@careerpilot.ai
                 </a>
                 <p className="mt-1 text-sm text-slate-500">{c.emailNote}</p>
@@ -517,8 +594,13 @@ export const SupportPage: React.FC = () => {
           <SectionHead index="03" title={c.tipsTitle} />
           <ol>
             {c.tips.map((tip, i) => (
-              <li key={tip} className="flex gap-4 border-b border-border py-5 text-[15px] leading-7 text-slate-700">
-                <span className="w-6 shrink-0 pt-0.5 text-xs tabular-nums text-slate-500">{String(i + 1).padStart(2, '0')}</span>
+              <li
+                key={tip}
+                className="flex gap-4 border-b border-border py-5 text-[15px] leading-7 text-slate-700"
+              >
+                <span className="w-6 shrink-0 pt-0.5 text-xs tabular-nums text-slate-500">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
                 {tip}
               </li>
             ))}
@@ -548,7 +630,10 @@ export const SupportPage: React.FC = () => {
               <div className="flex gap-1.5">
                 <dt className="sr-only">Status</dt>
                 <dd>
-                  <StatusMark status={selectedTicket.status} label={statusLabels[selectedTicket.status][lang]} />
+                  <StatusMark
+                    status={selectedTicket.status}
+                    label={statusLabels[selectedTicket.status][lang]}
+                  />
                 </dd>
               </div>
               <div className="flex gap-1.5">
@@ -559,7 +644,9 @@ export const SupportPage: React.FC = () => {
               </div>
               <div className="flex gap-1.5">
                 <dt className="text-slate-500">{c.priority}</dt>
-                <dd className={priorityTone[selectedTicket.priority]}>{priorityLabels[selectedTicket.priority][lang]}</dd>
+                <dd className={priorityTone[selectedTicket.priority]}>
+                  {priorityLabels[selectedTicket.priority][lang]}
+                </dd>
               </div>
               {selectedTicket.relatedFeature && (
                 <div className="flex gap-1.5">
@@ -600,7 +687,9 @@ export const SupportPage: React.FC = () => {
                       </span>
                       <span className="tabular-nums text-slate-500">{msg.timestamp}</span>
                     </div>
-                    <p className="mt-2 whitespace-pre-wrap text-[15px] leading-7 text-slate-800">{msg.text}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-[15px] leading-7 text-slate-800">
+                      {msg.text}
+                    </p>
                   </li>
                 ),
               )}
@@ -625,10 +714,24 @@ export const SupportPage: React.FC = () => {
                 {/* Only the support team can change a ticket's status. */}
                 <p className="text-[13px] text-slate-600">
                   {selectedTicket.status === 'closed'
-                    ? lang === 'vi' ? 'Yêu cầu đã đóng, không gửi thêm tin nhắn được.' : 'This ticket is closed.'
-                    : lang === 'vi' ? 'Đội hỗ trợ sẽ cập nhật trạng thái khi xử lý xong.' : 'The support team updates the status.'}
+                    ? lang === 'vi'
+                      ? 'Yêu cầu đã đóng, không gửi thêm tin nhắn được.'
+                      : 'This ticket is closed.'
+                    : selectedTicket.status === 'resolved'
+                      ? lang === 'vi'
+                        ? 'Yêu cầu đã được xử lý xong. Bạn vẫn có thể gửi phản hồi nếu cần hỗ trợ thêm.'
+                        : 'This ticket has been resolved. You can still reply if you need further help.'
+                      : lang === 'vi'
+                        ? 'Đội hỗ trợ sẽ cập nhật trạng thái khi xử lý xong.'
+                        : 'The support team updates the status.'}
                 </p>
-                <button type="submit" disabled={isSendingReply || !replyText.trim() || selectedTicket.status === 'closed'} className={primaryButton}>
+                <button
+                  type="submit"
+                  disabled={
+                    isSendingReply || !replyText.trim() || selectedTicket.status === 'closed'
+                  }
+                  className={primaryButton}
+                >
                   {isSendingReply ? <Loader2 size={16} className="animate-spin" /> : c.send}
                 </button>
               </div>
@@ -678,10 +781,18 @@ export const SupportPage: React.FC = () => {
                 <label className="block">
                   <span className={fieldLabel}>{c.category}</span>
                   <span className="relative block">
-                    <select value={category} onChange={(e) => setCategory(e.target.value as TicketCategory)} className={selectClass}>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value as TicketCategory)}
+                      className={selectClass}
+                    >
                       {categoryOrder.map((cat) => (
                         <option key={cat} value={cat}>
-                          {cat === 'other' ? (isVietnamese ? 'Khác' : 'Other') : categoryLabels[cat][lang]}
+                          {cat === 'other'
+                            ? isVietnamese
+                              ? 'Khác'
+                              : 'Other'
+                            : categoryLabels[cat][lang]}
                         </option>
                       ))}
                     </select>
@@ -691,7 +802,11 @@ export const SupportPage: React.FC = () => {
                 <label className="block">
                   <span className={fieldLabel}>{c.relatedFeature}</span>
                   <span className="relative block">
-                    <select value={relatedFeature} onChange={(e) => setRelatedFeature(e.target.value)} className={selectClass}>
+                    <select
+                      value={relatedFeature}
+                      onChange={(e) => setRelatedFeature(e.target.value)}
+                      className={selectClass}
+                    >
                       {relatedFeatures.map((f) => (
                         <option key={f} value={f}>
                           {f}
@@ -705,7 +820,10 @@ export const SupportPage: React.FC = () => {
 
               <fieldset>
                 <legend className={fieldLabel}>{c.priority}</legend>
-                <div role="radiogroup" className="mt-2 grid grid-cols-2 border-y border-border sm:grid-cols-4">
+                <div
+                  role="radiogroup"
+                  className="mt-2 grid grid-cols-2 border-y border-border sm:grid-cols-4"
+                >
                   {priorityOrder.map((p, i) => {
                     const active = priority === p;
                     return (
@@ -729,7 +847,11 @@ export const SupportPage: React.FC = () => {
                         >
                           {active && <span className="h-2 w-2 rounded-full bg-ink" />}
                         </span>
-                        <span className={active && (p === 'high' || p === 'urgent') ? priorityTone[p] : ''}>
+                        <span
+                          className={
+                            active && (p === 'high' || p === 'urgent') ? priorityTone[p] : ''
+                          }
+                        >
                           {priorityLabels[p][lang]}
                         </span>
                       </button>
@@ -754,7 +876,11 @@ export const SupportPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-3 border-t border-ink px-[clamp(1.25rem,3vw,2.5rem)] py-4">
-              <button type="button" onClick={() => setIsCreateOpen(false)} className={outlineButton}>
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(false)}
+                className={outlineButton}
+              >
                 {c.cancel}
               </button>
               <button type="submit" disabled={isSubmitting} className={primaryButton}>
