@@ -91,7 +91,12 @@ export function toSubscriptionPlan(row: ApiRow): SubscriptionPlan {
 
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const { data } = await apiClient.get<ApiRow[]>('/subscriptions/tiers');
-  return data.map(toSubscriptionPlan);
+  return data
+    .filter((row) => {
+      const code = str(row.tier_code).toUpperCase();
+      return !code.startsWith('TOPUP_') && !code.startsWith('TOKEN_');
+    })
+    .map(toSubscriptionPlan);
 }
 
 export interface TokenTopupPack {

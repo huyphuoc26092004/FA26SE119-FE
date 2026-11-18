@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { AdminSubscriptionPlan, PlanStatus } from '../../../types/subscriptionManagement';
+import type { AdminSubscriptionPlan, PlanStatus, PlanType } from '../../../types/subscriptionManagement';
 import {
   EmptyRow,
   Modal,
@@ -21,7 +21,7 @@ const priceText = (v: number) => (v === 0 ? 'Miễn phí' : `${(v / 1000).toLoca
 
 interface PlanManagementTabProps {
   plans: AdminSubscriptionPlan[];
-  onOpenAddPlan: () => void;
+  onOpenAddPlan: (defaultType?: PlanType) => void;
   onOpenEditPlan: (plan: AdminSubscriptionPlan) => void;
   onToggleStatus: (planId: string) => Promise<void>;
   onDuplicatePlan: (planId: string) => Promise<void>;
@@ -39,12 +39,21 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | PlanStatus>('ALL');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | PlanType>('ALL');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [planToDelete, setPlanToDelete] = useState<AdminSubscriptionPlan | null>(null);
+
+  const subscriptionPlansCount = plans.filter((p) => p.planType !== 'TOPUP').length;
+  const topupPlansCount = plans.filter((p) => p.planType === 'TOPUP').length;
 
   // Filtered plans
   const filteredPlans = plans.filter((p) => {
     if (statusFilter !== 'ALL' && p.status !== statusFilter) return false;
+    if (typeFilter !== 'ALL') {
+      const isTopup = p.planType === 'TOPUP';
+      if (typeFilter === 'TOPUP' && !isTopup) return false;
+      if (typeFilter === 'SUBSCRIPTION' && isTopup) return false;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       return (
@@ -86,11 +95,12 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
   return (
     <div>
       <p className="text-[15px] leading-7 text-slate-600">
-        {totalPlansCount} gói, {activePlansCount} đang bán · {totalSubscribers.toLocaleString('vi-VN')} thuê bao · ARPU{' '}
+        {totalPlansCount} gói ({subscriptionPlansCount} gói thuê bao · {topupPlansCount} gói nạp token), {activePlansCount} đang bán · {totalSubscribers.toLocaleString('vi-VN')} thuê bao · ARPU{' '}
         <span className="text-ink">{arpu.toLocaleString('vi-VN')}đ</span> · ARR ước tính{' '}
         <span className="text-ink">{formatMillions(totalMrrVND * 12, 'vi')}</span>
       </p>
 
+      {/* Tabs theo trạng thái */}
       <UnderlineTabs
         className="mt-6"
         tabs={(['ALL', 'ACTIVE', 'DRAFT', 'ARCHIVED'] as const).map((st) => ({
@@ -103,6 +113,29 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
         label="Lọc gói theo trạng thái"
       />
 
+      {/* Filter theo loại gói: Gói thuê bao vs Gói nạp token */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-slate-500 mr-1">Loại danh mục:</span>
+        {[
+          { key: 'ALL', label: `Tất cả (${plans.length})` },
+          { key: 'SUBSCRIPTION', label: `Gói thuê bao (${subscriptionPlansCount})` },
+          { key: 'TOPUP', label: `Gói nạp token (${topupPlansCount})` },
+        ].map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => setTypeFilter(item.key as 'ALL' | PlanType)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
+              typeFilter === item.key
+                ? 'bg-ink text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       <div className="mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <label className="block w-full max-w-md">
           <span className="sr-only">Tìm gói</span>
@@ -114,7 +147,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
             className={`${underlineInput} border-ink`}
           />
         </label>
-        <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
           <SegmentLinks
             options={[
               { value: 'grid', label: 'So sánh' },
@@ -123,21 +156,35 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
             value={viewMode}
             onChange={setViewMode}
           />
-          <button type="button" onClick={onOpenAddPlan} className={smallPrimary}>
-            Tạo gói mới
+          <button
+            type="button"
+            onClick={() => onOpenAddPlan('SUBSCRIPTION')}
+            className={smallPrimary}
+            title="Tạo gói thuê bao định kỳ theo tháng/năm"
+          >
+            + Tạo gói thuê bao
+          </button>
+          <button
+            type="button"
+            onClick={() => onOpenAddPlan('TOPUP')}
+            className="inline-flex min-h-9 items-center justify-center rounded-full border border-emerald-700 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 cursor-pointer shadow-2xs"
+            title="Tạo gói nạp token một lần vào ví"
+          >
+            + Tạo gói nạp token
           </button>
         </div>
       </div>
 
       {filteredPlans.length === 0 ? (
         <div className="mt-8 border-t border-ink">
-          <EmptyRow>Không có gói nào phù hợp.</EmptyRow>
+          <EmptyRow>Không có gói nào phù hợp với bộ lọc hiện tại.</EmptyRow>
         </div>
       ) : viewMode === 'grid' ? (
         /* Comparison columns */
         <div className="mt-8 grid border-t border-ink sm:grid-cols-2 xl:grid-cols-4">
           {filteredPlans.map((plan, i) => {
             const isActive = plan.status === 'ACTIVE';
+            const isTopup = plan.planType === 'TOPUP';
             return (
               <article
                 key={plan.id}
@@ -146,11 +193,18 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                 } ${i % 4 === 0 ? 'sm:pl-0' : ''} ${!isActive ? 'opacity-70' : ''}`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-[13px]">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
                     <span className={statusTone(plan.status)}>{STATUS_LABEL[plan.status]}</span>
-                    {plan.badge && <span className="text-slate-500"> · {plan.badge}</span>}
-                    {plan.highlight && <span className="text-brand"> · Đề xuất</span>}
-                  </p>
+                    <span
+                      className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                        isTopup ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {isTopup ? 'Gói nạp token' : 'Gói thuê bao'}
+                    </span>
+                    {plan.badge && <span className="text-slate-500">· {plan.badge}</span>}
+                    {plan.highlight && <span className="text-brand">· Đề xuất</span>}
+                  </div>
                   {menu(plan)}
                 </div>
                 <h3 className="mt-2 text-[clamp(1.125rem,1.5vw,1.375rem)] font-normal leading-snug text-ink">
@@ -160,26 +214,48 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
 
                 <p className="mt-6 text-[clamp(2rem,3vw,2.5rem)] leading-none tracking-[-0.02em] tabular-nums text-ink">
                   {priceText(plan.monthlyPriceVND)}
-                  {plan.monthlyPriceVND > 0 && <span className="ml-1 text-sm tracking-normal text-slate-500">/ tháng</span>}
+                  <span className="ml-1 text-sm tracking-normal text-slate-500">
+                    {isTopup ? '/ lần nạp' : plan.monthlyPriceVND > 0 ? '/ tháng' : ''}
+                  </span>
                 </p>
                 <p className="mt-2 h-5 text-[13px] text-slate-500">
-                  {plan.yearlyPriceVND > 0 && `${plan.yearlyPriceVND.toLocaleString('vi-VN')}đ / năm`}
+                  {isTopup
+                    ? 'Cộng trực tiếp vào ví'
+                    : plan.yearlyPriceVND > 0
+                      ? `${plan.yearlyPriceVND.toLocaleString('vi-VN')}đ / năm`
+                      : ''}
                 </p>
 
-                <dl className="mt-5 border-t border-border text-[13px]">
-                  {[
-                    ['Token AI', `${plan.tokenMonthlyQuota.toLocaleString('vi-VN')} / tháng`],
-                    ['Trích xuất CV', limitText(plan.cvParsingLimit, 'CV / tháng')],
-                    ['Đối sánh việc', limitText(plan.cvJobFitLimit, 'lượt / tháng')],
-                    ['Giới hạn API', `${plan.apiRateLimitRPM} RPM · ${(plan.apiRateLimitTPM / 1000).toFixed(0)}k TPM`],
-                    ['Giảm giá tư vấn', `${plan.consultantDiscountPercent}%`],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5">
-                      <dt className="text-slate-500">{k}</dt>
-                      <dd className="text-right text-ink">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
+                {isTopup ? (
+                  <dl className="mt-5 border-t border-border text-[13px]">
+                    {[
+                      ['Token nhận được', `${plan.tokenMonthlyQuota.toLocaleString('vi-VN')} token`],
+                      ['Hình thức', 'Nạp một lần vào ví'],
+                      ['Hạn sử dụng', 'Vĩnh viễn theo tài khoản'],
+                      ['Phạm vi sử dụng', 'Mọi tính năng AI'],
+                    ].map(([k, v]) => (
+                      <div key={k} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5">
+                        <dt className="text-slate-500">{k}</dt>
+                        <dd className="text-right text-ink font-medium">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <dl className="mt-5 border-t border-border text-[13px]">
+                    {[
+                      ['Token AI', `${plan.tokenMonthlyQuota.toLocaleString('vi-VN')} / tháng`],
+                      ['Trích xuất CV', limitText(plan.cvParsingLimit, 'CV / tháng')],
+                      ['Đối sánh việc', limitText(plan.cvJobFitLimit, 'lượt / tháng')],
+                      ['Giới hạn API', `${plan.apiRateLimitRPM} RPM · ${(plan.apiRateLimitTPM / 1000).toFixed(0)}k TPM`],
+                      ['Giảm giá tư vấn', `${plan.consultantDiscountPercent}%`],
+                    ].map(([k, v]) => (
+                      <div key={k} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5">
+                        <dt className="text-slate-500">{k}</dt>
+                        <dd className="text-right text-ink">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
 
                 <ul className="mt-5 space-y-1.5 text-[13px] text-slate-700">
                   {plan.features.slice(0, 3).map((feat, idx) => (
@@ -190,7 +266,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
 
                 <div className="mt-auto flex items-baseline justify-between gap-4 pt-6 text-[13px]">
                   <span className="text-slate-600">
-                    <span className="text-ink tabular-nums">{plan.activeSubscribersCount.toLocaleString('vi-VN')}</span> người dùng
+                    <span className="text-ink tabular-nums">{plan.activeSubscribersCount.toLocaleString('vi-VN')}</span> {isTopup ? 'lượt nạp' : 'người dùng'}
                   </span>
                   <button type="button" onClick={() => onOpenEditPlan(plan)} className={`${brandLink} text-[13px]`}>
                     Chỉnh sửa
@@ -203,46 +279,73 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
       ) : (
         /* List rows */
         <>
-          <div className="mt-8 hidden gap-x-6 border-y border-b-border border-t-ink py-3 text-[13px] text-slate-500 md:grid md:grid-cols-[minmax(0,1fr)_9rem_8rem_7rem_8rem_2rem]">
+          <div className="mt-8 hidden gap-x-6 border-y border-b-border border-t-ink py-3 text-[13px] text-slate-500 md:grid md:grid-cols-[minmax(0,1fr)_6.5rem_9rem_8rem_7rem_8rem_2rem]">
             <span>Gói cước</span>
-            <span className="text-right">Giá tháng / năm</span>
-            <span className="text-right">Token / tháng</span>
-            <span className="text-right">Thuê bao</span>
+            <span>Loại</span>
+            <span className="text-right">Giá bán</span>
+            <span className="text-right">Token</span>
+            <span className="text-right">Thuê bao / Đã bán</span>
             <span className="text-right">MRR</span>
             <span />
           </div>
           <ul className="mt-8 border-t border-ink md:mt-0 md:border-t-0">
-            {filteredPlans.map((plan) => (
-              <li
-                key={plan.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1 border-b border-border py-5 md:grid-cols-[minmax(0,1fr)_9rem_8rem_7rem_8rem_2rem]"
-              >
-                <div className="min-w-0">
-                  <button type="button" onClick={() => onOpenEditPlan(plan)} className="text-left text-[clamp(1rem,1.2vw,1.0625rem)] font-medium text-ink hover:text-brand">
-                    {plan.name}
-                  </button>
-                  <p className="mt-0.5 text-[13px] text-slate-600">
-                    <span className={statusTone(plan.status)}>{STATUS_LABEL[plan.status]}</span>
-                    {plan.badge && ` · ${plan.badge}`} · {plan.apiRateLimitRPM} RPM · {(plan.apiRateLimitTPM / 1000).toFixed(0)}k TPM
-                  </p>
-                  <p className="mt-1 text-[13px] text-slate-600 md:hidden">
-                    {priceText(plan.monthlyPriceVND)} · {plan.activeSubscribersCount.toLocaleString('vi-VN')} thuê bao
-                  </p>
-                </div>
-                <span className="hidden text-right md:block">
-                  <span className="block text-[15px] tabular-nums text-ink">
-                    {plan.monthlyPriceVND === 0 ? 'Miễn phí' : `${plan.monthlyPriceVND.toLocaleString('vi-VN')}đ`}
+            {filteredPlans.map((plan) => {
+              const isTopup = plan.planType === 'TOPUP';
+              return (
+                <li
+                  key={plan.id}
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1 border-b border-border py-5 md:grid-cols-[minmax(0,1fr)_6.5rem_9rem_8rem_7rem_8rem_2rem]"
+                >
+                  <div className="min-w-0">
+                    <button type="button" onClick={() => onOpenEditPlan(plan)} className="text-left text-[clamp(1rem,1.2vw,1.0625rem)] font-medium text-ink hover:text-brand">
+                      {plan.name}
+                    </button>
+                    <p className="mt-0.5 text-[13px] text-slate-600">
+                      <span className={statusTone(plan.status)}>{STATUS_LABEL[plan.status]}</span>
+                      {plan.badge && ` · ${plan.badge}`}
+                      {!isTopup && ` · ${plan.apiRateLimitRPM} RPM · ${(plan.apiRateLimitTPM / 1000).toFixed(0)}k TPM`}
+                    </p>
+                    <p className="mt-1 text-[13px] text-slate-600 md:hidden">
+                      {priceText(plan.monthlyPriceVND)} {isTopup ? '(lần nạp)' : '(tháng)'} · {plan.activeSubscribersCount.toLocaleString('vi-VN')} {isTopup ? 'lượt nạp' : 'thuê bao'}
+                    </p>
+                  </div>
+                  <span className="hidden md:block">
+                    <span
+                      className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
+                        isTopup ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {isTopup ? 'Nạp token' : 'Thuê bao'}
+                    </span>
                   </span>
-                  <span className="block text-xs text-slate-500">
-                    {plan.yearlyPriceVND > 0 ? `${plan.yearlyPriceVND.toLocaleString('vi-VN')}đ` : '—'}
+                  <span className="hidden text-right md:block">
+                    <span className="block text-[15px] tabular-nums text-ink">
+                      {plan.monthlyPriceVND === 0
+                        ? 'Miễn phí'
+                        : `${plan.monthlyPriceVND.toLocaleString('vi-VN')}đ ${isTopup ? '/ lần' : ''}`}
+                    </span>
+                    <span className="block text-xs text-slate-500">
+                      {isTopup
+                        ? 'Một lần vào ví'
+                        : plan.yearlyPriceVND > 0
+                          ? `${plan.yearlyPriceVND.toLocaleString('vi-VN')}đ / năm`
+                          : '—'}
+                    </span>
                   </span>
-                </span>
-                <span className="hidden text-right text-sm tabular-nums text-slate-700 md:block">{plan.tokenMonthlyQuota.toLocaleString('vi-VN')}</span>
-                <span className="hidden text-right text-sm tabular-nums text-slate-700 md:block">{plan.activeSubscribersCount.toLocaleString('vi-VN')}</span>
-                <span className="hidden text-right text-[15px] tabular-nums text-brand md:block">{plan.mrrVND.toLocaleString('vi-VN')}đ</span>
-                <span className="justify-self-end">{menu(plan)}</span>
-              </li>
-            ))}
+                  <span className="hidden text-right text-sm tabular-nums text-slate-700 md:block">
+                    {plan.tokenMonthlyQuota.toLocaleString('vi-VN')}
+                    <span className="block text-[11px] text-slate-400">{isTopup ? 'token ví' : 'token/tháng'}</span>
+                  </span>
+                  <span className="hidden text-right text-sm tabular-nums text-slate-700 md:block">
+                    {plan.activeSubscribersCount.toLocaleString('vi-VN')}
+                  </span>
+                  <span className="hidden text-right text-[15px] tabular-nums text-brand md:block">
+                    {isTopup ? '—' : `${plan.mrrVND.toLocaleString('vi-VN')}đ`}
+                  </span>
+                  <span className="justify-self-end">{menu(plan)}</span>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}
@@ -264,7 +367,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
           }
         >
           <p className="text-[15px] leading-7 text-slate-700">
-            Xoá gói <span className="text-ink">{planToDelete.name}</span>? Người dùng đang dùng gói này vẫn được giữ đến hết kỳ thanh toán.
+            Xoá gói <span className="text-ink">{planToDelete.name}</span>? Người dùng đã mua hoặc đang dùng gói này vẫn được bảo lưu quyền lợi.
           </p>
         </Modal>
       )}

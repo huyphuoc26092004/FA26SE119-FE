@@ -23,9 +23,18 @@ function toAdminPlan(row: ApiRow, quotas: ApiRow[], index: number): AdminSubscri
     const q = quotas.find((x) => str(x.feature_code ?? x.featureCode) === code);
     return q ? num(q.quota_value ?? q.quotaValue) : ('unlimited' as const);
   };
+  const tierCode = str(row.tier_code).toUpperCase();
+  const tokenQuota = quotas.find((x) => str(x.feature_code ?? x.featureCode) === 'AI_TOTAL_TOKENS');
+  const isTopup =
+    tierCode.startsWith('TOPUP_') ||
+    tierCode.startsWith('TOKEN_') ||
+    tokenQuota?.quota_period === 'SUBSCRIPTION' ||
+    tokenQuota?.quotaPeriod === 'SUBSCRIPTION';
+
   return {
     id: str(row.id),
     name: plan.name,
+    planType: isTopup ? 'TOPUP' : 'SUBSCRIPTION',
     badge: str(row.tier_code),
     description: plan.description,
     monthlyPriceVND: plan.monthlyPriceVND,
@@ -69,14 +78,20 @@ export async function getAdminPlans(): Promise<AdminSubscriptionPlan[]> {
   });
 }
 
-const tierCodeOf = (plan: Partial<AdminSubscriptionPlan>) =>
-  (plan.tierCode || plan.badge || plan.name || 'PLAN')
+const tierCodeOf = (plan: Partial<AdminSubscriptionPlan>) => {
+  let code = (plan.tierCode || plan.badge || plan.name || 'PLAN')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, '_')
     .replace(/^_|_$/g, '')
     .slice(0, 30) || 'PLAN';
+
+  if (plan.planType === 'TOPUP' && !code.startsWith('TOPUP_') && !code.startsWith('TOKEN_')) {
+    code = `TOPUP_${code}`.slice(0, 30);
+  }
+  return code;
+};
 
 const tierBody = (plan: Partial<AdminSubscriptionPlan>, active: boolean) => ({
   tierCode: tierCodeOf(plan),
@@ -88,10 +103,24 @@ const tierBody = (plan: Partial<AdminSubscriptionPlan>, active: boolean) => ({
 
 /** Quota gửi lên: các ô giới hạn dạng số, giữ chu kỳ cũ nếu đã có. */
 function quotaBody(plan: Partial<AdminSubscriptionPlan>, existing: AdminSubscriptionPlan['quotas'] = []) {
+  if (plan.planType === 'TOPUP') {
+    return [
+      {
+        featureCode: 'AI_TOTAL_TOKENS',
+        quotaValue: Math.max(0, Math.round(plan.tokenMonthlyQuota ?? 0)),
+        quotaPeriod: 'SUBSCRIPTION',
+      },
+    ];
+  }
+
   return Object.entries(LIMIT_FEATURES)
     .map(([field, code]) => ({ code, value: plan[field as keyof typeof LIMIT_FEATURES] }))
     .filter((q): q is { code: (typeof LIMIT_FEATURES)[keyof typeof LIMIT_FEATURES]; value: number } => typeof q.value === 'number')
-    .map((q) => ({ featureCode: q.code, quotaValue: Math.max(0, Math.round(q.value)), quotaPeriod: existing.find((e) => e.featureCode === q.code)?.quotaPeriod ?? 'MONTHLY' }));
+    .map((q) => ({
+      featureCode: q.code,
+      quotaValue: Math.max(0, Math.round(q.value)),
+      quotaPeriod: existing.find((e) => e.featureCode === q.code)?.quotaPeriod ?? 'MONTHLY',
+    }));
 }
 
 export async function createAdminPlan(plan: Omit<AdminSubscriptionPlan, 'id' | 'createdAt' | 'updatedAt' | 'activeSubscribersCount' | 'mrrVND'>): Promise<AdminSubscriptionPlan> {

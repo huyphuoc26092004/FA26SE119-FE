@@ -69,6 +69,7 @@ export default function SubscriptionQuotaManagementPage({
   // Modal states
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<AdminSubscriptionPlan | null>(null);
+  const [planModalDefaultType, setPlanModalDefaultType] = useState<'SUBSCRIPTION' | 'TOPUP'>('SUBSCRIPTION');
 
   const [selectedInvoiceTransaction, setSelectedInvoiceTransaction] =
     useState<PaymentTransaction | null>(null);
@@ -246,12 +247,24 @@ export default function SubscriptionQuotaManagementPage({
             <button
               type="button"
               onClick={() => {
+                setPlanModalDefaultType('SUBSCRIPTION');
                 setSelectedPlanForEdit(null);
                 setIsPlanModalOpen(true);
               }}
               className={smallPrimary}
             >
-              {isVietnamese ? 'Thêm gói cước' : 'Add plan'}
+              {isVietnamese ? '+ Gói thuê bao' : '+ Subscription plan'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPlanModalDefaultType('TOPUP');
+                setSelectedPlanForEdit(null);
+                setIsPlanModalOpen(true);
+              }}
+              className="inline-flex min-h-9 items-center justify-center rounded-full border border-emerald-700 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 cursor-pointer shadow-2xs"
+            >
+              {isVietnamese ? '+ Gói nạp token' : '+ Token top-up pack'}
             </button>
           </div>
         </div>
@@ -318,11 +331,13 @@ export default function SubscriptionQuotaManagementPage({
       {activeTab === 'plans' && (
         <PlanManagementTab
           plans={plans}
-          onOpenAddPlan={() => {
+          onOpenAddPlan={(defaultType = 'SUBSCRIPTION') => {
+            setPlanModalDefaultType(defaultType);
             setSelectedPlanForEdit(null);
             setIsPlanModalOpen(true);
           }}
           onOpenEditPlan={(plan) => {
+            setPlanModalDefaultType(plan.planType ?? 'SUBSCRIPTION');
             setSelectedPlanForEdit(plan);
             setIsPlanModalOpen(true);
           }}
@@ -337,27 +352,105 @@ export default function SubscriptionQuotaManagementPage({
 
       {/* Tab 2: Token Quotas & Rules */}
       {activeTab === 'tokens' && (
-        <section className="space-y-5">
-          <h2 className="text-2xl">Hạn mức token theo gói</h2>
-          <p className="max-w-3xl text-sm leading-7 text-slate-600">
-            Đây là số token AI được cấp theo từng gói. Hạn mức được chỉnh sửa tại mục Gói cước.
-          </p>
-          {plans.map((plan) => (
-            <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
+        <div className="space-y-10">
+          {/* Section: Gói nạp token bổ sung */}
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
               <div>
-                <p className="font-medium">{plan.name}</p>
+                <h2 className="text-xl font-normal text-ink">Gói nạp token một lần (Top-up Packs)</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  {plan.tokenMonthlyQuota.toLocaleString('vi-VN')} token
-                  {plan.quotas?.find((quota) => quota.featureCode === 'AI_TOTAL_TOKENS')?.quotaPeriod === 'SUBSCRIPTION'
-                    ? ' / kỳ gói' : ' / tháng'}
+                  Các gói nạp nhanh cho người dùng khi cần bổ sung token vào ví để tiếp tục dùng AI.
                 </p>
               </div>
-              <button type="button" className={textLink} onClick={() => { setSelectedPlanForEdit(plan); setIsPlanModalOpen(true); }}>
-                Chỉnh sửa hạn mức
+              <button
+                type="button"
+                onClick={() => {
+                  setPlanModalDefaultType('TOPUP');
+                  setSelectedPlanForEdit(null);
+                  setIsPlanModalOpen(true);
+                }}
+                className="inline-flex min-h-9 items-center justify-center rounded-full border border-emerald-700 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 cursor-pointer shadow-2xs"
+              >
+                + Tạo gói nạp token
               </button>
             </div>
-          ))}
-        </section>
+
+            {plans.filter((p) => p.planType === 'TOPUP').length === 0 ? (
+              <p className="py-4 text-sm text-slate-500 italic">Chưa có gói nạp token nào. Bấm “+ Tạo gói nạp token” để thêm gói đầu tiên.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {plans
+                  .filter((p) => p.planType === 'TOPUP')
+                  .map((pack) => (
+                    <div key={pack.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-ink">{pack.name}</span>
+                          <span className={`rounded px-1.5 py-0.5 text-[11px] ${pack.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {pack.status === 'ACTIVE' ? 'Đang bán' : pack.status === 'DRAFT' ? 'Bản nháp' : 'Lưu trữ'}
+                          </span>
+                          {pack.badge && <span className="text-xs text-slate-400">({pack.badge})</span>}
+                        </div>
+                        <p className="mt-1 text-sm text-slate-600">
+                          <strong className="text-emerald-700 tabular-nums">+{pack.tokenMonthlyQuota.toLocaleString('vi-VN')} token</strong> · Giá nạp:{' '}
+                          <span className="font-medium text-ink tabular-nums">{pack.monthlyPriceVND.toLocaleString('vi-VN')}đ</span> · {pack.description || 'Cộng trực tiếp vào ví'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          className={textLink}
+                          onClick={() => {
+                            setPlanModalDefaultType('TOPUP');
+                            setSelectedPlanForEdit(pack);
+                            setIsPlanModalOpen(true);
+                          }}
+                        >
+                          Chỉnh sửa
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </section>
+
+          {/* Section: Hạn mức định kỳ theo gói thuê bao */}
+          <section className="space-y-4 pt-4 border-t border-ink">
+            <div>
+              <h2 className="text-xl font-normal text-ink">Hạn mức token định kỳ theo gói thuê bao</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Định mức token cấp tự động theo chu kỳ mỗi tháng cho từng hạng gói cước thuê bao.
+              </p>
+            </div>
+            <div className="divide-y divide-border">
+              {plans
+                .filter((p) => p.planType !== 'TOPUP')
+                .map((plan) => (
+                  <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                    <div>
+                      <p className="font-medium text-ink">{plan.name}</p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        <strong className="text-brand tabular-nums">{plan.tokenMonthlyQuota.toLocaleString('vi-VN')} token</strong> / tháng
+                        {plan.monthlyPriceVND === 0 ? ' (Gói Miễn phí)' : ` · ${plan.monthlyPriceVND.toLocaleString('vi-VN')}đ/tháng`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className={textLink}
+                      onClick={() => {
+                        setPlanModalDefaultType('SUBSCRIPTION');
+                        setSelectedPlanForEdit(plan);
+                        setIsPlanModalOpen(true);
+                      }}
+                    >
+                      Chỉnh sửa hạn mức
+                    </button>
+                  </div>
+                ))}
+            </div>
+          </section>
+        </div>
       )}
 
       {/* Tab 3: API Gateway & Models */}
@@ -383,8 +476,9 @@ export default function SubscriptionQuotaManagementPage({
 
       {/* Modals */}
       <PlanEditorModal
-        key={selectedPlanForEdit?.id ?? 'new'}
+        key={`${selectedPlanForEdit?.id ?? 'new'}-${planModalDefaultType}`}
         isOpen={isPlanModalOpen}
+        defaultPlanType={planModalDefaultType}
         onClose={() => {
           setIsPlanModalOpen(false);
           setSelectedPlanForEdit(null);
