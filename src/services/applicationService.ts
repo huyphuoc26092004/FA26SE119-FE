@@ -1,4 +1,9 @@
-import type { ApplicationContentType, ApplicationDraft, ApplicationLanguage, ApplicationReviewScore } from '../types/domain';
+import type {
+  ApplicationContentType,
+  ApplicationDraft,
+  ApplicationLanguage,
+  ApplicationReviewScore,
+} from '../types/domain';
 import { apiClient } from './apiClient';
 import { createChatSession, deleteChatSession } from './assistantService';
 
@@ -45,7 +50,10 @@ const emptyScore = (content: string): ApplicationReviewScore => {
 };
 
 /** Email ứng tuyển được lưu dạng "tiêu đề\n\nnội dung"; thư xin việc chỉ có nội dung. */
-function toDraft(row: DraftResponse, language: ApplicationLanguage = 'Vietnamese'): ApplicationDraft {
+function toDraft(
+  row: DraftResponse,
+  language: ApplicationLanguage = 'Vietnamese',
+): ApplicationDraft {
   const isEmail = row.draft_type === 'APPLICATION_EMAIL';
   const [first, ...rest] = row.content.split(/\n\n/);
   const subject = isEmail && rest.length > 0 ? first.trim() : undefined;
@@ -95,9 +103,16 @@ function writeLocalDrafts(drafts: ApplicationDraft[]) {
 }
 
 /** Bộ thư trống (email + thư xin việc) để người dùng tự viết. */
-export function createOwnDrafts(params: { jobId: string; resumeId?: string; language: ApplicationLanguage }): ApplicationDraft[] {
+export function createOwnDrafts(params: {
+  jobId: string;
+  resumeId?: string;
+  language: ApplicationLanguage;
+}): ApplicationDraft[] {
   const now = new Date().toISOString();
-  const group = crypto.randomUUID();
+  const group =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
   return (['application_email', 'cover_letter'] as ApplicationContentType[]).map((contentType) => ({
     id: `local-${group}-${contentType}`,
     title: contentType === 'application_email' ? 'Email ứng tuyển' : 'Thư xin việc',
@@ -117,9 +132,13 @@ export function createOwnDrafts(params: { jobId: string; resumeId?: string; lang
 }
 
 export async function getStoredApplications(jobId?: string): Promise<ApplicationDraft[]> {
-  const { data } = await apiClient.get<DraftResponse[]>('/application-drafts', { params: jobId ? { jobId } : undefined });
+  const { data } = await apiClient.get<DraftResponse[]>('/application-drafts', {
+    params: jobId ? { jobId } : undefined,
+  });
   const local = readLocalDrafts().filter((draft) => !jobId || draft.jobId === jobId);
-  return [...local, ...data.map((row) => toDraft(row))].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return [...local, ...data.map((row) => toDraft(row))].sort((a, b) =>
+    b.updatedAt.localeCompare(a.updatedAt),
+  );
 }
 
 export async function getApplicationById(id: string): Promise<ApplicationDraft | undefined> {
@@ -143,15 +162,29 @@ export async function generateApplicationDrafts(params: {
 /** Lưu phần người dùng chỉnh sửa cho một thư đã có (PATCH /application-drafts/{id}). */
 export async function saveApplicationDraft(draft: ApplicationDraft): Promise<ApplicationDraft> {
   if (isLocalDraft(draft)) {
-    const saved = { ...draft, reviewScore: emptyScore(draft.content), updatedAt: new Date().toISOString(), isSaved: true };
+    const saved = {
+      ...draft,
+      reviewScore: emptyScore(draft.content),
+      updatedAt: new Date().toISOString(),
+      isSaved: true,
+    };
     writeLocalDrafts([saved, ...readLocalDrafts().filter((d) => d.id !== draft.id)]);
     return saved;
   }
-  const { data } = await apiClient.patch<DraftResponse>(`/application-drafts/${encodeURIComponent(draft.id)}`, {
-    content: toContent(draft),
-  });
+  const { data } = await apiClient.patch<DraftResponse>(
+    `/application-drafts/${encodeURIComponent(draft.id)}`,
+    {
+      content: toContent(draft),
+    },
+  );
   const saved = toDraft(data, draft.language);
-  return { ...draft, content: saved.content, subject: saved.subject, updatedAt: saved.updatedAt, isSaved: true };
+  return {
+    ...draft,
+    content: saved.content,
+    subject: saved.subject,
+    updatedAt: saved.updatedAt,
+    isSaved: true,
+  };
 }
 
 export interface ProofreadIssue {
@@ -167,7 +200,11 @@ function parseIssues(answer: string): ProofreadIssue[] | null {
     const rows = JSON.parse(match[0]);
     if (!Array.isArray(rows)) return null;
     return rows
-      .map((r) => ({ original: String(r?.original ?? '').trim(), suggestion: String(r?.suggestion ?? '').trim(), reason: String(r?.reason ?? '').trim() }))
+      .map((r) => ({
+        original: String(r?.original ?? '').trim(),
+        suggestion: String(r?.suggestion ?? '').trim(),
+        reason: String(r?.reason ?? '').trim(),
+      }))
       .filter((r) => r.original && r.original !== r.suggestion)
       .slice(0, 40);
   } catch {
@@ -179,7 +216,10 @@ function parseIssues(answer: string): ProofreadIssue[] | null {
  * AI chỉ soát chính tả, ngữ pháp, dấu câu và từ dùng sai; trả danh sách lỗi kèm gợi ý.
  * Không viết lại hay thêm nội dung. Dùng một cuộc trò chuyện tạm của Trợ lý AI rồi lưu trữ (archive) lại.
  */
-export async function proofreadApplication(text: string, language: ApplicationLanguage): Promise<{ issues: ProofreadIssue[]; raw?: string }> {
+export async function proofreadApplication(
+  text: string,
+  language: ApplicationLanguage,
+): Promise<{ issues: ProofreadIssue[]; raw?: string }> {
   const vi = language !== 'English';
   const instruction = vi
     ? 'Bạn là công cụ SOÁT LỖI cho thư ứng tuyển. CHỈ kiểm tra chính tả, ngữ pháp, dấu câu, viết hoa và từ dùng sai. ' +
@@ -190,17 +230,25 @@ export async function proofreadApplication(text: string, language: ApplicationLa
       'Do NOT rewrite sentences, add ideas, change tone or write the letter for the user. ' +
       'Return ONLY a JSON array; each item {"original": "exact wrong fragment copied from the letter", "suggestion": "corrected fragment", "reason": "short explanation"}. ' +
       'If there are no mistakes, return [].';
-  const session = await createChatSession({ title: vi ? 'Soát lỗi thư ứng tuyển' : 'Proofread application letter' });
+  const session = await createChatSession({
+    title: vi ? 'Soát lỗi thư ứng tuyển' : 'Proofread application letter',
+  });
   try {
     const { data } = await apiClient.post<{ message_text?: string }>(
       `/assistant/conversations/${session.id}/messages`,
-      { message: `${instruction}\n\n---\n${text.slice(0, 7000)}\n---`, retrieve: false, language: vi ? 'vi' : 'en' },
+      {
+        message: `${instruction}\n\n---\n${text.slice(0, 7000)}\n---`,
+        retrieve: false,
+        language: vi ? 'vi' : 'en',
+      },
       { timeout: AI_TIMEOUT },
     );
     const answer = String(data.message_text ?? '');
     const issues = parseIssues(answer);
     // Chỉ giữ gợi ý mà đoạn gốc thật sự có trong thư, để "Áp dụng" không sửa nhầm chỗ.
-    return issues ? { issues: issues.filter((i) => text.includes(i.original)) } : { issues: [], raw: answer };
+    return issues
+      ? { issues: issues.filter((i) => text.includes(i.original)) }
+      : { issues: [], raw: answer };
   } finally {
     void deleteChatSession(session.id).catch(() => undefined);
   }
