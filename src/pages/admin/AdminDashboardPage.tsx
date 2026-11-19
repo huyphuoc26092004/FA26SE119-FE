@@ -842,9 +842,11 @@ export default function AdminDashboardPage() {
             <dl>
               <InfoRow label={c.system.status} tone={isMaintenance ? 'warning' : 'brand'}>
                 {isMaintenance ? c.system.maintenance : c.system.operational}
-                <span className="ml-2 text-[13px] text-slate-500">
-                  {c.system.uptime(systemHealth.uptimePercentage, systemHealth.uptimeDays)}
-                </span>
+                {systemHealth.uptimePercentage > 0 && (
+                  <span className="ml-2 text-[13px] text-slate-500">
+                    {c.system.uptime(systemHealth.uptimePercentage, systemHealth.uptimeDays)}
+                  </span>
+                )}
               </InfoRow>
             </dl>
 

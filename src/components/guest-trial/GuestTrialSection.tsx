@@ -46,7 +46,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
       id: 'resumes' as const,
       icon: FileText,
       label: isVietnamese ? 'Xem CV demo' : 'Demo CVs',
-      hint: isVietnamese ? 'Mẫu chuẩn ATS, điểm 90+' : 'ATS-ready samples, 90+ score',
+      hint: isVietnamese ? 'CV mẫu và việc làm khớp kỹ năng' : 'Sample CVs and skill-matched jobs',
     },
     {
       id: 'builder' as const,
