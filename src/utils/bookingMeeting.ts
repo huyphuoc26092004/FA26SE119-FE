@@ -35,6 +35,15 @@ export function bookingMeetLink(booking: ConsultationBooking, now: number): stri
   return googleMeetingUrl(booking.meeting_url, 'meet');
 }
 
+/** The join link stays visible from READY until the session ends; Google only admits people once the room opens. */
+export function bookingJoinLink(booking: ConsultationBooking, now: number): string | null {
+  if (booking.status !== 'ACCEPTED' || booking.meeting_status !== 'READY' || booking.meeting_ended_at
+    || !validBookingWindow(booking) || !Number.isFinite(now) || now >= Date.parse(booking.ends_at)) {
+    return null;
+  }
+  return googleMeetingUrl(booking.meeting_url, 'meet');
+}
+
 export function bookingCalendarLink(booking: ConsultationBooking): string | null {
   if (!['ACCEPTED', 'COMPLETED'].includes(booking.status)
     || !['READY', 'ENDED'].includes(booking.meeting_status) || !validBookingWindow(booking)) return null;
