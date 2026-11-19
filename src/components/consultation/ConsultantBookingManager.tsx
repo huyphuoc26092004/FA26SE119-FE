@@ -1,11 +1,9 @@
-import WorkShiftPanel from './WorkShiftPanel';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Clock, Star } from 'lucide-react';
 import BookingMeetingAccess from './BookingMeetingAccess';
 import BookingAttachments from './BookingAttachments';
-import ConsultantExpertiseEditor from './ConsultantExpertiseEditor';
 import { useBookingClock } from './useBookingClock';
 import { bookingPollInterval } from '../../utils/bookingMeeting';
 export { useBookingClock } from './useBookingClock';
@@ -13,7 +11,6 @@ import { useTranslation } from '../../i18n';
 import type { ConsultationStatus } from '../../types/consultation';
 import {
   bookingAction,
-  getMyConsultantProfile,
   listBookings,
   type BookingStatus,
   type ConsultationBooking,
@@ -21,7 +18,8 @@ import {
 
 const button = 'rounded-lg bg-brand px-4 py-2 text-sm text-white disabled:opacity-50';
 const secondary = 'rounded-lg border border-border px-4 py-2 text-sm text-ink disabled:opacity-50';
-const statuses: Record<BookingStatus, [string, string]> = {
+export const HISTORY_STATUSES: BookingStatus[] = ['COMPLETED', 'DECLINED', 'CANCELLED'];
+export const statuses: Record<BookingStatus, [string, string]> = {
   PENDING: ['Chờ tiếp nhận', 'Awaiting review'],
   ACCEPTED: ['Đã xác nhận', 'Confirmed'],
   DECLINED: ['Đã từ chối', 'Declined'],
@@ -112,65 +110,32 @@ export function ConsultantBookingCard({ booking, showLinks = true }: {
 export default function ConsultantBookingManager() {
   const { isVietnamese: vi } = useTranslation();
   const [tab, setTab] = useState<'PENDING' | 'ACCEPTED' | 'HISTORY'>('PENDING');
-  const [settings, setSettings] = useState(false);
   const bookings = useQuery({ queryKey: ['consultation-bookings'], queryFn: listBookings,
     refetchInterval: (query) => bookingPollInterval(query.state.data) });
-  const profile = useQuery({ queryKey: ['consultant-profile'], queryFn: getMyConsultantProfile });
   const rows = bookings.data ?? [];
-  const completed = rows.filter(row => row.status === 'COMPLETED');
-  const reviewed = completed.filter(row => row.rating != null);
-  const average = reviewed.length ? reviewed.reduce((sum, row) => sum + Number(row.rating), 0) / reviewed.length : null;
-  const visible = rows.filter(row => tab === 'HISTORY' ? ['COMPLETED', 'DECLINED', 'CANCELLED'].includes(row.status) : row.status === tab)
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  const inTab = (value: typeof tab) => rows.filter(row => value === 'HISTORY' ? HISTORY_STATUSES.includes(row.status) : row.status === value);
+  const visible = inTab(tab).sort((a, b) => tab === 'HISTORY'
+    ? new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()
+    : new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  const tabLabel = (value: typeof tab) => value === 'HISTORY' ? (vi ? 'Lịch sử' : 'History') : statuses[value][vi ? 0 : 1];
   return (
     <div className="space-y-6 pb-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-medium tracking-tight text-ink">{vi ? 'Lịch tư vấn' : 'Consultation schedule'}</h1>
+          <h1 className="text-3xl font-medium tracking-tight text-ink">{vi ? 'Yêu cầu tư vấn' : 'Consultation requests'}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{vi ? 'Tiếp nhận yêu cầu để hệ thống tạo Google Meet và gửi lời mời Google Calendar. Tư vấn trong khung giờ đã xác nhận.' : 'Accept requests to create Google Meet and send Google Calendar invitations. Meet during the confirmed time slot.'}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className={secondary} onClick={() => setSettings(!settings)} aria-expanded={settings}>{vi ? 'Chuyên môn' : 'Expertise'}</button>
-          <Link className={secondary} to="/consultant/consultations?view=messages">{vi ? 'Lịch sử trao đổi' : 'Message history'}</Link>
-        </div>
+        <Link className={secondary} to="/consultant/consultations?view=messages">{vi ? 'Lịch sử trao đổi' : 'Message history'}</Link>
       </header>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-border p-4"><p className="text-sm text-slate-500">{vi ? 'Chờ tiếp nhận' : 'Awaiting review'}</p><p className="mt-1 text-2xl text-ink">{bookings.data ? rows.filter(row => row.status === 'PENDING').length : '—'}</p></div>
-        <div className="rounded-xl border border-border p-4"><p className="text-sm text-slate-500">{vi ? 'Đã hoàn tất' : 'Completed sessions'}</p><p className="mt-1 text-2xl text-ink">{bookings.data ? completed.length : '—'}</p></div>
-        <div className="rounded-xl border border-border p-4"><p className="text-sm text-slate-500">{vi ? 'Đánh giá từ ứng viên' : 'Candidate reviews'}</p><p className="mt-1 text-2xl text-ink">{average == null ? '—' : `${average.toFixed(1)}/5`} <span className="text-sm text-slate-500">({bookings.data ? reviewed.length : '—'})</span></p></div>
-      </div>
-      <section className="rounded-xl border border-border p-5" aria-label={vi ? 'Chuyên môn tư vấn' : 'Consulting expertise'}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-medium text-ink">{vi ? 'Chuyên môn tư vấn' : 'Consulting expertise'}</h2>
-          <Link to="/consultant/account#consulting-expertise" className="text-sm text-brand underline">
-            {vi ? 'Cập nhật chuyên môn' : 'Update expertise'}
-          </Link>
-        </div>
-        {profile.isPending ? <p className="mt-3 text-sm text-slate-500">{vi ? 'Đang tải chuyên môn…' : 'Loading expertise…'}</p>
-          : profile.isError ? <p className="mt-3 text-sm text-danger" role="alert">{profile.error.message}</p>
-          : profile.data && (profile.data.target_roles.length === 0
-            ? <p className="mt-3 text-sm text-amber-800">{vi ? 'Chọn ít nhất một lĩnh vực trong hồ sơ để ứng viên có thể tìm thấy bạn.' : 'Select at least one area in your profile so candidates can find you.'}</p>
-            : <>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {profile.data.target_roles.map(role => <li key={role} className="rounded-full bg-brand/10 px-3 py-1 text-sm text-brand">{role}</li>)}
-              </ul>
-              {profile.data.bio && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-600">{profile.data.bio}</p>}
-            </>)}
-      </section>
-      {settings && (
-        <section className="grid gap-6 rounded-xl border border-border p-5 lg:grid-cols-2">
-          <div>
-            <h2 className="text-lg font-medium text-ink">{vi ? 'Chuyên môn tư vấn' : 'Consulting expertise'}</h2>
-            <div className="mt-3"><ConsultantExpertiseEditor /></div>
-          </div>
-        </section>
-      )}
-      <WorkShiftPanel readOnly />
       <section>
-        <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={vi ? 'Lọc lịch tư vấn' : 'Filter consultations'}>
-          {(['PENDING', 'ACCEPTED', 'HISTORY'] as const).map(value => <button type="button" key={value} aria-pressed={tab === value} onClick={() => setTab(value)} className={tab === value ? button : secondary}>{value === 'HISTORY' ? (vi ? 'Lịch sử và đánh giá' : 'History and reviews') : statuses[value][vi ? 0 : 1]}</button>)}
+        <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label={vi ? 'Lọc yêu cầu tư vấn' : 'Filter consultation requests'}>
+          {(['PENDING', 'ACCEPTED', 'HISTORY'] as const).map(value => (
+            <button type="button" role="tab" key={value} aria-selected={tab === value} onClick={() => setTab(value)} className={tab === value ? button : secondary}>
+              {tabLabel(value)}{bookings.data && <span className="ml-1.5 opacity-75">({inTab(value).length})</span>}
+            </button>
+          ))}
         </div>
-        {bookings.isLoading ? <p className="py-8 text-sm text-slate-500">{vi ? 'Đang tải lịch tư vấn…' : 'Loading consultations…'}</p> : bookings.isError ? <p className="py-8 text-sm text-danger" role="alert">{bookings.error.message}</p> : visible.length === 0 ? <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-slate-500">{vi ? 'Chưa có lịch tư vấn trong mục này.' : 'No consultations in this category.'}</p> : <div className="grid gap-4 xl:grid-cols-2">{visible.map(booking => <ConsultantBookingCard key={booking.id} booking={booking} />)}</div>}
+        {bookings.isLoading ? <p className="py-8 text-sm text-slate-500">{vi ? 'Đang tải yêu cầu tư vấn…' : 'Loading consultation requests…'}</p> : bookings.isError ? <p className="py-8 text-sm text-danger" role="alert">{bookings.error.message}</p> : visible.length === 0 ? <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-slate-500">{vi ? 'Chưa có yêu cầu tư vấn trong mục này.' : 'No consultation requests in this category.'}</p> : <div className="grid gap-4 xl:grid-cols-2">{visible.map(booking => <ConsultantBookingCard key={booking.id} booking={booking} />)}</div>}
       </section>
     </div>
   );
