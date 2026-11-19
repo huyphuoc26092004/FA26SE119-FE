@@ -1,13 +1,15 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getJobs } from '../../services/candidateService';
 import { ArrowRight, Minus, Plus } from 'lucide-react';
 import { revealDelay, useRevealOnScroll } from './useRevealOnScroll';
 
 const stats = [
-  ['94%', 'Độ chính xác khớp nối'],
-  ['3x', 'Nhanh hơn tìm kiếm thủ công'],
-  ['3', 'Vai trò hệ thống'],
+  ['4', 'Vai trò hệ thống'],
   ['10+', 'Công cụ nghề nghiệp'],
+  ['PDF/DOCX', 'Định dạng CV được hỗ trợ'],
+  ['24 giờ', 'Dùng thử không cần tài khoản'],
 ] as const;
 
 const steps = [
@@ -56,12 +58,6 @@ const agentSteps = [
   ],
 ] as const;
 
-const sampleMatches = [
-  ['Senior Frontend Engineer', 'Acme Studio · Hồ Chí Minh', 94],
-  ['Frontend Platform Architect', 'FinPulse · Remote', 88],
-  ['React Developer', 'Northwind Labs · Hà Nội', 81],
-] as const;
-
 const faqs = [
   [
     'Hệ thống khớp CV với việc làm như thế nào?',
@@ -97,7 +93,7 @@ const audiences = [
     label: 'Nhà tuyển dụng',
     title: 'Sàng lọc hồ sơ nhanh hơn, chọn đúng ứng viên hơn',
     items: [
-      'Sàng lọc có hệ thống, tiết kiệm đến 70% thời gian xem hồ sơ',
+      'Sàng lọc có hệ thống, giảm thời gian xem hồ sơ',
       'Xem điểm CV-JD cụ thể, tránh bỏ sót ứng viên tiềm năng',
       'Phỏng vấn đúng người hơn, tăng tỷ lệ chốt offer thành công',
     ],
@@ -194,6 +190,9 @@ export default function HomePageRefined({
   setOpenFaq: Dispatch<SetStateAction<number | null>>;
 }) {
   const root = useRevealOnScroll<HTMLDivElement>();
+  // Việc làm công khai mới nhất (GET /jobs), dùng chung cache với tab việc làm của bản dùng thử.
+  const latestJobs = useQuery({ queryKey: ['guest-jobs'], queryFn: () => getJobs() });
+  const jobs = (latestJobs.data ?? []).slice(0, 3);
   return (
     <div ref={root} className="overflow-x-clip bg-canvas text-ink">
       {/* Hero: fills the first screen on any device */}
@@ -228,37 +227,30 @@ export default function HomePageRefined({
 
           <div data-reveal="right" style={revealDelay(2)}>
           <div
-            aria-label="Ví dụ kết quả khớp nối"
+            aria-label="Việc làm mới nhất"
             className="hp-float rounded-panel border border-border bg-surface p-[clamp(1.25rem,2.4vw,2.5rem)]"
           >
             <div className="flex items-baseline justify-between border-b border-ink/80 pb-4 text-[clamp(0.875rem,0.82rem+0.15vw,1rem)]">
-              <span className="text-slate-700">Việc làm phù hợp với bạn</span>
-              <span className="text-slate-500">Độ khớp</span>
+              <span className="text-slate-700">Việc làm mới nhất</span>
+              <span className="text-slate-500">Ngày đăng</span>
             </div>
             <ul>
-              {sampleMatches.map(([title, meta, score], i) => (
+              {latestJobs.isPending && <li className="py-6 text-slate-500">Đang tải việc làm…</li>}
+              {!latestJobs.isPending && jobs.length === 0 && <li className="py-6 text-slate-500">Chưa có tin tuyển dụng.</li>}
+              {jobs.map((job) => (
                 <li
-                  key={title}
-                  data-reveal="fade"
-                  style={revealDelay(i, 140, 400)}
+                  key={job.id}
                   className="grid grid-cols-[minmax(0,1fr)_clamp(5.5rem,8vw,8rem)] items-center gap-6 border-b border-border py-[clamp(1.1rem,1.8vw,1.75rem)] last:border-b-0"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-[clamp(1.0625rem,0.98rem+0.35vw,1.375rem)] text-ink">
-                      {title}
+                      <Link to={`/jobs/${job.id}`} className="hover:text-brand">{job.title}</Link>
                     </p>
                     <p className="mt-1 truncate text-[clamp(0.875rem,0.82rem+0.15vw,1rem)] text-slate-600">
-                      {meta}
+                      {[job.company, job.location].filter(Boolean).join(' · ')}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[clamp(1.5rem,1.2rem+1vw,2.25rem)] font-normal leading-none text-brand">
-                      {score}%
-                    </p>
-                    <div className="mt-2.5 h-0.5 bg-slate-200">
-                      <div className="hp-bar h-0.5 bg-brand" style={{ width: `${score}%` }} />
-                    </div>
-                  </div>
+                  <p className="text-right text-[clamp(0.875rem,0.82rem+0.15vw,1rem)] tabular-nums text-slate-600">{job.posted || '—'}</p>
                 </li>
               ))}
             </ul>

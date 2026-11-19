@@ -410,11 +410,14 @@ const WEEKDAYS: Record<Lang, string[]> = {
   en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
 };
 
-/** "13/10" → weekday label, using the dashboard's demo year. */
+/** "13/10" → weekday label, trong 12 tháng gần nhất (ngày tương lai thuộc năm trước). */
 function weekdayOf(ddmm: string, lang: Lang) {
   const [d, m] = ddmm.split('/').map(Number);
   if (!d || !m) return ddmm;
-  return WEEKDAYS[lang][new Date(2026, m - 1, d).getDay()];
+  const now = new Date();
+  const date = new Date(now.getFullYear(), m - 1, d);
+  if (date.getTime() > now.getTime()) date.setFullYear(now.getFullYear() - 1);
+  return WEEKDAYS[lang][date.getDay()];
 }
 
 function compactNumber(n: number, lang: Lang) {

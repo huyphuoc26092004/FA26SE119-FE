@@ -191,12 +191,10 @@ export default function ConsultantCandidatesPage() {
     const readyCount = candidates.filter(
       (c) => c.readinessLevel === 'Ready' || c.readinessLevel === 'Near Ready'
     ).length;
-    const avgAts =
-      total > 0
-        ? Math.round(
-            candidates.reduce((acc, c) => acc + (c.attachedResumeScore || 80), 0) / total
-          )
-        : 84;
+    const scored = candidates.filter((c) => (c.attachedResumeScore ?? 0) > 0);
+    const avgAts = scored.length
+      ? Math.round(scored.reduce((acc, c) => acc + (c.attachedResumeScore ?? 0), 0) / scored.length)
+      : '—';
     const activeConsultations = candidates.filter((c) => c.latestConsultation).length;
 
     return { total, readyCount, avgAts, activeConsultations };

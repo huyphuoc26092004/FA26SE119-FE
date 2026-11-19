@@ -1,3 +1,6 @@
+import type { GuestDemoResumeRow } from '../../services/guestService';
+
+/** CV mẫu cho khách, đọc từ GET /guest/demo-resumes (resumes.is_demo = true). */
 export interface DemoCvData {
   id: string;
   name: string;
@@ -5,14 +8,6 @@ export interface DemoCvData {
   email: string;
   phone: string;
   location: string;
-  template: 'modern' | 'tech' | 'classic';
-  atsScore: number;
-  atsBreakdown: {
-    formatting: number;
-    keywords: number;
-    impact: number;
-    brevity: number;
-  };
   summary: string;
   skills: string[];
   experience: {
@@ -27,199 +22,45 @@ export interface DemoCvData {
     period: string;
     honors?: string;
   }[];
-  atsStrengths: string[];
+  projects: { name: string; description: string }[];
 }
 
-export const demoResumes: DemoCvData[] = [
-  {
-    id: 'demo-fe',
-    name: 'Alex Trần',
-    title: 'Senior Frontend Engineer',
-    email: 'alex.tran@demo.careerpilot.io',
-    phone: '+84 90 123 4567',
-    location: 'TP. Hồ Chí Minh (Hybrid)',
-    template: 'modern',
-    atsScore: 94,
-    atsBreakdown: {
-      formatting: 98,
-      keywords: 92,
-      impact: 95,
-      brevity: 91,
-    },
-    summary:
-      'Kỹ sư Frontend với 4+ năm kinh nghiệm xây dựng các ứng dụng Web hiệu năng cao bằng React, Next.js và TypeScript. Đã dẫn dắt dự án tối ưu hoá Web Vitals giúp tăng 35% tốc độ tải trang cho 500,000+ người dùng hoạt động.',
-    skills: [
-      'React',
-      'TypeScript',
-      'Next.js',
-      'Tailwind CSS',
-      'Redux Toolkit',
-      'Zustand',
-      'Vite',
-      'RESTful APIs',
-      'Jest',
-      'CI/CD Pipelines',
-    ],
-    experience: [
-      {
-        role: 'Senior Frontend Engineer',
-        company: 'TechVision Corporation',
-        period: '2023 – Hiện tại',
-        highlights: [
-          'Chuyển đổi kiến trúc sang Next.js App Router, giảm 28% thời gian tải trang và đạt 98 điểm Google Lighthouse.',
-          'Thiết kế và phát triển Design System chung với 40+ React components tái sử dụng cho 4 sản phẩm chính.',
-          'Hướng dẫn chuyên môn cho 5 kỹ sư junior, nâng cao tiêu chuẩn code review và kiểm thử tự động.',
-        ],
-      },
-      {
-        role: 'Frontend Developer',
-        company: 'Innovate Solutions',
-        period: '2021 – 2023',
-        highlights: [
-          'Xây dựng giao diện dashboard phân tích dữ liệu lớn thời gian thực bằng React và WebSockets.',
-          'Tối ưu bundle size giảm 35% thông qua kỹ thuật code-splitting và lazy loading.',
-        ],
-      },
-    ],
-    education: [
-      {
-        degree: 'Cử nhân Công nghệ Thông tin (Khoa học Máy tính)',
-        school: 'Đại học Khoa học Tự nhiên TP.HCM',
-        period: '2017 – 2021',
-        honors: 'Tốt nghiệp loại Giỏi · GPA 3.6/4.0',
-      },
-    ],
-    atsStrengths: [
-      'Chỉ số định lượng rõ ràng (% cải thiện, số người dùng, số lượng component)',
-      'Từ khoá chuẩn ngành: Next.js, Web Vitals, Design System, Code-splitting',
-      'Bố cục chuẩn máy quét ATS không bị lỗi bảng biểu hay hình ảnh che chữ',
-    ],
-  },
-  {
-    id: 'demo-ai',
-    name: 'Minh Nguyễn',
-    title: 'AI / Machine Learning Engineer',
-    email: 'minh.nguyen@demo.careerpilot.io',
-    phone: '+84 98 765 4321',
-    location: 'Hà Nội / Remote',
-    template: 'tech',
-    atsScore: 89,
-    atsBreakdown: {
-      formatting: 95,
-      keywords: 90,
-      impact: 86,
-      brevity: 88,
-    },
-    summary:
-      'Kỹ sư Trí tuệ Nhân tạo chuyên sâu về Xử lý ngôn ngữ tự nhiên (NLP), Kiến trúc RAG và tinh chỉnh mô hình LLM. Có kinh nghiệm triển khai mô hình AI agent phục vụ doanh nghiệp trên nền tảng đám mây GCP và AWS.',
-    skills: [
-      'Python',
-      'PyTorch',
-      'Hugging Face',
-      'LangChain',
-      'FastAPI',
-      'Docker',
-      'Vector DB (Pinecone/Milvus)',
-      'MLflow',
-      'GCP BigQuery',
-      'RAG Architecture',
-    ],
-    experience: [
-      {
-        role: 'AI Engineer',
-        company: 'DataCore Intelligence',
-        period: '2023 – Hiện tại',
-        highlights: [
-          'Thiết kế và triển khai pipeline Retrieval-Augmented Generation (RAG) phục vụ trả lời hỏi đáp tài liệu nội bộ, giảm độ trễ truy vấn 42%.',
-          'Fine-tune các mô hình mã nguồn mở (Llama 3, Mistral) cho bài toán trích xuất thực thể pháp lý với độ chính xác F1 91%.',
-          'Đóng gói API inference với FastAPI và Docker, tự động mở rộng theo lưu lượng thực tế.',
-        ],
-      },
-      {
-        role: 'Data Scientist Intern',
-        company: 'AI Innovation Lab',
-        period: '2022 – 2023',
-        highlights: [
-          'Xây dựng pipeline tiền xử lý dữ liệu tiếng Việt quy mô 5 triệu văn bản.',
-          'Hỗ trợ huấn luyện mô hình phân loại cảm xúc khách hàng đạt độ chính xác 88%.',
-        ],
-      },
-    ],
-    education: [
-      {
-        degree: 'Kỹ sư Trí tuệ Nhân tạo',
-        school: 'Đại học Bách Khoa',
-        period: '2018 – 2022',
-        honors: 'Học bổng sinh viên xuất sắc nghiên cứu AI',
-      },
-    ],
-    atsStrengths: [
-      'Bao phủ đầy đủ các kỹ năng thế hệ mới: RAG, LLM Fine-tuning, Vector DB',
-      'Định dạng cấu trúc tối ưu cho các thuật toán quét từ khoá công nghệ',
-      'Liên kết chặt chẽ giữa học thuật và triển khai thực tế',
-    ],
-  },
-  {
-    id: 'demo-pm',
-    name: 'Linh Phạm',
-    title: 'Product Manager (SaaS & Digital)',
-    email: 'linh.pham@demo.careerpilot.io',
-    phone: '+84 91 888 9999',
-    location: 'Đà Nẵng / Toàn quốc',
-    template: 'classic',
-    atsScore: 91,
-    atsBreakdown: {
-      formatting: 96,
-      keywords: 89,
-      impact: 93,
-      brevity: 87,
-    },
-    summary:
-      'Quản lý sản phẩm (Product Manager) định hướng dữ liệu với 3+ năm kinh nghiệm phát triển sản phẩm B2B SaaS. Thành thạo quy trình Agile/Scrum, phân tích hành vi người dùng và tối ưu hoá tỷ lệ kích hoạt chuyển đổi.',
-    skills: [
-      'Product Strategy',
-      'Agile / Scrum',
-      'User Research',
-      'Figma Wireframing',
-      'SQL Data Querying',
-      'A/B Testing',
-      'Jira / Confluence',
-      'Google Analytics 4',
-      'Customer Journey Mapping',
-    ],
-    experience: [
-      {
-        role: 'Product Manager',
-        company: 'SaaSify Platforms',
-        period: '2023 – Hiện tại',
-        highlights: [
-          'Chịu trách nhiệm toàn trình lộ trình sản phẩm (Product Roadmap) cho phân hệ quản trị doanh nghiệp, đóng góp 24% doanh thu định kỳ năm (ARR).',
-          'Tối ưu phễu người dùng thử nghiệm sang trả phí, nâng tỷ lệ chuyển đổi từ 6.8% lên 11.2%.',
-          'Điều phối nhóm liên chức năng gồm 8 kỹ sư, 2 nhà thiết kế UX và 3 chuyên viên bán hàng.',
-        ],
-      },
-      {
-        role: 'Associate Product Manager',
-        company: 'GrowthX Tech',
-        period: '2021 – 2023',
-        highlights: [
-          'Tiến hành hơn 40 cuộc phỏng vấn người dùng chuyên sâu để xác định các điểm nghẽn trải nghiệm.',
-          'Triển khai tính năng tự động nhắc nhở qua email, tăng tần suất quay lại hàng tuần thêm 18%.',
-        ],
-      },
-    ],
-    education: [
-      {
-        degree: 'Cử nhân Quản trị Kinh doanh Quốc tế',
-        school: 'Đại học Ngoại Thương',
-        period: '2017 – 2021',
-        honors: 'Tốt nghiệp xuất sắc',
-      },
-    ],
-    atsStrengths: [
-      'Nhấn mạnh vào kết quả kinh doanh và chỉ số tăng trưởng (ARR, chuyển đổi)',
-      'Thuật ngữ chuẩn hóa: Product Roadmap, A/B Testing, Cross-functional Leadership',
-      'Phù hợp hoàn hảo với hệ thống sàng lọc vị trí quản lý và phát triển sản phẩm',
-    ],
-  },
-];
+type Row = Record<string, unknown>;
+
+const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+const list = (value: unknown): Row[] => (Array.isArray(value) ? value.filter((v): v is Row => !!v && typeof v === 'object') : []);
+const lines = (value: unknown): string[] =>
+  Array.isArray(value) ? value.map(text).filter(Boolean) : text(value) ? text(value).split(/\n+/).map((l) => l.trim()).filter(Boolean) : [];
+const period = (row: Row) =>
+  [text(row.start_date), row.is_current === true ? 'Hiện tại' : text(row.end_date)].filter(Boolean).join(' – ');
+
+/** structured_data của BE (snake_case, cùng khung với CV của ứng viên) → dữ liệu hiển thị của tab CV mẫu. */
+export function toDemoCv(row: GuestDemoResumeRow): DemoCvData {
+  const data = (row.structured_data ?? {}) as Row;
+  const skills = (Array.isArray(data.skills) ? data.skills : [])
+    .map((s) => (typeof s === 'string' ? s : text((s as Row)?.name)))
+    .filter(Boolean);
+  return {
+    id: row.id,
+    name: text(data.full_name) || row.title,
+    title: text(data.headline) || text(data.position) || row.title,
+    email: text(data.email),
+    phone: text(data.phone),
+    location: text(data.location) || text(data.address),
+    summary: text(data.summary),
+    skills,
+    experience: list(data.experience).map((e) => ({
+      role: text(e.job_title) || text(e.role) || text(e.position),
+      company: text(e.company_name) || text(e.company),
+      period: period(e),
+      highlights: lines(e.highlights).length ? lines(e.highlights) : lines(e.description),
+    })),
+    education: list(data.education).map((e) => ({
+      degree: [text(e.degree), text(e.major)].filter(Boolean).join(' · '),
+      school: text(e.school_name) || text(e.school),
+      period: period(e),
+      honors: text(e.gpa) ? `GPA ${text(e.gpa)}` : undefined,
+    })),
+    projects: list(data.projects).map((p) => ({ name: text(p.project_name) || text(p.name), description: text(p.description) })),
+  };
+}

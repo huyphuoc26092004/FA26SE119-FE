@@ -57,7 +57,7 @@ const copy = {
     description: 'Mô tả trách nhiệm & thành tựu',
     remove: 'Xoá',
     atsTitle: 'Điểm ATS ước tính',
-    atsNote: 'Tương thích tốt với hệ thống sàng lọc tự động.',
+    atsNote: 'Điểm do hệ thống chấm khi phân tích CV; chưa có điểm thì hiện dấu —.',
     format: 'Định dạng & bố cục',
     keywords: 'Từ khoá chuyên môn',
     quantified: 'Định lượng thành tích',
@@ -119,7 +119,7 @@ const copy = {
     description: 'Responsibilities & achievements',
     remove: 'Remove',
     atsTitle: 'Estimated ATS score',
-    atsNote: 'Works well with modern automated screening systems.',
+    atsNote: 'Scored by the system when the CV is analysed; shows — until then.',
     format: 'Format & layout',
     keywords: 'Domain keywords',
     quantified: 'Quantified results',
@@ -719,24 +719,9 @@ export default function UploadResumePage() {
               <section className="border-t border-ink pt-4">
                 <p className="text-[13px] text-slate-600">{c.atsTitle}</p>
                 <p className="mt-2 text-[clamp(2.75rem,4vw,3.5rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
-                  {extractedData.atsScore ?? 92}
+                  {extractedData.atsScore || '—'}
                 </p>
                 <p className="mt-2.5 text-sm text-slate-600">{c.atsNote}</p>
-                <dl className="mt-5 text-sm">
-                  {[
-                    { label: c.format, value: '95%' },
-                    { label: c.keywords, value: '90%' },
-                    { label: c.quantified, value: '88%' },
-                  ].map((row) => (
-                    <div
-                      key={row.label}
-                      className="flex justify-between gap-4 border-t border-border py-2.5 last:border-b"
-                    >
-                      <dt className="text-slate-600">{row.label}</dt>
-                      <dd className="text-ink tabular-nums">{row.value}</dd>
-                    </div>
-                  ))}
-                </dl>
               </section>
 
               <section className="border-t border-ink pt-4">

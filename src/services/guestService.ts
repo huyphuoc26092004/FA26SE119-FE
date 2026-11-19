@@ -115,6 +115,75 @@ export async function askGuestAssistant(message: string, options?: { freshConver
   });
 }
 
+/** GET /guest/templates: mẫu CV đang bật; ưu tiên mẫu được bật cho bản dùng thử (is_trial_enabled). */
+export async function getGuestTemplateRows(): Promise<Record<string, unknown>[]> {
+  return withSession(async (key) => {
+    const { data } = await guestClient.get<Record<string, unknown>[]>('/guest/templates', { headers: { 'X-Guest-Session': key } });
+    const usable = data.filter((row) => typeof row.html_content === 'string' && row.html_content);
+    const trial = usable.filter((row) => row.is_trial_enabled === true);
+    return trial.length ? trial : usable;
+  });
+}
+
+/** Một CV mẫu do BE duyệt sẵn (resumes.is_demo = true). */
+export interface GuestDemoResumeRow {
+  id: string;
+  title: string;
+  language: string;
+  structured_data: Record<string, unknown> | null;
+}
+
+/** GET /guest/demo-resumes: các CV mẫu khách được xem. */
+export async function getGuestDemoResumes(): Promise<GuestDemoResumeRow[]> {
+  return withSession(async (key) => {
+    const { data } = await guestClient.get<GuestDemoResumeRow[]>('/guest/demo-resumes', { headers: { 'X-Guest-Session': key } });
+    return data;
+  });
+}
+
+export interface GuestRecommendation {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  salary: string;
+  sourceUrl: string;
+  /** 0..100, độ phủ kỹ năng giữa CV mẫu và tin tuyển dụng. */
+  score: number;
+  strengths: string[];
+  gaps: string[];
+}
+
+const strings = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.map((v) => (typeof v === 'string' ? v : v && typeof v === 'object' && 'name' in v ? String((v as { name: unknown }).name) : '')).filter(Boolean)
+    : [];
+
+/** POST /guest/trials/recommendations: 3 việc làm khớp nhất với CV mẫu (so khớp kỹ năng, tốn 100 token dùng thử). */
+export async function getGuestRecommendations(demoResumeId: string): Promise<GuestRecommendation[]> {
+  return withSession(async (key) => {
+    const { data } = await guestClient.post<{ results?: Record<string, unknown>[] }>(
+      '/guest/trials/recommendations',
+      { demo_resume_id: demoResumeId },
+      { headers: { 'X-Guest-Session': key } },
+    );
+    return (data.results ?? []).map((row) => {
+      const comparison = (row.comparison ?? {}) as Record<string, unknown>;
+      return {
+        id: String(row.id ?? ''),
+        title: String(row.job_title ?? ''),
+        company: String(row.company_name ?? ''),
+        location: String(row.location ?? ''),
+        salary: String(row.salary_text ?? ''),
+        sourceUrl: String(row.source_url ?? ''),
+        score: Math.round(Number(row.score ?? 0) * 100),
+        strengths: strings(comparison.strengths),
+        gaps: strings(comparison.skill_gaps),
+      };
+    });
+  });
+}
+
 /** Lời báo lỗi dễ hiểu cho khách: hết hạn mức dùng thử, quá nhiều phiên, AI chậm. */
 export function guestErrorMessage(error: unknown, vi: boolean): string {
   if (isAxiosError(error)) {

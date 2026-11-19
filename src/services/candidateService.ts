@@ -15,6 +15,7 @@ import { apiClient } from './apiClient';
 import { authErrorMessage } from './authService';
 import { pending } from './apiPending';
 import { SEED_TEMPLATES } from './resumeTemplateAdminService';
+import { getGuestTemplateRows } from './guestService';
 import {
   type ApiRow,
   num,
@@ -284,6 +285,12 @@ const toTemplate = (row: ApiRow, source: CvTemplate['source']): CvTemplate => ({
 
 /** Mẫu có sẵn trong FE, dùng khi backend chưa có mẫu nào. */
 export const getLocalResumeTemplates = (): CvTemplate[] => SEED_TEMPLATES.map((t) => toTemplate(t as unknown as ApiRow, 'local'));
+
+/** Mẫu cho khách dùng thử: GET /guest/templates (không cần đăng nhập). */
+export async function getGuestResumeTemplates(): Promise<CvTemplate[]> {
+  const rows = await getGuestTemplateRows();
+  return rows.length ? rows.map((row) => toTemplate(row as ApiRow, 'api')) : getLocalResumeTemplates();
+}
 
 export async function getResumeTemplates(): Promise<CvTemplate[]> {
   const rows = (await get<ApiRow[]>('/resumes/templates')).filter((row) => typeof row.html_content === 'string' && row.html_content);

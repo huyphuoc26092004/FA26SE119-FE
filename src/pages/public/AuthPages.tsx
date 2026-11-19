@@ -554,10 +554,10 @@ export function VerifyOtpPage() {
 
   const isGoogleVerification = searchParams.get('provider') === 'google';
   const initiallySent = !isGoogleVerification || searchParams.get('sent') !== '0';
-  const emailParam = searchParams.get('email') || useAuthStore.getState().pendingVerificationEmail || 'alex@example.com';
+  const emailParam = searchParams.get('email') || useAuthStore.getState().pendingVerificationEmail || '';
 
   const [email, setEmail] = useState(emailParam);
-  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [isEditingEmail, setIsEditingEmail] = useState(!emailParam);
   const [newEmailInput, setNewEmailInput] = useState(emailParam);
 
   // 6 digit OTP input state
