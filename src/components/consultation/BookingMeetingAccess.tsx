@@ -2,11 +2,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, ExternalLink, Video } from 'lucide-react';
 import type { ConsultationBooking } from '../../services/bookingService';
 import { retryBookingMeeting } from '../../services/bookingService';
-import { bookingCalendarLink, bookingMeetLink, canRetryBookingMeeting, googleMeetingUrl, validBookingWindow } from '../../utils/bookingMeeting';
+import { bookingCalendarLink, bookingMeetingFailureReason, bookingMeetLink, canRetryBookingMeeting, googleMeetingUrl, validBookingWindow } from '../../utils/bookingMeeting';
 import { useTranslation } from '../../i18n';
 import { useBookingClock } from './useBookingClock';
 
-export default function BookingMeetingAccess({ booking }: { booking: ConsultationBooking }) {
+export default function BookingMeetingAccess({ booking, showFailureReason = false }: { booking: ConsultationBooking; showFailureReason?: boolean }) {
   const { isVietnamese: vi } = useTranslation();
   const client = useQueryClient();
   const now = useBookingClock();
@@ -48,6 +48,11 @@ export default function BookingMeetingAccess({ booking }: { booking: Consultatio
   return (
     <div className="mt-4 space-y-3 border-t border-border pt-4">
       <p className="text-sm leading-6 text-slate-600" role="status">{message}</p>
+      {showFailureReason && failed && !cancelled && !ended && !invalid && booking.meeting_error && (
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-800">
+          {bookingMeetingFailureReason(booking.meeting_error, vi)}
+        </p>
+      )}
       <div className="flex flex-wrap gap-3">
         {meet && <a href={meet} target="_blank" rel="noopener noreferrer"
           onClick={(event) => { if (!bookingMeetLink(booking, Date.now())) event.preventDefault(); }}

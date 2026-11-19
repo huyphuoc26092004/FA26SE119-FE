@@ -76,7 +76,7 @@ export function ConsultantBookingCard({ booking, showLinks = true }: {
       </p>
       <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">{booking.description}</p>
       <BookingAttachments booking={booking} vi={vi} />
-      <BookingMeetingAccess booking={booking} />
+      <BookingMeetingAccess booking={booking} showFailureReason />
       {booking.status === 'PENDING' && started && (
         <p className="mt-3 text-sm text-amber-700">{vi ? 'Khung giờ đã bắt đầu. Hệ thống sẽ hết hạn yêu cầu chưa tiếp nhận và hoàn lượt cho ứng viên.' : 'This time slot has started. The system will expire the unaccepted request and return the candidate’s credit.'}</p>
       )}
