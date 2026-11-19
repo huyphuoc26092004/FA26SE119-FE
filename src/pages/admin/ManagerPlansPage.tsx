@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { Modal, Note, fieldLabel, outlineButton, primaryButton, underlineInput, underlineSelect } from '../../components/admin/AdminKit';
 import { DotStatus, ManagerHead, ManagerSection, dangerTextLink, inkLink, pillPrimary } from '../../components/manager/ManagerUi';
-import { getManagerPlanCatalog, getManagerQuotaLimits, saveManagerPlan, validateManagerPlanQuotas, type ManagerPlanQuota } from '../../services/managerService';
+import { getManagerPlanCatalog, getManagerQuotaLimits, isTopupTier, saveManagerPlan, validateManagerPlanQuotas, type ManagerPlanQuota } from '../../services/managerService';
 import { num, rows, str, type ApiRow } from '../../services/candidateMappers';
 
 const PERIOD: Record<string, string> = { MONTHLY: 'Hàng tháng', DAILY: 'Hàng ngày', WEEKLY: 'Hàng tuần', YEARLY: 'Hàng năm', SUBSCRIPTION_PERIOD: 'Theo đăng ký', SUBSCRIPTION: 'Theo đăng ký' };
@@ -22,6 +22,8 @@ const planInput = (plan: ApiRow, active = plan.is_active !== false) => ({
   priceMonthly: num(plan.price_monthly),
   currency: str(plan.currency) || 'VND',
   active,
+  tierType: isTopupTier(plan) ? ('TOKEN_TOPUP' as const) : ('SUBSCRIPTION' as const),
+  tokenAmount: num(plan.token_amount ?? plan.tokenAmount),
 });
 
 export default function ManagerPlansPage() {
@@ -55,7 +57,12 @@ export default function ManagerPlansPage() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!limits.data) return;
-    const invalid = validateManagerPlanQuotas(quotas, limits.data);
+    const invalid =
+      draft && isTopupTier(draft)
+        ? Number.isSafeInteger(num(draft.token_amount)) && num(draft.token_amount) >= 1
+          ? null
+          : 'Số token của gói nạp phải là số nguyên lớn hơn 0.'
+        : validateManagerPlanQuotas(quotas, limits.data);
     if (invalid) {
       setError(invalid);
       return;
@@ -66,6 +73,8 @@ export default function ManagerPlansPage() {
 
   const plans: ApiRow[] = catalog.data ?? [];
   const selling = plans.filter((p) => p.is_active !== false).length;
+  const topupCount = plans.filter(isTopupTier).length;
+  const draftTopup = !!draft && isTopupTier(draft);
 
   return (
     <main className="space-y-10 pb-10">
@@ -103,12 +112,13 @@ export default function ManagerPlansPage() {
       {toggle.error && <Note tone="danger">{toggle.error.message}</Note>}
 
       <section>
-        <ManagerSection title="Các gói hiện có" meta={catalog.data ? `${selling} / ${plans.length} gói đang bán · VND / tháng` : undefined} />
+        <ManagerSection title="Các gói hiện có" meta={catalog.data ? `${selling} / ${plans.length} gói đang bán · ${plans.length - topupCount} gói thuê bao · ${topupCount} gói nạp token` : undefined} />
         {catalog.isPending && <p className="py-6 text-[13px] text-slate-500">Đang tải gói…</p>}
         {catalog.data && plans.length === 0 && <p className="py-6 text-[13px] text-slate-500">Chưa có gói nào.</p>}
         <div className="grid border-b border-border sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan, i) => {
             const active = plan.is_active !== false;
+            const topup = isTopupTier(plan);
             const q = toQuotas(plan);
             const tokens = q.find((x) => x.featureCode === 'AI_TOTAL_TOKENS');
             const calls = q.find((x) => x.featureCode === 'API_CALLS_TOTAL');
@@ -121,7 +131,10 @@ export default function ManagerPlansPage() {
                 } ${!active ? 'opacity-70' : ''}`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-[12px] tracking-[0.08em] text-slate-500">{str(plan.tier_code)}</span>
+                  <span className="font-mono text-[12px] tracking-[0.08em] text-slate-500">
+                    {str(plan.tier_code)}
+                    {topup && <span className="ml-2 font-sans tracking-normal">· Gói nạp token</span>}
+                  </span>
                   <span className="text-[12px]">
                     <DotStatus label={active ? 'Đang bán' : 'Ngừng bán'} tone={active ? 'brand' : 'muted'} />
                   </span>
@@ -132,11 +145,17 @@ export default function ManagerPlansPage() {
                     {num(plan.price_monthly).toLocaleString('vi-VN')}
                   </span>
                   <span className="text-[13px] text-slate-500">
-                    <span className="underline">đ</span> / tháng
+                    <span className="underline">đ</span> {topup ? '/ lần nạp' : '/ tháng'}
                   </span>
                 </p>
                 <dl className="mt-5 border-t border-border text-sm">
-                  {[
+                  {(topup
+                    ? [
+                        ['Loại gói', 'Nạp token một lần'],
+                        ['Tiền tệ', str(plan.currency) || 'VND'],
+                        ['Số token nhận', `${num(plan.token_amount).toLocaleString('vi-VN')} token`],
+                      ]
+                    : [
                     ['Chu kỳ', periodLabel(period)],
                     ['Tiền tệ', str(plan.currency) || 'VND'],
                     [
@@ -145,7 +164,7 @@ export default function ManagerPlansPage() {
                         ? [tokens && `${tokens.quotaValue.toLocaleString('vi-VN')} token`, calls && `${calls.quotaValue.toLocaleString('vi-VN')} lượt`].filter(Boolean).join(' · ')
                         : '',
                     ],
-                  ].map(([label, value]) => (
+                  ]).map(([label, value]) => (
                     <div key={label} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5">
                       <dt className="text-slate-500">{label}</dt>
                       <dd className={value ? 'text-right text-ink' : 'text-slate-400'}>{value || 'Xem trong chi tiết'}</dd>
@@ -202,7 +221,7 @@ export default function ManagerPlansPage() {
                 Đóng
               </button>
               <button type="submit" form="plan-form" className={primaryButton} disabled={save.isPending || !limits.data}>
-                {save.isPending ? 'Đang lưu…' : 'Lưu gói và hạn mức'}
+                {save.isPending ? 'Đang lưu…' : draftTopup ? 'Lưu gói nạp token' : 'Lưu gói và hạn mức'}
               </button>
             </>
           }
@@ -218,15 +237,24 @@ export default function ManagerPlansPage() {
                 <input required maxLength={100} className={underlineInput} value={str(draft.display_name)} onChange={(e) => setDraft({ ...draft, display_name: e.target.value })} />
               </label>
               <label className={fieldLabel}>
-                Giá tháng (VND)
+                {draftTopup ? 'Giá mỗi lần nạp (VND)' : 'Giá tháng (VND)'}
                 <input type="number" required min={0} step={1} className={underlineInput} value={num(draft.price_monthly)} onChange={(e) => setDraft({ ...draft, price_monthly: Number(e.target.value) })} />
               </label>
               <label className="flex items-center gap-2.5 self-end pb-2.5 text-sm text-ink">
                 <input type="checkbox" className="accent-brand" checked={draft.is_active !== false} onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })} />
                 Đang bán
               </label>
+              {draftTopup && (
+                <label className={fieldLabel}>
+                  Số token nhận
+                  <input type="number" required min={1} step={1} className={underlineInput} value={num(draft.token_amount)} onChange={(e) => setDraft({ ...draft, token_amount: Number(e.target.value) })} />
+                </label>
+              )}
             </div>
 
+            {draftTopup ? (
+              <p className="text-[13px] text-slate-500">Gói nạp token cộng thẳng số token vào tài khoản, không có hạn mức theo tính năng.</p>
+            ) : (
             <div>
               <h4 className="border-b border-ink pb-2 text-[15px] font-medium text-ink">Token và lượt gọi AI theo tính năng</h4>
               {quotas.map((quota, index) => (
@@ -278,6 +306,7 @@ export default function ManagerPlansPage() {
                   ))}
               </select>
             </div>
+            )}
             {(error || save.error) && <Note tone="danger">{error || save.error?.message}</Note>}
           </form>
         </Modal>

@@ -37,15 +37,32 @@ export function validateManagerPlanQuotas(quotas: ManagerPlanQuota[], limits: Ma
 export const getManagerQuotaLimits = () => apiClient.get<ManagerQuotaLimits>('/manager/quota-limits').then((response) => response.data);
 export const getManagerPlanCatalog = async () => {
   const tiers = await getRows('/admin/subscription-tiers');
-  return Promise.all(tiers.map(async (tier) => ({ ...tier, quotas: await getRows(`/admin/subscription-tiers/${tier.id}/quotas`) })));
+  // Gói nạp token (TOKEN_TOPUP) không có hạn mức; BE trả lỗi nếu gọi /quotas cho gói này (giống getAdminPlans).
+  return Promise.all(tiers.map(async (tier) => ({
+    ...tier,
+    quotas: isTopupTier(tier) ? [] : await getRows(`/admin/subscription-tiers/${tier.id}/quotas`),
+  })));
 };
-export const saveManagerPlan = async (id: string, input: { tierCode: string; displayName: string; priceMonthly: number; currency: string; active: boolean }, quotas: ManagerPlanQuota[], limits?: ManagerQuotaLimits) => {
-  const validation = validateManagerPlanQuotas(quotas, limits || await getManagerQuotaLimits());
+export const isTopupTier = (tier: ApiRow) => String(tier.tier_type ?? tier.tierType ?? '') === 'TOKEN_TOPUP';
+export interface ManagerPlanInput {
+  tierCode: string;
+  displayName: string;
+  priceMonthly: number;
+  currency: string;
+  active: boolean;
+  tierType: 'SUBSCRIPTION' | 'TOKEN_TOPUP';
+  tokenAmount: number;
+}
+export const saveManagerPlan = async (id: string, input: ManagerPlanInput, quotas: ManagerPlanQuota[], limits?: ManagerQuotaLimits) => {
+  const topup = input.tierType === 'TOKEN_TOPUP';
+  if (topup && (!Number.isSafeInteger(input.tokenAmount) || input.tokenAmount < 1)) throw new Error('Số token của gói nạp phải là số nguyên lớn hơn 0.');
+  const validation = topup ? null : validateManagerPlanQuotas(quotas, limits || await getManagerQuotaLimits());
   if (validation) throw new Error(validation);
+  const body = { ...input, tokenAmount: topup ? input.tokenAmount : 0 };
   const plan = id
-    ? await apiClient.put<ApiRow>(`/admin/subscription-tiers/${encodeURIComponent(id)}`, input).then((response) => response.data)
-    : await apiClient.post<ApiRow>('/admin/subscription-tiers', input).then((response) => response.data);
-  await apiClient.put(`/admin/subscription-tiers/${encodeURIComponent(String(plan.id || id))}/quotas`, quotas);
+    ? await apiClient.put<ApiRow>(`/admin/subscription-tiers/${encodeURIComponent(id)}`, body).then((response) => response.data)
+    : await apiClient.post<ApiRow>('/admin/subscription-tiers', body).then((response) => response.data);
+  if (!topup) await apiClient.put(`/admin/subscription-tiers/${encodeURIComponent(String(plan.id || id))}/quotas`, quotas);
   return plan;
 };
 export function safeInvoiceUrl(value: unknown): string | null {
