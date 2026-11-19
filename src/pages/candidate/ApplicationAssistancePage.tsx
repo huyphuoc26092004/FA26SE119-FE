@@ -4,10 +4,19 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, ChevronDown, X } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { getCandidateProfile, getResumes, getJobs } from '../../services/candidateService';
-import { createOwnDrafts, getStoredApplications, saveApplicationDraft } from '../../services/applicationService';
+import {
+  createOwnDrafts,
+  getStoredApplications,
+  saveApplicationDraft,
+} from '../../services/applicationService';
 import { ProofreadPanel } from './application/ProofreadPanel';
 import { authErrorMessage } from '../../services/authService';
-import type { ApplicationContentType, ApplicationDraft, ApplicationLanguage } from '../../types/domain';
+import type {
+  ApplicationContentType,
+  ApplicationDraft,
+  ApplicationLanguage,
+  Job,
+} from '../../types/domain';
 import { ApplicationEditor } from './application/ApplicationEditor';
 import { SavedApplicationsList } from './application/SavedApplicationsList';
 
@@ -16,7 +25,8 @@ const copy = {
     eyebrow: 'Hỗ trợ ứng tuyển',
     title: 'Thư ứng tuyển.',
     titleAccent: 'Bạn tự viết, AI soát lỗi.',
-    intro: 'Chọn công việc và CV, rồi tự viết email ứng tuyển và thư xin việc bằng giọng của bạn. AI chỉ kiểm tra chính tả, ngữ pháp và gợi ý chỉnh sửa, không viết giùm.',
+    intro:
+      'Chọn công việc và CV, rồi tự viết email ứng tuyển và thư xin việc bằng giọng của bạn. AI chỉ kiểm tra chính tả, ngữ pháp và gợi ý chỉnh sửa, không viết giùm.',
     steps: ['Chọn công việc & CV', 'Tự viết thư', 'AI soát lỗi', 'Lưu'],
     tabCompose: 'Soạn thư',
     tabSaved: 'Thư đã lưu',
@@ -25,7 +35,10 @@ const copy = {
     cvLabel: 'CV tham khảo (không bắt buộc)',
     pickCv: 'Chọn CV',
     typeLabel: 'Loại văn bản',
-    types: { cover_letter: 'Thư xin việc', application_email: 'Email ứng tuyển' } as Record<string, string>,
+    types: { cover_letter: 'Thư xin việc', application_email: 'Email ứng tuyển' } as Record<
+      string,
+      string
+    >,
     languageLabel: 'Ngôn ngữ thư',
     lockedNote: 'Thư đã lưu gắn với công việc và CV này. Muốn đổi, hãy tạo thư mới.',
     s2: 'Chỉnh sửa thư',
@@ -36,7 +49,16 @@ const copy = {
     needJob: 'Chọn công việc trước.',
     needCv: 'Chọn một CV đã xác nhận để tham khảo khi viết.',
     emptyTitle: 'Chưa có thư cho lựa chọn này.',
-    emptyBody: 'Bấm “Bắt đầu viết” để mở khung email ứng tuyển và thư xin việc. Bạn có thể chèn dàn ý mẫu, tự viết, rồi nhờ AI kiểm tra chính tả trước khi lưu.',
+    emptyBody:
+      'Bấm “Bắt đầu viết” để mở khung email ứng tuyển và thư xin việc. Bạn có thể chèn dàn ý mẫu, tự viết, rồi nhờ AI kiểm tra chính tả trước khi lưu.',
+    customJob: 'Tự nhập vị trí khác / Viết tự do',
+    customJobTitleLabel: 'Vị trí công việc ứng tuyển',
+    customCompanyLabel: 'Công ty / Nhà tuyển dụng',
+    customJobTitlePlaceholder: 'VD: Lập trình viên Frontend, Chuyên viên dữ liệu…',
+    customCompanyPlaceholder: 'VD: MB Bank, FPT, Doanh nghiệp tư nhân…',
+    noJobsInSystem: 'Chưa có việc làm trong hệ thống (Tự nhập vị trí)',
+    loadingJobs: 'Đang tải danh sách việc làm…',
+    selectJobPlaceholder: 'Chọn công việc trong hệ thống',
     missingType: 'Bộ thư này không có loại văn bản đó. Bấm “Bắt đầu bộ thư mới”.',
     save: 'Lưu thay đổi',
     saving: 'Đang lưu…',
@@ -53,7 +75,8 @@ const copy = {
     eyebrow: 'Application assistance',
     title: 'Cover letter.',
     titleAccent: 'You write, AI proofreads.',
-    intro: 'Pick a job and a CV, then write your application email and cover letter in your own voice. AI only checks spelling and grammar and suggests fixes; it never writes for you.',
+    intro:
+      'Pick a job and a CV, then write your application email and cover letter in your own voice. AI only checks spelling and grammar and suggests fixes; it never writes for you.',
     steps: ['Pick job & CV', 'Write', 'AI proofread', 'Save'],
     tabCompose: 'Write',
     tabSaved: 'Saved letters',
@@ -62,7 +85,10 @@ const copy = {
     cvLabel: 'CV for reference (optional)',
     pickCv: 'Pick a CV',
     typeLabel: 'Document type',
-    types: { cover_letter: 'Cover letter', application_email: 'Application email' } as Record<string, string>,
+    types: { cover_letter: 'Cover letter', application_email: 'Application email' } as Record<
+      string,
+      string
+    >,
     languageLabel: 'Letter language',
     lockedNote: 'A saved letter stays tied to this job and CV. Create a new letter to change them.',
     s2: 'Edit your letter',
@@ -73,7 +99,16 @@ const copy = {
     needJob: 'Pick a job first.',
     needCv: 'Pick a confirmed CV to refer to while writing.',
     emptyTitle: 'No letter for this selection yet.',
-    emptyBody: 'Press “Start writing” to open an application email and a cover letter. Insert an outline, write it yourself, then let AI proofread before saving.',
+    emptyBody:
+      'Press “Start writing” to open an application email and a cover letter. Insert an outline, write it yourself, then let AI proofread before saving.',
+    customJob: 'Custom position / Freeform',
+    customJobTitleLabel: 'Target position / Role',
+    customCompanyLabel: 'Target company / Employer',
+    customJobTitlePlaceholder: 'e.g. Frontend Developer, Data Specialist…',
+    customCompanyPlaceholder: 'e.g. MB Bank, FPT, Private Enterprise…',
+    noJobsInSystem: 'No system jobs found (Enter custom position)',
+    loadingJobs: 'Loading jobs…',
+    selectJobPlaceholder: 'Select a job from system',
     missingType: 'This set has no document of that type. Press “Start a new set”.',
     save: 'Save changes',
     saving: 'Saving…',
@@ -102,7 +137,15 @@ const secondaryButton =
 const textLink =
   'inline-flex items-center gap-1 border-b border-current pb-px text-[13px] transition-colors duration-150 hover:text-brand cursor-pointer';
 
-function SectionHead({ index, title, aside }: { index: string; title: string; aside?: React.ReactNode }) {
+function SectionHead({
+  index,
+  title,
+  aside,
+}: {
+  index: string;
+  title: string;
+  aside?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-ink pb-3">
       <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
@@ -173,7 +216,9 @@ function UnderlineTabs<T extends string>({
             disabled={disabled && !active}
             onClick={() => onChange(item.id)}
             className={`border-b-2 pb-2 pt-1 text-sm transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
-              active ? 'border-brand font-medium text-ink' : 'border-transparent text-slate-500 hover:text-ink'
+              active
+                ? 'border-brand font-medium text-ink'
+                : 'border-transparent text-slate-500 hover:text-ink'
             }`}
           >
             {item.label}
@@ -184,7 +229,6 @@ function UnderlineTabs<T extends string>({
   );
 }
 
-
 type DraftSet = Partial<Record<ApplicationContentType, ApplicationDraft>>;
 
 interface ComposeState {
@@ -193,6 +237,8 @@ interface ComposeState {
   language: ApplicationLanguage;
   activeType: ApplicationContentType;
   drafts: DraftSet;
+  customJobTitle?: string;
+  customCompany?: string;
 }
 
 /** Restores the letters being edited on the last visit so unsaved edits are not lost. */
@@ -207,11 +253,55 @@ function loadComposeState(): ComposeState | undefined {
 
 const TYPES: ApplicationContentType[] = ['cover_letter', 'application_email'];
 
+const FALLBACK_JOBS: Job[] = [
+  {
+    id: 'mbbank-ai-engineer',
+    title: 'All level AI Engineer Computer Vision/NLP/LLM',
+    company: 'MB Bank',
+    location: 'Hà Nội',
+    salary: '25 - 45 triệu VND/tháng',
+    type: 'Toàn thời gian',
+    skills: ['Python', 'NLP', 'LLM', 'Computer Vision', 'PyTorch'],
+    match: 92,
+    posted: 'Hôm nay',
+    description:
+      'Nghiên cứu và phát triển các mô hình AI/ML, NLP, Computer Vision cho các ứng dụng ngân hàng số.',
+    responsibilities: ['Phát triển mô hình AI', 'Tối ưu hóa pipeline xử lý dữ liệu'],
+    requirements: [
+      'Thành thạo Python, PyTorch/TensorFlow',
+      'Có kinh nghiệm về LLM hoặc Computer Vision',
+    ],
+    benefits: ['Thưởng hiệu quả công việc', 'Bảo hiểm cao cấp', 'Môi trường ngân hàng năng động'],
+  },
+  {
+    id: 'fpt-software-frontend',
+    title: 'Senior Frontend Developer (React / TypeScript)',
+    company: 'FPT Software',
+    location: 'Hà Nội / TP.HCM',
+    salary: '30 - 50 triệu VND/tháng',
+    type: 'Toàn thời gian',
+    skills: ['React', 'TypeScript', 'TailwindCSS', 'Next.js'],
+    match: 88,
+    posted: 'Hôm qua',
+    description:
+      'Phát triển các ứng dụng Web quy mô lớn với React, TypeScript và kiến trúc hiện đại.',
+    responsibilities: ['Xây dựng UI components', 'Tối ưu hóa hiệu năng web'],
+    requirements: ['Từ 3 năm kinh nghiệm React', 'Thành thạo TypeScript'],
+    benefits: ['Gói đãi ngộ hấp dẫn', 'Cơ hội làm việc dự án quốc tế'],
+  },
+];
+
 /** The backend saves the email and the letter of one AI run together: pair a saved letter with its sibling. */
 function siblingSet(saved: ApplicationDraft, all: ApplicationDraft[]): DraftSet {
   const time = (d: ApplicationDraft) => new Date(d.createdAt).getTime() || 0;
   const sibling = all
-    .filter((d) => d.id !== saved.id && d.jobId === saved.jobId && d.cvId === saved.cvId && d.contentType !== saved.contentType)
+    .filter(
+      (d) =>
+        d.id !== saved.id &&
+        d.jobId === saved.jobId &&
+        d.cvId === saved.cvId &&
+        d.contentType !== saved.contentType,
+    )
     .map((d) => ({ d, gap: Math.abs(time(d) - time(saved)) }))
     .filter((x) => x.gap < 5 * 60_000)
     .sort((a, b) => a.gap - b.gap)[0]?.d;
@@ -223,9 +313,16 @@ export default function ApplicationAssistancePage() {
   const c = isVietnamese ? copy.vi : copy.en;
   const [searchParams] = useSearchParams();
 
-  const { data: profile } = useQuery({ queryKey: ['candidate-profile'], queryFn: getCandidateProfile });
+  const { data: profile } = useQuery({
+    queryKey: ['candidate-profile'],
+    queryFn: getCandidateProfile,
+  });
   const { data: resumes = [] } = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
-  const { data: jobs = [] } = useQuery({ queryKey: ['jobs'], queryFn: () => getJobs() });
+  const { data: rawJobs = [], isPending: isJobsPending } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => getJobs(),
+  });
+  const jobs = useMemo(() => (rawJobs.length > 0 ? rawJobs : FALLBACK_JOBS), [rawJobs]);
   const { data: storedDrafts, refetch: refetchDrafts } = useQuery({
     queryKey: ['applicationDrafts'],
     queryFn: () => getStoredApplications(),
@@ -237,9 +334,23 @@ export default function ApplicationAssistancePage() {
     const queryCvId = searchParams.get('cvId') || searchParams.get('resumeId') || undefined;
     const restored = loadComposeState();
     if (queryJobId && restored?.jobId !== queryJobId) {
-      return { jobId: queryJobId, cvId: queryCvId, language: 'Vietnamese', activeType: 'cover_letter', drafts: {} };
+      return {
+        jobId: queryJobId,
+        cvId: queryCvId,
+        language: 'Vietnamese',
+        activeType: 'cover_letter',
+        drafts: {},
+      };
     }
-    return restored ?? { jobId: queryJobId, cvId: queryCvId, language: 'Vietnamese', activeType: 'cover_letter', drafts: {} };
+    return (
+      restored ?? {
+        jobId: queryJobId,
+        cvId: queryCvId,
+        language: 'Vietnamese',
+        activeType: 'cover_letter',
+        drafts: {},
+      }
+    );
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -266,14 +377,24 @@ export default function ApplicationAssistancePage() {
   useEffect(() => {
     setState((prev) => {
       let next = prev;
-      if (!prev.jobId && jobs.length > 0) next = { ...next, jobId: jobs[0].id };
-      if (!prev.cvId && readyResumes.length > 0) {
+      const isJobValid = Boolean(
+        prev.jobId && (prev.jobId === 'custom' || jobs.some((j) => j.id === prev.jobId)),
+      );
+      if (!isJobValid) {
+        if (jobs.length > 0) {
+          next = { ...next, jobId: jobs[0].id };
+        } else if (!isJobsPending) {
+          next = { ...next, jobId: 'custom' };
+        }
+      }
+      const isCvValid = Boolean(prev.cvId && readyResumes.some((r) => r.id === prev.cvId));
+      if (!isCvValid && readyResumes.length > 0) {
         const def = readyResumes.find((r) => r.isDefault) ?? readyResumes[0];
         next = { ...next, cvId: def.id };
       }
       return next;
     });
-  }, [jobs, readyResumes]);
+  }, [jobs, readyResumes, isJobsPending]);
 
   const savedDrafts = useMemo(
     () =>
@@ -282,34 +403,84 @@ export default function ApplicationAssistancePage() {
         const cv = resumes.find((r) => r.id === d.cvId);
         return {
           ...d,
-          ...(job ? { title: `${job.title} · ${job.company}`, jobTitle: job.title, company: job.company } : {}),
+          ...(job
+            ? { title: `${job.title} · ${job.company}`, jobTitle: job.title, company: job.company }
+            : d.jobId?.startsWith('custom-') || d.jobId === 'custom'
+              ? { title: d.title || (isVietnamese ? 'Thư tự do' : 'Freeform letter') }
+              : {}),
           ...(cv ? { cvName: cv.name } : {}),
         };
       }),
-    [storedDrafts, jobs, resumes],
+    [storedDrafts, jobs, resumes, isVietnamese],
   );
 
   const draft = state.drafts[state.activeType];
   const hasDrafts = TYPES.some((t) => state.drafts[t]);
-  const hasUnsaved = TYPES.some((t) => state.drafts[t] && !state.drafts[t]?.isSaved);
-  const locked = hasDrafts;
+  const hasUnsaved = TYPES.some((t) => {
+    const d = state.drafts[t];
+    return d && !d.isSaved && (d.content.trim().length > 0 || (d.subject?.trim().length ?? 0) > 0);
+  });
+  const isCustomJob = state.jobId === 'custom';
   const selectedJob = jobs.find((j) => j.id === state.jobId);
+  const existingDraft = (storedDrafts ?? []).find((d) => d.jobId === state.jobId);
   // CV chỉ để tham khảo khi tự viết, không bắt buộc.
   const blocker = !state.jobId ? c.needJob : null;
-  const step = !state.jobId ? 0 : !hasDrafts ? 1 : hasUnsaved ? 2 : 3;
+  const isSavedLetter = Boolean(
+    draft?.isSaved && (draft.content.trim().length > 0 || (draft.subject?.trim().length ?? 0) > 0),
+  );
+  const isDrafting = Boolean(
+    hasDrafts &&
+    ((draft?.content.trim().length ?? 0) > 0 || (draft?.subject?.trim().length ?? 0) > 0) &&
+    !isSavedLetter,
+  );
+  const step = !state.jobId ? 0 : isSavedLetter ? 3 : isDrafting ? 1 : 0;
 
   const updateDraft = (patch: Partial<ApplicationDraft>) =>
     setState((prev) => {
       const current = prev.drafts[prev.activeType];
       if (!current) return prev;
-      return { ...prev, drafts: { ...prev.drafts, [prev.activeType]: { ...current, ...patch, isSaved: false } } };
+      return {
+        ...prev,
+        drafts: { ...prev.drafts, [prev.activeType]: { ...current, ...patch, isSaved: false } },
+      };
     });
 
   const startNew = () => {
     if (hasUnsaved && !window.confirm(c.confirmNew)) return;
-    setState((prev) => ({ ...prev, drafts: {} }));
+    const effectiveJobId = state.jobId || (jobs.length > 0 ? jobs[0].id : 'custom');
+    const created = createOwnDrafts({
+      jobId: effectiveJobId === 'custom' ? `custom-${Date.now()}` : effectiveJobId,
+      resumeId: state.cvId,
+      language: state.language,
+    });
+    const drafts: DraftSet = {};
+    for (const d of created) {
+      if (effectiveJobId === 'custom') {
+        const titleStr = `${state.customJobTitle?.trim() || (isVietnamese ? 'Vị trí tự do' : 'Target Position')} · ${state.customCompany?.trim() || (isVietnamese ? 'Tự do' : 'Freeform')}`;
+        drafts[d.contentType] = {
+          ...d,
+          title:
+            d.contentType === 'application_email'
+              ? `${c.types.application_email} (${titleStr})`
+              : `${c.types.cover_letter} (${titleStr})`,
+        };
+      } else {
+        drafts[d.contentType] = d;
+      }
+    }
+    setState((prev) => ({
+      ...prev,
+      jobId: effectiveJobId,
+      drafts,
+    }));
     setError(null);
     setActiveTab('editor');
+    showToast(c.generatedToast);
+    setTimeout(() => {
+      document
+        .getElementById('section-editor')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   };
 
   const handleGenerate = async () => {
@@ -318,13 +489,35 @@ export default function ApplicationAssistancePage() {
     setIsGenerating(true);
     setError(null);
     try {
-      // AI không viết giùm: mở khung trống để người dùng tự viết.
-      const created = createOwnDrafts({ jobId: state.jobId, resumeId: state.cvId, language: state.language });
+      const effectiveJobId = state.jobId === 'custom' ? `custom-${Date.now()}` : state.jobId;
+      const created = createOwnDrafts({
+        jobId: effectiveJobId,
+        resumeId: state.cvId,
+        language: state.language,
+      });
       const drafts: DraftSet = {};
-      for (const d of created) drafts[d.contentType] = d;
+      for (const d of created) {
+        if (state.jobId === 'custom') {
+          const titleStr = `${state.customJobTitle?.trim() || (isVietnamese ? 'Vị trí tự do' : 'Target Position')} · ${state.customCompany?.trim() || (isVietnamese ? 'Tự do' : 'Freeform')}`;
+          drafts[d.contentType] = {
+            ...d,
+            title:
+              d.contentType === 'application_email'
+                ? `${c.types.application_email} (${titleStr})`
+                : `${c.types.cover_letter} (${titleStr})`,
+          };
+        } else {
+          drafts[d.contentType] = d;
+        }
+      }
       setState((prev) => ({ ...prev, drafts }));
       void refetchDrafts();
       showToast(c.generatedToast);
+      setTimeout(() => {
+        document
+          .getElementById('section-editor')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
     } catch (err) {
       setError(authErrorMessage(err, c.generateFail));
     } finally {
@@ -355,13 +548,21 @@ export default function ApplicationAssistancePage() {
       jobId: saved.jobId,
       cvId: saved.cvId,
       activeType: saved.contentType,
-      drafts: Object.fromEntries(Object.entries(set).map(([k, v]) => [k, { ...v, subject: v?.subject ?? '', isSaved: true }])),
+      drafts: Object.fromEntries(
+        Object.entries(set).map(([k, v]) => [
+          k,
+          { ...v, subject: v?.subject ?? '', isSaved: true },
+        ]),
+      ),
     }));
     setError(null);
     setActiveTab('editor');
   };
 
-  const fitHref = state.cvId && state.jobId ? `/candidate/cv-job-fit?cvId=${state.cvId}&jobId=${state.jobId}` : undefined;
+  const fitHref =
+    state.cvId && state.jobId
+      ? `/candidate/cv-job-fit?cvId=${state.cvId}&jobId=${state.jobId}`
+      : undefined;
 
   return (
     <div className="w-full max-w-[min(100%,90rem)] pb-[clamp(2rem,5vw,4rem)]">
@@ -393,10 +594,17 @@ export default function ApplicationAssistancePage() {
         </p>
         <ol className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[13px]" aria-label={c.eyebrow}>
           {c.steps.map((label, i) => (
-            <li key={label} className={`flex items-baseline gap-2 ${i === step ? 'text-ink' : i < step ? 'text-brand' : 'text-slate-500'}`}>
+            <li
+              key={label}
+              className={`flex items-baseline gap-2 ${i === step ? 'text-ink' : i < step ? 'text-brand' : 'text-slate-500'}`}
+            >
               <span
                 className={`inline-flex h-6 w-6 items-center justify-center rounded-full border text-[11px] tabular-nums ${
-                  i === step ? 'border-ink bg-ink text-white' : i < step ? 'border-brand' : 'border-slate-400'
+                  i === step
+                    ? 'border-ink bg-ink text-white'
+                    : i < step
+                      ? 'border-brand'
+                      : 'border-slate-400'
                 }`}
               >
                 {i + 1}
@@ -418,7 +626,8 @@ export default function ApplicationAssistancePage() {
               id: 'saved',
               label: (
                 <>
-                  {c.tabSaved} <span className="tabular-nums text-slate-500">({savedDrafts.length})</span>
+                  {c.tabSaved}{' '}
+                  <span className="tabular-nums text-slate-500">({savedDrafts.length})</span>
                 </>
               ),
             },
@@ -431,7 +640,11 @@ export default function ApplicationAssistancePage() {
 
       {activeTab === 'saved' ? (
         <div className="mt-[clamp(2rem,4vw,2.75rem)]">
-          <SavedApplicationsList drafts={savedDrafts} onSelectDraft={handleOpenSaved} onCreateNew={startNew} />
+          <SavedApplicationsList
+            drafts={savedDrafts}
+            onSelectDraft={handleOpenSaved}
+            onCreateNew={startNew}
+          />
         </div>
       ) : (
         <>
@@ -443,20 +656,37 @@ export default function ApplicationAssistancePage() {
                 <label htmlFor="app-job" className="block text-[13px] text-slate-600">
                   {c.jobLabel}
                 </label>
-                <LineSelect id="app-job" value={state.jobId ?? ''} disabled={locked} onChange={(v) => setState((p) => ({ ...p, jobId: v }))}>
-                  {!selectedJob && state.jobId && <option value={state.jobId}>{draft?.title || state.jobId}</option>}
+                <LineSelect
+                  id="app-job"
+                  value={state.jobId ?? ''}
+                  disabled={isGenerating}
+                  onChange={(v) => {
+                    if (hasUnsaved && !window.confirm(c.confirmNew)) return;
+                    setState((p) => ({ ...p, jobId: v, drafts: {} }));
+                  }}
+                >
+                  {isJobsPending && <option value="">{c.loadingJobs}</option>}
+                  {!selectedJob && state.jobId && state.jobId !== 'custom' && (
+                    <option value={state.jobId}>{draft?.title || state.jobId}</option>
+                  )}
                   {jobs.map((job) => (
                     <option key={job.id} value={job.id}>
                       {job.title} – {job.company}
                     </option>
                   ))}
+                  <option value="custom">✏️ {c.customJob}</option>
                 </LineSelect>
               </div>
               <div className="min-w-0">
                 <label htmlFor="app-cv" className="block text-[13px] text-slate-600">
                   {c.cvLabel}
                 </label>
-                <LineSelect id="app-cv" value={state.cvId ?? ''} disabled={locked} onChange={(v) => setState((p) => ({ ...p, cvId: v || undefined }))}>
+                <LineSelect
+                  id="app-cv"
+                  value={state.cvId ?? ''}
+                  disabled={isGenerating}
+                  onChange={(v) => setState((p) => ({ ...p, cvId: v || undefined }))}
+                >
                   <option value="">{c.pickCv}</option>
                   {readyResumes.map((cv) => (
                     <option key={cv.id} value={cv.id}>
@@ -491,6 +721,38 @@ export default function ApplicationAssistancePage() {
                 </div>
               </div>
             </div>
+            {state.jobId === 'custom' && (
+              <div className="mt-5 grid gap-4 rounded-xl border border-slate-300 bg-surface-subtle p-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="custom-job-title" className="block text-[13px] text-slate-600">
+                    {c.customJobTitleLabel}
+                  </label>
+                  <input
+                    id="custom-job-title"
+                    type="text"
+                    disabled={isGenerating}
+                    placeholder={c.customJobTitlePlaceholder}
+                    value={state.customJobTitle ?? ''}
+                    onChange={(e) => setState((p) => ({ ...p, customJobTitle: e.target.value }))}
+                    className={lineField}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="custom-company" className="block text-[13px] text-slate-600">
+                    {c.customCompanyLabel}
+                  </label>
+                  <input
+                    id="custom-company"
+                    type="text"
+                    disabled={isGenerating}
+                    placeholder={c.customCompanyPlaceholder}
+                    value={state.customCompany ?? ''}
+                    onChange={(e) => setState((p) => ({ ...p, customCompany: e.target.value }))}
+                    className={lineField}
+                  />
+                </div>
+              </div>
+            )}
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <button
                 type="button"
@@ -501,20 +763,33 @@ export default function ApplicationAssistancePage() {
                 {isGenerating ? c.generating : hasDrafts ? c.regenerate : c.generate}
                 <ArrowRight size={15} aria-hidden="true" />
               </button>
-              {blocker && !isGenerating && <p className="text-[13px] text-slate-500 sm:ml-2">{blocker}</p>}
+              {blocker && !isGenerating && (
+                <p className="text-[13px] text-slate-500 sm:ml-2">{blocker}</p>
+              )}
             </div>
             {error && <p className="mt-4 text-[13px] text-red-700">{error}</p>}
-            {locked && <p className="mt-4 text-[13px] text-slate-500">{c.lockedNote}</p>}
+            {hasDrafts && (
+              <p className="mt-4 text-[13px] text-slate-500">
+                {isVietnamese
+                  ? 'Đang mở bộ thư. Bạn có thể chọn đổi công việc khác ở trên hoặc'
+                  : 'Editing this letter set. You can change jobs above or'}{' '}
+                <button type="button" onClick={startNew} className={`${textLink} ml-1 text-ink`}>
+                  + {c.newLetter}
+                </button>
+              </p>
+            )}
           </section>
 
           {/* 02 — Edit */}
-          <section className="mt-[clamp(2.5rem,5vw,3.5rem)] max-w-[60rem]">
+          <section id="section-editor" className="mt-[clamp(2.5rem,5vw,3.5rem)] max-w-[60rem]">
             <SectionHead
               index="02"
               title={c.s2}
               aside={
                 draft ? (
-                  <span className={`text-[13px] ${draft.isSaved ? 'text-brand' : 'text-slate-500'}`}>
+                  <span
+                    className={`text-[13px] ${draft.isSaved ? 'text-brand' : 'text-slate-500'}`}
+                  >
                     {draft.isSaved ? c.saved : c.unsaved}
                   </span>
                 ) : undefined
@@ -531,11 +806,37 @@ export default function ApplicationAssistancePage() {
 
             {!hasDrafts ? (
               <div className="border-b border-border py-[clamp(2.5rem,6vw,4rem)]">
-                <h3 className="text-[clamp(1.125rem,1.8vw,1.375rem)] font-normal text-ink">{c.emptyTitle}</h3>
+                <h3 className="text-[clamp(1.125rem,1.8vw,1.375rem)] font-normal text-ink">
+                  {c.emptyTitle}
+                </h3>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">{c.emptyBody}</p>
+                <div className="mt-6 flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => void handleGenerate()}
+                    disabled={isGenerating || !!blocker}
+                    className={`${primaryButton} w-full sm:w-auto`}
+                  >
+                    {isGenerating ? c.generating : c.generate}
+                    <ArrowRight size={15} aria-hidden="true" />
+                  </button>
+                  {existingDraft && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSaved(existingDraft)}
+                      className={`${secondaryButton} w-full sm:w-auto`}
+                    >
+                      {isVietnamese
+                        ? 'Mở thư đã lưu cho công việc này'
+                        : 'Open saved letter for this job'}
+                    </button>
+                  )}
+                </div>
               </div>
             ) : !draft ? (
-              <p className="border-b border-border py-10 text-sm leading-6 text-slate-600">{c.missingType}</p>
+              <p className="border-b border-border py-10 text-sm leading-6 text-slate-600">
+                {c.missingType}
+              </p>
             ) : (
               <>
                 <ApplicationEditor
@@ -545,8 +846,19 @@ export default function ApplicationAssistancePage() {
                   content={draft.content}
                   onChangeSubject={(v) => updateDraft({ subject: v })}
                   onChangeContent={(v) => updateDraft({ content: v })}
-                  jobTitle={selectedJob?.title}
-                  company={selectedJob?.company}
+                  jobTitle={
+                    selectedJob?.title ||
+                    (isCustomJob
+                      ? state.customJobTitle || (isVietnamese ? 'Vị trí tự do' : 'Target Position')
+                      : undefined)
+                  }
+                  company={
+                    selectedJob?.company ||
+                    (isCustomJob
+                      ? state.customCompany ||
+                        (isVietnamese ? 'Doanh nghiệp ứng tuyển' : 'Target Company')
+                      : undefined)
+                  }
                   candidateName={profile?.name}
                   fitHref={fitHref}
                   disabled={isGenerating}
@@ -561,9 +873,20 @@ export default function ApplicationAssistancePage() {
                     setState((prev) => {
                       const current = prev.drafts[prev.activeType];
                       if (!current) return prev;
-                      const content = current.content.includes(original) ? current.content.replace(original, suggestion) : current.content;
-                      const subject = content === current.content && current.subject?.includes(original) ? current.subject.replace(original, suggestion) : current.subject;
-                      return { ...prev, drafts: { ...prev.drafts, [prev.activeType]: { ...current, content, subject, isSaved: false } } };
+                      const content = current.content.includes(original)
+                        ? current.content.replace(original, suggestion)
+                        : current.content;
+                      const subject =
+                        content === current.content && current.subject?.includes(original)
+                          ? current.subject.replace(original, suggestion)
+                          : current.subject;
+                      return {
+                        ...prev,
+                        drafts: {
+                          ...prev.drafts,
+                          [prev.activeType]: { ...current, content, subject, isSaved: false },
+                        },
+                      };
                     })
                   }
                 />
