@@ -46,7 +46,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
       id: 'resumes' as const,
       icon: FileText,
       label: isVietnamese ? 'Xem CV demo' : 'Demo CVs',
-      hint: isVietnamese ? 'Mẫu chuẩn ATS, điểm 90+' : 'ATS-ready samples, 90+ score',
+      hint: isVietnamese ? 'CV mẫu và việc làm khớp kỹ năng' : 'Sample CVs and skill-matched jobs',
     },
     {
       id: 'builder' as const,
@@ -288,8 +288,8 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">
                 {isVietnamese
-                  ? 'Bạn đang ở phiên dùng thử. Hãy đăng ký tài khoản miễn phí hoặc đăng nhập bằng tài khoản Demo để lưu trữ và tận hưởng trọn vẹn nền tảng.'
-                  : 'You are currently in guest trial mode. Sign up for free or sign in with demo credentials to save and unlock all features.'}
+                  ? 'Bạn đang ở phiên dùng thử. Hãy đăng ký tài khoản miễn phí hoặc đăng nhập để lưu trữ và dùng đầy đủ nền tảng.'
+                  : 'You are currently in guest trial mode. Sign up for free or sign in to save and unlock all features.'}
               </p>
             </div>
 

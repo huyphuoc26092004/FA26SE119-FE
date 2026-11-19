@@ -52,9 +52,9 @@ const recruiterFeatures = [
 ];
 
 const stats = [
-  { value: '94%', label: 'Độ chính xác khớp nối' },
-  { value: '3x', label: 'Nhanh hơn tìm kiếm thủ công' },
-  { value: '3', label: 'Vai trò hệ thống' },
+  { value: '4', label: 'Vai trò hệ thống' },
+  { value: 'PDF/DOCX', label: 'Định dạng CV được hỗ trợ' },
+  { value: '24 giờ', label: 'Dùng thử không cần tài khoản' },
   { value: '10+', label: 'Tính năng AI tích hợp' },
 ];
 

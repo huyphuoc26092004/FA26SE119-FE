@@ -139,7 +139,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
 
   // The admin mockup shows the role as the display name.
   const displayName = isAdmin ? roleLabel : user?.name || roleLabel;
-  const userSubtitle = isAdmin ? 'FA26SE119 · Demo' : `${roleLabel} · FA26SE119 Demo`;
+  const userSubtitle = isAdmin ? user?.email || roleLabel : [roleLabel, user?.email].filter(Boolean).join(' · ');
   const avatarInitials = isAdmin ? (isVietnamese ? 'QT' : 'AD') : initialsOf(displayName);
 
   const activeTo = findActiveTo(nav, location.pathname, location.search);

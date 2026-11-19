@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Search,
   ExternalLink,
-  CheckCircle2,
   X,
   ArrowRight,
 } from 'lucide-react';
@@ -20,7 +19,6 @@ export function GuestJobsTab() {
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('All');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [appliedJobId, setAppliedJobId] = useState<string | null>(null);
   const { data: jobs = [] } = useQuery({ queryKey: ['guest-jobs'], queryFn: () => getJobs() });
 
   const filteredJobs = useMemo(() => {
@@ -34,18 +32,11 @@ export function GuestJobsTab() {
     });
   }, [jobs, search, location]);
 
-  const handleQuickApply = (jobId: string) => {
-    setAppliedJobId(jobId);
-    setTimeout(() => {
-      setAppliedJobId(null);
-    }, 3500);
-  };
-
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h3 className="text-2xl font-normal text-ink">
-          {isVietnamese ? 'Việc làm công khai và độ khớp AI' : 'Public jobs and AI match scores'}
+          {isVietnamese ? 'Việc làm công khai' : 'Public jobs'}
         </h3>
         <Link
           to="/jobs"
@@ -93,7 +84,7 @@ export function GuestJobsTab() {
               ? `${filteredJobs.length} việc làm phù hợp`
               : `${filteredJobs.length} matching jobs`}
           </span>
-          <span>{isVietnamese ? 'Mô phỏng cách AI tính độ khớp' : 'Simulated match scoring'}</span>
+          <span>{isVietnamese ? 'Xem độ khớp ở tab CV mẫu' : 'See match scores in the Sample CVs tab'}</span>
         </div>
 
         {filteredJobs.map((job) => (
@@ -115,11 +106,7 @@ export function GuestJobsTab() {
               <p className="text-base text-ink">{job.salary}</p>
             </div>
             <div className="lg:pt-6">
-              <p className="text-2xl font-normal text-brand">{job.match}%</p>
-              <div className="mt-1 h-[3px] bg-slate-200">
-                <div className="h-[3px] bg-brand" style={{ width: `${job.match}%` }} />
-              </div>
-              <div className="mt-3 flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   className="inline-flex items-center gap-1 whitespace-nowrap text-base text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
@@ -193,11 +180,9 @@ export function GuestJobsTab() {
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-medium">
-                  {isVietnamese ? 'Độ tương thích hồ sơ' : 'Profile Match Score'}
+                  {isVietnamese ? 'Ngày đăng' : 'Posted'}
                 </p>
-                <p className="font-medium text-emerald-600 mt-0.5">
-                  {selectedJob.match}% {isVietnamese ? 'Rất phù hợp' : 'High Potential'}
-                </p>
+                <p className="font-medium text-slate-900 mt-0.5">{selectedJob.posted || '—'}</p>
               </div>
             </div>
 
@@ -244,18 +229,11 @@ export function GuestJobsTab() {
                 </Button>
               </Link>
 
-              <div className="flex items-center gap-2">
-                {appliedJobId === selectedJob.id ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-800">
-                    <CheckCircle2 size={16} />
-                    {isVietnamese ? 'Đã ghi nhận ứng tuyển thử nghiệm!' : 'Demo Application Received!'}
-                  </span>
-                ) : (
-                  <Button onClick={() => handleQuickApply(selectedJob.id)} className="text-xs">
-                    {isVietnamese ? 'Nộp hồ sơ thử nghiệm' : 'Try Demo Apply'}
-                  </Button>
-                )}
-              </div>
+              <Link to="/register">
+                <Button className="text-xs">
+                  {isVietnamese ? 'Đăng ký để ứng tuyển' : 'Sign up to apply'}
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

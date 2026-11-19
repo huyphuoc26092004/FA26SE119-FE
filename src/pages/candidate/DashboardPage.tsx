@@ -12,10 +12,16 @@ import { useTranslation } from '../../i18n';
 // Short page-only strings that have no i18n key yet.
 const copy = {
   vi: {
+    greeting: (name: string) => (name ? `Xin chào, ${name}` : 'Xin chào'),
     profileReached: (p: number) => `Hồ sơ của bạn đã ${p}%.`,
     remainingHint: (p: number) => `Còn ${p}% để nhận gợi ý chính xác hơn`,
     atsLabel: 'Điểm ATS của CV',
-    atsReady: 'Sẵn sàng gửi ứng tuyển',
+    atsReady: 'CV mới nhất của bạn',
+    atsNone: 'Chưa có CV được chấm điểm',
+    recommendedDetail: 'Theo CV và hồ sơ của bạn',
+    averageDetail: 'Trên các việc làm được gợi ý',
+    noGoal: 'Chưa đặt vị trí mục tiêu',
+    roadmapDetail: 'Xem và cập nhật tiến độ học tập',
     atsShort: 'điểm ATS',
     yourGoal: 'Mục tiêu của bạn',
     perMonth: 'tháng',
@@ -27,10 +33,16 @@ const copy = {
     manageCv: 'Quản lý CV',
   },
   en: {
+    greeting: (name: string) => (name ? `Hello, ${name}` : 'Hello'),
     profileReached: (p: number) => `Your profile is ${p}% complete.`,
     remainingHint: (p: number) => `${p}% to go for sharper recommendations`,
     atsLabel: 'CV ATS score',
-    atsReady: 'Ready to apply',
+    atsReady: 'Your latest CV',
+    atsNone: 'No scored CV yet',
+    recommendedDetail: 'Based on your CV and profile',
+    averageDetail: 'Across recommended jobs',
+    noGoal: 'No target position set',
+    roadmapDetail: 'View and update your learning progress',
     atsShort: 'ATS score',
     yourGoal: 'Your goal',
     perMonth: 'month',
@@ -66,54 +78,56 @@ export default function DashboardPage() {
   });
 
   const bestResume = resumes?.[0];
-  const atsScore = bestResume?.atsScore ?? 88;
-  const profileCompletion = profile?.completion ?? 85;
-  const candidateFirstName = profile?.name ? profile.name.split(' ').slice(-1)[0] : 'Alex';
-  const recommendedCount = 24;
+  const atsScore = bestResume?.atsScore || null;
+  const profileCompletion = profile?.completion ?? 0;
+  const candidateFirstName = profile?.name ? profile.name.split(' ').slice(-1)[0] : '';
+  const recommendedCount = jobs?.length ?? 0;
+  const scored = (jobs ?? []).filter((job) => job.semanticMatch?.scoreAvailable !== false && job.match > 0);
+  const averageMatch = scored.length ? Math.round(scored.reduce((sum, job) => sum + job.match, 0) / scored.length) : null;
 
-  const greeting = t('dashboard.greeting').replace('Alex', candidateFirstName);
+  const greeting = c.greeting(candidateFirstName);
   const salary =
     profile?.expectedSalary ||
     (profile?.salaryMin
       ? `${profile.salaryMin.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`
-      : '35,000,000 – 55,000,000 VNĐ');
+      : '');
   const goalMeta = [
-    `${salary} / ${c.perMonth}`,
-    profile?.employmentType || 'Full-time / Hybrid',
-    profile?.preferredLocations?.join(', ') || profile?.location || 'Hồ Chí Minh',
-  ];
+    salary ? `${salary} / ${c.perMonth}` : '',
+    profile?.employmentType || '',
+    profile?.preferredLocations?.join(', ') || profile?.location || '',
+  ].filter(Boolean);
 
   const stats = [
     {
       to: '/candidate/resumes',
       label: c.atsLabel,
-      value: String(atsScore),
-      detail: c.atsReady,
+      value: atsScore == null ? '—' : String(atsScore),
+      detail: atsScore == null ? c.atsNone : c.atsReady,
     },
     {
       to: '/candidate/jobs',
       label: t('dashboard.recommendedJobsCount'),
-      value: String(recommendedCount),
-      detail: t('dashboard.recommendedJobsDetail'),
+      value: jobs ? String(recommendedCount) : '—',
+      detail: c.recommendedDetail,
     },
     {
       to: undefined,
       label: t('dashboard.averageMatch'),
-      value: '88%',
-      detail: t('dashboard.averageMatchDetail'),
+      value: averageMatch == null ? '—' : `${averageMatch}%`,
+      detail: c.averageDetail,
     },
   ];
 
   const nextSteps = [
     {
-      to: `/candidate/resumes/${bestResume?.id || 'cv-1'}/analysis`,
+      to: bestResume ? `/candidate/resumes/${bestResume.id}/analysis` : '/candidate/resumes',
       title: c.improveCv,
-      detail: `${bestResume?.name ?? 'Frontend Developer CV'} · ${c.atsShort} ${atsScore}`,
+      detail: bestResume ? [bestResume.name, atsScore == null ? '' : `${c.atsShort} ${atsScore}`].filter(Boolean).join(' · ') : c.atsNone,
     },
     {
       to: '/candidate/learning/roadmap',
       title: c.continueRoadmap,
-      detail: `${t('dashboard.learningRoadmapSubtitle')} · ${t('dashboard.stagesComplete')}`,
+      detail: c.roadmapDetail,
     },
   ];
 
@@ -184,9 +198,9 @@ export default function DashboardPage() {
         <div className="mt-2 flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
           <div className="min-w-0">
             <h2 className="text-[clamp(1.25rem,2vw,1.5rem)] font-normal tracking-[-0.01em] text-ink">
-              {profile?.targetPosition || 'Senior Frontend Engineer'}
+              {profile?.targetPosition || c.noGoal}
             </h2>
-            <p className="mt-1.5 text-[15px] text-slate-600">{goalMeta.join(' · ')}</p>
+            {goalMeta.length > 0 && <p className="mt-1.5 text-[15px] text-slate-600">{goalMeta.join(' · ')}</p>}
           </div>
           <Link to="/candidate/profile/edit" className={`${textLink} text-ink`}>
             {t('dashboard.quickEditPreferences')}
@@ -201,7 +215,7 @@ export default function DashboardPage() {
             {t('dashboard.recommendedForYou')}
           </h2>
           <Link to="/candidate/jobs" className={`${textLink} text-brand hover:text-ink`}>
-            {t('dashboard.viewAllJobs')} {recommendedCount}
+            {t('dashboard.viewAllJobs')}
           </Link>
         </div>
 

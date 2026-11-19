@@ -415,7 +415,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
     detailedSkills.length > 0 ? detailedSkills : profile.skills.map((name) => ({ name, level: 'Advanced' }));
 
   const bestResume = resumes?.[0];
-  const atsScore = bestResume?.atsScore ?? 88;
+  const atsScore = bestResume?.atsScore || null;
 
   const socialLinks = [
     { label: 'LinkedIn', url: profile.linkedin },
@@ -676,14 +676,16 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
             />
             <Row label={c.atsScore}>
               <span className="text-[clamp(1.75rem,3vw,2.25rem)] leading-none tracking-[-0.02em] text-brand tabular-nums">
-                {atsScore}
+                {atsScore ?? '—'}
               </span>
-              <span className="text-sm text-slate-600">
-                {' '}
-                / 100 · {t('dashboard.atsScoreReady')}
-              </span>
+              {atsScore != null && (
+                <span className="text-sm text-slate-600">
+                  {' '}
+                  / 100 · {t('dashboard.atsScoreReady')}
+                </span>
+              )}
             </Row>
-            <Row label={c.activeCv}>{bestResume?.name ?? 'Frontend Developer CV (Default)'}</Row>
+            <Row label={c.activeCv}>{bestResume?.name ?? '—'}</Row>
             {resumes && resumes.length > 0 && (
               <Row label={c.allCvs}>
                 <ul className="-mt-1">
@@ -862,7 +864,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     <Input
                       type="number"
                       step={1000000}
-                      value={formData.salaryMin ?? profile.salaryMin ?? 35000000}
+                      value={formData.salaryMin ?? profile.salaryMin ?? ''}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -880,7 +882,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                     <Input
                       type="number"
                       step={1000000}
-                      value={formData.salaryMax ?? profile.salaryMax ?? 55000000}
+                      value={formData.salaryMax ?? profile.salaryMax ?? ''}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,

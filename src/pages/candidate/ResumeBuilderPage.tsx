@@ -6,6 +6,7 @@ import {
   createResume,
   getResumeById,
   getResumeTemplates,
+  getGuestResumeTemplates,
   getLocalResumeTemplates,
   updateResume,
   type CvTemplate,
@@ -503,10 +504,10 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
   const backTo = returnTo?.startsWith('/candidate/') ? returnTo : null;
   const queryClient = useQueryClient();
 
-  // Khách dùng thử: lỗi mạng thì vẫn có mẫu trong FE để thử.
+  // Khách dùng thử lấy mẫu từ GET /guest/templates; lỗi mạng thì vẫn có mẫu trong FE để thử.
   const templatesQuery = useQuery({
     queryKey: guest ? ['resume-templates', 'guest'] : ['resume-templates'],
-    queryFn: guest ? () => getResumeTemplates().catch(getLocalResumeTemplates) : getResumeTemplates,
+    queryFn: guest ? () => getGuestResumeTemplates().catch(getLocalResumeTemplates) : getResumeTemplates,
     staleTime: 5 * 60_000,
   });
   const resumeQuery = useQuery({
