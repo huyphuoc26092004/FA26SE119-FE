@@ -2,11 +2,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, ExternalLink, Video } from 'lucide-react';
 import type { ConsultationBooking } from '../../services/bookingService';
 import { retryBookingMeeting } from '../../services/bookingService';
-import { bookingCalendarLink, bookingMeetLink, canRetryBookingMeeting, googleMeetingUrl, validBookingWindow } from '../../utils/bookingMeeting';
+import { bookingCalendarLink, bookingJoinLink, bookingMeetingFailureReason, bookingMeetLink, canRetryBookingMeeting, googleMeetingUrl, validBookingWindow } from '../../utils/bookingMeeting';
 import { useTranslation } from '../../i18n';
 import { useBookingClock } from './useBookingClock';
 
-export default function BookingMeetingAccess({ booking }: { booking: ConsultationBooking }) {
+export default function BookingMeetingAccess({ booking, showFailureReason = false }: { booking: ConsultationBooking; showFailureReason?: boolean }) {
   const { isVietnamese: vi } = useTranslation();
   const client = useQueryClient();
   const now = useBookingClock();
@@ -18,6 +18,9 @@ export default function BookingMeetingAccess({ booking }: { booking: Consultatio
     onSuccess: () => { void client.invalidateQueries({ queryKey: ['consultation-bookings'] }); },
   });
   const meet = bookingMeetLink(booking, now);
+  const join = bookingJoinLink(booking, now);
+  const beforeStart = !!join && now < Date.parse(booking.starts_at);
+  const opensAt = new Date(booking.starts_at).toLocaleString(vi ? 'vi-VN' : 'en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
   const calendar = bookingCalendarLink(booking);
   const ended = !!booking.meeting_ended_at || now >= Date.parse(booking.ends_at)
     || booking.status === 'COMPLETED' || booking.meeting_status === 'ENDED';
@@ -48,9 +51,13 @@ export default function BookingMeetingAccess({ booking }: { booking: Consultatio
   return (
     <div className="mt-4 space-y-3 border-t border-border pt-4">
       <p className="text-sm leading-6 text-slate-600" role="status">{message}</p>
+      {showFailureReason && failed && !cancelled && !ended && !invalid && booking.meeting_error && (
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-800">
+          {bookingMeetingFailureReason(booking.meeting_error, vi)}
+        </p>
+      )}
       <div className="flex flex-wrap gap-3">
-        {meet && <a href={meet} target="_blank" rel="noopener noreferrer"
-          onClick={(event) => { if (!bookingMeetLink(booking, Date.now())) event.preventDefault(); }}
+        {join && <a href={join} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm text-white">
           <Video size={16} aria-hidden="true" />{vi ? 'Tham gia Google Meet' : 'Join Google Meet'}
           <ExternalLink size={13} aria-hidden="true" />
@@ -69,6 +76,9 @@ export default function BookingMeetingAccess({ booking }: { booking: Consultatio
           {vi ? 'Cập nhật trạng thái' : 'Refresh status'}
         </button>}
       </div>
+      {beforeStart && <p className="text-xs text-slate-500">
+        {vi ? `Phòng họp mở lúc ${opensAt}. Nếu vào sớm hơn, Google Meet sẽ báo chưa thể tham gia.` : `The room opens at ${opensAt}. Joining earlier, Google Meet will not admit you yet.`}
+      </p>}
       {retry.error && <p role="alert" className="text-sm text-danger">{retry.error.message}</p>}
     </div>
   );
