@@ -43,6 +43,7 @@ export interface UserSubscriptionStatus {
   autoRenew: boolean;
   tokensUsed: number;
   tokenLimit: number;
+  tokenWalletBalance?: number;
   cvParsedCount: number;
   cvJobFitCount: number;
   coverLettersGeneratedCount: number;

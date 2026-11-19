@@ -43,15 +43,15 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [planToDelete, setPlanToDelete] = useState<AdminSubscriptionPlan | null>(null);
 
-  const subscriptionPlansCount = plans.filter((p) => p.planType !== 'TOPUP').length;
-  const topupPlansCount = plans.filter((p) => p.planType === 'TOPUP').length;
+  const subscriptionPlansCount = plans.filter((p) => p.tierType !== 'TOKEN_TOPUP').length;
+  const topupPlansCount = plans.filter((p) => p.tierType === 'TOKEN_TOPUP').length;
 
   // Filtered plans
   const filteredPlans = plans.filter((p) => {
     if (statusFilter !== 'ALL' && p.status !== statusFilter) return false;
     if (typeFilter !== 'ALL') {
-      const isTopup = p.planType === 'TOPUP';
-      if (typeFilter === 'TOPUP' && !isTopup) return false;
+      const isTopup = p.tierType === 'TOKEN_TOPUP';
+      if (typeFilter === 'TOKEN_TOPUP' && !isTopup) return false;
       if (typeFilter === 'SUBSCRIPTION' && isTopup) return false;
     }
     if (searchQuery.trim()) {
@@ -68,8 +68,9 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
   // Summary Metrics
   const totalPlansCount = plans.length;
   const activePlansCount = plans.filter((p) => p.status === 'ACTIVE').length;
-  const totalSubscribers = plans.reduce((acc, p) => acc + (p.status === 'ACTIVE' ? p.activeSubscribersCount : 0), 0);
-  const totalMrrVND = plans.reduce((acc, p) => acc + (p.status === 'ACTIVE' ? p.mrrVND : 0), 0);
+  const activeSubscriptions = plans.filter((plan) => plan.status === 'ACTIVE' && plan.tierType !== 'TOKEN_TOPUP');
+  const totalSubscribers = activeSubscriptions.reduce((acc, plan) => acc + plan.activeSubscribersCount, 0);
+  const totalMrrVND = activeSubscriptions.reduce((acc, plan) => acc + plan.mrrVND, 0);
 
   const confirmDelete = async () => {
     if (planToDelete && onDeletePlan) {
@@ -119,7 +120,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
         {[
           { key: 'ALL', label: `Tất cả (${plans.length})` },
           { key: 'SUBSCRIPTION', label: `Gói thuê bao (${subscriptionPlansCount})` },
-          { key: 'TOPUP', label: `Gói nạp token (${topupPlansCount})` },
+          { key: 'TOKEN_TOPUP', label: `Gói nạp token (${topupPlansCount})` },
         ].map((item) => (
           <button
             key={item.key}
@@ -166,7 +167,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onOpenAddPlan('TOPUP')}
+            onClick={() => onOpenAddPlan('TOKEN_TOPUP')}
             className="inline-flex min-h-9 items-center justify-center rounded-full border border-emerald-700 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 cursor-pointer shadow-2xs"
             title="Tạo gói nạp token một lần vào ví"
           >
@@ -184,7 +185,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
         <div className="mt-8 grid border-t border-ink sm:grid-cols-2 xl:grid-cols-4">
           {filteredPlans.map((plan, i) => {
             const isActive = plan.status === 'ACTIVE';
-            const isTopup = plan.planType === 'TOPUP';
+            const isTopup = plan.tierType === 'TOKEN_TOPUP';
             return (
               <article
                 key={plan.id}
@@ -229,7 +230,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                 {isTopup ? (
                   <dl className="mt-5 border-t border-border text-[13px]">
                     {[
-                      ['Token nhận được', `${plan.tokenMonthlyQuota.toLocaleString('vi-VN')} token`],
+                      ['Token nhận được', `${(plan.tokenAmount ?? 0).toLocaleString('vi-VN')} token`],
                       ['Hình thức', 'Nạp một lần vào ví'],
                       ['Hạn sử dụng', 'Vĩnh viễn theo tài khoản'],
                       ['Phạm vi sử dụng', 'Mọi tính năng AI'],
@@ -290,7 +291,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
           </div>
           <ul className="mt-8 border-t border-ink md:mt-0 md:border-t-0">
             {filteredPlans.map((plan) => {
-              const isTopup = plan.planType === 'TOPUP';
+              const isTopup = plan.tierType === 'TOKEN_TOPUP';
               return (
                 <li
                   key={plan.id}
@@ -333,7 +334,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                     </span>
                   </span>
                   <span className="hidden text-right text-sm tabular-nums text-slate-700 md:block">
-                    {plan.tokenMonthlyQuota.toLocaleString('vi-VN')}
+                    {(isTopup ? plan.tokenAmount ?? 0 : plan.tokenMonthlyQuota).toLocaleString('vi-VN')}
                     <span className="block text-[11px] text-slate-400">{isTopup ? 'token ví' : 'token/tháng'}</span>
                   </span>
                   <span className="hidden text-right text-sm tabular-nums text-slate-700 md:block">

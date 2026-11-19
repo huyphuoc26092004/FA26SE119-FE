@@ -210,3 +210,28 @@ test('empty Google credentials are rejected before a request', async () => {
   await assert.rejects(store.getState().loginWithGoogle('  '), /mã xác thực Google/);
   assert.equal(requests.length, 0);
 });
+
+test('forgot password preserves the development reset token returned by the backend', async () => {
+  respond = (config) => {
+    assert.equal(config.url, '/auth/forgot-password');
+    assert.deepEqual(JSON.parse(config.data), { email: profile.email });
+    return { data: { message: 'Reset link created', developmentToken: 'test-reset-token' } };
+  };
+  assert.equal(await store.getState().forgotPassword(profile.email), 'test-reset-token');
+  assert.equal(store.getState().isAuthenticated, false);
+});
+
+test('password reset includes the confirmation required by the backend', async () => {
+  respond = (config) => {
+    assert.equal(config.url, '/auth/reset-password');
+    assert.deepEqual(JSON.parse(config.data), {
+      token: 'test-reset-token',
+      newPassword: 'test-new-password',
+      newPasswordConfirmation: 'test-new-password',
+    });
+    return { data: { message: 'Password reset' } };
+  };
+  await store.getState().resetPassword('test-reset-token', 'test-new-password');
+  assert.equal(requests.length, 1);
+  assert.equal(store.getState().isAuthenticated, false);
+});

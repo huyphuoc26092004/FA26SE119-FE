@@ -15,7 +15,7 @@ type SortKey = 'recent' | 'score' | 'title';
 
 const copy = {
   vi: {
-    statTotal: 'Thư đã lưu',
+    statTotal: 'Email đã lưu',
     statAvg: 'Điểm trung bình',
     statLatest: 'Cập nhật gần nhất',
     all: 'Tất cả',
@@ -30,7 +30,7 @@ const copy = {
     copied: 'Đã sao chép',
     download: 'Tải .txt',
     remove: 'Xoá',
-    create: 'Viết thư mới',
+    create: 'Viết email mới',
     score: 'điểm',
     previewTitle: 'Xem trước',
     pickHint: 'Chọn một thư bên trái để xem toàn bộ nội dung.',
@@ -49,12 +49,7 @@ const copy = {
     persuasion: 'Bố cục',
     clarity: 'Rõ ràng',
     toneScore: 'Văn phong',
-    types: {
-      cover_letter: 'Cover Letter',
-      application_email: 'Email ứng tuyển',
-      linkedin_inmail: 'LinkedIn InMail',
-      follow_up_email: 'Follow-up Email',
-    } as Record<string, string>,
+    emailLabel: 'Email ứng tuyển',
     tones: { professional: 'Chuyên nghiệp', impactful: 'Ấn tượng', enthusiastic: 'Thân thiện', concise: 'Ngắn gọn' } as Record<string, string>,
     focuses: {
       tech_depth: 'Chuyên môn kỹ thuật',
@@ -65,7 +60,7 @@ const copy = {
     languages: { Vietnamese: 'Tiếng Việt', English: 'English' } as Record<string, string>,
   },
   en: {
-    statTotal: 'Saved letters',
+    statTotal: 'Saved emails',
     statAvg: 'Average score',
     statLatest: 'Last updated',
     all: 'All',
@@ -80,7 +75,7 @@ const copy = {
     copied: 'Copied',
     download: 'Download .txt',
     remove: 'Delete',
-    create: 'Create a new letter',
+    create: 'Create a new email',
     score: 'score',
     previewTitle: 'Preview',
     pickHint: 'Pick a letter on the left to read it in full.',
@@ -99,12 +94,7 @@ const copy = {
     persuasion: 'Structure',
     clarity: 'Clarity',
     toneScore: 'Tone',
-    types: {
-      cover_letter: 'Cover Letter',
-      application_email: 'Application email',
-      linkedin_inmail: 'LinkedIn InMail',
-      follow_up_email: 'Follow-up email',
-    } as Record<string, string>,
+    emailLabel: 'Application email',
     tones: { professional: 'Professional', impactful: 'Impactful', enthusiastic: 'Friendly', concise: 'Concise' } as Record<string, string>,
     focuses: {
       tech_depth: 'Technical depth',
@@ -187,7 +177,7 @@ function DraftPreview({
       {!compact && (
         <header>
           <p className="text-[13px] text-slate-600">
-            {c.types[draft.contentType] ?? c.types.cover_letter}
+            {c.emailLabel}
             <span className="mx-2 text-slate-400">·</span>
             {c.words(countWords(draft.content))}
           </p>
@@ -293,7 +283,6 @@ export function SavedApplicationsList({
 }: SavedApplicationsListProps) {
   const { isVietnamese, t } = useTranslation();
   const c = isVietnamese ? copy.vi : copy.en;
-  const [filterType, setFilterType] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('recent');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -302,19 +291,18 @@ export function SavedApplicationsList({
   const filteredDrafts = useMemo(() => {
     const q = search.toLowerCase();
     const list = drafts.filter((d) => {
-      const matchesType = filterType === 'all' || d.contentType === filterType;
       const matchesSearch =
         d.title.toLowerCase().includes(q) ||
         (d.company && d.company.toLowerCase().includes(q)) ||
         (d.jobTitle && d.jobTitle.toLowerCase().includes(q));
-      return matchesType && matchesSearch;
+      return matchesSearch;
     });
     return [...list].sort((a, b) => {
       if (sortBy === 'score') return (b.reviewScore?.overallScore ?? 0) - (a.reviewScore?.overallScore ?? 0);
       if (sortBy === 'title') return a.title.localeCompare(b.title);
       return dateValue(b.updatedAt) - dateValue(a.updatedAt);
     });
-  }, [drafts, filterType, search, sortBy]);
+  }, [drafts, search, sortBy]);
 
   // Keep the preview pointed at a visible letter.
   useEffect(() => {
@@ -334,7 +322,6 @@ export function SavedApplicationsList({
     return { avg, latest };
   }, [drafts]);
 
-  const typeCount = (id: string) => (id === 'all' ? drafts.length : drafts.filter((d) => d.contentType === id).length);
 
   const handleCopy = (draft: ApplicationDraft, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -365,12 +352,6 @@ export function SavedApplicationsList({
       onDeleteDraft(id);
     }
   };
-
-  const filters = [
-    { id: 'all', label: c.all },
-    { id: 'cover_letter', label: c.types.cover_letter },
-    { id: 'application_email', label: c.types.application_email },
-  ];
 
   if (drafts.length === 0) {
     return (
@@ -419,28 +400,6 @@ export function SavedApplicationsList({
 
       {/* Filters + search + sort */}
       <div className="mt-[clamp(1.5rem,3vw,2.25rem)] flex flex-col gap-4 border-b border-ink pb-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
-          {filters.map((item) => {
-            const active = filterType === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setFilterType(item.id)}
-                className={`text-sm transition-colors cursor-pointer ${
-                  active
-                    ? 'font-medium text-ink underline decoration-brand decoration-2 underline-offset-[10px]'
-                    : 'text-slate-500 hover:text-ink'
-                }`}
-              >
-                {item.label}
-                <span className="ml-1 text-[12px] tabular-nums text-slate-400">{typeCount(item.id)}</span>
-              </button>
-            );
-          })}
-        </div>
-
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="relative w-full sm:w-64">
             <Search size={15} aria-hidden="true" className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -483,7 +442,7 @@ export function SavedApplicationsList({
           <button
             type="button"
             onClick={() => {
-              setFilterType('all');
+              
               setSearch('');
             }}
             className={`${textLink} mt-3 text-ink`}
@@ -510,7 +469,7 @@ export function SavedApplicationsList({
                     <span className="pt-1 text-xs tabular-nums text-slate-500">#{idx + 1}</span>
                     <span className="min-w-0">
                       <span className="block text-[12px] text-slate-600">
-                        {c.types[draft.contentType] ?? c.types.cover_letter}
+                        {c.emailLabel}
                         <span className="mx-1.5 text-slate-400">·</span>
                         {draft.updatedAt}
                       </span>

@@ -222,10 +222,38 @@ export interface ResumeAnalysisResult {
   analyzedAt: string;
 }
 
+export interface RequirementEvidenceItem {
+  id: string;
+  text: string;
+  importance: string;
+  status: 'MET' | 'PARTIAL' | 'NOT_MET' | 'MISSING_EVIDENCE' | 'UNVERIFIED';
+  reason: string;
+  skills: string[];
+  evidence: { source: string; quote: string }[];
+}
+
+export interface RequirementEvidenceReport {
+  version: string;
+  scoreAvailable: boolean;
+  complete: boolean;
+  verificationDeferred?: boolean;
+  requiredCount: number;
+  preferredCount: number;
+  unverifiedCount: number;
+  preferredScore?: number;
+  requirements: RequirementEvidenceItem[];
+}
+
 export interface SemanticMatchingDetail {
+  evidenceReport?: RequirementEvidenceReport;
   /** ID dòng `job_match_results` ở backend, dùng để gửi phản hồi. */
   matchResultId?: string;
   method?: string;
+  rankPosition?: number;
+  semanticSimilarity?: number;
+  aiRerankScore?: number;
+  scoreAvailable?: boolean;
+  scoreStatus?: string;
   skillCoverageScore?: number;
   requirementCoverageScore?: number;
   requirementCoverageAvailable?: boolean;
@@ -273,6 +301,7 @@ export interface Job {
   skills: string[];
   match: number;
   posted: string;
+  postedAt?: string;
   description: string;
   /** HTML gốc của tin (original_content), chỉ dùng để tách mục khi hiển thị. */
   contentHtml?: string;
@@ -305,6 +334,7 @@ export interface CvJobFitGapItem {
 }
 
 export interface CvJobFitResult {
+  evidenceReport?: RequirementEvidenceReport;
   cvId: string;
   cvName: string;
   jobId: string;

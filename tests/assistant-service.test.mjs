@@ -65,6 +65,19 @@ beforeEach(() => {
   respond = () => { throw new Error('Unexpected request'); };
 });
 
+test('CV suggestions show a Vietnamese message when the AI proposal is rejected', async () => {
+  for (const [detail, message] of [
+    ['AI CV support returned an invalid proposal. Please try again.', 'AI chưa trả về gợi ý CV hợp lệ. Vui lòng thử lại.'],
+    ['AI provider failed or returned an invalid result. Retry the request or check provider configuration.', 'AI chưa trả về kết quả hợp lệ. Vui lòng thử lại.'],
+  ]) {
+    respond = () => ({ status: 502, data: { detail } });
+    await assert.rejects(
+      service.suggestCvText({ field: 'summary', language: 'vi', current: '' }),
+      { message },
+    );
+  }
+});
+
 after(async () => {
   await server?.close();
   globalThis.sessionStorage = oldSessionStorage;

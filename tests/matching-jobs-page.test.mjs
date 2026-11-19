@@ -17,7 +17,7 @@ const catalogJob = (id, title, extra = {}) => ({
 });
 const catalog = [catalogJob('job-1', 'React Engineer'), catalogJob('job-2', 'DevOps Engineer')];
 const ranked = catalogJob('job-1', 'React Engineer', {
-  match: 72, semanticMatch: { overallScore: 72, fitLevel: 'Strong Fit' },
+  match: 72, semanticMatch: { scoreAvailable: true, matchedSkills: [], missingSkills: [], overallScore: 72, fitLevel: 'Strong Fit' },
   type: '', experienceLevel: undefined, skills: [], description: '', posted: '',
 });
 const defaultRecommendations = { jobs: [ranked], basis: 'SELECTED_CV' };
@@ -151,17 +151,29 @@ function mountJobsPage(options = {}) {
 
 test('recommended jobs come from matching results even when their score is below 85 percent', () => {
   const page = mountJobsPage();
-  page.click(page.tab('Được đề xuất'));
-  assert.match(page.text(), /Được đề xuất\s*\(1\)/);
+  page.click(page.tab('Việc làm phù hợp với bạn'));
+  assert.match(page.text(), /Top 10 công việc phù hợp nhất/);
   assert.match(page.text(), /React Engineer/);
   assert.doesNotMatch(page.text(), /DevOps Engineer/);
   assert.match(page.text(), /72\s*%/);
   assert.doesNotMatch(page.text(), /Không tìm thấy việc làm phù hợp/);
 });
 
-test('enriching catalog jobs with matching scores preserves skills and employment filters', () => {
+test('a provider outage displays available jobs with pending verification instead of an empty error page', () => {
+  const page = mountJobsPage({ recommendations: { ...defaultRecommendations, verificationDeferred: true,
+    jobs: [{ ...ranked, match: 50, semanticMatch: { ...ranked.semanticMatch, overallScore: 50,
+      evidenceReport: { verificationDeferred: true } } }],
+  } });
+  page.click(page.tab('Việc làm phù hợp với bạn'));
+  assert.match(page.text(), /React Engineer/);
+  assert.match(page.text(), /50\s*%/);
+  assert.match(page.text(), /đang chờ AI xác minh/);
+  assert.match(page.text(), /còn yêu cầu chờ AI/);
+  assert.equal(page.nodes((node) => node.type === 'ErrorState').length, 0);
+});
+
+test('the full catalog remains searchable by skills with employment filters', () => {
   const page = mountJobsPage();
-  page.click(page.tab('Được đề xuất'));
   const search = page.one((node) => node.type === 'input' && node.props.type === 'text');
   search.props.onChange({ target: { value: 'TypeScript' } });
   page.render();
@@ -189,7 +201,7 @@ test('quick skill coverage is not presented as an overall suitability or experie
       experienceStatus: 'UNVERIFIED', recommendation: 'Khớp 2/2 kỹ năng bắt buộc',
     } }],
   } });
-  page.click(page.tab('Được đề xuất'));
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   const job = page.one((node) => node.type === 'li');
   assert.match(page.text(job), /60\s*%/);
   assert.match(page.text(job), /Đối chiếu yêu cầu/);
@@ -200,6 +212,7 @@ test('quick skill coverage is not presented as an overall suitability or experie
 
 test('recommendations initially use the confirmed default CV rather than the first CV', async () => {
   const page = mountJobsPage();
+    page.click(page.tab('Việc làm phù hợp với bạn'));
   const source = page.one((node) => node.type === 'select' && node.props['aria-label'] === 'Nguồn đề xuất việc làm');
   const optionValues = page.nodes((node) => node.type === 'option', source).map((node) => node.props.value);
   assert.ok(!optionValues.includes('AUTO'));
@@ -218,10 +231,10 @@ test('recommendations initially use the confirmed default CV rather than the fir
 for (const [name, resumes] of [
   ['no CVs', []],
   ['only an unconfirmed default CV', [{ ...defaultResumes[2], isDefault: true }]],
-  ['confirmed CVs without a default', [{ ...defaultResumes[0] }]],
 ]) {
   test(`recommendations use the career profile when there are ${name}`, async () => {
     const page = mountJobsPage({ resumes });
+    page.click(page.tab('Việc làm phù hợp với bạn'));
     const source = page.one((node) => node.type === 'select' && node.props['aria-label'] === 'Nguồn đề xuất việc làm');
     assert.equal(source.props.value, 'CAREER_PROFILE');
     await page.queries.get('jobRecommendations').queryFn();
@@ -230,20 +243,34 @@ for (const [name, resumes] of [
   });
 }
 
+test('recommendations use a confirmed CV when no usable default is configured', async () => {
+  const page = mountJobsPage({
+    resumes: [defaultResumes[0], { ...defaultResumes[2], isDefault: true }],
+  });
+  page.click(page.tab('Việc làm phù hợp với bạn'));
+  const source = page.one((node) => node.type === 'select' && node.props['aria-label'] === 'Nguồn đề xuất việc làm');
+  assert.equal(source.props.value, 'cv:ready-cv');
+  await page.queries.get('jobRecommendations').queryFn();
+  assert.equal(page.calls.recommendations.at(-1).basis, 'SELECTED_CV');
+  assert.equal(page.calls.recommendations.at(-1).resumeId, 'ready-cv');
+});
+
 test('a manual profile selection survives a refetch that changes the default CV', async () => {
   const page = mountJobsPage();
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   page.selectSource('CAREER_PROFILE');
-  const previousVersion = page.queries.get('jobRecommendations').queryKey.at(-1);
+  const previousVersion = page.queries.get('jobRecommendations').queryKey.at(-2);
   page.updateResumes(defaultResumes.map((resume) => ({ ...resume, isDefault: resume.id === 'ready-cv' })));
   const source = page.one((node) => node.type === 'select' && node.props['aria-label'] === 'Nguồn đề xuất việc làm');
   assert.equal(source.props.value, 'CAREER_PROFILE');
-  assert.notEqual(page.queries.get('jobRecommendations').queryKey.at(-1), previousVersion);
+  assert.notEqual(page.queries.get('jobRecommendations').queryKey.at(-2), previousVersion);
   await page.queries.get('jobRecommendations').queryFn();
   assert.equal(page.calls.recommendations.at(-1).basis, 'CAREER_PROFILE');
 });
 
 test('a manually selected CV stays selected until it is no longer eligible', async () => {
   const page = mountJobsPage();
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   page.selectSource('cv:ready-cv');
   page.updateResumes(defaultResumes.map((resume) => ({ ...resume, isDefault: resume.id === 'ready-cv' })));
   await page.queries.get('jobRecommendations').queryFn();
@@ -269,7 +296,7 @@ test('changing the default CV refreshes the automatic source even when timestamp
 test('each recommended job carries its actual CV source in a small footer', () => {
   const page = mountJobsPage();
   assert.doesNotMatch(page.text(), /Dựa trên CV/);
-  page.click(page.tab('Được đề xuất'));
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   const job = page.one((node) => node.type === 'li');
   const footer = job.props.children.at(-1);
   assert.equal(footer.type, 'p');
@@ -278,9 +305,9 @@ test('each recommended job carries its actual CV source in a small footer', () =
 
 test('job footers describe the returned profile basis even if the selector contains a CV', () => {
   const page = mountJobsPage({ recommendations: { ...defaultRecommendations, basis: 'CAREER_PROFILE' } });
+    page.click(page.tab('Việc làm phù hợp với bạn'));
   const source = page.one((node) => node.type === 'select' && node.props['aria-label'] === 'Nguồn đề xuất việc làm');
   assert.equal(source.props.value, 'cv:primary-cv');
-  page.click(page.tab('Được đề xuất'));
   const job = page.one((node) => node.type === 'li');
   assert.match(page.text(job), /Dựa trên hồ sơ cá nhân/);
   assert.doesNotMatch(page.text(job), /Dựa trên CV/);
@@ -288,7 +315,7 @@ test('job footers describe the returned profile basis even if the selector conta
 
 test('pending matching shows a loading state instead of declaring that filters found no jobs', () => {
   const page = mountJobsPage({ recommendationState: { data: undefined, isPending: true, isLoading: true, isFetching: true } });
-  page.click(page.tab('Được đề xuất'));
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   assert.ok(page.nodes((node) => node.type === 'Loading' || node.props.role === 'status').length > 0);
   assert.match(page.text(), /Đang tìm việc làm phù hợp…/);
   assert.doesNotMatch(page.text(), /Đang đối sánh CV\/hồ sơ|Quá trình này có thể mất vài phút/);
@@ -297,7 +324,7 @@ test('pending matching shows a loading state instead of declaring that filters f
 
 test('matching API errors are visible and retryable rather than an empty filtered list', () => {
   const page = mountJobsPage({ recommendationState: { data: undefined, isError: true, error: new Error('Matching unavailable') } });
-  page.click(page.tab('Được đề xuất'));
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   assert.match(page.one((node) => node.type === 'ErrorState').props.message, /Matching unavailable/);
   assert.doesNotMatch(page.text(), /Không tìm thấy việc làm phù hợp\. Hãy thử thay đổi bộ lọc/);
   page.click(page.one((node) => node.type === 'button' && page.text(node).includes('Thử lại')));
@@ -308,16 +335,16 @@ test('a successful empty ranking explains salary eligibility without blaming unr
   const page = mountJobsPage({ recommendations: {
     jobs: [], basis: 'CAREER_PROFILE', salaryFilter: { active: true, eligibleJobs: 0 },
   } });
-  page.click(page.tab('Được đề xuất'));
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   assert.match(page.text(), /chưa đáp ứng điều kiện lương kỳ vọng/i);
-  assert.match(page.text(), /Xem tất cả cơ hội/);
+  assert.match(page.text(), /Xem tất cả việc làm/);
   assert.doesNotMatch(page.text(), /Không tìm thấy việc làm phù hợp\. Hãy thử thay đổi bộ lọc/);
 });
 
 test('signed-out visitors cannot start personal matching and receive a sign-in action', () => {
   const page = mountJobsPage({ auth: { user: null, accessToken: null, isAuthenticated: false } });
   assert.equal(page.queries.get('jobRecommendations').enabled, false);
-  page.click(page.tab('Được đề xuất'));
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   assert.match(page.text(), /Đăng nhập bằng tài khoản ứng viên/);
   assert.ok(page.nodes((node) => node.type === 'Link' && node.props.to === '/login').length > 0);
   assert.doesNotMatch(page.text(), /Không tìm thấy việc làm phù hợp\. Hãy thử thay đổi bộ lọc/);
@@ -328,8 +355,84 @@ test('missing JD extraction is shown as unavailable rather than a full compatibi
     semanticMatch: { ...ranked.semanticMatch, method: 'SKILL_OVERLAP_QUICK', skillCoverageScore: 100,
       extractionStatus: 'MISSING_SOURCE', requirementCoverageAvailable: false } }],
   } });
-  page.click(page.tab('Được đề xuất'));
+  page.click(page.tab('Việc làm phù hợp với bạn'));
   const job = page.one((node) => node.type === 'li');
   assert.match(page.text(job), /Chưa đủ dữ liệu/);
   assert.doesNotMatch(page.text(job), /100\s*%/);
+});
+
+test('AI suitability is displayed as the main percentage with rule coverage separately', () => {
+  const page = mountJobsPage({ recommendations: { ...defaultRecommendations, jobs: [{ ...ranked, match: 87,
+    semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_AI_SUITABILITY', scoreAvailable: true,
+      requirementCoverageScore: 20, requirementCoverageAvailable: true } }],
+  } });
+  page.click(page.tab('Việc làm phù hợp với bạn'));
+  const job = page.one((node) => node.type === 'li');
+  assert.match(page.text(job), /87%/);
+  assert.match(page.text(job), /Độ phù hợp do AI đánh giá/);
+  assert.match(page.text(job), /Đối chiếu quy tắc: 20% yêu cầu/);
+});
+
+test('unscored jobs are omitted from the AI ranking', () => {
+  const page = mountJobsPage({ recommendations: { ...defaultRecommendations, jobs: [{ ...ranked, match: 0,
+    semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_AI_SUITABILITY', scoreAvailable: false,
+      requirementCoverageScore: 20, requirementCoverageAvailable: true } }],
+  } });
+  page.click(page.tab('Việc làm phù hợp với bạn'));
+  assert.equal(page.nodes((node) => node.type === 'li').length, 0);
+  assert.match(page.text(), /Chưa có đề xuất/);
+});
+
+test('AI quota failures explain why percentages are unavailable instead of only suggesting a retry', () => {
+  const page = mountJobsPage({ recommendations: { ...defaultRecommendations, retrieval: {
+    vectorUsed: true, status: 'PARTIAL_INDEX', activeJobs: 129, compatibleVectors: 36,
+    rerankStatus: 'SKIPPED', aiSelectedJobs: 10, aiScoredJobs: 0, failureCode: 'AI_QUOTA_EXCEEDED',
+  } } });
+  page.click(page.tab('Việc làm phù hợp với bạn'));
+  assert.match(page.text(), /Không đủ hạn mức AI/);
+  assert.match(page.text(), /mức sử dụng AI và gói đăng ký/);
+});
+
+for (const count of [0, 6, 10, 14]) {
+  test('AI ranking limits and orders ' + count + ' scored jobs', () => {
+    const scored = Array.from({ length: count }, (_, index) => catalogJob('ranked-' + index, 'Job ' + index, {
+      match: index < 2 ? 100 : index,
+      semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_AI_SUITABILITY' },
+    }));
+    const expired = { ...ranked, id: 'expired', status: 'EXPIRED', match: 100 };
+    const invalid = { ...ranked, id: 'invalid', match: NaN };
+    const unscored = { ...ranked, id: 'unscored', semanticMatch: { ...ranked.semanticMatch, scoreAvailable: false } };
+    const page = mountJobsPage({ recommendations: { jobs: [...scored.reverse(), expired, invalid, unscored] } });
+    assert.equal(page.queries.get('jobRecommendations').enabled, false);
+    page.click(page.tab('Việc làm phù hợp với bạn'));
+    assert.equal(page.queries.get('jobRecommendations').enabled, true);
+    const cards = page.nodes((node) => node.type === 'li');
+    assert.equal(cards.length, Math.min(count, 10));
+    if (count > 0) {
+      assert.match(page.text(cards[0]), /#1Job 0/);
+      assert.match(page.text(cards[1]), /#2Job 1/);
+      assert.match(page.text(cards[2]), new RegExp('#3Job ' + (count - 1)));
+    }
+    assert.doesNotMatch(page.text(), /Xem thêm việc làm/);
+    assert.equal(page.nodes((node) => node.type === 'input' && node.props.type === 'text').length, 0);
+  });
+}
+
+test('only the full catalog progressively reveals more jobs', () => {
+  const page = mountJobsPage({ catalog: Array.from({ length: 45 }, (_, index) => catalogJob('job-' + index, 'Job ' + index)) });
+  assert.equal(page.nodes((node) => node.type === 'li').length, 20);
+  page.click(page.tab('Xem thêm việc làm'));
+  assert.equal(page.nodes((node) => node.type === 'li').length, 40);
+  page.click(page.tab('Xem thêm việc làm'));
+  assert.equal(page.nodes((node) => node.type === 'li').length, 45);
+  assert.doesNotMatch(page.text(), /Xem thêm việc làm/);
+});
+
+test('the apply dialog hands the selected CV and job to application assistance', () => {
+  const page = mountJobsPage();
+  page.click(page.tab('Việc làm phù hợp với bạn'));
+  page.selectSource('cv:ready-cv');
+  page.click(page.one((node) => node.type === 'button' && page.text(node).trim() === 'Ứng tuyển'));
+  assert.equal(page.one((node) => node.type === 'Link' && page.text(node) === 'Hỗ trợ ứng tuyển').props.to,
+    '/candidate/applications?jobId=job-1&cvId=ready-cv');
 });

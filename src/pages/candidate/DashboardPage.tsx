@@ -20,6 +20,7 @@ const copy = {
     yourGoal: 'Mục tiêu của bạn',
     perMonth: 'tháng',
     matchSuffix: 'phù hợp',
+    noAiScore: 'Chưa có điểm AI',
     nextSteps: 'Bước tiếp theo',
     improveCv: 'Phân tích và cải thiện CV bằng AI',
     continueRoadmap: 'Tiếp tục lộ trình học tập',
@@ -34,6 +35,7 @@ const copy = {
     yourGoal: 'Your goal',
     perMonth: 'month',
     matchSuffix: 'match',
+    noAiScore: 'Not scored by AI',
     nextSteps: 'Next steps',
     improveCv: 'Analyse and improve your CV with AI',
     continueRoadmap: 'Continue your learning roadmap',
@@ -228,7 +230,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <span className="shrink-0 text-sm font-medium text-brand tabular-nums">
-                    {job.match}% {c.matchSuffix}
+                    {job.semanticMatch?.scoreAvailable === false ? c.noAiScore : `${job.match}% ${c.matchSuffix}`}
                   </span>
                 </Link>
               </li>

@@ -5,7 +5,7 @@ import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
 import { orderLearningNodes } from '../utils/learningOrder';
 
 // Bài đánh giá kỹ năng và lộ trình học theo JD của một công việc (trang /candidate/skill-assessment).
-// CV không bắt buộc: POST /assessments { jobId, resumeId? } sinh 10 câu theo JD (và CV nếu có);
+// CV không bắt buộc: POST /assessments { jobId, resumeId? } sinh câu hỏi theo JD (và CV nếu có);
 // POST /roadmaps { jobId, assessmentId } lập lộ trình cho kỹ năng bắt buộc còn thiếu, dùng đúng CV của bài đánh giá.
 
 // Chờ lâu hơn giới hạn gọi AI của backend để nhận được thông báo lỗi từ máy chủ.
@@ -34,6 +34,8 @@ export interface JdAssessment {
   correct: number;
   total: number;
   createdAt: string;
+  timeLimitSeconds: number;
+  expiresAt: string;
   submittedAt?: string;
 }
 
@@ -87,6 +89,8 @@ function toAssessment(session: ApiRow): JdAssessment {
     correct,
     total,
     createdAt: str(session.created_at),
+    timeLimitSeconds: num(session.time_limit_seconds, questions.length * 90),
+    expiresAt: str(session.expires_at),
     submittedAt: optStr(session.submitted_at),
   };
 }
@@ -135,18 +139,18 @@ export async function getLatestJdAssessment(jobId: string, resumeId = ''): Promi
   return latest ? toAssessment(await get(`/assessments/${str(latest.id)}`)) : null;
 }
 
-/** Sinh bài mới gồm 10 câu theo JD, kèm CV nếu có (gọi AI, có thể mất vài phút). */
+/** Sinh bài đánh giá mới theo JD, kèm CV nếu có (gọi AI, có thể mất vài phút). */
 export async function startJdAssessment(jobId: string, resumeId?: string, pasted?: { targetJobTitle: string; jdText: string }): Promise<JdAssessment> {
   const body = pasted ? { ...pasted, ...(resumeId ? { resumeId } : {}) } : resumeId ? { jobId, resumeId } : { jobId };
   const session = await apiClient.post<ApiRow>('/assessments', body, { timeout: AI_TIMEOUT }).then((res) => res.data);
   return toAssessment(session);
 }
 
-/** Lưu từng câu trả lời rồi nộp; kết quả trả về có đáp án đúng và giải thích. */
-export async function submitJdAssessment(sessionId: string, answers: Record<string, string>): Promise<JdAssessment> {
-  for (const [questionId, selectedOption] of Object.entries(answers)) {
-    await apiClient.put(`/assessments/${sessionId}/answers`, { questionId, selectedOption });
-  }
+export async function saveJdAssessmentAnswer(sessionId: string, questionId: string, selectedOption: string): Promise<void> {
+  await apiClient.put(`/assessments/${sessionId}/answers`, { questionId, selectedOption });
+}
+
+export async function submitJdAssessment(sessionId: string): Promise<JdAssessment> {
   return toAssessment(await apiClient.post<ApiRow>(`/assessments/${sessionId}/submit`).then((res) => res.data));
 }
 

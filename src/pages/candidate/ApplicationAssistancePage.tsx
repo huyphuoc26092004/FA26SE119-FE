@@ -3,19 +3,17 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, ChevronDown, X } from 'lucide-react';
 import { useTranslation } from '../../i18n';
-import { getCandidateProfile, getResumes, getJobs } from '../../services/candidateService';
+import { getCandidateProfile, getJobById, getResumes, getJobs } from '../../services/candidateService';
 import {
-  createOwnDrafts,
+  createOwnApplicationEmail,
   getStoredApplications,
   saveApplicationDraft,
 } from '../../services/applicationService';
-import { ProofreadPanel } from './application/ProofreadPanel';
+import { ApplicationReviewPanel } from './application/ApplicationReviewPanel';
 import { authErrorMessage } from '../../services/authService';
 import type {
-  ApplicationContentType,
   ApplicationDraft,
   ApplicationLanguage,
-  Job,
 } from '../../types/domain';
 import { ApplicationEditor } from './application/ApplicationEditor';
 import { SavedApplicationsList } from './application/SavedApplicationsList';
@@ -23,34 +21,28 @@ import { SavedApplicationsList } from './application/SavedApplicationsList';
 const copy = {
   vi: {
     eyebrow: 'Hỗ trợ ứng tuyển',
-    title: 'Thư ứng tuyển.',
-    titleAccent: 'Bạn tự viết, AI soát lỗi.',
+    title: 'Email ứng tuyển.',
+    titleAccent: 'Bạn tự viết, AI góp ý.',
     intro:
-      'Chọn công việc và CV, rồi tự viết email ứng tuyển và thư xin việc bằng giọng của bạn. AI chỉ kiểm tra chính tả, ngữ pháp và gợi ý chỉnh sửa, không viết giùm.',
-    steps: ['Chọn công việc & CV', 'Tự viết thư', 'AI soát lỗi', 'Lưu'],
+      'Chọn công việc và CV, rồi tự viết email ứng tuyển bằng giọng của bạn. AI góp ý về nội dung, bố cục và cách diễn đạt để bạn chỉnh thư.',
+    steps: ['Chọn công việc & CV', 'Tự viết thư', 'AI đánh giá', 'Lưu'],
     tabCompose: 'Soạn thư',
-    tabSaved: 'Thư đã lưu',
+    tabSaved: 'Email đã lưu',
     s1: 'Ứng tuyển cho',
     jobLabel: 'Công việc',
     cvLabel: 'CV tham khảo (không bắt buộc)',
     pickCv: 'Chọn CV',
-    typeLabel: 'Loại văn bản',
-    types: { cover_letter: 'Thư xin việc', application_email: 'Email ứng tuyển' } as Record<
-      string,
-      string
-    >,
     languageLabel: 'Ngôn ngữ thư',
     lockedNote: 'Thư đã lưu gắn với công việc và CV này. Muốn đổi, hãy tạo thư mới.',
     s2: 'Chỉnh sửa thư',
-    newLetter: 'Tạo thư mới',
+    newLetter: 'Tạo email mới',
     generate: 'Bắt đầu viết',
-    regenerate: 'Bắt đầu bộ thư mới',
-    generating: 'Đang chuẩn bị…',
+    regenerate: 'Bắt đầu email mới',
     needJob: 'Chọn công việc trước.',
     needCv: 'Chọn một CV đã xác nhận để tham khảo khi viết.',
     emptyTitle: 'Chưa có thư cho lựa chọn này.',
     emptyBody:
-      'Bấm “Bắt đầu viết” để mở khung email ứng tuyển và thư xin việc. Bạn có thể chèn dàn ý mẫu, tự viết, rồi nhờ AI kiểm tra chính tả trước khi lưu.',
+      'Bấm “Bắt đầu viết” để mở khung email ứng tuyển. Bạn có thể chèn dàn ý mẫu, tự viết, rồi nhờ AI góp ý trước khi lưu.',
     customJob: 'Tự nhập vị trí khác / Viết tự do',
     customJobTitleLabel: 'Vị trí công việc ứng tuyển',
     customCompanyLabel: 'Công ty / Nhà tuyển dụng',
@@ -59,48 +51,40 @@ const copy = {
     noJobsInSystem: 'Chưa có việc làm trong hệ thống (Tự nhập vị trí)',
     loadingJobs: 'Đang tải danh sách việc làm…',
     selectJobPlaceholder: 'Chọn công việc trong hệ thống',
-    missingType: 'Bộ thư này không có loại văn bản đó. Bấm “Bắt đầu bộ thư mới”.',
     save: 'Lưu thay đổi',
     saving: 'Đang lưu…',
     saved: 'Đã lưu',
     unsaved: 'Chưa lưu',
     savedToast: 'Đã lưu thư.',
-    generatedToast: 'Đã mở khung viết email và thư xin việc.',
-    generateFail: 'Không tạo được thư.',
+    generatedToast: 'Đã mở khung viết email ứng tuyển.',
     saveFail: 'Không lưu được thư.',
     confirmNew: 'Thư hiện tại có thay đổi chưa lưu. Bỏ thay đổi?',
     close: 'Đóng',
   },
   en: {
     eyebrow: 'Application assistance',
-    title: 'Cover letter.',
-    titleAccent: 'You write, AI proofreads.',
+    title: 'Application email.',
+    titleAccent: 'You write, AI gives feedback.',
     intro:
-      'Pick a job and a CV, then write your application email and cover letter in your own voice. AI only checks spelling and grammar and suggests fixes; it never writes for you.',
-    steps: ['Pick job & CV', 'Write', 'AI proofread', 'Save'],
+      'Pick a job and a CV, then write your application email in your own voice. AI gives feedback on content, structure, and wording so you can revise your draft.',
+    steps: ['Pick job & CV', 'Write', 'AI review', 'Save'],
     tabCompose: 'Write',
-    tabSaved: 'Saved letters',
+    tabSaved: 'Saved emails',
     s1: 'Applying for',
     jobLabel: 'Job',
     cvLabel: 'CV for reference (optional)',
     pickCv: 'Pick a CV',
-    typeLabel: 'Document type',
-    types: { cover_letter: 'Cover letter', application_email: 'Application email' } as Record<
-      string,
-      string
-    >,
     languageLabel: 'Letter language',
     lockedNote: 'A saved letter stays tied to this job and CV. Create a new letter to change them.',
     s2: 'Edit your letter',
-    newLetter: 'New letter',
+    newLetter: 'New email',
     generate: 'Start writing',
-    regenerate: 'Start a new set',
-    generating: 'Preparing…',
+    regenerate: 'Start a new email',
     needJob: 'Pick a job first.',
     needCv: 'Pick a confirmed CV to refer to while writing.',
     emptyTitle: 'No letter for this selection yet.',
     emptyBody:
-      'Press “Start writing” to open an application email and a cover letter. Insert an outline, write it yourself, then let AI proofread before saving.',
+      'Press “Start writing” to open an application email. Insert an outline, write it yourself, then get AI feedback before saving.',
     customJob: 'Custom position / Freeform',
     customJobTitleLabel: 'Target position / Role',
     customCompanyLabel: 'Target company / Employer',
@@ -109,14 +93,12 @@ const copy = {
     noJobsInSystem: 'No system jobs found (Enter custom position)',
     loadingJobs: 'Loading jobs…',
     selectJobPlaceholder: 'Select a job from system',
-    missingType: 'This set has no document of that type. Press “Start a new set”.',
     save: 'Save changes',
     saving: 'Saving…',
     saved: 'Saved',
     unsaved: 'Not saved',
     savedToast: 'Letter saved.',
-    generatedToast: 'Your email and cover letter are ready to write.',
-    generateFail: 'Could not create the letters.',
+    generatedToast: 'Your email draft is ready.',
     saveFail: 'Could not save the letter.',
     confirmNew: 'The current letter has unsaved changes. Discard them?',
     close: 'Close',
@@ -229,13 +211,12 @@ function UnderlineTabs<T extends string>({
   );
 }
 
-type DraftSet = Partial<Record<ApplicationContentType, ApplicationDraft>>;
+type DraftSet = { application_email?: ApplicationDraft };
 
 interface ComposeState {
   jobId?: string;
   cvId?: string;
   language: ApplicationLanguage;
-  activeType: ApplicationContentType;
   drafts: DraftSet;
   customJobTitle?: string;
   customCompany?: string;
@@ -251,63 +232,6 @@ function loadComposeState(): ComposeState | undefined {
   }
 }
 
-const TYPES: ApplicationContentType[] = ['cover_letter', 'application_email'];
-
-const FALLBACK_JOBS: Job[] = [
-  {
-    id: 'mbbank-ai-engineer',
-    title: 'All level AI Engineer Computer Vision/NLP/LLM',
-    company: 'MB Bank',
-    location: 'Hà Nội',
-    salary: '25 - 45 triệu VND/tháng',
-    type: 'Toàn thời gian',
-    skills: ['Python', 'NLP', 'LLM', 'Computer Vision', 'PyTorch'],
-    match: 92,
-    posted: 'Hôm nay',
-    description:
-      'Nghiên cứu và phát triển các mô hình AI/ML, NLP, Computer Vision cho các ứng dụng ngân hàng số.',
-    responsibilities: ['Phát triển mô hình AI', 'Tối ưu hóa pipeline xử lý dữ liệu'],
-    requirements: [
-      'Thành thạo Python, PyTorch/TensorFlow',
-      'Có kinh nghiệm về LLM hoặc Computer Vision',
-    ],
-    benefits: ['Thưởng hiệu quả công việc', 'Bảo hiểm cao cấp', 'Môi trường ngân hàng năng động'],
-  },
-  {
-    id: 'fpt-software-frontend',
-    title: 'Senior Frontend Developer (React / TypeScript)',
-    company: 'FPT Software',
-    location: 'Hà Nội / TP.HCM',
-    salary: '30 - 50 triệu VND/tháng',
-    type: 'Toàn thời gian',
-    skills: ['React', 'TypeScript', 'TailwindCSS', 'Next.js'],
-    match: 88,
-    posted: 'Hôm qua',
-    description:
-      'Phát triển các ứng dụng Web quy mô lớn với React, TypeScript và kiến trúc hiện đại.',
-    responsibilities: ['Xây dựng UI components', 'Tối ưu hóa hiệu năng web'],
-    requirements: ['Từ 3 năm kinh nghiệm React', 'Thành thạo TypeScript'],
-    benefits: ['Gói đãi ngộ hấp dẫn', 'Cơ hội làm việc dự án quốc tế'],
-  },
-];
-
-/** The backend saves the email and the letter of one AI run together: pair a saved letter with its sibling. */
-function siblingSet(saved: ApplicationDraft, all: ApplicationDraft[]): DraftSet {
-  const time = (d: ApplicationDraft) => new Date(d.createdAt).getTime() || 0;
-  const sibling = all
-    .filter(
-      (d) =>
-        d.id !== saved.id &&
-        d.jobId === saved.jobId &&
-        d.cvId === saved.cvId &&
-        d.contentType !== saved.contentType,
-    )
-    .map((d) => ({ d, gap: Math.abs(time(d) - time(saved)) }))
-    .filter((x) => x.gap < 5 * 60_000)
-    .sort((a, b) => a.gap - b.gap)[0]?.d;
-  return { [saved.contentType]: saved, ...(sibling ? { [sibling.contentType]: sibling } : {}) };
-}
-
 export default function ApplicationAssistancePage() {
   const { isVietnamese } = useTranslation();
   const c = isVietnamese ? copy.vi : copy.en;
@@ -318,11 +242,10 @@ export default function ApplicationAssistancePage() {
     queryFn: getCandidateProfile,
   });
   const { data: resumes = [] } = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
-  const { data: rawJobs = [], isPending: isJobsPending } = useQuery({
+  const { data: rawJobs, isPending: isJobsPending } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => getJobs(),
   });
-  const jobs = useMemo(() => (rawJobs.length > 0 ? rawJobs : FALLBACK_JOBS), [rawJobs]);
   const { data: storedDrafts, refetch: refetchDrafts } = useQuery({
     queryKey: ['applicationDrafts'],
     queryFn: () => getStoredApplications(),
@@ -333,12 +256,11 @@ export default function ApplicationAssistancePage() {
     const queryJobId = searchParams.get('jobId') ?? undefined;
     const queryCvId = searchParams.get('cvId') || searchParams.get('resumeId') || undefined;
     const restored = loadComposeState();
-    if (queryJobId && restored?.jobId !== queryJobId) {
+    if (queryJobId && (restored?.jobId !== queryJobId || (queryCvId && restored.cvId !== queryCvId))) {
       return {
         jobId: queryJobId,
         cvId: queryCvId,
         language: 'Vietnamese',
-        activeType: 'cover_letter',
         drafts: {},
       };
     }
@@ -347,15 +269,22 @@ export default function ApplicationAssistancePage() {
         jobId: queryJobId,
         cvId: queryCvId,
         language: 'Vietnamese',
-        activeType: 'cover_letter',
         drafts: {},
       }
     );
   });
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const { data: linkedJob } = useQuery({
+    queryKey: ['application-linked-job', state.jobId],
+    queryFn: () => getJobById(state.jobId!),
+    enabled: !isJobsPending && !!state.jobId && state.jobId !== 'custom' && !state.jobId.startsWith('custom-')
+      && !rawJobs?.some((job) => job.id === state.jobId),
+  });
+  const jobs = useMemo(() => {
+    const catalog = rawJobs ?? [];
+    return linkedJob && !catalog.some((job) => job.id === linkedJob.id) ? [...catalog, linkedJob] : catalog;
+  }, [rawJobs, linkedJob]);
 
   const showToast = useCallback((message: string, ms = 3000) => {
     setToast(message);
@@ -377,15 +306,8 @@ export default function ApplicationAssistancePage() {
   useEffect(() => {
     setState((prev) => {
       let next = prev;
-      const isJobValid = Boolean(
-        prev.jobId && (prev.jobId === 'custom' || jobs.some((j) => j.id === prev.jobId)),
-      );
-      if (!isJobValid) {
-        if (jobs.length > 0) {
-          next = { ...next, jobId: jobs[0].id };
-        } else if (!isJobsPending) {
-          next = { ...next, jobId: 'custom' };
-        }
+      if (!prev.jobId && !isJobsPending) {
+        next = { ...next, jobId: jobs[0]?.id ?? 'custom' };
       }
       const isCvValid = Boolean(prev.cvId && readyResumes.some((r) => r.id === prev.cvId));
       if (!isCvValid && readyResumes.length > 0) {
@@ -398,7 +320,7 @@ export default function ApplicationAssistancePage() {
 
   const savedDrafts = useMemo(
     () =>
-      (storedDrafts ?? []).map((d) => {
+      (storedDrafts ?? []).filter((draft) => draft.contentType === 'application_email').map((d) => {
         const job = jobs.find((j) => j.id === d.jobId);
         const cv = resumes.find((r) => r.id === d.cvId);
         return {
@@ -414,15 +336,12 @@ export default function ApplicationAssistancePage() {
     [storedDrafts, jobs, resumes, isVietnamese],
   );
 
-  const draft = state.drafts[state.activeType];
-  const hasDrafts = TYPES.some((t) => state.drafts[t]);
-  const hasUnsaved = TYPES.some((t) => {
-    const d = state.drafts[t];
-    return d && !d.isSaved && (d.content.trim().length > 0 || (d.subject?.trim().length ?? 0) > 0);
-  });
+  const draft = state.drafts.application_email;
+  const hasDrafts = Boolean(draft);
+  const hasUnsaved = Boolean(draft && !draft.isSaved && (draft.content.trim() || draft.subject?.trim()));
   const isCustomJob = state.jobId === 'custom';
   const selectedJob = jobs.find((j) => j.id === state.jobId);
-  const existingDraft = (storedDrafts ?? []).find((d) => d.jobId === state.jobId);
+  const existingDraft = savedDrafts.find((d) => d.jobId === state.jobId && d.cvId === state.cvId);
   // CV chỉ để tham khảo khi tự viết, không bắt buộc.
   const blocker = !state.jobId ? c.needJob : null;
   const isSavedLetter = Boolean(
@@ -437,92 +356,34 @@ export default function ApplicationAssistancePage() {
 
   const updateDraft = (patch: Partial<ApplicationDraft>) =>
     setState((prev) => {
-      const current = prev.drafts[prev.activeType];
+      const current = prev.drafts.application_email;
       if (!current) return prev;
       return {
         ...prev,
-        drafts: { ...prev.drafts, [prev.activeType]: { ...current, ...patch, isSaved: false } },
+        drafts: { ...prev.drafts, application_email: { ...current, ...patch, isSaved: false } },
       };
     });
 
   const startNew = () => {
     if (hasUnsaved && !window.confirm(c.confirmNew)) return;
-    const effectiveJobId = state.jobId || (jobs.length > 0 ? jobs[0].id : 'custom');
-    const created = createOwnDrafts({
-      jobId: effectiveJobId === 'custom' ? `custom-${Date.now()}` : effectiveJobId,
+    const jobId = state.jobId || jobs[0]?.id || 'custom';
+    const custom = jobId === 'custom';
+    const email = createOwnApplicationEmail({
+      jobId: custom ? `custom-${Date.now()}` : jobId,
       resumeId: state.cvId,
       language: state.language,
     });
-    const drafts: DraftSet = {};
-    for (const d of created) {
-      if (effectiveJobId === 'custom') {
-        const titleStr = `${state.customJobTitle?.trim() || (isVietnamese ? 'Vị trí tự do' : 'Target Position')} · ${state.customCompany?.trim() || (isVietnamese ? 'Tự do' : 'Freeform')}`;
-        drafts[d.contentType] = {
-          ...d,
-          title:
-            d.contentType === 'application_email'
-              ? `${c.types.application_email} (${titleStr})`
-              : `${c.types.cover_letter} (${titleStr})`,
-        };
-      } else {
-        drafts[d.contentType] = d;
-      }
+    if (custom) {
+      email.jobTitle = state.customJobTitle?.trim();
+      email.company = state.customCompany?.trim();
+      email.title = [c.title.replace(/\.$/, ''), email.jobTitle, email.company].filter(Boolean).join(' · ');
     }
-    setState((prev) => ({
-      ...prev,
-      jobId: effectiveJobId,
-      drafts,
-    }));
-    setError(null);
+    setState((prev) => ({ ...prev, jobId, drafts: { application_email: email } }));
     setActiveTab('editor');
     showToast(c.generatedToast);
     setTimeout(() => {
-      document
-        .getElementById('section-editor')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('section-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
-  };
-
-  const handleGenerate = async () => {
-    if (blocker || !state.jobId) return;
-    if (hasUnsaved && !window.confirm(c.confirmNew)) return;
-    setIsGenerating(true);
-    setError(null);
-    try {
-      const effectiveJobId = state.jobId === 'custom' ? `custom-${Date.now()}` : state.jobId;
-      const created = createOwnDrafts({
-        jobId: effectiveJobId,
-        resumeId: state.cvId,
-        language: state.language,
-      });
-      const drafts: DraftSet = {};
-      for (const d of created) {
-        if (state.jobId === 'custom') {
-          const titleStr = `${state.customJobTitle?.trim() || (isVietnamese ? 'Vị trí tự do' : 'Target Position')} · ${state.customCompany?.trim() || (isVietnamese ? 'Tự do' : 'Freeform')}`;
-          drafts[d.contentType] = {
-            ...d,
-            title:
-              d.contentType === 'application_email'
-                ? `${c.types.application_email} (${titleStr})`
-                : `${c.types.cover_letter} (${titleStr})`,
-          };
-        } else {
-          drafts[d.contentType] = d;
-        }
-      }
-      setState((prev) => ({ ...prev, drafts }));
-      void refetchDrafts();
-      showToast(c.generatedToast);
-      setTimeout(() => {
-        document
-          .getElementById('section-editor')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
-    } catch (err) {
-      setError(authErrorMessage(err, c.generateFail));
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
   const handleSave = async () => {
@@ -530,7 +391,7 @@ export default function ApplicationAssistancePage() {
     setIsSaving(true);
     try {
       const saved = await saveApplicationDraft(draft);
-      setState((prev) => ({ ...prev, drafts: { ...prev.drafts, [saved.contentType]: saved } }));
+      setState((prev) => ({ ...prev, drafts: { ...prev.drafts, application_email: saved } }));
       void refetchDrafts();
       showToast(c.savedToast);
     } catch (err) {
@@ -542,25 +403,21 @@ export default function ApplicationAssistancePage() {
 
   const handleOpenSaved = (saved: ApplicationDraft) => {
     if (hasUnsaved && !window.confirm(c.confirmNew)) return;
-    const set = siblingSet(saved, storedDrafts ?? []);
+    const custom = saved.jobId === 'custom' || saved.jobId?.startsWith('custom-');
     setState((prev) => ({
       ...prev,
-      jobId: saved.jobId,
+      jobId: custom ? 'custom' : saved.jobId,
       cvId: saved.cvId,
-      activeType: saved.contentType,
-      drafts: Object.fromEntries(
-        Object.entries(set).map(([k, v]) => [
-          k,
-          { ...v, subject: v?.subject ?? '', isSaved: true },
-        ]),
-      ),
+      language: saved.language,
+      customJobTitle: custom ? saved.jobTitle : undefined,
+      customCompany: custom ? saved.company : undefined,
+      drafts: { application_email: { ...saved, subject: saved.subject ?? '', isSaved: true } },
     }));
-    setError(null);
     setActiveTab('editor');
   };
 
   const fitHref =
-    state.cvId && state.jobId
+    state.cvId && state.jobId && !isCustomJob
       ? `/candidate/cv-job-fit?cvId=${state.cvId}&jobId=${state.jobId}`
       : undefined;
 
@@ -659,7 +516,6 @@ export default function ApplicationAssistancePage() {
                 <LineSelect
                   id="app-job"
                   value={state.jobId ?? ''}
-                  disabled={isGenerating}
                   onChange={(v) => {
                     if (hasUnsaved && !window.confirm(c.confirmNew)) return;
                     setState((p) => ({ ...p, jobId: v, drafts: {} }));
@@ -684,7 +540,6 @@ export default function ApplicationAssistancePage() {
                 <LineSelect
                   id="app-cv"
                   value={state.cvId ?? ''}
-                  disabled={isGenerating}
                   onChange={(v) => setState((p) => ({ ...p, cvId: v || undefined }))}
                 >
                   <option value="">{c.pickCv}</option>
@@ -730,7 +585,6 @@ export default function ApplicationAssistancePage() {
                   <input
                     id="custom-job-title"
                     type="text"
-                    disabled={isGenerating}
                     placeholder={c.customJobTitlePlaceholder}
                     value={state.customJobTitle ?? ''}
                     onChange={(e) => setState((p) => ({ ...p, customJobTitle: e.target.value }))}
@@ -744,7 +598,6 @@ export default function ApplicationAssistancePage() {
                   <input
                     id="custom-company"
                     type="text"
-                    disabled={isGenerating}
                     placeholder={c.customCompanyPlaceholder}
                     value={state.customCompany ?? ''}
                     onChange={(e) => setState((p) => ({ ...p, customCompany: e.target.value }))}
@@ -756,23 +609,23 @@ export default function ApplicationAssistancePage() {
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <button
                 type="button"
-                onClick={() => void handleGenerate()}
-                disabled={isGenerating || !!blocker}
+                onClick={startNew}
+                disabled={!!blocker}
                 className={`${hasDrafts ? secondaryButton : primaryButton} w-full sm:w-auto`}
               >
-                {isGenerating ? c.generating : hasDrafts ? c.regenerate : c.generate}
+                {hasDrafts ? c.regenerate : c.generate}
                 <ArrowRight size={15} aria-hidden="true" />
               </button>
-              {blocker && !isGenerating && (
+              {blocker && (
                 <p className="text-[13px] text-slate-500 sm:ml-2">{blocker}</p>
               )}
             </div>
-            {error && <p className="mt-4 text-[13px] text-red-700">{error}</p>}
+
             {hasDrafts && (
               <p className="mt-4 text-[13px] text-slate-500">
                 {isVietnamese
-                  ? 'Đang mở bộ thư. Bạn có thể chọn đổi công việc khác ở trên hoặc'
-                  : 'Editing this letter set. You can change jobs above or'}{' '}
+                  ? 'Đang soạn email. Bạn có thể chọn đổi công việc khác ở trên hoặc'
+                  : 'Editing this email. You can change jobs above or'}{' '}
                 <button type="button" onClick={startNew} className={`${textLink} ml-1 text-ink`}>
                   + {c.newLetter}
                 </button>
@@ -795,16 +648,7 @@ export default function ApplicationAssistancePage() {
                 ) : undefined
               }
             />
-            <div className="mt-4 flex h-11 items-end border-b border-border">
-              <UnderlineTabs
-                label={c.typeLabel}
-                value={state.activeType}
-                onChange={(v: ApplicationContentType) => setState((p) => ({ ...p, activeType: v }))}
-                items={TYPES.map((id) => ({ id, label: c.types[id] }))}
-              />
-            </div>
-
-            {!hasDrafts ? (
+            {!draft ? (
               <div className="border-b border-border py-[clamp(2.5rem,6vw,4rem)]">
                 <h3 className="text-[clamp(1.125rem,1.8vw,1.375rem)] font-normal text-ink">
                   {c.emptyTitle}
@@ -813,11 +657,11 @@ export default function ApplicationAssistancePage() {
                 <div className="mt-6 flex flex-wrap items-center gap-4">
                   <button
                     type="button"
-                    onClick={() => void handleGenerate()}
-                    disabled={isGenerating || !!blocker}
+                    onClick={startNew}
+                    disabled={!!blocker}
                     className={`${primaryButton} w-full sm:w-auto`}
                   >
-                    {isGenerating ? c.generating : c.generate}
+                    {c.generate}
                     <ArrowRight size={15} aria-hidden="true" />
                   </button>
                   {existingDraft && (
@@ -827,20 +671,16 @@ export default function ApplicationAssistancePage() {
                       className={`${secondaryButton} w-full sm:w-auto`}
                     >
                       {isVietnamese
-                        ? 'Mở thư đã lưu cho công việc này'
-                        : 'Open saved letter for this job'}
+                        ? 'Mở email đã lưu cho công việc này'
+                        : 'Open saved email for this job'}
                     </button>
                   )}
                 </div>
               </div>
-            ) : !draft ? (
-              <p className="border-b border-border py-10 text-sm leading-6 text-slate-600">
-                {c.missingType}
-              </p>
             ) : (
               <>
                 <ApplicationEditor
-                  contentType={state.activeType}
+                  contentType="application_email"
                   language={state.language}
                   subject={draft.subject ?? ''}
                   content={draft.content}
@@ -861,34 +701,12 @@ export default function ApplicationAssistancePage() {
                   }
                   candidateName={profile?.name}
                   fitHref={fitHref}
-                  disabled={isGenerating}
                 />
-                <ProofreadPanel
+                <ApplicationReviewPanel
                   key={draft.id}
                   text={[draft.subject, draft.content].filter(Boolean).join('\n\n')}
                   language={state.language}
                   vi={isVietnamese}
-                  disabled={isGenerating}
-                  onApply={(original, suggestion) =>
-                    setState((prev) => {
-                      const current = prev.drafts[prev.activeType];
-                      if (!current) return prev;
-                      const content = current.content.includes(original)
-                        ? current.content.replace(original, suggestion)
-                        : current.content;
-                      const subject =
-                        content === current.content && current.subject?.includes(original)
-                          ? current.subject.replace(original, suggestion)
-                          : current.subject;
-                      return {
-                        ...prev,
-                        drafts: {
-                          ...prev.drafts,
-                          [prev.activeType]: { ...current, content, subject, isSaved: false },
-                        },
-                      };
-                    })
-                  }
                 />
                 <div className="mt-7 flex flex-col gap-3 border-t border-ink pt-5 sm:flex-row sm:flex-wrap sm:items-center">
                   <button

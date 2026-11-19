@@ -22,15 +22,20 @@ import { skillAssessmentHref } from '../../services/skillPathService';
 import { JobPicker, jobPickerCopy, lineField } from './cv-job-fit/JobPicker';
 import { JobDescription } from '../../components/jobs/JobContent';
 import { selectableJobs } from './cv-job-fit/jobSelection';
+import { RequirementEvidencePanel } from '../../components/jobs/RequirementEvidencePanel';
 
 const copy = {
   vi: {
     crumbResumes: 'CV của tôi',
     crumbPage: 'Độ phù hợp CV',
     fitHead: (score: number) => `CV phù hợp ${score}% với công việc.`,
+    provisionalHead: (score: number) => `Điểm phù hợp tạm tính: ${score}%.`,
+    provisionalLine: (count: number) => `Đã đối chiếu ${count} yêu cầu bắt buộc; các mục JD chưa rõ được liệt kê bên dưới.`,
     introResult: (cv: string, job: string) =>
       `So khớp ${/^cv\b/i.test(cv) ? '' : 'CV '}${cv} với JD ${job}. Bên dưới là điểm từng tiêu chí, những gì cần sửa trước và bước tiếp theo.`,
     scoreTitle: 'Điểm phù hợp',
+    provisionalScore: (count: number) => `Điểm tạm tính từ ${count} yêu cầu bắt buộc`,
+    unclearRequirements: (count: number) => `JD còn ${count} yêu cầu cần làm rõ; điểm có thể thay đổi khi các mục này được xác minh.`,
     grade: (g: string) => `Hạng ${g}`,
     missingPoints: (n: number) => `Còn thiếu ${n} điểm`,
     reachedTarget: 'Đã đạt mức nên có',
@@ -57,7 +62,7 @@ const copy = {
     startMatch: 'Bắt đầu so khớp',
     rematch: 'So khớp lại',
     matching: 'Đang so khớp',
-    runNote: 'Chỉ chạy khi bạn bấm. Mỗi lần so khớp dùng một lượt AI.',
+    runNote: 'Chỉ chạy khi bạn bấm. Kết quả dựa trên yêu cầu JD và thông tin thực tế trong CV.',
     lastRun: (d: string) => `Kết quả lúc ${d}. Bấm So khớp lại nếu bạn vừa sửa CV.`,
     idleBody: 'Chưa so khớp cặp CV và công việc này.',
     idleSteps: ['Điểm phù hợp theo từng tiêu chí', 'Điểm mạnh và điểm cần cải thiện', 'Kỹ năng JD có và chưa có trong CV', 'Gợi ý viết lại CV'],
@@ -70,7 +75,7 @@ const copy = {
     noCvSkill: 'Chưa có CV? Vẫn có thể đánh giá kỹ năng theo JD',
     noJobsYet: 'Chưa có tin tuyển dụng nào để so khớp.',
     nextTitle: 'Bước tiếp theo',
-    nextBody: 'Làm bài 10 câu theo JD để biết kỹ năng nào còn yếu, rồi nhận lộ trình học cho phần đó.',
+    nextBody: 'Làm bài đánh giá theo JD để biết kỹ năng nào còn yếu, rồi nhận lộ trình học cho phần đó.',
     nextLink: 'Chuẩn bị phỏng vấn',
     cvLabel: 'Bản CV dùng để so sánh',
     cvHint: 'Chọn bản CV bạn định nộp cho vị trí này.',
@@ -161,9 +166,13 @@ const copy = {
     crumbResumes: 'My CVs',
     crumbPage: 'CV fit',
     fitHead: (score: number) => `Your CV is a ${score}% fit.`,
+    provisionalHead: (score: number) => `Provisional fit score: ${score}%.`,
+    provisionalLine: (count: number) => `${count} mandatory requirements were assessed; unclear JD items are listed below.`,
     introResult: (cv: string, job: string) =>
       `Matching ${/^cv\b/i.test(cv) ? '' : 'CV '}${cv} against the ${job} JD. Below: score per criterion, what to fix first, and the next step.`,
     scoreTitle: 'Fit score',
+    provisionalScore: (count: number) => `Provisional score from ${count} mandatory requirements`,
+    unclearRequirements: (count: number) => `The JD has ${count} requirements to clarify; the score may change when they are verified.`,
     grade: (g: string) => `Grade ${g}`,
     missingPoints: (n: number) => `${n} points short`,
     reachedTarget: 'Target reached',
@@ -185,7 +194,7 @@ const copy = {
     startMatch: 'Start matching',
     rematch: 'Match again',
     matching: 'Matching',
-    runNote: 'Runs only when you press it. Each match uses one AI request.',
+    runNote: 'Runs only when you press it. Results compare JD requirements with information in your CV.',
     lastRun: (d: string) => `Result from ${d}. Match again if you just edited the CV.`,
     idleBody: 'This CV and job have not been matched yet.',
     idleSteps: ['Fit score per criterion', 'Strengths and what to improve', 'JD skills found and missing in the CV', 'CV rewrite tips'],
@@ -198,7 +207,7 @@ const copy = {
     noCvSkill: 'No CV? You can still assess your skills from the JD',
     noJobsYet: 'There are no job postings to match yet.',
     nextTitle: 'Next step',
-    nextBody: 'Take a 10-question test built from the JD to find weak skills, then get a learning path for them.',
+    nextBody: 'Take a JD-based assessment to find weak skills, then get a learning path for them.',
     nextLink: 'Skill assessment',
     cvLabel: 'CV to compare',
     cvHint: 'Pick the CV you plan to send for this role.',
@@ -295,7 +304,7 @@ const primaryButton =
   'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
 
 // Kết quả so khớp được lưu lại theo cặp CV + job, để mở lại trang không phải chạy AI lần nữa.
-const FIT_STORE_KEY = 'careerpilot-cv-fit-results';
+const FIT_STORE_KEY = 'careerpilot-cv-fit-ai-v2';
 const FIT_STORE_LIMIT = 30;
 
 interface StoredFit {
@@ -441,7 +450,7 @@ export default function CvJobFitPage() {
     mutationFn: async ({ cvId, jobId }: { cvId: string; jobId: string }): Promise<StoredFit> => {
       const fit = await getCvJobFitAnalysis(cvId, jobId);
       // Supplemental matching is useful only after the requested CV/job pair has passed validation.
-      const semantic = await getJobSemanticMatch(jobId, cvId).catch(() => undefined);
+      const semantic = fit.evidenceReport ? undefined : await getJobSemanticMatch(jobId, cvId).catch(() => undefined);
       return {
         fit,
         semantic,
@@ -475,6 +484,9 @@ export default function CvJobFitPage() {
   const stored = storedFits[pairKey];
   const fitResult = stored?.fit;
   const semantic = stored?.semantic;
+  const provisionalScore = !!fitResult?.evidenceReport
+    && !fitResult.evidenceReport.scoreAvailable
+    && fitResult.evidenceReport.requiredCount > 0;
 
   const startMatch = () => {
     if (!selectedCvId || !selectedJobId || resumesError || jobsError || matchMutation.isPending) return;
@@ -564,7 +576,7 @@ export default function CvJobFitPage() {
     minor: 'text-slate-600',
   } as const;
 
-  const dims = fitResult?.dimensions?.length
+  const dims = fitResult?.evidenceReport?.scoreAvailable === false ? [] : fitResult?.dimensions?.length
     ? fitResult.dimensions.map((d) => ({ label: d.label, value: d.score }))
     : fitResult
     ? [
@@ -636,9 +648,15 @@ export default function CvJobFitPage() {
       {/* Headline: chưa so khớp / đang so khớp / kết quả */}
       <header className="mt-3">
         <h1 className="text-[clamp(2rem,3.6vw,3.25rem)] font-normal leading-[1.12] tracking-[-0.03em] text-ink">
-          {runningThisPair ? c.loadingTitle : fitResult ? c.fitHead(fitResult.overallScore) : c.idleTitle}
+          {runningThisPair ? c.loadingTitle : fitResult?.evidenceReport?.scoreAvailable === false
+            ? provisionalScore ? c.provisionalHead(fitResult.overallScore)
+              : (isVietnamese ? 'Chưa đủ dữ liệu JD.' : 'Insufficient JD information.')
+            : fitResult ? c.fitHead(fitResult.overallScore) : c.idleTitle}
           <span className={`block ${fitResult && !runningThisPair ? scoreText(fitResult.overallScore) : 'text-brand'}`}>
-            {runningThisPair ? c.loadingLine : fitResult ? c.verdictLine(fitResult.overallScore) : c.idleLine}
+            {runningThisPair ? c.loadingLine : fitResult?.evidenceReport?.scoreAvailable === false
+              ? provisionalScore ? c.provisionalLine(fitResult.evidenceReport.requiredCount)
+                : (isVietnamese ? 'Xem các yêu cầu cần làm rõ.' : 'Review unclear requirements.')
+              : fitResult ? c.verdictLine(fitResult.overallScore) : c.idleLine}
           </span>
         </h1>
         <p className="mt-4 max-w-[36rem] text-[15px] leading-7 text-slate-600">
@@ -820,12 +838,21 @@ export default function CvJobFitPage() {
             <div className="grid gap-x-[clamp(2rem,5vw,4.5rem)] gap-y-6 pt-4 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
               <div className="pt-2">
                 <p className={`text-[clamp(3.5rem,6.5vw,5.25rem)] font-normal leading-none tracking-[-0.04em] tabular-nums ${scoreText(fitResult.overallScore)}`}>
-                  {fitResult.overallScore}%
+                  {fitResult.evidenceReport?.scoreAvailable === false && !provisionalScore ? '—' : `${fitResult.overallScore}%`}
                 </p>
                 <p className="mt-3 text-[13px] text-slate-600">
-                  {c.grade(fitResult.fitGrade)}
+                  {fitResult.evidenceReport?.scoreAvailable === false
+                    ? provisionalScore
+                      ? c.provisionalScore(fitResult.evidenceReport!.requiredCount)
+                      : (isVietnamese ? 'Chưa thể tính độ bao phủ' : 'Coverage unavailable')
+                    : c.grade(fitResult.fitGrade)}
                   {fitResult.targetScore ? ` · ${c.target(fitResult.targetScore)}` : ''}
                 </p>
+                {provisionalScore && fitResult.evidenceReport && fitResult.evidenceReport.unverifiedCount > 0 && (
+                  <p className="mt-2 text-[13px] leading-5 text-slate-600">
+                    {c.unclearRequirements(fitResult.evidenceReport.unverifiedCount)}
+                  </p>
+                )}
                 {fitResult.targetScore && fitResult.overallScore < fitResult.targetScore ? (
                   <p className="text-[13px] text-danger">{c.missingPoints(fitResult.targetScore - fitResult.overallScore)}</p>
                 ) : fitResult.targetScore ? (
@@ -847,7 +874,9 @@ export default function CvJobFitPage() {
             <div className="mt-6 max-w-[48rem] space-y-2 text-[13px] leading-6 text-slate-700">
               {missingNames.length > 0 && (
                 <p>
-                  <span className="text-ink">{c.missingKeywords}</span> {missingNames.join(', ')}.
+                  <span className="text-ink">{fitResult.evidenceReport
+                    ? (isVietnamese ? 'Yêu cầu chưa đủ bằng chứng:' : 'Requirements needing evidence:')
+                    : c.missingKeywords}</span> {missingNames.join(', ')}.
                 </p>
               )}
               {fitResult.verdict && <p>{fitResult.verdict}</p>}
@@ -860,6 +889,7 @@ export default function CvJobFitPage() {
           </section>
 
           {/* 02 Điểm mạnh */}
+          <RequirementEvidencePanel report={fitResult.evidenceReport} />
           {strengthList.length > 0 && (
             <section className={sectionGap}>
               <SectionHead index="02" title={c.strengths} />

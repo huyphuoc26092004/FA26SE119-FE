@@ -69,7 +69,7 @@ export default function SubscriptionQuotaManagementPage({
   // Modal states
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<AdminSubscriptionPlan | null>(null);
-  const [planModalDefaultType, setPlanModalDefaultType] = useState<'SUBSCRIPTION' | 'TOPUP'>('SUBSCRIPTION');
+  const [planModalDefaultType, setPlanModalDefaultType] = useState<'SUBSCRIPTION' | 'TOKEN_TOPUP'>('SUBSCRIPTION');
 
   const [selectedInvoiceTransaction, setSelectedInvoiceTransaction] =
     useState<PaymentTransaction | null>(null);
@@ -258,7 +258,7 @@ export default function SubscriptionQuotaManagementPage({
             <button
               type="button"
               onClick={() => {
-                setPlanModalDefaultType('TOPUP');
+                setPlanModalDefaultType('TOKEN_TOPUP');
                 setSelectedPlanForEdit(null);
                 setIsPlanModalOpen(true);
               }}
@@ -337,7 +337,7 @@ export default function SubscriptionQuotaManagementPage({
             setIsPlanModalOpen(true);
           }}
           onOpenEditPlan={(plan) => {
-            setPlanModalDefaultType(plan.planType ?? 'SUBSCRIPTION');
+            setPlanModalDefaultType(plan.tierType ?? 'SUBSCRIPTION');
             setSelectedPlanForEdit(plan);
             setIsPlanModalOpen(true);
           }}
@@ -365,7 +365,7 @@ export default function SubscriptionQuotaManagementPage({
               <button
                 type="button"
                 onClick={() => {
-                  setPlanModalDefaultType('TOPUP');
+                  setPlanModalDefaultType('TOKEN_TOPUP');
                   setSelectedPlanForEdit(null);
                   setIsPlanModalOpen(true);
                 }}
@@ -375,12 +375,12 @@ export default function SubscriptionQuotaManagementPage({
               </button>
             </div>
 
-            {plans.filter((p) => p.planType === 'TOPUP').length === 0 ? (
+            {plans.filter((p) => p.tierType === 'TOKEN_TOPUP').length === 0 ? (
               <p className="py-4 text-sm text-slate-500 italic">Chưa có gói nạp token nào. Bấm “+ Tạo gói nạp token” để thêm gói đầu tiên.</p>
             ) : (
               <div className="divide-y divide-border">
                 {plans
-                  .filter((p) => p.planType === 'TOPUP')
+                  .filter((p) => p.tierType === 'TOKEN_TOPUP')
                   .map((pack) => (
                     <div key={pack.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
                       <div>
@@ -392,7 +392,7 @@ export default function SubscriptionQuotaManagementPage({
                           {pack.badge && <span className="text-xs text-slate-400">({pack.badge})</span>}
                         </div>
                         <p className="mt-1 text-sm text-slate-600">
-                          <strong className="text-emerald-700 tabular-nums">+{pack.tokenMonthlyQuota.toLocaleString('vi-VN')} token</strong> · Giá nạp:{' '}
+                          <strong className="text-emerald-700 tabular-nums">+{(pack.tokenAmount ?? 0).toLocaleString('vi-VN')} token</strong> · Giá nạp:{' '}
                           <span className="font-medium text-ink tabular-nums">{pack.monthlyPriceVND.toLocaleString('vi-VN')}đ</span> · {pack.description || 'Cộng trực tiếp vào ví'}
                         </p>
                       </div>
@@ -401,7 +401,7 @@ export default function SubscriptionQuotaManagementPage({
                           type="button"
                           className={textLink}
                           onClick={() => {
-                            setPlanModalDefaultType('TOPUP');
+                            setPlanModalDefaultType('TOKEN_TOPUP');
                             setSelectedPlanForEdit(pack);
                             setIsPlanModalOpen(true);
                           }}
@@ -425,7 +425,7 @@ export default function SubscriptionQuotaManagementPage({
             </div>
             <div className="divide-y divide-border">
               {plans
-                .filter((p) => p.planType !== 'TOPUP')
+                .filter((p) => p.tierType !== 'TOKEN_TOPUP')
                 .map((plan) => (
                   <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
                     <div>
@@ -475,7 +475,7 @@ export default function SubscriptionQuotaManagementPage({
       </div>
 
       {/* Modals */}
-      <PlanEditorModal
+      {isPlanModalOpen && <PlanEditorModal
         key={`${selectedPlanForEdit?.id ?? 'new'}-${planModalDefaultType}`}
         isOpen={isPlanModalOpen}
         defaultPlanType={planModalDefaultType}
@@ -487,7 +487,7 @@ export default function SubscriptionQuotaManagementPage({
           await savePlanMutation.mutateAsync(planData);
         }}
         initialPlan={selectedPlanForEdit}
-      />
+      />}
 
       <TransactionInvoiceModal
         isOpen={Boolean(selectedInvoiceTransaction)}

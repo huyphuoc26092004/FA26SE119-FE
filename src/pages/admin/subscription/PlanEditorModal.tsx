@@ -56,14 +56,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
 }) => {
   const isEdit = Boolean(initialPlan);
 
-  const initialType: PlanType =
-    initialPlan?.planType ||
-    (initialPlan?.tierCode?.startsWith('TOPUP_') || initialPlan?.tierCode?.startsWith('TOKEN_')
-      ? 'TOPUP'
-      : defaultPlanType);
-
-  const [planType, setPlanType] = useState<PlanType>(initialType);
-  const isTopup = planType === 'TOPUP';
+  const isTopup = (initialPlan?.tierType ?? defaultPlanType) === 'TOKEN_TOPUP';
 
   const [name, setName] = useState(initialPlan?.name || '');
   const [badge, setBadge] = useState(initialPlan?.badge || '');
@@ -71,7 +64,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
   const [monthlyPriceVND, setMonthlyPriceVND] = useState<number>(initialPlan?.monthlyPriceVND ?? 199000);
   const [yearlyPriceVND, setYearlyPriceVND] = useState<number>(initialPlan?.yearlyPriceVND ?? 1890000);
   const [tokenMonthlyQuota, setTokenMonthlyQuota] = useState<number>(
-    initialPlan?.tokenMonthlyQuota ?? (isTopup ? 500000 : 250000)
+    isTopup ? initialPlan?.tokenAmount ?? 500000 : initialPlan?.tokenMonthlyQuota ?? 250000
   );
   const [cvParsingLimit, setCvParsingLimit] = useState<string>(
     initialPlan?.cvParsingLimit === 'unlimited' ? 'unlimited' : String(initialPlan?.cvParsingLimit ?? 10)
@@ -145,6 +138,11 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
       return;
     }
 
+    if (isTopup && (!Number.isSafeInteger(tokenMonthlyQuota) || tokenMonthlyQuota < 1)) {
+      setError('Số token phải là số nguyên dương.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -152,12 +150,13 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
       if (isTopup) {
         await onSave({
           name: name.trim(),
-          planType: 'TOPUP',
+          tierType: 'TOKEN_TOPUP',
           badge: badge.trim() || undefined,
           description: description.trim() || `Cộng ${Number(tokenMonthlyQuota).toLocaleString('vi-VN')} token vào ví`,
           monthlyPriceVND: Number(monthlyPriceVND),
           yearlyPriceVND: 0,
-          tokenMonthlyQuota: Number(tokenMonthlyQuota),
+          tokenMonthlyQuota: 0,
+          tokenAmount: tokenMonthlyQuota,
           cvParsingLimit: 0,
           cvJobFitLimit: 0,
           aiAssistantQueriesLimit: 0,
@@ -180,7 +179,7 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
       } else {
         await onSave({
           name: name.trim(),
-          planType: 'SUBSCRIPTION',
+          tierType: 'SUBSCRIPTION',
           badge: badge.trim() || undefined,
           description: description.trim(),
           monthlyPriceVND: Number(monthlyPriceVND),
@@ -270,17 +269,6 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
         <section>
           <SubHead title={isTopup ? '01  Thông tin gói nạp' : '01  Thông tin chung'} />
           <div className="mt-5 grid gap-x-8 gap-y-5 md:grid-cols-2">
-            <Field label="Loại gói">
-              <select
-                value={planType}
-                onChange={(e) => setPlanType(e.target.value as PlanType)}
-                className={underlineSelect}
-              >
-                <option value="SUBSCRIPTION">Gói thuê bao định kỳ (theo tháng / năm)</option>
-                <option value="TOPUP">Gói nạp token một lần (cộng vào ví)</option>
-              </select>
-            </Field>
-
             {isTopup ? (
               <Field
                 label={<>Số token cộng vào ví <span className="text-danger">*</span></>}
@@ -288,8 +276,8 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
               >
                 <input
                   type="number"
-                  min="1000"
-                  step="10000"
+                  min="1"
+                  step="1"
                   required
                   value={tokenMonthlyQuota}
                   onChange={(e) => setTokenMonthlyQuota(Number(e.target.value))}

@@ -10,6 +10,7 @@ import ManagerReportsPage from '../pages/admin/ManagerReportsPage';
 import OperationsReportsPage from '../pages/admin/OperationsReportsPage';
 import { managerCanOpen } from '../utils/roleAccess';
 import { Navigate, createBrowserRouter, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import type { UserRole } from '../types/domain';
 import PublicLayout from '../layouts/PublicLayout';
@@ -78,6 +79,22 @@ function SkillAssessmentRedirect() {
   return <Navigate to={`/candidate/skill-assessment${jobId ? `?jobId=${encodeURIComponent(jobId)}` : ''}`} replace />;
 }
 
+/** SePay needs a public callback URL; send the browser back to the local app in dev. */
+function SePayReturnRedirect() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const returnPath = `/candidate/subscription${location.search}`;
+    const destination = import.meta.env.DEV
+      ? `http://localhost:5173${returnPath}`
+      : `${window.location.origin}${returnPath}`;
+
+    window.location.replace(destination);
+  }, [location.search]);
+
+  return null;
+}
+
 export function ProtectedRoute() { const authenticated = useAuthStore(s => s.isAuthenticated); return authenticated ? <Outlet /> : <Navigate to="/login" replace />; }
 export function RoleRoute({ role }: { role: UserRole }) {
   const current = useAuthStore(s => s.role);
@@ -97,6 +114,7 @@ export const router = createBrowserRouter([
       { path: '/trial', element: <Navigate to="/guest-trial" replace /> },
       { path: '/jobs', element: <JobsPage /> },
       { path: '/jobs/:jobId', element: <JobDetailsPage /> },
+      { path: '/sepay/return', element: <SePayReturnRedirect /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
       { path: '/verify-otp', element: <VerifyOtpPage /> },

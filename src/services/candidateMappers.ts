@@ -8,6 +8,8 @@ import type {
   EducationItem,
   Job,
   ProjectItem,
+  RequirementEvidenceItem,
+  RequirementEvidenceReport,
   Resume,
   SemanticMatchingDetail,
   SkillItem,
@@ -109,11 +111,14 @@ export function toJob(row: ApiRow): Job {
     company: str(row.company_name),
     location: str(row.location),
     salary: str(row.salary_text) || 'Thỏa thuận',
+    salaryMin: row.monthly_salary_min_vnd == null ? undefined : num(row.monthly_salary_min_vnd),
+    salaryMax: row.monthly_salary_max_vnd == null ? undefined : num(row.monthly_salary_max_vnd),
     type: str(row.employment_type || row.role_category),
     experienceLevel: Object.entries(SENIORITY).find(([key]) => seniority.includes(key))?.[1],
     skills: skills.map((s) => str(s.skill_name ?? s.name)).filter(Boolean),
     match: 0,
     posted: formatDate(row.posted_at || row.collected_at),
+    postedAt: optStr(row.posted_at || row.collected_at),
     description: str(row.parsed_description || row.raw_content),
     contentHtml: str(row.original_content_format).toLowerCase() === 'html' ? optStr(row.original_content) : undefined,
     department: optStr(row.role_category),
@@ -143,6 +148,28 @@ const fitLevel = (score: number): SemanticMatchingDetail['fitLevel'] => {
   return 'Growth Opportunity';
 };
 
+export function toEvidenceReport(value: unknown): RequirementEvidenceReport | undefined {
+  const report = obj(value);
+  if (report.version !== 'requirement-evidence-v1' || !Array.isArray(report.requirements)) return undefined;
+  const statuses: RequirementEvidenceItem['status'][] = ['MET', 'PARTIAL', 'NOT_MET', 'MISSING_EVIDENCE', 'UNVERIFIED'];
+  return {
+    version: str(report.version),
+    scoreAvailable: report.requirement_coverage_available === true,
+    complete: report.coverage_complete === true,
+    verificationDeferred: report.verification_status === 'DEFERRED',
+    requiredCount: num(report.required_count),
+    preferredCount: num(report.preferred_count),
+    unverifiedCount: num(report.unverified_requirements),
+    preferredScore: report.preferred_coverage == null ? undefined : Math.trunc(num(report.preferred_coverage) * 1000) / 10,
+    requirements: rows(report.requirements).map((row) => ({
+      id: str(row.requirement_id), text: str(row.text), importance: str(row.importance),
+      status: statuses.find((status) => status === row.status) ?? 'UNVERIFIED',
+      reason: str(row.reason), skills: texts(row.skills),
+      evidence: rows(row.evidence).map((citation) => ({ source: str(citation.source), quote: str(citation.quote) })),
+    })),
+  };
+}
+
 /** Một dòng `results[]` của POST /matching. Backend chỉ có một điểm tổng (0..1). */
 export function toSemanticMatch(result: ApiRow): SemanticMatchingDetail {
   const rawScore = num(result.final_score) * 100;
@@ -150,7 +177,10 @@ export function toSemanticMatch(result: ApiRow): SemanticMatchingDetail {
   const score = Math.trunc(Number(rawScore.toFixed(8)) * 10) / 10;
   const explanation = obj(result.match_reason_json);
   const assessment = obj(explanation.assessment);
-  const reviewNote = assessment.extraction_status && assessment.extraction_status !== 'PARSED'
+  const evidenceReport = toEvidenceReport(assessment);
+  const needsReview = evidenceReport ? !evidenceReport.complete
+    : assessment.extraction_status && assessment.extraction_status !== 'PARSED';
+  const reviewNote = needsReview
     ? ' Còn yêu cầu chưa xác minh hoặc thiếu nguồn; điểm này không xác nhận đáp ứng toàn bộ JD.' : '';
   const reason = str(explanation.reason) + reviewNote;
   const experienceStatuses: NonNullable<SemanticMatchingDetail['experienceStatus']>[] = [
@@ -167,7 +197,14 @@ export function toSemanticMatch(result: ApiRow): SemanticMatchingDetail {
   const missing = texts(result.skill_gaps_json);
   return {
     matchResultId: str(result.id),
+    evidenceReport,
     method: optStr(explanation.method),
+    rankPosition: result.rank_position == null ? undefined : num(result.rank_position),
+    semanticSimilarity: result.vector_similarity_score == null ? undefined : num(result.vector_similarity_score),
+    aiRerankScore: result.llm_rerank_score == null ? undefined : num(result.llm_rerank_score),
+    scoreAvailable: typeof assessment.suitability_score_available === 'boolean'
+      ? assessment.suitability_score_available : undefined,
+    scoreStatus: optStr(explanation.score_status ?? assessment.ai_status),
     skillCoverageScore: skillCoverage !== undefined && skillCoverage <= 1 ? Math.round(skillCoverage * 100) : undefined,
     requirementCoverageScore: nonnegativeNumber(assessment.requirement_coverage) !== undefined
       ? Math.trunc(num(assessment.requirement_coverage) * 1000) / 10 : undefined,

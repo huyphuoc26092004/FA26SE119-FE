@@ -1,7 +1,6 @@
 import type { BillingCycle, PaymentStatus, PaymentTransaction, SubscriptionPlan, UserSubscriptionStatus } from '../types/domain';
 import { useAuthStore } from '../stores/authStore';
 import { apiClient } from './apiClient';
-import { pending, notConnected } from './apiPending';
 import { type ApiRow, num, obj, rows, str } from './candidateMappers';
 import { formatDateTime } from './supportService';
 
@@ -91,12 +90,7 @@ export function toSubscriptionPlan(row: ApiRow): SubscriptionPlan {
 
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const { data } = await apiClient.get<ApiRow[]>('/subscriptions/tiers');
-  return data
-    .filter((row) => {
-      const code = str(row.tier_code).toUpperCase();
-      return !code.startsWith('TOPUP_') && !code.startsWith('TOKEN_');
-    })
-    .map(toSubscriptionPlan);
+  return data.map(toSubscriptionPlan);
 }
 
 export interface TokenTopupPack {
@@ -107,14 +101,24 @@ export interface TokenTopupPack {
   popular?: boolean;
 }
 
-// TODO(api): GET /api/v1/token-packs (BE chưa có API nạp token lẻ)
-export function getTopupPacks(): TokenTopupPack[] {
-  return pending([], 'BE chưa có API');
+export async function getTopupPacks(): Promise<TokenTopupPack[]> {
+  const { data } = await apiClient.get<ApiRow[]>('/token-packs');
+  return data.map((row) => ({
+    id: str(row.id),
+    name: str(row.display_name),
+    tokens: num(row.token_amount),
+    priceVND: num(row.price),
+  }));
 }
 
-// TODO(api): POST /api/v1/token-packs/{id}/orders (BE chưa có API)
-export async function purchaseTokenTopup(packId: string): Promise<UserSubscriptionStatus> {
-  return notConnected('BE chưa có API', packId);
+export async function purchaseTokenTopup(packId: string): Promise<SePayCheckout> {
+  const { data } = await apiClient.post<ApiRow>('/payments/sepay/checkout', { tierId: packId });
+  return toCheckout(data, []);
+}
+
+export async function getTokenWalletBalance(): Promise<number> {
+  const { data } = await apiClient.get<ApiRow>('/token-wallet');
+  return num(data.balance);
 }
 
 const monthStart = () => {
@@ -148,6 +152,7 @@ export async function getUserSubscription(): Promise<UserSubscriptionStatus> {
     autoRenew: Boolean(active?.auto_renew),
     tokensUsed: num(me.tokensUsedThisMonth),
     tokenLimit: totalTokens(quotas),
+    tokenWalletBalance: num(me.tokenWalletBalance),
     cvParsedCount: countOf('CV_PARSE', 'CV_ANALYZE', 'CV_BUILD'),
     cvJobFitCount: countOf('JOB_ATS', 'JOB_MATCH_RERANK'),
     coverLettersGeneratedCount: countOf('APPLICATION_EMAIL'),
@@ -205,7 +210,9 @@ export function toPaymentTransaction(row: ApiRow, plans: SubscriptionPlan[] = []
     planId: plan?.id ?? 'free',
     planName: str(row.order_type) === 'CONSULTATION'
       ? str(row.service_name) || 'Dịch vụ tư vấn'
-      : `${plan?.name ?? 'Gói'} · ${months * 30} ngày`,
+      : str(row.order_type) === 'TOKEN_TOPUP'
+        ? `${str(row.tier_display_name) || 'Gói token'} · nạp ${num(row.token_amount).toLocaleString('vi-VN')} token`
+        : `${plan?.name ?? 'Gói'} · ${months * 30} ngày`,
     billingCycle: months >= 12 ? 'yearly' : 'monthly',
     amountVND: amount,
     discountAmountVND: 0,

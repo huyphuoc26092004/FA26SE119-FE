@@ -174,7 +174,7 @@ function mountFitPage(options = {}) {
   let params = new URLSearchParams(options.params);
   const service = { getResumes() {}, getJobs() {},
     getJobById: async (id) => { calls.jobDetails.push(id); return options.explicitJob; },
-    getCvJobFitAnalysis: async (...args) => { calls.ats.push(args); if (options.error) throw options.error; return {}; },
+    getCvJobFitAnalysis: async (...args) => { calls.ats.push(args); if (options.error) throw options.error; return options.fit ?? {}; },
     getJobSemanticMatch: async (...args) => { calls.semantic.push(args); return {}; } };
   const modules = {
     axios: { default: axios },
@@ -205,10 +205,21 @@ function mountFitPage(options = {}) {
     './cv-job-fit/JobPicker': { JobPicker: 'JobPicker', jobPickerCopy: { vi: {}, en: {} }, lineField: '' },
     './cv-job-fit/jobSelection': selectionHelpers,
     '../../components/jobs/JobContent': { JobDescription: () => null },
+    '../../components/jobs/RequirementEvidencePanel': { RequirementEvidencePanel: () => null },
   };
   const page = mount(pageSource, 'default', {}, modules);
   return { ...page, data, calls, match: () => mutations[0] };
 }
+
+test('a unified evidence report completes a selected pair without a second matching request', async () => {
+  const fit = { evidenceReport: { version: 'requirement-evidence-v1' } };
+  const page = mountFitPage({ fit });
+  const result = await page.match().mutationFn({ cvId: 'ready-cv', jobId: 'active-job' });
+  assert.equal(result.fit, fit);
+  assert.equal(result.semantic, undefined);
+  assert.deepEqual(page.calls.ats, [['ready-cv', 'active-job']]);
+  assert.deepEqual(page.calls.semantic, []);
+});
 
 test('ATS selection ignores removed history defaults and disables IDs removed by a refetch', () => {
   const page = mountFitPage({ activity: { ...emptyActivity, applied: [{ job: job('removed-job') }], appliedIds: ['removed-job'] } });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Zap,
@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   CheckCircle2,
 } from 'lucide-react';
-import { getTopupPacks, purchaseTokenTopup } from '../../../services/subscriptionService';
+import { getTopupPacks, purchaseTokenTopup, submitSePayForm, type TokenTopupPack } from '../../../services/subscriptionService';
 import { useTranslation } from '../../../i18n';
 
 interface TokenTopupModalProps {
@@ -22,10 +22,14 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
   onSuccess,
 }) => {
   const { isVietnamese, t } = useTranslation();
-  const packs = getTopupPacks();
+  const [packs, setPacks] = useState<TokenTopupPack[]>([]);
   const [selectedPackId, setSelectedPackId] = useState(packs[1]?.id || packs[0]?.id || 'pack-300k');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) void getTopupPacks().then(setPacks).catch(() => setPacks([]));
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -34,10 +38,11 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
   const handleTopup = async () => {
     setIsProcessing(true);
     try {
-      await purchaseTokenTopup(selectedPack.id);
-      setIsSuccess(true);
+      const checkout = await purchaseTokenTopup(selectedPack.id);
       onSuccess();
+      submitSePayForm(checkout);
     } catch (err) {
+      setIsSuccess(false);
       console.error(err);
     } finally {
       setIsProcessing(false);
@@ -58,7 +63,7 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
                 {t.subscriptionPage.topupTokensBtn}
               </h3>
               <p className="text-xs text-neutral-500">
-                {isVietnamese ? 'Cộng dồn ngay vào hạn mức tháng hiện tại' : 'Instantly added to your active quota'}
+                {isVietnamese ? 'Sau khi thanh toán, token được cộng vào ví và không hết hạn' : 'After payment, tokens are added to your wallet and do not expire'}
               </p>
             </div>
           </div>
@@ -82,8 +87,8 @@ export const TokenTopupModal: React.FC<TokenTopupModalProps> = ({
               </h4>
               <p className="text-xs text-neutral-600 dark:text-neutral-400 max-w-sm mx-auto">
                 {isVietnamese
-                  ? `Đã cộng thêm +${selectedPack.tokens.toLocaleString('vi-VN')} Tokens vào tài khoản của bạn. Hạn mức mới đã sẵn sàng sử dụng.`
-                  : `Added +${selectedPack.tokens.toLocaleString()} Tokens to your account. New quota is active.`}
+                  ? `Đã cộng thêm ${selectedPack.tokens.toLocaleString('vi-VN')} token vào ví của bạn.`
+                  : `Added ${selectedPack.tokens.toLocaleString()} tokens to your wallet.`}
               </p>
               <button
                 onClick={() => {

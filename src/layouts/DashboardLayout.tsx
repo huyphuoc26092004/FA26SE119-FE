@@ -5,7 +5,7 @@ import { useSidebarCollapsed } from '../utils/useSidebarCollapsed';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
 import { useQuery } from '@tanstack/react-query';
-import { getUserSubscription } from '../services/subscriptionService';
+import { getTokenWalletBalance, getUserSubscription } from '../services/subscriptionService';
 import { navGroupLabels, type NavItem } from '../constants/navigation';
 import { getNotifications } from '../services/notificationService';
 import { CcvLogo } from '../components/brand/CcvLogo';
@@ -80,6 +80,12 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
     enabled: isCandidate,
     staleTime: 60_000,
   });
+  const { data: walletBalance = 0 } = useQuery({
+    queryKey: ['tokenWallet'],
+    queryFn: getTokenWalletBalance,
+    enabled: isCandidate,
+    staleTime: 30_000,
+  });
 
   useEffect(() => {
     setOpen(false);
@@ -149,8 +155,9 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
   }, [nav]);
 
   const tokenLimit = subscription?.tokenLimit ?? 0;
-  const tokensLeft = Math.max(0, tokenLimit - (subscription?.tokensUsed ?? 0));
-  const tokenPercent = tokenLimit > 0 ? Math.min(100, Math.round((tokensLeft / tokenLimit) * 100)) : 0;
+  const planTokensLeft = Math.max(0, tokenLimit - (subscription?.tokensUsed ?? 0));
+  const tokensLeft = planTokensLeft + walletBalance;
+  const tokenPercent = tokenLimit > 0 ? Math.min(100, Math.round((planTokensLeft / tokenLimit) * 100)) : 0;
   const number = (value: number) => value.toLocaleString(isVietnamese ? 'vi-VN' : 'en-US');
 
   const textLink =
@@ -322,7 +329,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
               <div className="mt-5">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-[13px] text-slate-700">
-                    {isVietnamese ? 'Token còn lại' : 'Tokens left'}
+                    {isVietnamese ? 'Tổng token còn dùng' : 'Total tokens available'}
                   </span>
                   <Link
                     to="/candidate/subscription"
@@ -333,15 +340,19 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
                 </div>
                 <p className="mt-1 flex items-baseline gap-1 tabular-nums">
                   <span className="text-[24px] leading-tight text-ink">{number(tokensLeft)}</span>
-                  <span className="text-[13px] text-slate-500">/{number(tokenLimit)}</span>
+                </p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-600">
+                  {isVietnamese
+                    ? `Gói còn ${number(planTokensLeft)} · Ví ${number(walletBalance)}`
+                    : `Plan ${number(planTokensLeft)} · Wallet ${number(walletBalance)}`}
                 </p>
                 <div
                   className="mt-2 h-[3px] w-full bg-slate-200"
                   role="progressbar"
                   aria-valuemin={0}
                   aria-valuemax={tokenLimit}
-                  aria-valuenow={tokensLeft}
-                  aria-label={isVietnamese ? 'Token còn lại' : 'Tokens left'}
+                  aria-valuenow={planTokensLeft}
+                  aria-label={isVietnamese ? 'Quota gói còn lại' : 'Plan quota remaining'}
                 >
                   <div className="h-full bg-brand" style={{ width: `${tokenPercent}%` }} />
                 </div>
