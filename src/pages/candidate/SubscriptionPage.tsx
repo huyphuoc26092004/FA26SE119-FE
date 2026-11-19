@@ -13,6 +13,7 @@ import {
   getUserSubscription,
   getPaymentHistory,
   getTopupPacks,
+  getTokenWalletBalance,
   purchaseTokenTopup,
   cancelSubscription,
   reportPaymentIssue,
@@ -52,8 +53,9 @@ const copy = {
     tokenLine1: 'Hết token? Nạp thêm',
     tokenLine2: 'và dùng khi cần.',
     tokenIntro:
-      'Mỗi lần dùng tính năng AI sẽ trừ một lượng token. Token nạp thêm được cộng ngay vào hạn mức của bạn.',
-    balance: 'Số dư token hiện tại',
+      'Token còn lại từ gói và token nạp thêm được tính chung thành số token bạn có thể dùng. Hệ thống dùng quota gói trước, sau đó mới trừ vào ví.',
+    balance: 'Tổng token có thể sử dụng',
+    balanceBreakdown: (plan: string, wallet: string) => `Quota gói còn ${plan} · Ví nạp thêm ${wallet}`,
     balanceNote: (plan: string, quota: string) => `Gói ${plan} gồm ${quota} token mỗi chu kỳ; gói trả phí tính theo 30 ngày`,
     used: (used: string, limit: string) => `Đã dùng ${used} / ${limit}`,
     packsTitle: 'Chọn gói token',
@@ -112,8 +114,9 @@ const copy = {
     tokenEyebrow: 'AI tokens',
     tokenLine1: 'Out of tokens? Top up',
     tokenLine2: 'and use them when you need.',
-    tokenIntro: 'Each AI feature uses some tokens. Top-ups are added to your quota right away.',
-    balance: 'Current token balance',
+    tokenIntro: 'Plan tokens and purchased tokens are shown as one available total. Plan quota is used first, then your wallet.',
+    balance: 'Total tokens available',
+    balanceBreakdown: (plan: string, wallet: string) => `Plan quota remaining ${plan} · Top-up wallet ${wallet}`,
     balanceNote: (plan: string, quota: string) => `${plan} includes ${quota} tokens a month`,
     used: (used: string, limit: string) => `Used ${used} / ${limit}`,
     packsTitle: 'Choose a token pack',
@@ -211,7 +214,7 @@ export const SubscriptionPage: React.FC = () => {
     aiQueriesCount: 0,
   });
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
-  const packs = useMemo(() => getTopupPacks(), []);
+  const [packs, setPacks] = useState<Awaited<ReturnType<typeof getTopupPacks>>>([]);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   const queryClient = useQueryClient();
 
@@ -231,9 +234,12 @@ export const SubscriptionPage: React.FC = () => {
     try {
       const tiers = await getSubscriptionPlans();
       setPlans(tiers);
-      const [subscription, history] = await Promise.all([getUserSubscription(), getPaymentHistory(tiers)]);
-      setUserSubscription(subscription);
+      const [subscription, history, topups, walletBalance] = await Promise.all([
+        getUserSubscription(), getPaymentHistory(tiers), getTopupPacks(), getTokenWalletBalance().catch(() => 0),
+      ]);
+      setUserSubscription({ ...subscription, tokenWalletBalance: walletBalance });
       setTransactions(history);
+      setPacks(topups);
       void queryClient.invalidateQueries({ queryKey: ['userSubscription'] });
     } catch (err) {
       setNotice({ tone: 'error', text: authErrorMessage(err, 'Không tải được thông tin gói.') });
@@ -284,10 +290,7 @@ export const SubscriptionPage: React.FC = () => {
     if (!pack || isToppingUp) return;
     setIsToppingUp(true);
     try {
-      await purchaseTokenTopup(pack.id);
-      setToppedUp(pack.tokens);
-      setSelectedPackId(null);
-      void refreshData();
+      submitSePayForm(await purchaseTokenTopup(pack.id));
     } catch (err) {
       setNotice({ tone: 'error', text: authErrorMessage(err, 'Chưa nạp được token.') });
     } finally {
@@ -307,6 +310,8 @@ export const SubscriptionPage: React.FC = () => {
   }, [plans]);
 
   const remaining = Math.max(0, userSubscription.tokenLimit - userSubscription.tokensUsed);
+  const walletBalance = userSubscription.tokenWalletBalance ?? 0;
+  const availableTokens = remaining + walletBalance;
   const usedPct = Math.min(100, Math.round((userSubscription.tokensUsed / Math.max(1, userSubscription.tokenLimit)) * 100));
 
   // Price per 1,000 tokens; the first pack is the reference for savings and the cost table.
@@ -520,7 +525,10 @@ export const SubscriptionPage: React.FC = () => {
             <div className="shrink-0 lg:text-right">
               <p className="text-[13px] text-slate-600">{c.balance}</p>
               <p className="mt-1 text-[clamp(3rem,6vw,4.5rem)] font-normal leading-none tracking-[-0.03em] text-brand tabular-nums">
-                {num(remaining)}
+                {num(availableTokens)}
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                {c.balanceBreakdown(num(remaining), num(walletBalance))}
               </p>
               <p className="mt-3 text-xs text-slate-500">
                 {c.balanceNote(currentPlan ? planName(currentPlan) : userSubscription.planName, num(currentPlan?.tokenMonthlyQuota ?? userSubscription.tokenLimit))}

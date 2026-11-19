@@ -33,7 +33,7 @@ const copy = {
     noPathNote: 'Lộ trình dựa trên JD và hồ sơ nghề nghiệp, dùng một lượt AI.',
     creating: 'Đang tạo lộ trình học. Việc này có thể mất vài phút.',
     testLink: 'Muốn biết chính xác mình yếu kỹ năng nào? Làm bài đánh giá kỹ năng',
-    testSub: '10 câu hỏi theo JD; lộ trình sau bài đánh giá chỉ gồm kỹ năng bạn chưa đạt.',
+    testSub: 'Câu hỏi theo JD; lộ trình sau bài đánh giá chỉ gồm kỹ năng bạn chưa đạt.',
   },
   en: {
     crumbGroup: 'Growth',
@@ -52,7 +52,7 @@ const copy = {
     noPathNote: 'The path is based on the JD and your career profile and uses one AI credit.',
     creating: 'Building the learning path. This can take a few minutes.',
     testLink: 'Want to know exactly which skills are weak? Take the skill assessment',
-    testSub: '10 questions from the JD; a path built after the test only covers the skills you missed.',
+    testSub: 'Questions from the JD; a path built after the test only covers the skills you missed.',
   },
 };
 

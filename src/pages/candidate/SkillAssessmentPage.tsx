@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState, type ReactNode } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +8,7 @@ import {
   createLearningPath,
   getLatestJdAssessment,
   getLatestLearningPath,
+  saveJdAssessmentAnswer,
   setLearningNodeStatus,
   startJdAssessment,
   submitJdAssessment,
@@ -33,7 +34,7 @@ const copy = {
     crumbPage: 'Chuẩn bị phỏng vấn',
     heroA: 'Chuẩn bị phỏng vấn theo JD.',
     heroB: 'CV không bắt buộc.',
-    introShort: 'Tìm công việc bạn nhắm tới hoặc dán thẳng JD. Hệ thống tách JD thành kỹ năng kèm mức Bloom, ra 10 câu hỏi đúng mức đó, chấm điểm từng kỹ năng và lập lộ trình cho phần còn yếu.',
+    introShort: 'Tìm công việc bạn nhắm tới hoặc dán thẳng JD. Hệ thống tách JD thành kỹ năng kèm mức Bloom, ra câu hỏi đúng mức đó, chấm điểm từng kỹ năng và lập lộ trình cho phần còn yếu.',
     sumNotPassed: `Chưa đạt mức ${SKILL_PASS_SCORE}`,
     sumPassed: `Đạt mức ${SKILL_PASS_SCORE}`,
     sumSkills: (d: number, n: number) => `${d} / ${n} kỹ năng`,
@@ -50,7 +51,7 @@ const copy = {
     fitSub: (t: string) => `So khớp CV với JD ${t} và nhận gợi ý sửa CV.`,
     title: 'Chuẩn bị phỏng vấn.',
     titleLine: 'Theo JD, CV không bắt buộc.',
-    intro: 'Chọn công việc bạn nhắm tới, và CV nếu bạn có. Hệ thống đối chiếu JD với CV, ra 10 câu hỏi về đúng các kỹ năng đó, chấm điểm từng kỹ năng rồi lập lộ trình học cho phần còn yếu.',
+    intro: 'Chọn công việc bạn nhắm tới, và CV nếu bạn có. Hệ thống đối chiếu JD với CV, ra câu hỏi về đúng các kỹ năng đó, chấm điểm từng kỹ năng rồi lập lộ trình học cho phần còn yếu.',
     cvLabel: 'CV dùng để đánh giá',
     cvNone: 'Không dùng CV, chỉ theo JD',
     cvWith: 'Câu hỏi và lộ trình dựa trên CV này đối chiếu với JD.',
@@ -74,8 +75,8 @@ const copy = {
     responsibilities: 'Bạn sẽ làm gì',
     requirements: 'Yêu cầu',
     testTitle: 'Bài đánh giá',
-    testNote: `10 câu trắc nghiệm do AI tạo từ JD. Kỹ năng dưới ${SKILL_PASS_SCORE} điểm sẽ vào lộ trình học.`,
-    testIntro: 'Bạn chưa làm bài cho công việc này. Bài mất khoảng 10 phút.',
+    testNote: `Câu hỏi trắc nghiệm do AI tạo từ JD. Kỹ năng dưới ${SKILL_PASS_SCORE} điểm sẽ vào lộ trình học.`,
+    testIntro: 'Bạn có một quỹ thời gian chung cho cả bài, tính theo 1 phút 30 giây nhân với số câu hỏi.',
     testCost: 'Tạo bài dùng một lượt AI.',
     testStart: 'Bắt đầu đánh giá',
     testCreating: 'Đang tạo câu hỏi từ JD. Việc này có thể mất vài phút.',
@@ -86,6 +87,9 @@ const copy = {
     submitting: 'Đang chấm',
     answered: (n: number, total: number) => `Đã trả lời ${n}/${total}`,
     answerAll: 'Trả lời đủ các câu để nộp bài.',
+    timeRemaining: 'Thời gian còn lại',
+    quizTotalTime: 'Tổng thời gian',
+    timeExpired: 'Đã hết giờ. Hệ thống chấm các câu trả lời đã lưu.',
     resultLabel: 'Điểm bài đánh giá',
     resultLine: (c: number, t: number) => `${c}/${t} câu đúng`,
     passMark: `Mức đạt ${SKILL_PASS_SCORE}`,
@@ -139,7 +143,7 @@ const copy = {
     crumbPage: 'Interview preparation',
     heroA: 'Prepare for interviews from the JD.',
     heroB: 'CV optional.',
-    introShort: 'Pick the job you are aiming for. We write 10 questions on exactly the skills in the JD, score each skill and build a path for the weak ones.',
+    introShort: 'Pick the job you are aiming for. We write questions on exactly the skills in the JD, score each skill and build a path for the weak ones.',
     sumNotPassed: `Below the ${SKILL_PASS_SCORE} pass mark`,
     sumPassed: `Passed the ${SKILL_PASS_SCORE} mark`,
     sumSkills: (d: number, n: number) => `${d} / ${n} skills`,
@@ -156,7 +160,7 @@ const copy = {
     fitSub: (t: string) => `Match your CV with the ${t} JD and get CV fixes.`,
     title: 'Interview preparation.',
     titleLine: 'From the JD, CV optional.',
-    intro: 'Pick the job you are aiming for, and your CV if you have one. We compare the JD with the CV, write 10 questions on exactly those skills, score each skill and build a learning path for the weak ones.',
+    intro: 'Pick the job you are aiming for, and your CV if you have one. We compare the JD with the CV, write questions on exactly those skills, score each skill and build a learning path for the weak ones.',
     cvLabel: 'CV to assess with',
     cvNone: 'No CV, JD only',
     cvWith: 'Questions and the path use this CV against the JD.',
@@ -180,8 +184,8 @@ const copy = {
     responsibilities: 'What you will do',
     requirements: 'Requirements',
     testTitle: 'Assessment',
-    testNote: `10 multiple-choice questions written from the JD. Skills under ${SKILL_PASS_SCORE} go into the learning path.`,
-    testIntro: 'You have not taken an assessment for this job. It takes about 10 minutes.',
+    testNote: `Multiple-choice questions written from the JD. Skills under ${SKILL_PASS_SCORE} go into the learning path.`,
+    testIntro: 'The assessment has one shared time limit of 90 seconds multiplied by the number of questions.',
     testCost: 'Creating it uses one AI request.',
     testStart: 'Start assessment',
     testCreating: 'Writing questions from the JD. This can take a few minutes.',
@@ -192,6 +196,9 @@ const copy = {
     submitting: 'Scoring',
     answered: (n: number, total: number) => `${n}/${total} answered`,
     answerAll: 'Answer every question to submit.',
+    timeRemaining: 'Time remaining',
+    quizTotalTime: 'Total time',
+    timeExpired: 'Time is up. Your saved answers will be scored.',
     resultLabel: 'Assessment score',
     resultLine: (c: number, t: number) => `${c}/${t} correct`,
     passMark: `Pass mark ${SKILL_PASS_SCORE}`,
@@ -310,9 +317,36 @@ export function Muted({ children }: { children: ReactNode }) {
 
 // ─── Assessment ─────────────────────────────────────────────────────────────
 
-function Quiz({ session, c, onSubmit, submitting }: { session: JdAssessment; c: Copy; onSubmit: (answers: Record<string, string>) => void; submitting: boolean }) {
+function formatQuizTime(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+function Quiz({ session, c, onSubmit, submitting }: { session: JdAssessment; c: Copy; onSubmit: (id: string) => void; submitting: boolean }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>(session.answers);
+  const [now, setNow] = useState(Date.now);
+  const didAutoSubmit = useRef(false);
+  const deadline = Date.parse(session.expiresAt);
+  const timed = Number.isFinite(deadline);
+  const remaining = timed ? Math.max(0, Math.ceil((deadline - now) / 1000)) : session.timeLimitSeconds;
+  const expired = timed && remaining === 0;
+  const saveAnswer = useMutation({
+    mutationFn: ({ questionId, optionId }: { questionId: string; optionId: string }) =>
+      saveJdAssessmentAnswer(session.id, questionId, optionId),
+    onSuccess: (_, { questionId, optionId }) =>
+      setAnswers((previous) => ({ ...previous, [questionId]: optionId })),
+  });
+  const saving = saveAnswer.isPending;
+  useEffect(() => {
+    if (!timed || expired) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [timed, expired]);
+  useEffect(() => {
+    if (!expired || saving || submitting || didAutoSubmit.current) return;
+    didAutoSubmit.current = true;
+    onSubmit(session.id);
+  }, [expired, saving, submitting, onSubmit, session.id]);
   const questions = session.questions;
   const current = questions[index];
   const answered = questions.filter((q) => answers[q.id]).length;
@@ -322,6 +356,16 @@ function Quiz({ session, c, onSubmit, submitting }: { session: JdAssessment; c: 
   return (
     <div className="grid gap-x-[clamp(2rem,5vw,4rem)] gap-y-8 py-6 lg:grid-cols-[minmax(0,1fr)_14rem]">
       <div className="min-w-0">
+        {timed && (
+          <div className="mb-4 border-b border-border pb-3">
+            <p className="text-[13px] text-slate-600">{c.timeRemaining}</p>
+            <p role="timer" className={`text-2xl tabular-nums ${remaining <= 60 ? 'text-danger' : 'text-brand'}`}>
+              {formatQuizTime(remaining)}
+            </p>
+            <p className="text-[12px] text-slate-600">{c.quizTotalTime} · {formatQuizTime(session.timeLimitSeconds)}</p>
+            {expired && <p role="status" className="mt-2 text-[13px] text-slate-600">{c.timeExpired}</p>}
+          </div>
+        )}
         <p className="flex flex-wrap gap-x-3 text-[13px] text-slate-600">
           <span className="tabular-nums text-ink">{c.question(index + 1, questions.length)}</span>
           {current.topic && <span>· {current.topic}</span>}
@@ -336,7 +380,10 @@ function Quiz({ session, c, onSubmit, submitting }: { session: JdAssessment; c: 
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => setAnswers((prev) => ({ ...prev, [current.id]: option.id }))}
+                disabled={expired || saving || submitting}
+                onClick={() => {
+                  if (!timed || Date.now() < deadline) saveAnswer.mutate({ questionId: current.id, optionId: option.id });
+                }}
                 className={`group flex w-full items-start gap-4 border-b border-border py-3.5 pr-2 text-left transition-colors cursor-pointer ${
                   selected ? 'bg-brand-50/60' : 'hover:bg-slate-100/60'
                 }`}
@@ -359,13 +406,13 @@ function Quiz({ session, c, onSubmit, submitting }: { session: JdAssessment; c: 
             <ArrowLeft size={14} aria-hidden="true" />
             {c.prev}
           </button>
-          {index < questions.length - 1 ? (
+          {index < questions.length - 1 && !expired ? (
             <button type="button" onClick={() => setIndex((i) => i + 1)} className={primaryButton}>
               {c.next}
               <ArrowRight size={15} aria-hidden="true" />
             </button>
           ) : (
-            <button type="button" onClick={() => onSubmit(answers)} disabled={!allAnswered || submitting} className={primaryButton}>
+            <button type="button" onClick={() => onSubmit(session.id)} disabled={(!expired && !allAnswered) || saving || submitting} className={primaryButton}>
               {submitting && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
               {submitting ? c.submitting : c.submit}
             </button>
@@ -391,7 +438,8 @@ function Quiz({ session, c, onSubmit, submitting }: { session: JdAssessment; c: 
             </button>
           ))}
         </div>
-        {!allAnswered && <p className="mt-3 text-[12px] leading-5 text-slate-500">{c.answerAll}</p>}
+        {!allAnswered && !expired && <p className="mt-3 text-[12px] leading-5 text-slate-500">{c.answerAll}</p>}
+        <ErrorLine error={saveAnswer.error} c={c} />
       </aside>
     </div>
   );
@@ -648,7 +696,7 @@ export default function SkillAssessmentPage() {
     },
   });
   const submitTest = useMutation({
-    mutationFn: (answers: Record<string, string>) => submitJdAssessment(session!.id, answers),
+    mutationFn: submitJdAssessment,
     onSuccess: (data) => {
       queryClient.setQueryData(testKey, data);
       queryClient.invalidateQueries({ queryKey: ['jdAssessments'] });
@@ -875,7 +923,7 @@ export default function SkillAssessmentPage() {
             <p className="mt-1 text-[13px] text-slate-500">{c.testCost}</p>
           </div>
         ) : session.status === 'in_progress' ? (
-          <Quiz key={session.id} session={session} c={c} onSubmit={(answers) => submitTest.mutate(answers)} submitting={submitTest.isPending} />
+          <Quiz key={session.id} session={session} c={c} onSubmit={submitTest.mutate} submitting={submitTest.isPending} />
         ) : (
           <AssessmentResult key={session.id} session={session} c={c} vi={isVietnamese} reviewOpen={reviewOpen} />
         )}

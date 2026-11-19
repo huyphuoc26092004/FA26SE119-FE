@@ -126,6 +126,7 @@ export default function AiConfigPage() {
   } | null>(null);
   const [editPrompt, setEditPrompt] = useState<Partial<AiPrompt> | null>(null);
   const [history, setHistory] = useState<{ kind: Tab; key: string } | null>(null);
+  const openAssessmentConfig = () => setEditConfig({ type: 'ASSESSMENT', locked: true });
 
   const refreshSettings = () => {
     for (const key of ['ai-configs', 'ai-prompts', 'ai-runtime', 'ai-features'])
@@ -333,6 +334,11 @@ export default function AiConfigPage() {
                             : 'Hướng dẫn mặc định của hệ thống'}
                         </p>
                         <FeaturePolicy feature={feature} />
+                        {feature.featureCode === 'ASSESSMENT_GENERATE' && runtimeQuery.data && (
+                          <button type="button" className={brandLink} onClick={openAssessmentConfig}>
+                            Cài số câu hỏi · {runtimeQuery.data.assessment.configuration.questionCount ?? 10} câu
+                          </button>
+                        )}
                       </div>
                       <div className="flex items-start gap-5">
                         <button
@@ -417,6 +423,10 @@ export default function AiConfigPage() {
         <PromptModal
           initial={editPrompt}
           features={features}
+          suspended={Boolean(editConfig)}
+          assessmentQuestionCount={runtimeQuery.data
+            ? runtimeQuery.data.assessment.configuration.questionCount ?? 10 : undefined}
+          onEditAssessmentConfig={openAssessmentConfig}
           onClose={() => setEditPrompt(null)}
           onSaved={() => {
             refreshSettings();
@@ -471,6 +481,7 @@ function ModelParameters({ model }: { model: AiRuntimeModelConfiguration }) {
     model.configuration.temperature != null && `Nhiệt độ ${model.configuration.temperature}`,
     model.configuration.numPredict != null &&
       `Đầu ra ${model.configuration.numPredict.toLocaleString('vi-VN')} token`,
+    model.configType === 'ASSESSMENT' && `${model.configuration.questionCount ?? 10} câu mỗi bài`,
   ].filter(Boolean);
   return values.length > 0 ? (
     <p className="mt-2 text-xs leading-6 text-slate-500">{values.join(' · ')}</p>
@@ -483,6 +494,7 @@ function configForm(model: AiRuntimeModelConfiguration) {
     provider: model.provider,
     modelName: model.modelName,
     temperature: String(model.configuration.temperature ?? 0.2),
+    questionCount: String(model.configuration.questionCount ?? 10),
     numPredict: String(
       model.configuration.numPredict ?? (model.configType === 'ASSESSMENT' ? 12000 : 2000),
     ),
@@ -520,6 +532,9 @@ function ConfigModal({
         throw new Error('Nhiệt độ phải từ 0 đến 2.');
       if (!Number.isInteger(numPredict) || numPredict < 256 || numPredict > 16000)
         throw new Error('Giới hạn đầu ra phải từ 256 đến 16.000 token.');
+      const questionCount = Number(form.questionCount);
+      if (form.configType === 'ASSESSMENT' && (!Number.isInteger(questionCount) || questionCount < 2 || questionCount > 20))
+        throw new Error('Số câu hỏi phải là số nguyên từ 2 đến 20.');
       return saveAiConfiguration({
         configType: form.configType,
         provider: form.provider,
@@ -527,6 +542,7 @@ function ConfigModal({
         configuration: {
           temperature,
           numPredict,
+          ...(form.configType === 'ASSESSMENT' ? { questionCount } : {}),
         },
       });
     },
@@ -608,6 +624,21 @@ function ConfigModal({
           />
         </label>
       </div>
+      {form.configType === 'ASSESSMENT' && (
+        <label className="mt-4 block">
+          <span className={fieldLabel}>Số câu hỏi mỗi bài đánh giá</span>
+          <input
+            type="number"
+            min={2}
+            max={20}
+            step={1}
+            className={underlineInput}
+            value={form.questionCount}
+            onChange={(event) => setForm({ ...form, questionCount: event.target.value })}
+          />
+          <p className="mt-2 text-xs text-slate-500">Áp dụng cho bài tạo mới. Mỗi câu cộng 90 giây vào thời gian làm bài.</p>
+        </label>
+      )}
       <p className="mt-4 text-xs leading-6 text-slate-500">
         Model cần được nhà cung cấp đang sử dụng hỗ trợ. Giới hạn riêng của từng chức năng được hiển
         thị trong tab Prompt.
@@ -624,11 +655,17 @@ function ConfigModal({
 function PromptModal({
   initial,
   features,
+  suspended,
+  assessmentQuestionCount,
+  onEditAssessmentConfig,
   onClose,
   onSaved,
 }: {
   initial: Partial<AiPrompt>;
   features: AiFeatureDefinition[];
+  suspended: boolean;
+  assessmentQuestionCount?: number;
+  onEditAssessmentConfig: () => void;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -650,6 +687,7 @@ function PromptModal({
     onSuccess: onSaved,
     onError: (cause) => setError(errorText(cause)),
   });
+  if (suspended) return null;
   return (
     <Modal
       title={initial.id ? `Sửa prompt ${initial.featureCode}` : 'Tùy chỉnh prompt'}
@@ -709,6 +747,24 @@ function PromptModal({
           <div className="sm:col-span-2 text-sm leading-7 text-slate-600">
             <p>{feature.description}</p>
             <FeaturePolicy feature={feature} />
+            {feature.featureCode === 'ASSESSMENT_GENERATE' && (
+              <div className="mt-3 rounded-control border border-border p-3">
+                <p className="font-medium text-ink">
+                  Số câu hỏi mỗi bài{assessmentQuestionCount != null ? ` · ${assessmentQuestionCount} câu` : ''}
+                </p>
+                <p className="text-xs text-slate-600">
+                  Bài mới dùng số câu trong cấu hình ASSESSMENT, kể cả khi prompt cũ ghi số khác.
+                </p>
+                <button
+                  type="button"
+                  className={brandLink}
+                  disabled={assessmentQuestionCount == null || save.isPending}
+                  onClick={onEditAssessmentConfig}
+                >
+                  Cài số câu hỏi
+                </button>
+              </div>
+            )}
           </div>
         )}
         <label className="sm:col-span-2">

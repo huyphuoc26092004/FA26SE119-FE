@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import type { AdminSubscriptionPlan, PlanStatus } from '../../../types/subscriptionManagement';
+import type { AdminSubscriptionPlan, PlanStatus, PlanType } from '../../../types/subscriptionManagement';
 import {
   CheckBox,
   Modal,
@@ -12,7 +12,17 @@ import {
   underlineSelect,
 } from '../../../components/admin/AdminKit';
 
-function Field({ label, hint, children, className = '' }: { label: React.ReactNode; hint?: React.ReactNode; children: React.ReactNode; className?: string }) {
+function Field({
+  label,
+  hint,
+  children,
+  className = '',
+}: {
+  label: React.ReactNode;
+  hint?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <label className={`block ${className}`}>
       <span className={fieldLabel}>{label}</span>
@@ -27,6 +37,7 @@ interface PlanEditorModalProps {
   onClose: () => void;
   onSave: (planData: Partial<AdminSubscriptionPlan>) => Promise<void>;
   initialPlan?: AdminSubscriptionPlan | null;
+  defaultPlanType?: PlanType;
 }
 
 const AVAILABLE_MODELS = [
@@ -41,15 +52,20 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
   onClose,
   onSave,
   initialPlan,
+  defaultPlanType = 'SUBSCRIPTION',
 }) => {
   const isEdit = Boolean(initialPlan);
+
+  const isTopup = (initialPlan?.tierType ?? defaultPlanType) === 'TOKEN_TOPUP';
 
   const [name, setName] = useState(initialPlan?.name || '');
   const [badge, setBadge] = useState(initialPlan?.badge || '');
   const [description, setDescription] = useState(initialPlan?.description || '');
   const [monthlyPriceVND, setMonthlyPriceVND] = useState<number>(initialPlan?.monthlyPriceVND ?? 199000);
   const [yearlyPriceVND, setYearlyPriceVND] = useState<number>(initialPlan?.yearlyPriceVND ?? 1890000);
-  const [tokenMonthlyQuota, setTokenMonthlyQuota] = useState<number>(initialPlan?.tokenMonthlyQuota ?? 250000);
+  const [tokenMonthlyQuota, setTokenMonthlyQuota] = useState<number>(
+    isTopup ? initialPlan?.tokenAmount ?? 500000 : initialPlan?.tokenMonthlyQuota ?? 250000
+  );
   const [cvParsingLimit, setCvParsingLimit] = useState<string>(
     initialPlan?.cvParsingLimit === 'unlimited' ? 'unlimited' : String(initialPlan?.cvParsingLimit ?? 10)
   );
@@ -118,7 +134,12 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Vui lòng nhập tên gói cước');
+      setError(isTopup ? 'Vui lòng nhập tên gói nạp token' : 'Vui lòng nhập tên gói cước');
+      return;
+    }
+
+    if (isTopup && (!Number.isSafeInteger(tokenMonthlyQuota) || tokenMonthlyQuota < 1)) {
+      setError('Số token phải là số nguyên dương.');
       return;
     }
 
@@ -126,34 +147,66 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
     setError(null);
 
     try {
-      await onSave({
-        name: name.trim(),
-        badge: badge.trim() || undefined,
-        description: description.trim(),
-        monthlyPriceVND: Number(monthlyPriceVND),
-        yearlyPriceVND: Number(yearlyPriceVND),
-        tokenMonthlyQuota: Number(tokenMonthlyQuota),
-        cvParsingLimit: cvParsingLimit === 'unlimited' ? 'unlimited' : Number(cvParsingLimit),
-        cvJobFitLimit: cvJobFitLimit === 'unlimited' ? 'unlimited' : Number(cvJobFitLimit),
-        aiAssistantQueriesLimit:
-          aiAssistantQueriesLimit === 'unlimited' ? 'unlimited' : Number(aiAssistantQueriesLimit),
-        coverLetterGenLimit:
-          coverLetterGenLimit === 'unlimited' ? 'unlimited' : Number(coverLetterGenLimit),
-        mockInterviewLimit:
-          mockInterviewLimit === 'unlimited' ? 'unlimited' : Number(mockInterviewLimit),
-        consultantDiscountPercent: Number(consultantDiscountPercent),
-        apiRateLimitRPM: Number(apiRateLimitRPM),
-        apiRateLimitTPM: Number(apiRateLimitTPM),
-        supportedModels,
-        prioritySupport,
-        highlight,
-        status,
-        features: features.filter((f) => f.trim().length > 0),
-        sortOrder: initialPlan?.sortOrder ?? 99,
-      });
+      if (isTopup) {
+        await onSave({
+          name: name.trim(),
+          tierType: 'TOKEN_TOPUP',
+          badge: badge.trim() || undefined,
+          description: description.trim() || `Cộng ${Number(tokenMonthlyQuota).toLocaleString('vi-VN')} token vào ví`,
+          monthlyPriceVND: Number(monthlyPriceVND),
+          yearlyPriceVND: 0,
+          tokenMonthlyQuota: 0,
+          tokenAmount: tokenMonthlyQuota,
+          cvParsingLimit: 0,
+          cvJobFitLimit: 0,
+          aiAssistantQueriesLimit: 0,
+          coverLetterGenLimit: 0,
+          mockInterviewLimit: 0,
+          consultantDiscountPercent: 0,
+          apiRateLimitRPM: 0,
+          apiRateLimitTPM: 0,
+          supportedModels: [],
+          prioritySupport,
+          highlight,
+          status,
+          features: [
+            `+${Number(tokenMonthlyQuota).toLocaleString('vi-VN')} AI Tokens vào ví`,
+            'Không giới hạn thời gian sử dụng',
+            'Sử dụng cho tất cả tính năng AI',
+          ],
+          sortOrder: initialPlan?.sortOrder ?? 99,
+        });
+      } else {
+        await onSave({
+          name: name.trim(),
+          tierType: 'SUBSCRIPTION',
+          badge: badge.trim() || undefined,
+          description: description.trim(),
+          monthlyPriceVND: Number(monthlyPriceVND),
+          yearlyPriceVND: Number(yearlyPriceVND),
+          tokenMonthlyQuota: Number(tokenMonthlyQuota),
+          cvParsingLimit: cvParsingLimit === 'unlimited' ? 'unlimited' : Number(cvParsingLimit),
+          cvJobFitLimit: cvJobFitLimit === 'unlimited' ? 'unlimited' : Number(cvJobFitLimit),
+          aiAssistantQueriesLimit:
+            aiAssistantQueriesLimit === 'unlimited' ? 'unlimited' : Number(aiAssistantQueriesLimit),
+          coverLetterGenLimit:
+            coverLetterGenLimit === 'unlimited' ? 'unlimited' : Number(coverLetterGenLimit),
+          mockInterviewLimit:
+            mockInterviewLimit === 'unlimited' ? 'unlimited' : Number(mockInterviewLimit),
+          consultantDiscountPercent: Number(consultantDiscountPercent),
+          apiRateLimitRPM: Number(apiRateLimitRPM),
+          apiRateLimitTPM: Number(apiRateLimitTPM),
+          supportedModels,
+          prioritySupport,
+          highlight,
+          status,
+          features: features.filter((f) => f.trim().length > 0),
+          sortOrder: initialPlan?.sortOrder ?? 99,
+        });
+      }
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Có lỗi xảy ra khi lưu gói cước';
+      const msg = err instanceof Error ? err.message : 'Có lỗi xảy ra khi lưu gói';
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -170,8 +223,24 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
 
   return (
     <Modal
-      eyebrow={isEdit ? 'Chỉnh sửa gói cước' : 'Gói cước mới'}
-      title={isEdit ? `${initialPlan?.name}.` : 'Tạo gói cước.'}
+      eyebrow={
+        isTopup
+          ? isEdit
+            ? 'Chỉnh sửa gói nạp token'
+            : 'Gói nạp token mới'
+          : isEdit
+            ? 'Chỉnh sửa gói thuê bao'
+            : 'Gói thuê bao mới'
+      }
+      title={
+        isTopup
+          ? isEdit
+            ? `${initialPlan?.name}.`
+            : 'Tạo gói nạp token.'
+          : isEdit
+            ? `${initialPlan?.name}.`
+            : 'Tạo gói cước.'
+      }
       onClose={onClose}
       width="max-w-3xl"
       footer={
@@ -180,7 +249,15 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
             Huỷ
           </button>
           <button type="submit" form="plan-editor-form" disabled={isSubmitting} className={primaryButton}>
-            {isSubmitting ? 'Đang lưu…' : isEdit ? 'Cập nhật gói' : 'Tạo gói'}
+            {isSubmitting
+              ? 'Đang lưu…'
+              : isEdit
+                ? isTopup
+                  ? 'Cập nhật gói nạp'
+                  : 'Cập nhật gói'
+                : isTopup
+                  ? 'Tạo gói nạp token'
+                  : 'Tạo gói'}
           </button>
         </>
       }
@@ -188,18 +265,59 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
       <form id="plan-editor-form" onSubmit={handleSubmit} className="space-y-10">
         {error && <p className="border-l-2 border-danger pl-4 text-[13px] text-danger">{error}</p>}
 
+        {/* Section 01: Thông tin chung */}
         <section>
-          <SubHead title="01  Thông tin chung" />
+          <SubHead title={isTopup ? '01  Thông tin gói nạp' : '01  Thông tin chung'} />
           <div className="mt-5 grid gap-x-8 gap-y-5 md:grid-cols-2">
-            <Field label={<>Tên gói <span className="text-danger">*</span></>}>
-              <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Chuyên nghiệp Pro" className={underlineInput} />
+            {isTopup ? (
+              <Field
+                label={<>Số token cộng vào ví <span className="text-danger">*</span></>}
+                hint={`${Number(tokenMonthlyQuota).toLocaleString('vi-VN')} token cộng trực tiếp`}
+              >
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  value={tokenMonthlyQuota}
+                  onChange={(e) => setTokenMonthlyQuota(Number(e.target.value))}
+                  placeholder="500000"
+                  className={`${underlineInput} tabular-nums`}
+                />
+              </Field>
+            ) : null}
+
+            <Field label={<>{isTopup ? 'Tên gói nạp' : 'Tên gói'} <span className="text-danger">*</span></>}>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={isTopup ? 'Token Starter / Gói 500k Token' : 'Chuyên nghiệp Pro'}
+                className={underlineInput}
+              />
             </Field>
-            <Field label="Nhãn hiển thị">
-              <input type="text" value={badge} onChange={(e) => setBadge(e.target.value)} placeholder="Phổ biến nhất, Đặc quyền VIP" className={underlineInput} />
+
+            <Field label="Nhãn hiển thị / Mã gói" hint={isTopup ? 'Ví dụ: TOKEN_STARTER, TOPUP_500K' : undefined}>
+              <input
+                type="text"
+                value={badge}
+                onChange={(e) => setBadge(e.target.value)}
+                placeholder={isTopup ? 'TOKEN_STARTER' : 'Phổ biến nhất, Đặc quyền VIP'}
+                className={underlineInput}
+              />
             </Field>
+
             <Field label="Mô tả ngắn" className="md:col-span-2">
-              <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Gói dành cho ai và giá trị chính" className={`${underlineInput} resize-none`} />
+              <textarea
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={isTopup ? 'Cộng 500.000 token vào ví, dùng ngay cho mọi tính năng AI' : 'Gói dành cho ai và giá trị chính'}
+                className={`${underlineInput} resize-none`}
+              />
             </Field>
+
             <Field label="Trạng thái phát hành" className="md:col-span-2">
               <select value={status} onChange={(e) => setStatus(e.target.value as PlanStatus)} className={underlineSelect}>
                 <option value="ACTIVE">Đang bán · người dùng có thể mua</option>
@@ -214,90 +332,164 @@ export const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
           </div>
         </section>
 
-        <section>
-          <SubHead title="02  Giá bán & token" />
-          <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-3">
-            <Field label="Giá tháng (VNĐ)" hint={`${monthlyPriceVND.toLocaleString('vi-VN')}đ / tháng`}>
-              <input type="number" min="0" step="1000" value={monthlyPriceVND} onChange={(e) => setMonthlyPriceVND(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
-            </Field>
-            <Field label="Giá năm (VNĐ)" hint={`${yearlyPriceVND.toLocaleString('vi-VN')}đ / năm`}>
-              <input type="number" min="0" step="10000" value={yearlyPriceVND} onChange={(e) => setYearlyPriceVND(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
-            </Field>
-            <Field label="Token mỗi tháng" hint={`${tokenMonthlyQuota.toLocaleString('vi-VN')} token`}>
-              <input type="number" min="1000" step="5000" value={tokenMonthlyQuota} onChange={(e) => setTokenMonthlyQuota(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
-            </Field>
-          </div>
-        </section>
-
-        <section>
-          <SubHead title="03  Giới hạn tính năng" action={<span className="text-[13px] text-slate-500">Nhập số hoặc “unlimited”</span>} />
-          <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-3">
-            {limitFields.map(([label, value, set, ph]) => (
-              <Field key={label} label={label}>
-                <input type="text" value={value} onChange={(e) => set(e.target.value)} placeholder={ph} className={underlineInput} />
+        {/* Section 02: Giá bán */}
+        {isTopup ? (
+          <section>
+            <SubHead title="02  Giá bán gói nạp" />
+            <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+              <Field
+                label={<>Giá gói nạp (VNĐ) <span className="text-danger">*</span></>}
+                hint={`${monthlyPriceVND.toLocaleString('vi-VN')}đ / lần nạp`}
+              >
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  required
+                  value={monthlyPriceVND}
+                  onChange={(e) => setMonthlyPriceVND(Number(e.target.value))}
+                  className={`${underlineInput} tabular-nums`}
+                />
               </Field>
-            ))}
-            <Field label="Giảm giá tư vấn 1-1 (%)">
-              <input type="number" min="0" max="100" value={consultantDiscountPercent} onChange={(e) => setConsultantDiscountPercent(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
-            </Field>
-          </div>
-        </section>
+            </div>
+          </section>
+        ) : (
+          <section>
+            <SubHead title="02  Giá bán & token" />
+            <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-3">
+              <Field label="Giá tháng (VNĐ)" hint={`${monthlyPriceVND.toLocaleString('vi-VN')}đ / tháng`}>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={monthlyPriceVND}
+                  onChange={(e) => setMonthlyPriceVND(Number(e.target.value))}
+                  className={`${underlineInput} tabular-nums`}
+                />
+              </Field>
+              <Field label="Giá năm (VNĐ)" hint={`${yearlyPriceVND.toLocaleString('vi-VN')}đ / năm`}>
+                <input
+                  type="number"
+                  min="0"
+                  step="10000"
+                  value={yearlyPriceVND}
+                  onChange={(e) => setYearlyPriceVND(Number(e.target.value))}
+                  className={`${underlineInput} tabular-nums`}
+                />
+              </Field>
+              <Field label="Token mỗi tháng" hint={`${tokenMonthlyQuota.toLocaleString('vi-VN')} token`}>
+                <input
+                  type="number"
+                  min="1000"
+                  step="5000"
+                  value={tokenMonthlyQuota}
+                  onChange={(e) => setTokenMonthlyQuota(Number(e.target.value))}
+                  className={`${underlineInput} tabular-nums`}
+                />
+              </Field>
+            </div>
+          </section>
+        )}
 
-        <section>
-          <SubHead title="04  API & mô hình" />
-          <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
-            <Field label="Giới hạn RPM (request / phút)">
-              <input type="number" min="1" value={apiRateLimitRPM} onChange={(e) => setApiRateLimitRPM(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
-            </Field>
-            <Field label="Giới hạn TPM (token / phút)">
-              <input type="number" min="1000" step="5000" value={apiRateLimitTPM} onChange={(e) => setApiRateLimitTPM(Number(e.target.value))} className={`${underlineInput} tabular-nums`} />
-            </Field>
-          </div>
-          <p className={`${fieldLabel} mt-6`}>Mô hình được phép dùng (giữ ít nhất 1)</p>
-          <div className="mt-1 grid border-t border-border sm:grid-cols-2 sm:gap-x-8">
-            {AVAILABLE_MODELS.map((m) => (
-              <CheckBox key={m.id} checked={supportedModels.includes(m.id)} onChange={() => handleToggleModel(m.id)} label={m.name} />
-            ))}
-          </div>
-        </section>
+        {/* Sections 03, 04, 05: Chỉ dành cho gói thuê bao (SUBSCRIPTION) */}
+        {!isTopup && (
+          <>
+            <section>
+              <SubHead title="03  Giới hạn tính năng" action={<span className="text-[13px] text-slate-500">Nhập số hoặc “unlimited”</span>} />
+              <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-3">
+                {limitFields.map(([label, value, set, ph]) => (
+                  <Field key={label} label={label}>
+                    <input type="text" value={value} onChange={(e) => set(e.target.value)} placeholder={ph} className={underlineInput} />
+                  </Field>
+                ))}
+                <Field label="Giảm giá tư vấn 1-1 (%)">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={consultantDiscountPercent}
+                    onChange={(e) => setConsultantDiscountPercent(Number(e.target.value))}
+                    className={`${underlineInput} tabular-nums`}
+                  />
+                </Field>
+              </div>
+            </section>
 
-        <section>
-          <SubHead title="05  Quyền lợi hiển thị" action={<span className="text-[13px] text-slate-500">{features.length} mục</span>} />
-          <ol>
-            {features.map((feat, idx) => (
-              <li key={idx} className="flex items-baseline gap-4 border-b border-border py-3 text-[15px]">
-                <span className="w-6 shrink-0 text-xs tabular-nums text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
-                <span className="min-w-0 flex-1 text-ink">{feat}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveFeature(idx)}
-                  aria-label={`Xoá quyền lợi ${feat}`}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-200 hover:text-danger"
-                >
-                  <X size={14} />
+            <section>
+              <SubHead title="04  API & mô hình" />
+              <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                <Field label="Giới hạn RPM (request / phút)">
+                  <input
+                    type="number"
+                    min="1"
+                    value={apiRateLimitRPM}
+                    onChange={(e) => setApiRateLimitRPM(Number(e.target.value))}
+                    className={`${underlineInput} tabular-nums`}
+                  />
+                </Field>
+                <Field label="Giới hạn TPM (token / phút)">
+                  <input
+                    type="number"
+                    min="1000"
+                    step="5000"
+                    value={apiRateLimitTPM}
+                    onChange={(e) => setApiRateLimitTPM(Number(e.target.value))}
+                    className={`${underlineInput} tabular-nums`}
+                  />
+                </Field>
+              </div>
+              <p className={`${fieldLabel} mt-6`}>Mô hình được phép dùng (giữ ít nhất 1)</p>
+              <div className="mt-1 grid border-t border-border sm:grid-cols-2 sm:gap-x-8">
+                {AVAILABLE_MODELS.map((m) => (
+                  <CheckBox
+                    key={m.id}
+                    checked={supportedModels.includes(m.id)}
+                    onChange={() => handleToggleModel(m.id)}
+                    label={m.name}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <SubHead title="05  Quyền lợi hiển thị" action={<span className="text-[13px] text-slate-500">{features.length} mục</span>} />
+              <ol>
+                {features.map((feat, idx) => (
+                  <li key={idx} className="flex items-baseline gap-4 border-b border-border py-3 text-[15px]">
+                    <span className="w-6 shrink-0 text-xs tabular-nums text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
+                    <span className="min-w-0 flex-1 text-ink">{feat}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFeature(idx)}
+                      aria-label={`Xoá quyền lợi ${feat}`}
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-200 hover:text-danger"
+                    >
+                      <X size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-3 flex items-end gap-6">
+                <input
+                  type="text"
+                  value={newFeatureText}
+                  onChange={(e) => setNewFeatureText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddFeature();
+                    }
+                  }}
+                  placeholder="Thêm quyền lợi, ví dụ: Không giới hạn lưu trữ CV"
+                  className={`${underlineInput} flex-1`}
+                />
+                <button type="button" onClick={handleAddFeature} disabled={!newFeatureText.trim()} className={`${textLink} mb-2.5 text-ink`}>
+                  Thêm
                 </button>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-3 flex items-end gap-6">
-            <input
-              type="text"
-              value={newFeatureText}
-              onChange={(e) => setNewFeatureText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddFeature();
-                }
-              }}
-              placeholder="Thêm quyền lợi, ví dụ: Không giới hạn lưu trữ CV"
-              className={`${underlineInput} flex-1`}
-            />
-            <button type="button" onClick={handleAddFeature} disabled={!newFeatureText.trim()} className={`${textLink} mb-2.5 text-ink`}>
-              Thêm
-            </button>
-          </div>
-        </section>
+              </div>
+            </section>
+          </>
+        )}
       </form>
     </Modal>
   );

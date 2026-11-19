@@ -51,6 +51,8 @@ function toAdminPlan(row: ApiRow, quotas: ApiRow[], index: number): AdminSubscri
     createdAt: formatDateTime(row.created_at),
     updatedAt: formatDateTime(row.updated_at),
     tierCode: str(row.tier_code),
+    tierType: str(row.tier_type) === 'TOKEN_TOPUP' ? 'TOKEN_TOPUP' : 'SUBSCRIPTION',
+    tokenAmount: num(row.token_amount),
     currency: str(row.currency) || 'VND',
     quotas: quotas.map((q) => ({ featureCode: str(q.feature_code), quotaValue: num(q.quota_value), quotaPeriod: str(q.quota_period) })),
   };
@@ -64,7 +66,7 @@ export async function getAdminPlans(): Promise<AdminSubscriptionPlan[]> {
   ]);
   return tiers.map((row, i) => {
     const pub = publicTiers.find((t) => str(t.id) === str(row.id));
-    const quotas = rows(pub?.quotas).map((q) => ({ feature_code: q.featureCode, quota_value: q.quotaValue, quota_period: q.quotaPeriod }));
+    const quotas = str(row.tier_type) === 'TOKEN_TOPUP' ? [] : rows(pub?.quotas).map((q) => ({ feature_code: q.featureCode, quota_value: q.quotaValue, quota_period: q.quotaPeriod }));
     return toAdminPlan(row, quotas, i);
   });
 }
@@ -84,6 +86,8 @@ const tierBody = (plan: Partial<AdminSubscriptionPlan>, active: boolean) => ({
   priceMonthly: plan.monthlyPriceVND ?? 0,
   currency: plan.currency ?? 'VND',
   active,
+  tierType: plan.tierType ?? 'SUBSCRIPTION',
+  tokenAmount: plan.tierType === 'TOKEN_TOPUP' ? Math.max(1, Math.round(plan.tokenAmount ?? 0)) : 0,
 });
 
 /** Quota gửi lên: các ô giới hạn dạng số, giữ chu kỳ cũ nếu đã có. */
@@ -96,7 +100,7 @@ function quotaBody(plan: Partial<AdminSubscriptionPlan>, existing: AdminSubscrip
 
 export async function createAdminPlan(plan: Omit<AdminSubscriptionPlan, 'id' | 'createdAt' | 'updatedAt' | 'activeSubscribersCount' | 'mrrVND'>): Promise<AdminSubscriptionPlan> {
   const { data } = await apiClient.post<ApiRow>('/admin/subscription-tiers', tierBody(plan, plan.status !== 'ARCHIVED'));
-  const quotas = await apiClient.put<ApiRow[]>(`/admin/subscription-tiers/${str(data.id)}/quotas`, quotaBody(plan)).then((r) => r.data);
+  const quotas = plan.tierType === 'TOKEN_TOPUP' ? [] : await apiClient.put<ApiRow[]>(`/admin/subscription-tiers/${str(data.id)}/quotas`, quotaBody(plan)).then((r) => r.data);
   return toAdminPlan(data, quotas, plan.sortOrder ?? 0);
 }
 
@@ -106,7 +110,7 @@ export async function updateAdminPlan(id: string, updates: Partial<AdminSubscrip
   const next = { ...current, ...updates };
   const { data } = await apiClient.put<ApiRow>(`/admin/subscription-tiers/${id}`, tierBody(next, next.status !== 'ARCHIVED'));
   const body = quotaBody(updates, current.quotas);
-  const quotas = body.length
+  const quotas = next.tierType === 'TOKEN_TOPUP' ? [] : body.length
     ? await apiClient.put<ApiRow[]>(`/admin/subscription-tiers/${id}/quotas`, body).then((r) => r.data)
     : (current.quotas ?? []).map((q) => ({ feature_code: q.featureCode, quota_value: q.quotaValue, quota_period: q.quotaPeriod }));
   return toAdminPlan(data, quotas, current.sortOrder);
@@ -228,6 +232,7 @@ export interface AiRuntimeModelConfiguration {
   configuration: Record<string, unknown> & {
     temperature?: number;
     numPredict?: number;
+    questionCount?: number;
   };
   source: 'ENVIRONMENT' | 'DATABASE';
   version?: number | null;

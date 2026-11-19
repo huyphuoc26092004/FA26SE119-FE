@@ -1,3 +1,5 @@
+export type PlanType = 'SUBSCRIPTION' | 'TOKEN_TOPUP';
+
 export type PlanStatus = 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
 
 export interface AdminSubscriptionPlan {
@@ -27,6 +29,8 @@ export interface AdminSubscriptionPlan {
   createdAt?: string;
   updatedAt?: string;
   tierCode?: string;
+  tierType?: PlanType;
+  tokenAmount?: number;
   currency?: string;
   quotas?: { featureCode: string; quotaValue: number; quotaPeriod: string }[];
 }

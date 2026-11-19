@@ -60,7 +60,9 @@ export function Headline({
   return (
     <header className="grid gap-x-12 gap-y-6 lg:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0">
-        {eyebrow && <div className="mb-[clamp(1.25rem,2.5vw,2rem)] text-[13px] text-brand">{eyebrow}</div>}
+        {eyebrow && (
+          <div className="mb-[clamp(1.25rem,2.5vw,2rem)] text-[13px] text-brand">{eyebrow}</div>
+        )}
         <h1 className="text-[clamp(2.25rem,4.6vw,4rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
           {line1}
           {line2 && <span className="block text-brand">{line2}</span>}
@@ -70,7 +72,9 @@ export function Headline({
             {intro}
           </div>
         )}
-        {children && <div className="mt-7 flex flex-wrap items-center gap-x-7 gap-y-3">{children}</div>}
+        {children && (
+          <div className="mt-7 flex flex-wrap items-center gap-x-7 gap-y-3">{children}</div>
+        )}
       </div>
       {aside && <div className="order-first lg:order-none">{aside}</div>}
     </header>
@@ -91,9 +95,14 @@ export function SectionHead({
   id?: string;
 }) {
   return (
-    <div id={id} className="flex scroll-mt-24 flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-ink pb-3">
+    <div
+      id={id}
+      className="flex scroll-mt-24 flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-ink pb-3"
+    >
       <h2 className="flex items-baseline gap-3 text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
-        {index && <span className="text-xs tabular-nums tracking-normal text-slate-500">{index}</span>}
+        {index && (
+          <span className="text-xs tabular-nums tracking-normal text-slate-500">{index}</span>
+        )}
         {title}
       </h2>
       {(meta || action) && (
@@ -158,7 +167,9 @@ export function StatRow({
             {it.detail && (
               <dd
                 className={`mt-2.5 text-[13px] ${
-                  it.detailTone && it.detailTone !== 'muted' ? toneText[it.detailTone] : 'text-slate-500'
+                  it.detailTone && it.detailTone !== 'muted'
+                    ? toneText[it.detailTone]
+                    : 'text-slate-500'
                 }`}
               >
                 {it.detail}
@@ -169,7 +180,11 @@ export function StatRow({
         return (
           <div key={i} className="py-5">
             {it.onClick ? (
-              <button type="button" onClick={it.onClick} className="block w-full text-left hover:opacity-80">
+              <button
+                type="button"
+                onClick={it.onClick}
+                className="block w-full text-left hover:opacity-80"
+              >
                 {body}
               </button>
             ) : (
@@ -211,7 +226,9 @@ export function UnderlineTabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(tab.value)}
             className={`-mb-px flex shrink-0 items-baseline gap-1 whitespace-nowrap border-b-2 py-3 text-[15px] transition-colors duration-150 ${
-              active ? 'border-ink font-medium text-ink' : 'border-transparent text-slate-600 hover:text-ink'
+              active
+                ? 'border-ink font-medium text-ink'
+                : 'border-transparent text-slate-600 hover:text-ink'
             }`}
           >
             {tab.label}
@@ -242,7 +259,9 @@ export function SegmentLinks<T extends string>({
           onClick={() => onChange(o.value)}
           aria-pressed={o.value === value}
           className={`border-b-2 pb-1.5 text-sm transition-colors ${
-            o.value === value ? 'border-ink font-medium text-ink' : 'border-transparent text-slate-500 hover:text-ink'
+            o.value === value
+              ? 'border-ink font-medium text-ink'
+              : 'border-transparent text-slate-500 hover:text-ink'
           }`}
         >
           {o.label}
@@ -252,7 +271,13 @@ export function SegmentLinks<T extends string>({
   );
 }
 
-export function ThinBar({ value, tone = 'brand' }: { value: number; tone?: 'brand' | 'ink' | 'warning' | 'danger' | 'muted' }) {
+export function ThinBar({
+  value,
+  tone = 'brand',
+}: {
+  value: number;
+  tone?: 'brand' | 'ink' | 'warning' | 'danger' | 'muted';
+}) {
   const fill =
     tone === 'warning'
       ? 'bg-orange-500'
@@ -265,13 +290,24 @@ export function ThinBar({ value, tone = 'brand' }: { value: number; tone?: 'bran
             : 'bg-brand';
   return (
     <div className="h-[3px] w-full bg-slate-200">
-      <div className={`h-full ${fill}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      <div
+        className={`h-full ${fill}`}
+        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+      />
     </div>
   );
 }
 
 /** Label / value row used in detail sections. */
-export function InfoRow({ label, children, tone }: { label: ReactNode; children: ReactNode; tone?: StatTone }) {
+export function InfoRow({
+  label,
+  children,
+  tone,
+}: {
+  label: ReactNode;
+  children: ReactNode;
+  tone?: StatTone;
+}) {
   return (
     <div className="grid gap-1 border-b border-border py-3.5 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] sm:gap-6">
       <dt className="text-[13px] text-slate-500">{label}</dt>
@@ -300,6 +336,7 @@ export function Modal({
   children,
   footer,
   width = 'max-w-2xl',
+  zIndex = 'z-50',
 }: {
   title: ReactNode;
   eyebrow?: ReactNode;
@@ -307,6 +344,7 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
   width?: string;
+  zIndex?: string;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -315,7 +353,10 @@ export function Modal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center sm:p-6" onClick={onClose}>
+    <div
+      className={`fixed inset-0 ${zIndex} flex items-end justify-center bg-ink/40 sm:items-center sm:p-6`}
+      onClick={onClose}
+    >
       <div
         role="dialog"
         aria-modal="true"
@@ -325,7 +366,9 @@ export function Modal({
         <div className="flex items-start justify-between gap-6 border-b border-ink px-6 pb-4 pt-6 sm:px-8">
           <div className="min-w-0">
             {eyebrow && <p className="mb-1 text-[13px] text-brand">{eyebrow}</p>}
-            <h3 className="text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">{title}</h3>
+            <h3 className="text-[clamp(1.25rem,2vw,1.625rem)] font-normal tracking-[-0.01em] text-ink">
+              {title}
+            </h3>
           </div>
           <button
             type="button"
@@ -375,9 +418,7 @@ export function RowMenu({
   }, [open]);
 
   const positionClass =
-    placement === 'top'
-      ? 'bottom-[calc(100%+6px)] right-0'
-      : 'top-[calc(100%+6px)] right-0';
+    placement === 'top' ? 'bottom-[calc(100%+6px)] right-0' : 'top-[calc(100%+6px)] right-0';
 
   return (
     <div ref={ref} className="relative inline-block text-left">
@@ -423,7 +464,9 @@ export function RowMenu({
 }
 
 export function EmptyRow({ children }: { children: ReactNode }) {
-  return <p className="border-b border-border py-10 text-center text-sm text-slate-500">{children}</p>;
+  return (
+    <p className="border-b border-border py-10 text-center text-sm text-slate-500">{children}</p>
+  );
 }
 
 /** Simple checkbox styled as a square with a tick. */
@@ -440,7 +483,12 @@ export function CheckBox({
 }) {
   return (
     <label className="flex cursor-pointer items-start gap-3 border-b border-border py-3">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="peer sr-only"
+      />
       <span
         aria-hidden
         className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center border transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-brand ${
@@ -451,7 +499,9 @@ export function CheckBox({
       </span>
       <span className="min-w-0">
         <span className="block text-[15px] text-ink">{label}</span>
-        {description && <span className="mt-0.5 block text-[13px] text-slate-500">{description}</span>}
+        {description && (
+          <span className="mt-0.5 block text-[13px] text-slate-500">{description}</span>
+        )}
       </span>
     </label>
   );
@@ -479,7 +529,14 @@ export function RadioRow({
     <label
       className={`flex items-start gap-3 border-b border-border py-3 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
     >
-      <input type="radio" name={name} checked={checked} onChange={onChange} disabled={disabled} className="peer sr-only" />
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        className="peer sr-only"
+      />
       <span
         aria-hidden
         className={`mt-1 grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-brand ${
@@ -489,8 +546,12 @@ export function RadioRow({
         {checked && <span className="h-2 w-2 rounded-full bg-ink" />}
       </span>
       <span className="min-w-0 flex-1">
-        <span className={`block text-[15px] ${checked ? 'text-ink' : 'text-slate-700'}`}>{label}</span>
-        {description && <span className="mt-0.5 block text-[13px] text-slate-500">{description}</span>}
+        <span className={`block text-[15px] ${checked ? 'text-ink' : 'text-slate-700'}`}>
+          {label}
+        </span>
+        {description && (
+          <span className="mt-0.5 block text-[13px] text-slate-500">{description}</span>
+        )}
       </span>
       {aside && <span className="shrink-0 text-[13px] tabular-nums text-slate-600">{aside}</span>}
     </label>
@@ -498,7 +559,22 @@ export function RadioRow({
 }
 
 /** Thin bordered note, e.g. legal reminders inside modals. */
-export function Note({ children, tone = 'muted' }: { children: ReactNode; tone?: 'muted' | 'warning' | 'danger' }) {
-  const bar = tone === 'warning' ? 'border-orange-500' : tone === 'danger' ? 'border-danger' : 'border-slate-300';
-  return <div className={`border-l-2 ${bar} py-1 pl-4 text-[13px] leading-6 text-slate-600`}>{children}</div>;
+export function Note({
+  children,
+  tone = 'muted',
+}: {
+  children: ReactNode;
+  tone?: 'muted' | 'warning' | 'danger';
+}) {
+  const bar =
+    tone === 'warning'
+      ? 'border-orange-500'
+      : tone === 'danger'
+        ? 'border-danger'
+        : 'border-slate-300';
+  return (
+    <div className={`border-l-2 ${bar} py-1 pl-4 text-[13px] leading-6 text-slate-600`}>
+      {children}
+    </div>
+  );
 }

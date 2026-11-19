@@ -113,38 +113,34 @@ const knownMessages: Record<string, string> = {
     'Tài khoản này đã bị khóa hoặc xóa. Vui lòng liên hệ hỗ trợ.',
   'This email already has an account; use its existing sign-in method':
     'Email này đã đăng ký bằng phương thức khác. Vui lòng dùng cách đăng nhập đã đăng ký hoặc đặt lại mật khẩu.',
+  'AI CV support returned an invalid proposal. Please try again.':
+    'AI chưa trả về gợi ý CV hợp lệ. Vui lòng thử lại.',
+  'AI provider failed or returned an invalid result. Retry the request or check provider configuration.':
+    'AI chưa trả về kết quả hợp lệ. Vui lòng thử lại.',
   'Invalid email or password': 'Email hoặc mật khẩu không đúng.',
   'Verify your email or contact support about your account status':
     'Tài khoản chưa xác minh email hoặc đang bị khóa. Vui lòng xác minh email trước khi đăng nhập.',
   'Wait 60 seconds before requesting a new code': 'Vui lòng đợi 60 giây trước khi yêu cầu mã mới.',
-  'Verification attempt limit reached; request a new code':
-    'Bạn đã nhập sai quá số lần cho phép. Hãy gửi lại mã mới.',
-  'AI is disabled. Configure the AI API key and enable AI_ENABLED in the backend environment.':
-    'Dịch vụ AI chưa sẵn sàng. Vui lòng liên hệ quản trị viên hoặc thử lại sau.',
+  'Verification attempt limit reached; request a new code': 'Bạn đã nhập sai quá số lần cho phép. Hãy gửi lại mã mới.',
+  'AI is disabled. Enable Ollama and start its local container with the configured model.':
+    'Backend đang tắt AI (AI_ENABLED=false). Bật Ollama và đặt AI_ENABLED=true trong .env của backend rồi chạy lại.',
   'AI token quota exceeded; upgrade your subscription or wait for the next quota period':
     'Bạn đã dùng hết lượt AI của gói hiện tại trong kỳ này. Hãy nâng cấp gói hoặc đợi kỳ sau.',
-  'Feature token quota exceeded':
-    'Bạn đã dùng hết lượt AI cho tính năng này trong kỳ này. Hãy nâng cấp gói hoặc đợi kỳ sau.',
+  'Feature token quota exceeded': 'Bạn đã dùng hết lượt AI cho tính năng này trong kỳ này. Hãy nâng cấp gói hoặc đợi kỳ sau.',
   'Confirm the CV before analysis': 'Hãy xác nhận (lưu hoàn tất) CV trước khi đánh giá.',
-  'Invalid or expired reset token':
-    'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Hãy yêu cầu link mới.',
-  'New password must contain at least 10 characters': 'Mật khẩu mới cần ít nhất 10 ký tự.',
-  'Email delivery is disabled; configure MAIL_ENABLED and SMTP settings':
-    'Backend chưa bật gửi email (MAIL_ENABLED). Bật SMTP hoặc AUTH_EXPOSE_DEV_OTP=true khi chạy thử.',
-  'Current password is incorrect': 'Mật khẩu hiện tại không đúng.',
 };
 
 /** Turns an Axios/ProblemDetail error from the backend into a message the auth pages can show. */
 export function authErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
     if (!error.response) {
+      if (error.code === 'ERR_CANCELED') return 'Yêu cầu đã được hủy.';
       if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-        const requestPath = error.config?.url?.split(/[?#]/, 1)[0].replace(/\/+$/, '');
-        return requestPath?.endsWith('/matching')
+        const path = error.config?.url?.split(/[?#]/, 1)[0] ?? '';
+        return /\/matching\/?$/.test(path)
           ? 'Đề xuất việc làm đang mất nhiều thời gian hơn dự kiến. Vui lòng thử lại sau.'
           : 'Yêu cầu xử lý quá lâu. Vui lòng thử lại sau.';
       }
-      if (error.code === 'ERR_CANCELED') return 'Yêu cầu đã được hủy.';
       return 'Không kết nối được hệ thống. Vui lòng thử lại.';
     }
     const data = error.response.data as ProblemDetail | undefined;
@@ -157,17 +153,11 @@ export function authErrorMessage(error: unknown, fallback: string): string {
 }
 
 export const authService = {
-  register: (body: {
-    email: string;
-    password: string;
-    fullName: string;
-    preferredLanguage: 'vi' | 'en';
-  }) => apiClient.post<RegisterResponse>('/auth/register', body).then((res) => res.data),
+  register: (body: { email: string; password: string; fullName: string; preferredLanguage: 'vi' | 'en' }) =>
+    apiClient.post<RegisterResponse>('/auth/register', body).then((res) => res.data),
 
   verifyEmail: (email: string, code: string) =>
-    apiClient
-      .post<{ message: string }>('/auth/verify-email', { email, code })
-      .then((res) => res.data),
+    apiClient.post<{ message: string }>('/auth/verify-email', { email, code }).then((res) => res.data),
 
   resendCode: (email: string) =>
     apiClient.post<RegisterResponse>('/auth/resend-code', { email }).then((res) => res.data),
@@ -188,7 +178,8 @@ export const authService = {
 
   logout: () => apiClient.post<{ message: string }>('/auth/logout').then((res) => res.data),
 
-  // The backend emails a link to /reset-password?token=…; with AUTH_EXPOSE_DEV_OTP it returns the token instead.
+  me: () => apiClient.get<ProfileResponse>('/me').then((res) => toUser(res.data)),
+
   forgotPassword: (email: string) =>
     apiClient
       .post<{ message: string; expiresIn?: number; developmentToken?: string }>(
@@ -205,6 +196,4 @@ export const authService = {
         newPasswordConfirmation: newPassword,
       })
       .then((res) => res.data),
-
-  me: () => apiClient.get<ProfileResponse>('/me').then((res) => toUser(res.data)),
 };

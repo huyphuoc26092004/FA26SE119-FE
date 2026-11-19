@@ -20,6 +20,8 @@ import { AiRecommendationFeedbackWidget } from '../../components/feedback/AiReco
 import { parseJobContent, sectionLength } from '../../utils/jobContent';
 import { JobContent } from '../../components/jobs/JobContent';
 import { JobCandidateTools } from './job/JobCandidateTools';
+import { RequirementEvidencePanel } from '../../components/jobs/RequirementEvidencePanel';
+import { useAuthStore } from '../../stores/authStore';
 
 const textLink =
   'inline-flex items-center gap-1.5 border-b border-current pb-px text-sm transition-colors duration-150 hover:text-brand cursor-pointer';
@@ -66,6 +68,9 @@ export default function JobDetailsPage() {
   const queryClient = useQueryClient();
   const isCandidate = location.pathname.startsWith('/candidate');
   const backUrl = isCandidate ? '/candidate/jobs' : '/jobs';
+  const matchingParams = new URLSearchParams(location.search);
+  const matchingCvId = matchingParams.get('cvId') ?? undefined;
+  const matchingBasis = matchingParams.get('basis') === 'CAREER_PROFILE' ? 'CAREER_PROFILE' as const : undefined;
 
   const [redirectModalOpen, setRedirectModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -78,10 +83,14 @@ export default function JobDetailsPage() {
     queryFn: () => getJobById(jobId),
   });
 
+  const matchingUserId = useAuthStore((state) => state.user?.id);
   const { data: semantic } = useQuery({
-    queryKey: ['jobSemanticMatch', jobId],
-    queryFn: () => getJobSemanticMatch(jobId),
-    enabled: !!jobId,
+    queryKey: ['jobSemanticMatch', matchingUserId, jobId, matchingCvId, matchingBasis, 'requirement-evidence-v1'],
+    queryFn: () => getJobSemanticMatch(jobId, matchingCvId, matchingBasis),
+    enabled: !!jobId && !!matchingUserId,
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
   });
 
   const { data: savedIds = [] } = useQuery({
@@ -138,12 +147,14 @@ export default function JobDetailsPage() {
   };
 
   // Điểm lấy từ kết quả matching; chưa có thì không hiển thị 0%.
-  const insufficientRequirements = semantic?.method?.startsWith('SKILL_OVERLAP')
-    && (semantic.requirementCoverageAvailable === false || ['MISSING_SOURCE', 'TRUNCATED'].includes(semantic.extractionStatus ?? ''));
+  const insufficientRequirements = semantic?.requirementCoverageAvailable === false
+    || (semantic?.method?.startsWith('SKILL_OVERLAP')
+      && ['MISSING_SOURCE', 'TRUNCATED'].includes(semantic.extractionStatus ?? ''));
   const matchScore: number | null = insufficientRequirements ? null : semantic?.overallScore ?? (job.match > 0 ? job.match : null);
   const matchText = matchScore === null ? '—' : `${matchScore}%`;
 
-  const fitHref = isCandidate ? `/candidate/cv-job-fit?jobId=${job.id}` : '/login';
+  const fitHref = isCandidate
+    ? `/candidate/cv-job-fit?jobId=${job.id}${matchingCvId ? `&cvId=${encodeURIComponent(matchingCvId)}` : ''}` : '/login';
   const matchedSkills = new Set((semantic?.matchedSkills ?? []).map((s) => s.toLowerCase()));
 
   const facts: { label: string; value?: string }[] = [
@@ -158,7 +169,7 @@ export default function JobDetailsPage() {
 
   // Matching returns an overall score and optional recognized-skill coverage, not four dimension scores.
   const dims = semantic?.skillCoverageScore !== undefined && !insufficientRequirements
-    ? [{ label: 'Bao phủ kỹ năng đã nhận diện', value: semantic.skillCoverageScore }]
+    ? [{ label: semantic.evidenceReport ? 'Độ bao phủ yêu cầu bắt buộc' : 'Bao phủ kỹ năng đã nhận diện', value: semantic.skillCoverageScore }]
     : [];
   // Khi mô tả đã có các mục riêng (trách nhiệm, yêu cầu, quyền lợi) thì các danh sách
   // parsed_* chỉ lặp lại nội dung đó, nên bỏ đi.
@@ -269,7 +280,7 @@ export default function JobDetailsPage() {
             <Link to={`/candidate/assistant?jobId=${job.id}`} className={`${textLink} text-ink`}>
               Hỏi trợ lý về việc này
             </Link>
-            <Link to={`/candidate/applications?jobId=${job.id}`} className={`${textLink} text-ink`}>
+            <Link to={`/candidate/applications?jobId=${job.id}${matchingCvId ? `&cvId=${encodeURIComponent(matchingCvId)}` : ''}`} className={`${textLink} text-ink`}>
               Soạn thư ứng tuyển
             </Link>
             <Link to={`/candidate/learning-path?jobId=${job.id}&build=1`} className={`${textLink} text-ink`}>
@@ -289,6 +300,7 @@ export default function JobDetailsPage() {
         ))}
       </dl>
 
+      <RequirementEvidencePanel report={semantic?.evidenceReport} />
       {/* Body: description + match aside */}
       <div className="mt-[clamp(3rem,6vw,4.5rem)] grid gap-x-[clamp(2.5rem,5vw,5rem)] gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
         <div className="min-w-0 space-y-[clamp(3rem,6vw,4.5rem)]">

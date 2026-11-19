@@ -77,14 +77,32 @@ after(async () => {
   globalThis.sessionStorage = oldStorage;
 });
 
-test('selected CV recommendations request quick matching with the selected resume and percentage scores', async () => {
+test('explore jobs loads later catalog pages with their skill, experience and salary fields', async () => {
+  respond = ({ params }) => ({
+    data: params.offset ? [{
+      id: 'later-job',
+      job_title: 'Java Engineer',
+      parsed_seniority: 'Senior',
+      skills: [{ name: 'Spring Boot' }],
+      monthly_salary_max_vnd: 45_000_000,
+    }] : Array.from({ length: 100 }, (_, index) => ({ id: `job-${index}` })),
+  });
+  const jobs = await service.getJobs({ allPages: true });
+  assert.equal(jobs.length, 101);
+  assert.equal(requests[1].params.offset, 100);
+  assert.equal(jobs.at(-1).experienceLevel, 'Senior');
+  assert.equal(jobs.at(-1).salaryMax, 45_000_000);
+  assert.deepEqual(jobs.at(-1).skills, ['Spring Boot']);
+});
+
+test('selected CV recommendations request semantic recommendation with the selected resume and coverage scores', async () => {
   respond = () => ({ data: matchingRun({ basis: 'SELECTED_CV' }) });
   const result = await service.getRecommendationResult({ basis: 'SELECTED_CV', resumeId: 'resume-2' });
 
   assert.equal(requests[0].method, 'post');
   assert.equal(requests[0].url, '/matching');
-  assert.deepEqual(JSON.parse(requests[0].data), { basis: 'SELECTED_CV', resumeIds: ['resume-2'], limit: 50, mode: 'QUICK' });
-  assert.equal(requests[0].timeout, 60_000);
+  assert.deepEqual(JSON.parse(requests[0].data), { basis: 'SELECTED_CV', resumeIds: ['resume-2'], limit: 10, mode: 'RECOMMENDATION' });
+  assert.equal(requests[0].timeout, 600_000);
   assert.equal(requests[0].headers.Authorization, 'Bearer candidate-token');
   assert.equal(result.basis, 'SELECTED_CV');
   assert.equal(result.jobs[0].id, 'job-1');
@@ -94,6 +112,24 @@ test('selected CV recommendations request quick matching with the selected resum
   assert.deepEqual(result.salaryFilter, { active: true, examinedJobs: 37, eligibleJobs: 12 });
 });
 
+test('semantic recommendation preserves retrieval status and separate scores from the server', async () => {
+  respond = () => ({ data: matchingRun({
+    profile_snapshot: { mode: 'RECOMMENDATION' },
+    recommendation: { vector_used: true, semantic_status: 'PARTIAL_INDEX', active_jobs: 129,
+      compatible_vectors: 36, rerank: { status: 'SKIPPED' } },
+    results: [matchedJob({ rank_position: 2, final_score: 0.5, vector_similarity_score: 0.91, llm_rerank_score: 0.8,
+      match_reason_json: { method: 'SEMANTIC_RULE_RECOMMENDATION', assessment: { score_kind: 'RECOMMENDATION_RULE_COVERAGE' } } })],
+  }) });
+  const result = await service.getRecommendationResult({ basis: 'ALL_CVS' });
+  assert.equal(result.mode, 'RECOMMENDATION');
+  assert.deepEqual(result.retrieval, { vectorUsed: true, status: 'PARTIAL_INDEX', activeJobs: 129,
+    compatibleVectors: 36, rerankStatus: 'SKIPPED' });
+  assert.equal(result.jobs[0].match, 50);
+  assert.equal(result.jobs[0].semanticMatch.semanticSimilarity, 0.91);
+  assert.equal(result.jobs[0].semanticMatch.aiRerankScore, 0.8);
+  assert.equal(result.jobs[0].semanticMatch.rankPosition, 2);
+});
+
 test('explicit profile matching never silently switches to CV data', async () => {
   respond = () => ({ status: 400, data: { detail: 'Complete your career profile first' } });
   await assert.rejects(
@@ -101,7 +137,44 @@ test('explicit profile matching never silently switches to CV data', async () =>
     /Complete your career profile first/,
   );
   assert.deepEqual(requestedBases(), ['CAREER_PROFILE']);
-  assert.deepEqual(JSON.parse(requests[0].data), { basis: 'CAREER_PROFILE', limit: 50, mode: 'QUICK' });
+  assert.deepEqual(JSON.parse(requests[0].data), { basis: 'CAREER_PROFILE', limit: 10, mode: 'RECOMMENDATION' });
+});
+
+test('AI suitability is the displayed percentage and rule coverage remains separate', async () => {
+  respond = () => ({ data: matchingRun({ results: [matchedJob({ final_score: 0.87, llm_rerank_score: 0.87,
+    match_reason_json: { score_source: 'LLM', score_status: 'SCORED', assessment: {
+      score_kind: 'RECOMMENDATION_AI_SUITABILITY', suitability_score_available: true,
+      requirement_coverage: 0.2, requirement_coverage_available: true,
+    } },
+  })] }) });
+  const result = await service.getRecommendationResult({ basis: 'ALL_CVS' });
+  assert.equal(result.jobs[0].match, 87);
+  assert.equal(result.jobs[0].semanticMatch.requirementCoverageScore, 20);
+  assert.equal(result.jobs[0].semanticMatch.scoreAvailable, true);
+  assert.equal(result.jobs[0].semanticMatch.scoreStatus, 'SCORED');
+});
+
+test('recommendation retains the quota failure reason returned by the backend', async () => {
+  respond = () => ({ data: matchingRun({ recommendation: { vector_used: true, active_jobs: 129, compatible_vectors: 36,
+    semantic_status: 'PARTIAL_INDEX', rerank: { status: 'SKIPPED', selected_jobs: 10, assessed_jobs: 0,
+      failure_code: 'AI_QUOTA_EXCEEDED', failure_message: 'AI token quota exceeded' } } }) });
+  const result = await service.getRecommendationResult({ basis: 'ALL_CVS' });
+  assert.equal(result.retrieval.failureCode, 'AI_QUOTA_EXCEEDED');
+  assert.equal(result.retrieval.failureMessage, 'AI token quota exceeded');
+});
+
+test('an unassessed recommendation exposes score unavailability instead of treating coverage as AI suitability', async () => {
+  respond = () => ({ data: matchingRun({ results: [matchedJob({ final_score: null, llm_rerank_score: null,
+    match_reason_json: { score_source: 'UNAVAILABLE', score_status: 'NOT_SELECTED', assessment: {
+      score_kind: 'RECOMMENDATION_AI_SUITABILITY', suitability_score_available: false,
+      requirement_coverage: 1, requirement_coverage_available: true,
+    } },
+  })] }) });
+  const result = await service.getRecommendationResult({ basis: 'ALL_CVS' });
+  assert.equal(result.jobs[0].semanticMatch.scoreAvailable, false);
+  assert.equal(result.jobs[0].semanticMatch.aiRerankScore, undefined);
+  assert.equal(result.jobs[0].semanticMatch.requirementCoverageScore, 100);
+  assert.equal(result.jobs[0].semanticMatch.scoreStatus, 'NOT_SELECTED');
 });
 
 test('an explicit CV selection requires a resume and does not fall back on its validation error', async () => {
@@ -123,7 +196,9 @@ test('a resume ID without an explicit basis selects that CV and keeps semantic j
   assert.equal(detail.overallScore, 82);
   assert.deepEqual(requestedBases(), ['SELECTED_CV', 'SELECTED_CV']);
   assert.ok(requests.every((request) => JSON.parse(request.data).resumeIds[0] === 'resume-3'));
-  assert.deepEqual(requests.map((request) => JSON.parse(request.data).mode), ['QUICK', 'DETAILED']);
+  assert.deepEqual(requests.map((request) => JSON.parse(request.data).mode), ['RECOMMENDATION', 'DETAILED']);
+  assert.equal(JSON.parse(requests[1].data).jobId, 'job-1');
+  assert.equal(JSON.parse(requests[1].data).limit, 1);
   assert.equal(requests[1].timeout, 600_000);
 });
 
@@ -253,14 +328,16 @@ test('the same account and matching basis share only the request currently in fl
   assert.equal(requests.length, 2, 'completed results are not kept in a stale frontend cache');
 });
 
-test('quick recommendations never reuse a detailed analysis request that is still running', async () => {
+test('recommendations and a selected-job request have independent in-flight identities', async () => {
   const pending = deferred();
   respond = () => pending.promise;
   const quick = service.getRecommendationResult({ basis: 'SELECTED_CV', resumeId: 'resume-1' });
   const detailed = service.getJobSemanticMatch('job-1', 'resume-1');
   await nextTurn();
   assert.equal(requests.length, 2);
-  assert.deepEqual(requests.map((request) => JSON.parse(request.data).mode).sort(), ['DETAILED', 'QUICK']);
+  assert.deepEqual(requests.map((request) => JSON.parse(request.data).mode), ['RECOMMENDATION', 'DETAILED']);
+  assert.equal(JSON.parse(requests[0].data).jobId, undefined);
+  assert.equal(JSON.parse(requests[1].data).jobId, 'job-1');
   pending.resolve({ data: matchingRun() });
   const [recommendations, detail] = await Promise.all([quick, detailed]);
   assert.equal(recommendations.jobs[0].id, 'job-1');
@@ -368,4 +445,75 @@ test('catalog assessment distinguishes recognized skill coverage from requiremen
   assert.equal(detail.requirementCoverageScore, 40);
   assert.equal(detail.unverifiedRequirements, 3);
   assert.equal(detail.catalogVersion, 'test-catalog');
+});
+
+test('evidence matching preserves source quotes and the same fractional score in list and selected-pair analysis', async () => {
+  const report = {
+    version: 'requirement-evidence-v1', requirement_coverage_available: true, coverage_complete: true,
+    required_count: 3, preferred_count: 1, unverified_requirements: 0, preferred_coverage: 0,
+    requirements: [{ requirement_id: 'r0', text: 'Optimize SQL queries', importance: 'MANDATORY',
+      status: 'MET', reason: 'The project documents the action', skills: ['SQL'],
+      evidence: [{ source: 'resume:resume-1/projects/0/offset:0', quote: 'Added indexes to reduce query time' }] }],
+  };
+  respond = (config) => {
+    if (config.method === 'get') return { data: config.url.startsWith('/resumes/')
+      ? { id: 'resume-1', title: 'Backend CV', status: 'READY', structured_data: {} }
+      : { id: 'job-1', job_title: 'Backend Developer' } };
+    if (config.url.endsWith('/ats')) return { data: { ats_score: 66.67, strengths_json: [], missing_skills_json: [],
+      improvement_suggestions_json: [], evidence_report: report } };
+    return { data: matchingRun({ results: [matchedJob({ final_score: 2 / 3,
+      match_reason_json: { method: 'REQUIREMENT_EVIDENCE', assessment: report } })] }) };
+  };
+  const recommendations = await service.getRecommendationResult({ resumeId: 'resume-1' });
+  const fit = await service.getCvJobFitAnalysis('resume-1', 'job-1');
+  const listed = recommendations.jobs[0].semanticMatch;
+  assert.equal(listed.overallScore, 66.6);
+  assert.equal(fit.overallScore, listed.overallScore);
+  assert.deepEqual(fit.evidenceReport, listed.evidenceReport);
+  assert.equal(fit.evidenceReport.requirements[0].evidence[0].quote, 'Added indexes to reduce query time');
+  assert.equal(fit.dimensions.length, 1, 'a shared total is not copied into fabricated dimension scores');
+});
+
+test('two selected jobs for one CV cannot share an in-flight detail result', async () => {
+  const waiting = deferred();
+  respond = () => waiting.promise;
+  const a = service.getJobSemanticMatch('job-1', 'resume-1');
+  const b = service.getJobSemanticMatch('job-2', 'resume-1');
+  await nextTurn();
+  assert.equal(requests.length, 2);
+  assert.deepEqual(requests.map((request) => JSON.parse(request.data).jobId), ['job-1', 'job-2']);
+  waiting.resolve({ data: matchingRun({ results: [matchedJob(), matchedJob({ market_job_id: 'job-2' })] }) });
+  await Promise.all([a, b]);
+});
+
+test('a deferred AI verification keeps actual jobs and exposes the pending status', async () => {
+  respond = () => ({ data: matchingRun({
+    profile_snapshot: { mode: 'REQUIREMENT_EVIDENCE', evidence_status: 'DEFERRED' },
+    results: [matchedJob({ final_score: 0.5, match_reason_json: { method: 'REQUIREMENT_EVIDENCE', assessment: {
+      version: 'requirement-evidence-v1', verification_status: 'DEFERRED', coverage_complete: false,
+      requirement_coverage_available: true, required_count: 2, requirements: [],
+    } } })],
+  }) });
+  const result = await service.getRecommendationResult({ resumeId: 'resume-1' });
+  assert.equal(result.jobs.length, 1);
+  assert.equal(result.verificationDeferred, true);
+  assert.equal(result.jobs[0].semanticMatch.evidenceReport.verificationDeferred, true);
+  assert.equal(result.jobs[0].match, 50);
+});
+
+test('unverified provider-dependent requirements do not become missing skills or learning gaps', async () => {
+  respond = (config) => ({ data: config.method === 'get'
+    ? config.url.startsWith('/resumes/')
+      ? { id: 'resume-1', title: 'Backend CV', status: 'READY', structured_data: {} }
+      : { id: 'job-1', job_title: 'Backend Developer' }
+    : { ats_score: 0, strengths_json: [], missing_skills_json: [], improvement_suggestions_json: [], evidence_report: {
+      version: 'requirement-evidence-v1', verification_status: 'DEFERRED', requirement_coverage_available: false,
+      required_count: 1, requirements: [{ requirement_id: 'r0', text: 'Experience building APIs',
+        importance: 'MANDATORY', status: 'UNVERIFIED', reason: 'AI temporarily unavailable', skills: ['REST API'], evidence: [] }],
+    } } });
+  const fit = await service.getCvJobFitAnalysis('resume-1', 'job-1');
+  assert.equal(fit.evidenceReport.scoreAvailable, false);
+  assert.equal(fit.evidenceReport.requirements.length, 1);
+  assert.deepEqual(fit.skillsAnalysis, []);
+  assert.deepEqual(fit.gaps, []);
 });

@@ -29,6 +29,7 @@ import {
   toResume,
   toResumeWrite,
   toSemanticMatch,
+  toEvidenceReport,
 } from './candidateMappers';
 
 // `indexes: null` gửi mảng dạng `skills=a&skills=b` để Spring đọc được.
@@ -47,10 +48,21 @@ export async function getJobs(params?: {
   salaryMin?: number;
   type?: string;
   sortBy?: 'match' | 'salary' | 'newest';
+  allPages?: boolean;
 }): Promise<Job[]> {
-  const list = await get<ApiRow[]>('/jobs', { q: params?.search ?? '', location: params?.location ?? '', limit: 100 });
+  const pageSize = 100;
+  const query = { q: params?.search ?? '', location: params?.location ?? '', limit: pageSize };
+  const list = await get<ApiRow[]>('/jobs', query);
+  if (params?.allPages) {
+    let size = list.length;
+    for (let offset = pageSize; size === pageSize; offset += pageSize) {
+      const page = await get<ApiRow[]>('/jobs', { ...query, offset });
+      list.push(...page);
+      size = page.length;
+    }
+  }
   // Backend chỉ lọc theo tên và địa điểm; các bộ lọc còn lại lọc ở FE.
-  return list
+  return [...new Map(list.map((row) => [row.id, row])).values()]
     .map(toJob)
     .filter((job) => !params?.type || job.type.toLowerCase().includes(params.type.toLowerCase()))
     .filter((job) => !params?.experienceLevel || job.experienceLevel === params.experienceLevel);
@@ -112,6 +124,7 @@ export type MatchBasis = 'SELECTED_CV' | 'ALL_CVS' | 'CAREER_PROFILE';
 export interface RecommendationOptions {
   basis?: MatchBasis | 'AUTO';
   resumeId?: string;
+  sourceVersion?: string;
 }
 
 export interface RecommendationResult {
@@ -119,21 +132,30 @@ export interface RecommendationResult {
   basis: MatchBasis;
   salaryFilter?: { active?: boolean; examinedJobs?: number; eligibleJobs?: number };
   mode?: string;
+  verificationDeferred?: boolean;
+  retrieval?: { vectorUsed: boolean; status: string; activeJobs: number; compatibleVectors: number; rerankStatus: string;
+    aiSelectedJobs?: number; aiScoredJobs?: number; failureCode?: string; failureMessage?: string };
 }
 
 // Share only requests still running for the same account. The backend caches by
 // current CV/profile content; keeping completed requests here would hide edits.
 const matchingInFlight = new Map<string, Promise<ApiRow>>();
 
-function runMatching(basis: MatchBasis, resumeId?: string, mode: 'QUICK' | 'DETAILED' = 'QUICK'): Promise<ApiRow> {
+function runMatching(
+  basis: MatchBasis,
+  resumeId?: string,
+  mode: 'QUICK' | 'DETAILED' | 'RECOMMENDATION' = 'RECOMMENDATION',
+  jobId?: string,
+  sourceVersion?: string,
+): Promise<ApiRow> {
   const auth = useAuthStore.getState();
   const selectedResumeId = basis === 'SELECTED_CV' ? resumeId : undefined;
-  const key = JSON.stringify([auth.user?.id ?? auth.accessToken, basis, selectedResumeId ?? '', mode]);
+  const key = JSON.stringify([auth.user?.id ?? auth.accessToken, basis, selectedResumeId, mode, jobId, sourceVersion]);
   const hit = matchingInFlight.get(key);
   if (hit) return hit;
   const run = apiClient.post<ApiRow>(
     '/matching',
-    { basis, resumeIds: selectedResumeId ? [selectedResumeId] : undefined, limit: 50, mode },
+    { basis, resumeIds: selectedResumeId ? [selectedResumeId] : undefined, limit: jobId ? 1 : mode === 'RECOMMENDATION' ? 10 : 50, mode, jobId },
     { timeout: mode === 'QUICK' ? 60_000 : 600_000 },
   ).then((response) => response.data).finally(() => {
     if (matchingInFlight.get(key) === run) matchingInFlight.delete(key);
@@ -142,9 +164,9 @@ function runMatching(basis: MatchBasis, resumeId?: string, mode: 'QUICK' | 'DETA
   return run;
 }
 
-export async function getJobSemanticMatch(jobId: string, resumeId?: string): Promise<SemanticMatchingDetail> {
+export async function getJobSemanticMatch(jobId: string, resumeId?: string, basis?: 'CAREER_PROFILE' | 'ALL_CVS'): Promise<SemanticMatchingDetail> {
   if (!isSignedIn()) throw new Error('Đăng nhập để xem mức độ phù hợp.');
-  const run = await runMatching(resumeId ? 'SELECTED_CV' : 'ALL_CVS', resumeId, 'DETAILED');
+  const run = await runMatching(resumeId ? 'SELECTED_CV' : basis ?? 'ALL_CVS', resumeId, 'DETAILED', jobId);
   const result = rows(run.results).find((r) => str(r.market_job_id) === jobId);
   if (!result) throw new Error('Việc làm này không nằm trong kết quả phù hợp với CV của bạn.');
   return toSemanticMatch(result);
@@ -152,12 +174,25 @@ export async function getJobSemanticMatch(jobId: string, resumeId?: string): Pro
 
 function toRecommendationResult(run: ApiRow, basis: MatchBasis): RecommendationResult {
   const salary = obj(run.salary_filter ?? obj(run.profile_snapshot).salary_filter);
+  const recommendation = obj(run.recommendation ?? obj(run.profile_snapshot).recommendation);
   return {
     jobs: rows(run.results)
       .filter((row) => !str(row.job_status) || row.job_status === 'ACTIVE')
       .map(toMatchedJob),
     basis,
     mode: optStr(obj(run.profile_snapshot).mode ?? run.mode),
+    verificationDeferred: obj(run.profile_snapshot).evidence_status === 'DEFERRED',
+    retrieval: Object.keys(recommendation).length ? {
+      vectorUsed: recommendation.vector_used === true,
+      status: str(recommendation.semantic_status),
+      activeJobs: num(recommendation.active_jobs),
+      compatibleVectors: num(recommendation.compatible_vectors),
+      rerankStatus: str(obj(recommendation.rerank).status),
+      ...(obj(recommendation.rerank).selected_jobs == null ? {} : { aiSelectedJobs: num(obj(recommendation.rerank).selected_jobs) }),
+      ...(obj(recommendation.rerank).assessed_jobs == null ? {} : { aiScoredJobs: num(obj(recommendation.rerank).assessed_jobs) }),
+      ...(obj(recommendation.rerank).failure_code == null ? {} : { failureCode: str(obj(recommendation.rerank).failure_code) }),
+      ...(obj(recommendation.rerank).failure_message == null ? {} : { failureMessage: str(obj(recommendation.rerank).failure_message) }),
+    } : undefined,
     salaryFilter: Object.keys(salary).length ? {
       active: typeof salary.active === 'boolean' ? salary.active : undefined,
       examinedJobs: salary.examined_jobs == null ? undefined : num(salary.examined_jobs),
@@ -179,7 +214,10 @@ export async function getRecommendationResult(options?: RecommendationOptions): 
   const basis = options?.basis ?? (options?.resumeId ? 'SELECTED_CV' : 'AUTO');
   if (basis !== 'AUTO') {
     if (basis === 'SELECTED_CV' && !options?.resumeId) throw new Error('Chọn một CV để tìm việc làm phù hợp.');
-    return toRecommendationResult(await runMatching(basis, options?.resumeId), basis);
+    return toRecommendationResult(
+      await runMatching(basis, options?.resumeId, 'RECOMMENDATION', undefined, options?.sourceVersion),
+      basis,
+    );
   }
 
   let emptyCvResult: RecommendationResult | undefined;
@@ -450,6 +488,35 @@ export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<
   const missing = texts(ats.missing_skills_json);
   const tips = texts(ats.improvement_suggestions_json);
   const report = obj(ats.ats_report);
+  const evidenceReport = toEvidenceReport(ats.evidence_report);
+  if (evidenceReport) {
+    const score = Math.trunc(num(ats.ats_score) * 10) / 10;
+    const required = evidenceReport.requirements.filter((row) => row.importance === 'MANDATORY');
+    const preferred = evidenceReport.requirements.filter((row) => row.importance === 'PREFERRED');
+    return {
+      cvId, cvName: cv?.name ?? '', jobId, jobTitle: job?.title ?? '', company: job?.company ?? '',
+      overallScore: score, skillsScore: score, experienceScore: score, educationScore: score, cultureScore: score,
+      fitGrade: grade(score),
+      verdict: evidenceReport.scoreAvailable
+        ? `Độ bao phủ thông tin cho ${evidenceReport.requiredCount} yêu cầu bắt buộc. Chưa có bằng chứng không đồng nghĩa chưa có năng lực.`
+        : 'Chưa đủ nguồn JD để tính độ bao phủ yêu cầu bắt buộc.',
+      strengths, evidenceReport,
+      gaps: [...required, ...preferred].filter((row) => row.status !== 'MET' && row.status !== 'UNVERIFIED').map((row) => ({
+        title: row.text, description: row.reason,
+        impact: row.importance === 'MANDATORY' ? 'critical' as const : 'moderate' as const,
+        recommendation: 'Bổ sung thông tin thực tế nếu đã có kinh nghiệm; đánh giá kỹ năng trước khi chọn nội dung cần học.',
+      })),
+      skillsAnalysis: [...required, ...preferred].filter((row) => row.status !== 'UNVERIFIED').map((row) => ({
+        name: row.text, category: row.importance === 'MANDATORY' ? 'required' as const : 'preferred' as const,
+        status: row.status === 'MET' ? 'matched' as const : row.status === 'PARTIAL' ? 'partial' as const : 'missing' as const,
+        cvMention: row.evidence.map((citation) => citation.quote).join(' · '),
+        importance: row.importance === 'MANDATORY' ? 'high' as const : 'medium' as const,
+      })),
+      tailoringTips: tips, suggestedBulletPoints: [], analyzedAt: str(ats.created_at),
+      dimensions: evidenceReport.scoreAvailable
+        ? [{ code: 'REQUIREMENT_COVERAGE', label: 'Độ bao phủ yêu cầu bắt buộc', score }] : [],
+    };
+  }
   if (Object.keys(report).length > 0) return fromAtsReport(report, { cvId, cv, jobId, job, score, strengths, tips, analyzedAt: str(ats.created_at) });
   return {
     cvId,
@@ -622,7 +689,7 @@ function toAssessmentResult(session: ApiRow): AssessmentResult {
   };
 }
 
-/** `topicId` là ID job: backend sinh 10 câu hỏi theo JD đã chọn. */
+/** `topicId` là ID job: backend sinh câu hỏi theo JD đã chọn. */
 export async function getAssessmentQuestions(topicId: string): Promise<AssessmentQuestion[]> {
   const session = await apiClient.post<ApiRow>('/assessments', { jobId: topicId }, { timeout: 600_000 }).then((res) => res.data);
   return rows(session.questions).map((q) => {

@@ -69,6 +69,7 @@ export function PaymentReturnStatus({ details, onSettled }: {
     handled.current = `${order.id}:${order.status}`;
     void client.invalidateQueries({ queryKey: [order.orderType === 'CONSULTATION'
       ? 'consultation-orders' : 'userSubscription'] });
+    void client.invalidateQueries({ queryKey: ['tokenWallet'] });
     void client.invalidateQueries({ queryKey: ['paymentHistory'] });
     void client.invalidateQueries({ queryKey: ['invoices'] });
     settledCallback.current?.();
