@@ -1,17 +1,16 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Check, ChevronDown, Loader2 } from 'lucide-react';
 import {
   SKILL_PASS_SCORE,
   createLearningPath,
   getLatestJdAssessment,
   getLatestLearningPath,
-  saveJdAssessmentAnswer,
   setLearningNodeStatus,
+  skillTestHref,
   startJdAssessment,
-  submitJdAssessment,
   type JdAssessment,
   type LearningPath,
   type LearningPathNode,
@@ -76,7 +75,7 @@ const copy = {
     requirements: 'Yêu cầu',
     testTitle: 'Bài đánh giá',
     testNote: `Câu hỏi trắc nghiệm do AI tạo từ JD. Kỹ năng dưới ${SKILL_PASS_SCORE} điểm sẽ vào lộ trình học.`,
-    testIntro: 'Bạn có một quỹ thời gian chung cho cả bài, tính theo 1 phút 30 giây nhân với số câu hỏi.',
+    testIntro: 'Bài làm trên một trang riêng, mỗi lần một câu. Bạn có một quỹ thời gian chung cho cả bài, tính theo 1 phút 30 giây nhân với số câu hỏi.',
     testCost: 'Tạo bài dùng một lượt AI.',
     testStart: 'Bắt đầu đánh giá',
     testCreating: 'Đang tạo câu hỏi từ JD. Việc này có thể mất vài phút.',
@@ -105,6 +104,10 @@ const copy = {
     doneAt: (d: string) => `Nộp ngày ${d}`,
     testDone: (score: number) => `${score}%`,
     testOpen: 'Đang làm dở',
+    continueTest: 'Tiếp tục làm bài',
+    openTestLine: 'Bạn có một bài đang làm dở. Bài làm trên một trang riêng, câu trả lời được lưu sau mỗi lần chọn.',
+    openTestStats: (a: number, n: number, m: string) => `Đã trả lời ${a}/${n} câu · còn ${m}`,
+    openTestExpired: (a: number, n: number) => `Đã trả lời ${a}/${n} câu · đã hết giờ, mở bài để nộp`,
     pathTitle: 'Lộ trình học',
     pathNote: 'Chỉ gồm kỹ năng bắt buộc của JD mà CV và hồ sơ chưa có, hoặc bài đánh giá dưới 70 điểm.',
     pathLocked: 'Làm xong bài đánh giá để lộ trình biết bạn yếu kỹ năng nào.',
@@ -185,7 +188,7 @@ const copy = {
     requirements: 'Requirements',
     testTitle: 'Assessment',
     testNote: `Multiple-choice questions written from the JD. Skills under ${SKILL_PASS_SCORE} go into the learning path.`,
-    testIntro: 'The assessment has one shared time limit of 90 seconds multiplied by the number of questions.',
+    testIntro: 'The test opens on its own page, one question at a time. It has one shared time limit of 90 seconds multiplied by the number of questions.',
     testCost: 'Creating it uses one AI request.',
     testStart: 'Start assessment',
     testCreating: 'Writing questions from the JD. This can take a few minutes.',
@@ -214,6 +217,10 @@ const copy = {
     doneAt: (d: string) => `Submitted ${d}`,
     testDone: (score: number) => `${score}%`,
     testOpen: 'In progress',
+    continueTest: 'Continue the test',
+    openTestLine: 'You have a test in progress. It opens on its own page and every answer is saved as you pick it.',
+    openTestStats: (a: number, n: number, m: string) => `${a}/${n} answered · ${m} left`,
+    openTestExpired: (a: number, n: number) => `${a}/${n} answered · time is up, open it to submit`,
     pathTitle: 'Learning path',
     pathNote: 'Only the required JD skills missing from your CV and profile, or scored under 70 in the assessment.',
     pathLocked: 'Finish the assessment so the path knows which skills are weak.',
@@ -317,135 +324,28 @@ export function Muted({ children }: { children: ReactNode }) {
 
 // ─── Assessment ─────────────────────────────────────────────────────────────
 
-function formatQuizTime(seconds: number): string {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-}
-
-function Quiz({ session, c, onSubmit, submitting }: { session: JdAssessment; c: Copy; onSubmit: (id: string) => void; submitting: boolean }) {
-  const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>(session.answers);
-  const [now, setNow] = useState(Date.now);
-  const didAutoSubmit = useRef(false);
+/** Bài đang làm dở: chỉ tóm tắt, việc làm bài diễn ra ở trang riêng. */
+function OpenTest({ session, c }: { session: JdAssessment; c: Copy }) {
+  const answered = session.questions.filter((q) => session.answers[q.id]).length;
+  const total = session.questions.length;
   const deadline = Date.parse(session.expiresAt);
-  const timed = Number.isFinite(deadline);
-  const remaining = timed ? Math.max(0, Math.ceil((deadline - now) / 1000)) : session.timeLimitSeconds;
-  const expired = timed && remaining === 0;
-  const saveAnswer = useMutation({
-    mutationFn: ({ questionId, optionId }: { questionId: string; optionId: string }) =>
-      saveJdAssessmentAnswer(session.id, questionId, optionId),
-    onSuccess: (_, { questionId, optionId }) =>
-      setAnswers((previous) => ({ ...previous, [questionId]: optionId })),
-  });
-  const saving = saveAnswer.isPending;
-  useEffect(() => {
-    if (!timed || expired) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(timer);
-  }, [timed, expired]);
-  useEffect(() => {
-    if (!expired || saving || submitting || didAutoSubmit.current) return;
-    didAutoSubmit.current = true;
-    onSubmit(session.id);
-  }, [expired, saving, submitting, onSubmit, session.id]);
-  const questions = session.questions;
-  const current = questions[index];
-  const answered = questions.filter((q) => answers[q.id]).length;
-  const allAnswered = answered === questions.length;
-  if (!current) return null;
-
+  const left = Number.isFinite(deadline) ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : session.timeLimitSeconds;
+  const time = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
   return (
-    <div className="grid gap-x-[clamp(2rem,5vw,4rem)] gap-y-8 py-6 lg:grid-cols-[minmax(0,1fr)_14rem]">
-      <div className="min-w-0">
-        {timed && (
-          <div className="mb-4 border-b border-border pb-3">
-            <p className="text-[13px] text-slate-600">{c.timeRemaining}</p>
-            <p role="timer" className={`text-2xl tabular-nums ${remaining <= 60 ? 'text-danger' : 'text-brand'}`}>
-              {formatQuizTime(remaining)}
-            </p>
-            <p className="text-[12px] text-slate-600">{c.quizTotalTime} · {formatQuizTime(session.timeLimitSeconds)}</p>
-            {expired && <p role="status" className="mt-2 text-[13px] text-slate-600">{c.timeExpired}</p>}
-          </div>
-        )}
-        <p className="flex flex-wrap gap-x-3 text-[13px] text-slate-600">
-          <span className="tabular-nums text-ink">{c.question(index + 1, questions.length)}</span>
-          {current.topic && <span>· {current.topic}</span>}
-        </p>
-        <h3 className="mt-3 max-w-[44rem] text-[clamp(1.125rem,1.8vw,1.5rem)] font-normal leading-[1.45] text-ink">{current.text}</h3>
-        <div role="radiogroup" aria-label={current.text} className="mt-6 border-t border-slate-400">
-          {current.options.map((option) => {
-            const selected = answers[current.id] === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                disabled={expired || saving || submitting}
-                onClick={() => {
-                  if (!timed || Date.now() < deadline) saveAnswer.mutate({ questionId: current.id, optionId: option.id });
-                }}
-                className={`group flex w-full items-start gap-4 border-b border-border py-3.5 pr-2 text-left transition-colors cursor-pointer ${
-                  selected ? 'bg-brand-50/60' : 'hover:bg-slate-100/60'
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[12px] ${
-                    selected ? 'border-brand bg-brand text-white' : 'border-slate-400 text-slate-600 group-hover:border-ink'
-                  }`}
-                >
-                  {option.id}
-                </span>
-                <span className={`pt-0.5 text-[15px] leading-7 ${selected ? 'text-ink' : 'text-slate-700'}`}>{option.text}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          <button type="button" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0} className={`${textLink} text-ink`}>
-            <ArrowLeft size={14} aria-hidden="true" />
-            {c.prev}
-          </button>
-          {index < questions.length - 1 && !expired ? (
-            <button type="button" onClick={() => setIndex((i) => i + 1)} className={primaryButton}>
-              {c.next}
-              <ArrowRight size={15} aria-hidden="true" />
-            </button>
-          ) : (
-            <button type="button" onClick={() => onSubmit(session.id)} disabled={(!expired && !allAnswered) || saving || submitting} className={primaryButton}>
-              {submitting && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
-              {submitting ? c.submitting : c.submit}
-            </button>
-          )}
-        </div>
+    <div className="flex flex-col gap-4 border-b border-border py-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="max-w-xl text-[15px] leading-7 text-ink">{c.openTestLine}</p>
+        <p className="mt-1 text-[13px] tabular-nums text-slate-500">{left > 0 ? c.openTestStats(answered, total, time) : c.openTestExpired(answered, total)}</p>
       </div>
-
-      <aside className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
-        <p className="text-[13px] text-slate-600">{c.answered(answered, questions.length)}</p>
-        <div className="mt-3 grid grid-cols-5 gap-1.5">
-          {questions.map((q, i) => (
-            <button
-              key={q.id}
-              type="button"
-              onClick={() => setIndex(i)}
-              aria-label={`${i + 1}`}
-              aria-current={i === index ? 'step' : undefined}
-              className={`h-9 rounded-full border text-[12px] tabular-nums transition-colors cursor-pointer ${
-                i === index ? 'border-ink bg-ink text-white' : answers[q.id] ? 'border-brand text-brand' : 'border-slate-300 text-slate-500 hover:border-ink'
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
-        {!allAnswered && !expired && <p className="mt-3 text-[12px] leading-5 text-slate-500">{c.answerAll}</p>}
-        <ErrorLine error={saveAnswer.error} c={c} />
-      </aside>
+      <Link to={skillTestHref(session.id)} className={`${primaryButton} shrink-0`}>
+        {c.continueTest}
+        <ArrowRight size={15} aria-hidden="true" />
+      </Link>
     </div>
   );
 }
 
-function AssessmentResult({ session, c, vi, reviewOpen }: { session: JdAssessment; c: Copy; vi: boolean; reviewOpen: boolean }) {
+export function AssessmentResult({ session, c, vi, reviewOpen }: { session: JdAssessment; c: Copy; vi: boolean; reviewOpen: boolean }) {
   const passed = session.score >= SKILL_PASS_SCORE;
   const skills = [...session.skillScores].sort((a, b) => a.score - b.score);
   return (
@@ -634,6 +534,7 @@ export default function SkillAssessmentPage() {
   const c = isVietnamese ? copy.vi : copy.en;
   const pickerCopy = isVietnamese ? jobPickerCopy.vi : jobPickerCopy.en;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const jobId = searchParams.get('jobId') ?? '';
   const cvParam = searchParams.get('cvId') ?? '';
@@ -691,17 +592,11 @@ export default function SkillAssessmentPage() {
     mutationFn: () => startJdAssessment(jobId, cvId || undefined, pastedMode ? { targetJobTitle: pastedTitle.trim(), jdText: pastedJd.trim() } : undefined),
     onSuccess: (data) => {
       queryClient.setQueryData(testKey, data);
+      queryClient.setQueryData(['jdAssessment', 'session', data.id], data);
       queryClient.invalidateQueries({ queryKey: ['jdAssessments'] });
       setReviewOpen(false);
-    },
-  });
-  const submitTest = useMutation({
-    mutationFn: submitJdAssessment,
-    onSuccess: (data) => {
-      queryClient.setQueryData(testKey, data);
-      queryClient.invalidateQueries({ queryKey: ['jdAssessments'] });
-      // Nộp bài làm lộ trình cũ hết hiệu lực ở backend.
-      queryClient.invalidateQueries({ queryKey: pathKey });
+      // Làm bài trên trang riêng để tập trung.
+      navigate(skillTestHref(data.id));
     },
   });
   const buildPath = useMutation({
@@ -713,6 +608,14 @@ export default function SkillAssessmentPage() {
     mutationFn: ({ nodeId, status }: { nodeId: string; status: LearningPathNode['status'] }) => setLearningNodeStatus(path!.id, nodeId, status),
     onSuccess: (data) => queryClient.setQueryData(pathKey, data),
   });
+
+  // Quay về từ trang làm bài (#step-2 / #step-3): cuộn tới đúng phần khi dữ liệu đã tải.
+  const { hash } = useLocation();
+  const sectionsReady = !testQuery.isPending && !pathQuery.isPending;
+  useEffect(() => {
+    if (!hash || !sectionsReady) return;
+    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+  }, [hash, sectionsReady]);
 
   const weakSkills = completedTest?.skillScores.filter((s) => s.score < SKILL_PASS_SCORE).map((s) => s.skill) ?? [];
   const pathBeforeTest = !!path && !!completedTest?.submittedAt && new Date(path.createdAt) < new Date(completedTest.submittedAt);
@@ -747,7 +650,12 @@ export default function SkillAssessmentPage() {
       <button type="button" onClick={() => startTest.mutate()} className={`${primaryButton} shrink-0`}>
         {c.newTest}
       </button>
-    ) : null;
+    ) : (
+      <Link to={skillTestHref(session.id)} className={`${primaryButton} shrink-0`}>
+        {c.continueTest}
+        <ArrowRight size={15} aria-hidden="true" />
+      </Link>
+    );
 
   return (
     <div className="w-full max-w-[min(100%,76rem)] pb-[clamp(2rem,5vw,4rem)]">
@@ -923,11 +831,11 @@ export default function SkillAssessmentPage() {
             <p className="mt-1 text-[13px] text-slate-500">{c.testCost}</p>
           </div>
         ) : session.status === 'in_progress' ? (
-          <Quiz key={session.id} session={session} c={c} onSubmit={submitTest.mutate} submitting={submitTest.isPending} />
+          <OpenTest session={session} c={c} />
         ) : (
           <AssessmentResult key={session.id} session={session} c={c} vi={isVietnamese} reviewOpen={reviewOpen} />
         )}
-        <ErrorLine error={startTest.error ?? submitTest.error} c={c} />
+        <ErrorLine error={startTest.error} c={c} />
       </Section>
 
       {/* 03 Lộ trình học */}

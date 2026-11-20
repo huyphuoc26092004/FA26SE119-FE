@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
-import { listAssessmentHistory, type AssessmentHistoryItem } from '../../../services/skillPathService';
+import { listAssessmentHistory, skillTestHref, type AssessmentHistoryItem } from '../../../services/skillPathService';
 
 const field = 'mt-1 block w-full border-b border-slate-400 bg-transparent py-1.5 text-sm text-ink outline-none focus:border-ink';
 
@@ -97,6 +98,9 @@ export function AssessmentHistory({ vi, onOpen }: { vi: boolean; onOpen: (item: 
                           <span className={item.score === undefined ? 'text-slate-500' : item.score >= 70 ? 'text-brand' : 'text-danger'}>
                             {item.score === undefined ? (vi ? 'Đang làm dở' : 'In progress') : `${item.score}%`}
                           </span>
+                          <Link to={skillTestHref(item.id)} className="text-ink underline underline-offset-4 hover:text-brand">
+                            {item.score === undefined ? (vi ? 'Làm tiếp' : 'Continue') : vi ? 'Xem bài' : 'View'}
+                          </Link>
                           {item.jobId && (
                             <button type="button" onClick={() => onOpen(item)} className="text-ink underline underline-offset-4 hover:text-brand">
                               {vi ? 'Mở' : 'Open'}
