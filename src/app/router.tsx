@@ -37,6 +37,7 @@ import ResumeAnalysisPage from '../pages/candidate/ResumeAnalysisPage';
 import JobsPage from '../pages/candidate/JobsPage';
 import JobDetailsPage from '../pages/candidate/JobDetailsPage';
 import SkillAssessmentPage from '../pages/candidate/SkillAssessmentPage';
+import SkillTestPage from '../pages/candidate/skill-assessment/SkillTestPage';
 import LearningPathPage from '../pages/candidate/LearningPathPage';
 import CvJobFitPage from '../pages/candidate/CvJobFitPage';
 import AssistantPage from '../pages/candidate/AssistantPage';
@@ -129,6 +130,8 @@ export const router = createBrowserRouter([
       {
         element: <RoleRoute role="CANDIDATE" />,
         children: [
+          // Làm bài đánh giá kỹ năng trên trang riêng, không có sidebar để tập trung.
+          { path: '/candidate/skill-assessment/test/:sessionId', element: <SkillTestPage /> },
           {
             path: '/candidate',
             element: <CandidateLayout />,

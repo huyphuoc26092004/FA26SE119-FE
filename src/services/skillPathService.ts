@@ -37,6 +37,12 @@ export interface JdAssessment {
   timeLimitSeconds: number;
   expiresAt: string;
   submittedAt?: string;
+  /** Tên vị trí của bài (tin tuyển dụng hoặc JD tự dán). */
+  jobTitle: string;
+  /** Rỗng khi bài làm từ JD tự dán. */
+  jobId: string;
+  /** Rỗng khi bài chỉ theo JD. */
+  resumeId: string;
 }
 
 export type MissingSkillStatus = 'NEEDS_PRACTICE' | 'MISSING_EVIDENCE';
@@ -92,6 +98,9 @@ function toAssessment(session: ApiRow): JdAssessment {
     timeLimitSeconds: num(session.time_limit_seconds, questions.length * 90),
     expiresAt: str(session.expires_at),
     submittedAt: optStr(session.submitted_at),
+    jobTitle: str(session.target_job_title),
+    jobId: str(session.market_job_id),
+    resumeId: str(session.resume_id),
   };
 }
 
@@ -128,6 +137,16 @@ function toLearningPath(roadmap: ApiRow): LearningPath {
     unverifiedRequirements: rows(roadmap.unverified_requirements).map((row) => str(row.text)),
     gapAnalysisVersion: str(roadmap.gap_analysis_version) || 'LEGACY',
   };
+}
+
+/** Một bài đánh giá theo id (trang làm bài riêng). */
+export async function getJdAssessment(sessionId: string): Promise<JdAssessment> {
+  return toAssessment(await get(`/assessments/${sessionId}`));
+}
+
+/** Link tới trang làm bài / xem kết quả của một bài đánh giá. */
+export function skillTestHref(sessionId: string) {
+  return `/candidate/skill-assessment/test/${sessionId}`;
 }
 
 /** Bài đánh giá gần nhất của ứng viên cho JD này, kể cả bài đang làm dở. */
