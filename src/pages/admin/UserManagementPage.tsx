@@ -125,6 +125,7 @@ const copy = {
         CANDIDATE: 'Nộp CV, làm bài kiểm tra, chat AI',
         CAREER_CONSULTANT: 'Tư vấn, xem CV và phản hồi',
         ADMIN: 'Toàn quyền quản trị hệ thống', MANAGER: 'Quản lý vận hành',
+      STAFF: 'Việc làm, mẫu CV, sơ duyệt báo cáo đánh giá',
       } as Record<UserRole, string>,
       saving: 'Đang lưu…',
       save: 'Lưu phân quyền',
@@ -231,6 +232,7 @@ const copy = {
         CANDIDATE: 'Upload CVs, take tests, chat with AI',
         CAREER_CONSULTANT: 'Consult, review CVs, give feedback',
         ADMIN: 'Full system administration', MANAGER: 'Operations manager',
+      STAFF: 'Jobs, CV templates, first review of rating reports',
       } as Record<UserRole, string>,
       saving: 'Saving…',
       save: 'Save permissions',
@@ -255,8 +257,8 @@ const copy = {
 };
 
 const ROLE_LABEL: Record<'vi' | 'en', Record<UserRole, string>> = {
-  vi: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' },
-  en: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Consultant', ADMIN: 'Administrator', MANAGER: 'Operations manager' },
+  vi: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành', STAFF: 'Nhân viên vận hành' },
+  en: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Consultant', ADMIN: 'Administrator', MANAGER: 'Operations manager', STAFF: 'Operations staff' },
 };
 
 const STATUS_LABEL: Record<'vi' | 'en', Record<UserAccountStatus, string>> = {
@@ -267,7 +269,7 @@ const STATUS_LABEL: Record<'vi' | 'en', Record<UserAccountStatus, string>> = {
 const statusTone = (s: UserAccountStatus) =>
   s === 'ACTIVE' ? 'text-brand' : s === 'SUSPENDED' ? 'text-danger' : 'text-orange-600';
 
-const isRole = (v: string | null): v is UserRole => v === 'CANDIDATE' || v === 'CAREER_CONSULTANT' || v === 'ADMIN' || v === 'MANAGER';
+const isRole = (v: string | null): v is UserRole => v === 'CANDIDATE' || v === 'CAREER_CONSULTANT' || v === 'ADMIN' || v === 'MANAGER' || v === 'STAFF';
 
 export default function UserManagementPage() {
   const { isVietnamese } = useTranslation();
@@ -479,6 +481,7 @@ export default function UserManagementPage() {
       consultants: users.filter((u) => u.role === 'CAREER_CONSULTANT').length,
       admins: users.filter((u) => u.role === 'ADMIN').length,
       managers: users.filter((u) => u.role === 'MANAGER').length,
+      staff: users.filter((u) => u.role === 'STAFF').length,
       active: users.filter((u) => u.status === 'ACTIVE').length,
       suspended: users.filter((u) => u.status === 'SUSPENDED').length,
       pending: users.filter((u) => u.status === 'PENDING').length,
@@ -585,6 +588,7 @@ export default function UserManagementPage() {
           { value: 'ALL' as const, label: c.all, count: counts.total },
           { value: 'CANDIDATE' as const, label: ROLE_LABEL[lang].CANDIDATE, count: counts.candidates },
           { value: 'CAREER_CONSULTANT' as const, label: ROLE_LABEL[lang].CAREER_CONSULTANT, count: counts.consultants },
+          { value: 'STAFF' as const, label: ROLE_LABEL[lang].STAFF, count: counts.staff },
           { value: 'MANAGER' as const, label: ROLE_LABEL[lang].MANAGER, count: counts.managers },
           { value: 'ADMIN' as const, label: ROLE_LABEL[lang].ADMIN, count: counts.admins },
         ]}
@@ -781,7 +785,7 @@ export default function UserManagementPage() {
               >
                 <option value="CANDIDATE">{ROLE_LABEL[lang].CANDIDATE}</option>
                 <option value="CAREER_CONSULTANT">{ROLE_LABEL[lang].CAREER_CONSULTANT}</option>
-                <option value="MANAGER">Manager</option><option value="ADMIN">{ROLE_LABEL[lang].ADMIN}</option>
+                <option value="STAFF">Staff</option><option value="MANAGER">Manager</option><option value="ADMIN">{ROLE_LABEL[lang].ADMIN}</option>
               </select>
             </label>
             <label className="block">

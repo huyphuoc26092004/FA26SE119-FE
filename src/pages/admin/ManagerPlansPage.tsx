@@ -4,7 +4,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { Modal, Note, fieldLabel, outlineButton, primaryButton, underlineInput, underlineSelect } from '../../components/admin/AdminKit';
 import { DotStatus, ManagerHead, ManagerSection, dangerTextLink, inkLink, pillPrimary } from '../../components/manager/ManagerUi';
-import { getManagerPlanCatalog, getManagerQuotaLimits, isTopupTier, saveManagerPlan, validateManagerPlanQuotas, type ManagerPlanQuota } from '../../services/managerService';
+import {
+  GOOGLE_SEARCH_USD_PER_1000,
+  USD_TO_VND,
+  getManagerPlanCatalog,
+  getManagerQuotaLimits,
+  googleSearchCostVnd,
+  isDocumentPackTier,
+  isTopupTier,
+  saveManagerPlan,
+  validateManagerPlanQuotas,
+  type ManagerPlanQuota,
+} from '../../services/managerService';
 import { num, rows, str, type ApiRow } from '../../services/candidateMappers';
 
 const PERIOD: Record<string, string> = { MONTHLY: 'Hàng tháng', DAILY: 'Hàng ngày', WEEKLY: 'Hàng tuần', YEARLY: 'Hàng năm', SUBSCRIPTION_PERIOD: 'Theo đăng ký', SUBSCRIPTION: 'Theo đăng ký' };
@@ -22,9 +33,20 @@ const planInput = (plan: ApiRow, active = plan.is_active !== false) => ({
   priceMonthly: num(plan.price_monthly),
   currency: str(plan.currency) || 'VND',
   active,
-  tierType: isTopupTier(plan) ? ('TOKEN_TOPUP' as const) : ('SUBSCRIPTION' as const),
+  tierType: isDocumentPackTier(plan) ? ('DOCUMENT_PACK' as const) : isTopupTier(plan) ? ('TOKEN_TOPUP' as const) : ('SUBSCRIPTION' as const),
   tokenAmount: num(plan.token_amount ?? plan.tokenAmount),
+  searchCallAmount: num(plan.search_call_amount ?? plan.searchCallAmount),
+  validDays: num(plan.valid_days ?? plan.validDays),
 });
+const searchCalls = (plan: ApiRow) => num(plan.search_call_amount ?? plan.searchCallAmount);
+const validDays = (plan: ApiRow) => num(plan.valid_days ?? plan.validDays);
+/** Giá bán, chi phí Google Search ước tính và phần còn lại của một gói tài liệu. */
+const docPackEconomics = (plan: ApiRow) => {
+  const calls = searchCalls(plan);
+  const price = num(plan.price_monthly);
+  const cost = googleSearchCostVnd(calls);
+  return { calls, price, cost, perCall: calls ? Math.round(price / calls) : 0, margin: price ? Math.round(((price - cost) / price) * 100) : 0 };
+};
 
 export default function ManagerPlansPage() {
   const client = useQueryClient();
@@ -58,7 +80,13 @@ export default function ManagerPlansPage() {
     event.preventDefault();
     if (!limits.data) return;
     const invalid =
-      draft && isTopupTier(draft)
+      draft && isDocumentPackTier(draft)
+        ? !Number.isSafeInteger(searchCalls(draft)) || searchCalls(draft) < 1
+          ? 'Số lượt tìm tài liệu phải là số nguyên lớn hơn 0.'
+          : !Number.isSafeInteger(validDays(draft)) || validDays(draft) < 1
+            ? 'Thời hạn phải là số ngày lớn hơn 0.'
+            : null
+        : draft && isTopupTier(draft)
         ? Number.isSafeInteger(num(draft.token_amount)) && num(draft.token_amount) >= 1
           ? null
           : 'Số token của gói nạp phải là số nguyên lớn hơn 0.'
@@ -74,7 +102,10 @@ export default function ManagerPlansPage() {
   const plans: ApiRow[] = catalog.data ?? [];
   const selling = plans.filter((p) => p.is_active !== false).length;
   const topupCount = plans.filter(isTopupTier).length;
+  const docPackCount = plans.filter(isDocumentPackTier).length;
   const draftTopup = !!draft && isTopupTier(draft);
+  const draftDocPack = !!draft && isDocumentPackTier(draft);
+  const draftEconomics = draft && draftDocPack ? docPackEconomics(draft) : null;
 
   return (
     <main className="space-y-10 pb-10">
@@ -106,19 +137,30 @@ export default function ManagerPlansPage() {
         >
           <Plus size={15} /> Thêm gói
         </button>
+        <button
+          type="button"
+          className={inkLink}
+          onClick={() =>
+            edit({ tier_code: '', display_name: '', price_monthly: 49000, currency: 'VND', is_active: true, tier_type: 'DOCUMENT_PACK', search_call_amount: 200, valid_days: 30, quotas: [] })
+          }
+        >
+          Thêm gói tài liệu
+        </button>
       </ManagerHead>
 
       {(catalog.error || limits.error) && <Note tone="danger">{catalog.error?.message || limits.error?.message}</Note>}
       {toggle.error && <Note tone="danger">{toggle.error.message}</Note>}
 
       <section>
-        <ManagerSection title="Các gói hiện có" meta={catalog.data ? `${selling} / ${plans.length} gói đang bán · ${plans.length - topupCount} gói thuê bao · ${topupCount} gói nạp token` : undefined} />
+        <ManagerSection title="Các gói hiện có" meta={catalog.data ? `${selling} / ${plans.length} gói đang bán · ${plans.length - topupCount} gói thuê bao · ${topupCount} gói nạp token · ${docPackCount} gói tài liệu` : undefined} />
         {catalog.isPending && <p className="py-6 text-[13px] text-slate-500">Đang tải gói…</p>}
         {catalog.data && plans.length === 0 && <p className="py-6 text-[13px] text-slate-500">Chưa có gói nào.</p>}
         <div className="grid border-b border-border sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan, i) => {
             const active = plan.is_active !== false;
             const topup = isTopupTier(plan);
+            const docPack = isDocumentPackTier(plan);
+            const econ = docPack ? docPackEconomics(plan) : null;
             const q = toQuotas(plan);
             const tokens = q.find((x) => x.featureCode === 'AI_TOTAL_TOKENS');
             const calls = q.find((x) => x.featureCode === 'API_CALLS_TOTAL');
@@ -134,6 +176,7 @@ export default function ManagerPlansPage() {
                   <span className="font-mono text-[12px] tracking-[0.08em] text-slate-500">
                     {str(plan.tier_code)}
                     {topup && <span className="ml-2 font-sans tracking-normal">· Gói nạp token</span>}
+                    {docPack && <span className="ml-2 font-sans tracking-normal">· Gói tài liệu</span>}
                   </span>
                   <span className="text-[12px]">
                     <DotStatus label={active ? 'Đang bán' : 'Ngừng bán'} tone={active ? 'brand' : 'muted'} />
@@ -145,11 +188,18 @@ export default function ManagerPlansPage() {
                     {num(plan.price_monthly).toLocaleString('vi-VN')}
                   </span>
                   <span className="text-[13px] text-slate-500">
-                    <span className="underline">đ</span> {topup ? '/ lần nạp' : '/ tháng'}
+                    <span className="underline">đ</span> {topup ? '/ lần nạp' : docPack ? `/ ${validDays(plan) || 30} ngày` : '/ tháng'}
                   </span>
                 </p>
                 <dl className="mt-5 border-t border-border text-sm">
-                  {(topup
+                  {(econ
+                    ? [
+                        ['Lượt tìm tài liệu', `${econ.calls.toLocaleString('vi-VN')} lượt`],
+                        ['Thời hạn dùng', `${validDays(plan) || '—'} ngày`],
+                        ['Chi phí Google Search (ước tính)', `${econ.cost.toLocaleString('vi-VN')} đ`],
+                        ['Giá bán mỗi lượt · biên lãi', `${econ.perCall.toLocaleString('vi-VN')} đ · ${econ.margin}%`],
+                      ]
+                    : topup
                     ? [
                         ['Loại gói', 'Nạp token một lần'],
                         ['Tiền tệ', str(plan.currency) || 'VND'],
@@ -183,6 +233,12 @@ export default function ManagerPlansPage() {
             );
           })}
         </div>
+        <div className="mt-5">
+          <Note>
+            Gói tài liệu bán số lượt tìm tài liệu học (Lộ trình học, Tài liệu) qua Google Search API để bù chi phí gọi API. Chi phí ước tính theo giá Google {GOOGLE_SEARCH_USD_PER_1000} USD / 1.000 lượt, tỷ giá{' '}
+            {USD_TO_VND.toLocaleString('vi-VN')} đ/USD, tức khoảng {googleSearchCostVnd(1).toLocaleString('vi-VN')} đ mỗi lượt. Nên đặt giá mỗi lượt cao hơn mức này.
+          </Note>
+        </div>
       </section>
 
       <section className="grid gap-x-12 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
@@ -211,7 +267,7 @@ export default function ManagerPlansPage() {
 
       {draft && (
         <Modal
-          eyebrow={draft.id ? 'Chỉnh sửa gói' : 'Gói mới'}
+          eyebrow={draft.id ? 'Chỉnh sửa gói' : draftDocPack ? 'Gói tài liệu mới' : 'Gói mới'}
           title={str(draft.display_name) || 'Tạo gói'}
           width="max-w-3xl"
           onClose={() => setDraft(null)}
@@ -221,7 +277,7 @@ export default function ManagerPlansPage() {
                 Đóng
               </button>
               <button type="submit" form="plan-form" className={primaryButton} disabled={save.isPending || !limits.data}>
-                {save.isPending ? 'Đang lưu…' : draftTopup ? 'Lưu gói nạp token' : 'Lưu gói và hạn mức'}
+                {save.isPending ? 'Đang lưu…' : draftDocPack ? 'Lưu gói tài liệu' : draftTopup ? 'Lưu gói nạp token' : 'Lưu gói và hạn mức'}
               </button>
             </>
           }
@@ -237,13 +293,25 @@ export default function ManagerPlansPage() {
                 <input required maxLength={100} className={underlineInput} value={str(draft.display_name)} onChange={(e) => setDraft({ ...draft, display_name: e.target.value })} />
               </label>
               <label className={fieldLabel}>
-                {draftTopup ? 'Giá mỗi lần nạp (VND)' : 'Giá tháng (VND)'}
+                {draftDocPack ? 'Giá gói (VND)' : draftTopup ? 'Giá mỗi lần nạp (VND)' : 'Giá tháng (VND)'}
                 <input type="number" required min={0} step={1} className={underlineInput} value={num(draft.price_monthly)} onChange={(e) => setDraft({ ...draft, price_monthly: Number(e.target.value) })} />
               </label>
               <label className="flex items-center gap-2.5 self-end pb-2.5 text-sm text-ink">
                 <input type="checkbox" className="accent-brand" checked={draft.is_active !== false} onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })} />
                 Đang bán
               </label>
+              {draftDocPack && (
+                <>
+                  <label className={fieldLabel}>
+                    Số lượt tìm tài liệu
+                    <input type="number" required min={1} step={1} className={underlineInput} value={searchCalls(draft)} onChange={(e) => setDraft({ ...draft, search_call_amount: Number(e.target.value) })} />
+                  </label>
+                  <label className={fieldLabel}>
+                    Thời hạn dùng (ngày)
+                    <input type="number" required min={1} step={1} className={underlineInput} value={validDays(draft)} onChange={(e) => setDraft({ ...draft, valid_days: Number(e.target.value) })} />
+                  </label>
+                </>
+              )}
               {draftTopup && (
                 <label className={fieldLabel}>
                   Số token nhận
@@ -252,7 +320,23 @@ export default function ManagerPlansPage() {
               )}
             </div>
 
-            {draftTopup ? (
+            {draftEconomics ? (
+              <dl className="border-t border-ink text-sm">
+                {[
+                  ['Chi phí Google Search ước tính', `${draftEconomics.cost.toLocaleString('vi-VN')} đ`],
+                  ['Giá bán mỗi lượt', `${draftEconomics.perCall.toLocaleString('vi-VN')} đ`],
+                  ['Phần còn lại sau chi phí API', `${(draftEconomics.price - draftEconomics.cost).toLocaleString('vi-VN')} đ · ${draftEconomics.margin}%`],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5">
+                    <dt className="text-slate-500">{label}</dt>
+                    <dd className={label.startsWith('Phần còn lại') && draftEconomics.price < draftEconomics.cost ? 'text-danger' : 'text-ink'}>{value}</dd>
+                  </div>
+                ))}
+                <p className="pt-3 text-[13px] text-slate-500">
+                  Người dùng mua gói để dùng tính năng tìm tài liệu học. Mỗi lần tìm trừ 1 lượt; hết lượt hoặc hết hạn thì cần mua thêm. BE chưa hỗ trợ loại gói này nên lưu sẽ báo lỗi cho tới khi BE bổ sung.
+                </p>
+              </dl>
+            ) : draftTopup ? (
               <p className="text-[13px] text-slate-500">Gói nạp token cộng thẳng số token vào tài khoản, không có hạn mức theo tính năng.</p>
             ) : (
             <div>

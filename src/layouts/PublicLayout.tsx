@@ -35,6 +35,7 @@ export default function PublicLayout() {
   }, [mobileMenuOpen]);
 
   const getRoleLabel = () => {
+    if (role === 'STAFF') return 'Staff';
     if (role === 'MANAGER') return 'Manager';
     if (role === 'ADMIN') return t('common.roleAdmin', 'Quản trị viên');
     if (role === 'CAREER_CONSULTANT') return t('common.roleConsultant', 'Tư vấn viên');
@@ -42,6 +43,7 @@ export default function PublicLayout() {
   };
 
   const getRoleDashboardPath = () => {
+    if (role === 'STAFF') return '/staff';
     if (role === 'MANAGER') return '/manager';
     if (role === 'ADMIN') return '/admin';
     if (role === 'CAREER_CONSULTANT') return '/consultant';

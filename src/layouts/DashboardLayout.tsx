@@ -115,6 +115,8 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
         return isVietnamese ? 'Không gian tư vấn viên' : 'Consultant workspace';
       case 'manager':
         return isVietnamese ? 'Quản lý vận hành' : 'Operations management';
+      case 'staff':
+        return isVietnamese ? 'Nhân viên vận hành' : 'Operations staff';
       case 'admin':
         return isVietnamese ? 'Quản trị hệ thống' : 'System administration';
       default:
@@ -130,6 +132,8 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
         return isVietnamese ? 'Tư vấn viên' : 'Consultant';
       case 'manager':
         return isVietnamese ? 'Quản lý' : 'Manager';
+      case 'staff':
+        return isVietnamese ? 'Nhân viên' : 'Staff';
       case 'admin':
         return isVietnamese ? 'Quản trị viên' : 'Administrator';
       default:
@@ -224,7 +228,7 @@ export function DashboardLayout({ nav, area }: { nav: NavItem[]; area: string })
         <nav aria-label={areaLabel} className={`flex-1 overflow-y-auto px-6 pb-6 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 ${collapsed ? 'lg:px-3' : ''}`}>
           {groups.map(({ group, items }, groupIndex) => (
             <div key={`${group}-${groupIndex}`} className={groupIndex === 0 ? '' : 'mt-5'}>
-              {(groupIndex > 0 || ((areaKey === 'admin' || areaKey === 'manager') && group === 'main')) && (
+              {(groupIndex > 0 || ((areaKey === 'admin' || areaKey === 'manager' || areaKey === 'staff') && group === 'main')) && (
                 <p className={`pb-1.5 pl-[15px] text-[12px] text-slate-500 ${full}`}>
                   {isVietnamese ? navGroupLabels[group].vi : navGroupLabels[group].en}
                 </p>

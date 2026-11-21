@@ -20,11 +20,15 @@ const TABS: { value: Tab; label: string }[] = [
 
 const PAGE_SIZE = 20;
 
-/** /admin/jobs — collect job posts from ITviec and TopCV (manual runs, schedule, run history). */
-export default function JobCrawlManagementPage() {
+/**
+ * /admin/jobs — collect job posts from ITviec and TopCV (manual runs, schedule, run history).
+ * `staff`: Staff chạy thu thập, xem lịch sử và quản lý kho tin; lịch tự động do Manager/Admin cấu hình.
+ */
+export default function JobCrawlManagementPage({ staff = false }: { staff?: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const tab: Tab = tabParam === 'schedule' || tabParam === 'history' || tabParam === 'catalog' ? tabParam : 'run';
+  const tabs = staff ? TABS.filter((t) => t.value !== 'schedule') : TABS;
+  const tab: Tab = tabs.some((t) => t.value === tabParam) ? (tabParam as Tab) : 'run';
   const setTab = (next: Tab) => setSearchParams(next === 'run' ? {} : { tab: next }, { replace: true });
 
   const [openRunId, setOpenRunId] = useState<string | null>(null);
@@ -82,13 +86,13 @@ export default function JobCrawlManagementPage() {
                 ? `Mỗi ${describeDelay(settings.fixedDelay)} · ${settings.sources.length} nguồn`
                 : `${settings.sources.length} nguồn đã cấu hình`
               : undefined,
-            onClick: () => setTab('schedule'),
+            onClick: staff ? undefined : () => setTab('schedule'),
           },
         ]}
       />
 
       <div className="space-y-10">
-        <UnderlineTabs tabs={TABS} value={tab} onChange={setTab} label="Thu thập việc làm" />
+        <UnderlineTabs tabs={tabs} value={tab} onChange={setTab} label="Thu thập việc làm" />
 
         {tab === 'run' && <CrawlRunTab onDone={(run) => showToast(`Đã nhập ${run.importedJobs} việc mới, ${run.skippedDuplicates} tin trùng.`)} />}
 
