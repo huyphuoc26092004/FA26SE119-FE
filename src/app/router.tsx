@@ -8,6 +8,10 @@ import ManagerConsultantsPage from '../pages/admin/ManagerConsultantsPage';
 import ManagerCrawlReportsPage from '../pages/admin/ManagerCrawlReportsPage';
 import ManagerReportsPage from '../pages/admin/ManagerReportsPage';
 import OperationsReportsPage from '../pages/admin/OperationsReportsPage';
+import ManagerRatingAppealsPage from '../pages/admin/ManagerRatingAppealsPage';
+import StaffLayout from '../layouts/StaffLayout';
+import StaffDashboardPage from '../pages/staff/StaffDashboardPage';
+import StaffRatingAppealsPage from '../pages/staff/StaffRatingAppealsPage';
 import { managerCanOpen } from '../utils/roleAccess';
 import { Navigate, createBrowserRouter, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -214,12 +218,25 @@ export const router = createBrowserRouter([
           { path: 'jobs', element: <JobCrawlManagementPage /> },
           { path: 'vector', element: <KnowledgeBasePage /> },
           { path: 'consultants', element: <ManagerConsultantsPage /> },
+          { path: 'rating-appeals', element: <ManagerRatingAppealsPage /> },
           { path: 'work-schedule', element: <ManagerWorkSchedulePage /> },
           { path: 'crawl-reports', element: <ManagerCrawlReportsPage /> },
           { path: 'notifications', element: <AnnouncementsPage /> },
           { path: 'feedback', element: <OperationsReportsPage mode="feedback" /> },
           { path: 'support', element: <AdminSupportPage /> },
           { path: 'analytics', element: <ManagerReportsPage analytics /> },
+          { path: 'account', element: <AccountPage /> },
+          { path: 'inbox', element: <NotificationsPage /> },
+        ] }],
+      },
+      {
+        // Staff: việc làm, mẫu CV, sơ duyệt báo cáo đánh giá (BE chưa có role STAFF — xem tài liệu API cần bổ sung).
+        element: <RoleRoute role="STAFF" />,
+        children: [{ path: '/staff', element: <StaffLayout />, children: [
+          { index: true, element: <StaffDashboardPage /> },
+          { path: 'jobs', element: <JobCrawlManagementPage staff /> },
+          { path: 'templates', element: <ResumeTemplateManagementPage /> },
+          { path: 'rating-appeals', element: <StaffRatingAppealsPage /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'inbox', element: <NotificationsPage /> },
         ] }],

@@ -34,7 +34,7 @@ import {
 import NotificationsPage from '../shared/NotificationsPage';
 
 const STATUS_LABEL: Record<AnnouncementStatus, string> = { DRAFT: 'Bản nháp', PUBLISHED: 'Đã phát hành', ARCHIVED: 'Đã lưu trữ' };
-const ROLE_LABEL = { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' } as const;
+const ROLE_LABEL = { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành', STAFF: 'Nhân viên vận hành' } as const;
 const errorText = (error: unknown) => (error instanceof Error ? error.message : 'Có lỗi xảy ra.');
 
 type Tab = 'announcements' | 'inbox';

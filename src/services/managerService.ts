@@ -40,29 +40,47 @@ export const getManagerPlanCatalog = async () => {
   // Gói nạp token (TOKEN_TOPUP) không có hạn mức; BE trả lỗi nếu gọi /quotas cho gói này (giống getAdminPlans).
   return Promise.all(tiers.map(async (tier) => ({
     ...tier,
-    quotas: isTopupTier(tier) ? [] : await getRows(`/admin/subscription-tiers/${tier.id}/quotas`),
+    quotas: isTopupTier(tier) || isDocumentPackTier(tier) ? [] : await getRows(`/admin/subscription-tiers/${tier.id}/quotas`),
   })));
 };
 export const isTopupTier = (tier: ApiRow) => String(tier.tier_type ?? tier.tierType ?? '') === 'TOKEN_TOPUP';
+/**
+ * Gói tài liệu (DOCUMENT_PACK): bán số lượt tìm tài liệu học qua Google Search API để bù chi phí gọi API.
+ * TODO(api): BE chưa nhận tierType DOCUMENT_PACK / searchCallAmount / validDays trên /admin/subscription-tiers.
+ */
+export const isDocumentPackTier = (tier: ApiRow) => String(tier.tier_type ?? tier.tierType ?? '') === 'DOCUMENT_PACK';
+/** Giá Google Custom Search JSON API: 5 USD / 1.000 lượt (sau 100 lượt miễn phí mỗi ngày). */
+export const GOOGLE_SEARCH_USD_PER_1000 = 5;
+/** Tỷ giá ước tính để quy ra VND. */
+export const USD_TO_VND = 26_000;
+export const googleSearchCostVnd = (calls: number) => Math.round((calls * GOOGLE_SEARCH_USD_PER_1000 * USD_TO_VND) / 1000);
 export interface ManagerPlanInput {
   tierCode: string;
   displayName: string;
   priceMonthly: number;
   currency: string;
   active: boolean;
-  tierType: 'SUBSCRIPTION' | 'TOKEN_TOPUP';
+  tierType: 'SUBSCRIPTION' | 'TOKEN_TOPUP' | 'DOCUMENT_PACK';
   tokenAmount: number;
+  /** Chỉ cho gói tài liệu: số lượt tìm tài liệu và số ngày dùng. */
+  searchCallAmount?: number;
+  validDays?: number;
 }
 export const saveManagerPlan = async (id: string, input: ManagerPlanInput, quotas: ManagerPlanQuota[], limits?: ManagerQuotaLimits) => {
   const topup = input.tierType === 'TOKEN_TOPUP';
+  const docPack = input.tierType === 'DOCUMENT_PACK';
   if (topup && (!Number.isSafeInteger(input.tokenAmount) || input.tokenAmount < 1)) throw new Error('Số token của gói nạp phải là số nguyên lớn hơn 0.');
-  const validation = topup ? null : validateManagerPlanQuotas(quotas, limits || await getManagerQuotaLimits());
+  if (docPack && (!Number.isSafeInteger(input.searchCallAmount) || (input.searchCallAmount ?? 0) < 1)) throw new Error('Số lượt tìm tài liệu phải là số nguyên lớn hơn 0.');
+  if (docPack && (!Number.isSafeInteger(input.validDays) || (input.validDays ?? 0) < 1)) throw new Error('Thời hạn gói tài liệu phải là số ngày lớn hơn 0.');
+  const validation = topup || docPack ? null : validateManagerPlanQuotas(quotas, limits || await getManagerQuotaLimits());
   if (validation) throw new Error(validation);
-  const body = { ...input, tokenAmount: topup ? input.tokenAmount : 0 };
+  const body = docPack
+    ? { ...input, tokenAmount: 0 }
+    : { tierCode: input.tierCode, displayName: input.displayName, priceMonthly: input.priceMonthly, currency: input.currency, active: input.active, tierType: input.tierType, tokenAmount: topup ? input.tokenAmount : 0 };
   const plan = id
     ? await apiClient.put<ApiRow>(`/admin/subscription-tiers/${encodeURIComponent(id)}`, body).then((response) => response.data)
     : await apiClient.post<ApiRow>('/admin/subscription-tiers', body).then((response) => response.data);
-  if (!topup) await apiClient.put(`/admin/subscription-tiers/${encodeURIComponent(String(plan.id || id))}/quotas`, quotas);
+  if (!topup && !docPack) await apiClient.put(`/admin/subscription-tiers/${encodeURIComponent(String(plan.id || id))}/quotas`, quotas);
   return plan;
 };
 export function safeInvoiceUrl(value: unknown): string | null {

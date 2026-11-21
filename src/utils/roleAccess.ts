@@ -1,4 +1,4 @@
-export const managerSections = ['', 'subscriptions', 'subscribers', 'consultation-services', 'payments', 'templates', 'jobs', 'vector', 'consultants', 'work-schedule', 'crawl-reports', 'notifications', 'feedback', 'support', 'analytics', 'account', 'inbox'];
+export const managerSections = ['', 'subscriptions', 'subscribers', 'consultation-services', 'payments', 'templates', 'jobs', 'vector', 'consultants', 'work-schedule', 'crawl-reports', 'rating-appeals', 'notifications', 'feedback', 'support', 'analytics', 'account', 'inbox'];
 
 export function managerCanOpen(pathname: string) {
   const parts = pathname.split('/').filter(Boolean);
@@ -6,5 +6,5 @@ export function managerCanOpen(pathname: string) {
 }
 
 export function homeForRole(role: string | null) {
-  return role === 'MANAGER' ? '/manager' : role === 'ADMIN' ? '/admin' : role === 'CAREER_CONSULTANT' ? '/consultant' : '/candidate';
+  return role === 'STAFF' ? '/staff' : role === 'MANAGER' ? '/manager' : role === 'ADMIN' ? '/admin' : role === 'CAREER_CONSULTANT' ? '/consultant' : '/candidate';
 }

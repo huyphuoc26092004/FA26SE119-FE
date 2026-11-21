@@ -3,8 +3,8 @@ import { permissionsForRole } from '../../services/userService';
 import type { UserRole } from '../../types/domain';
 
 const ROLE_LABEL: Record<'vi' | 'en', Record<UserRole, string>> = {
-  vi: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành' },
-  en: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Consultant', ADMIN: 'Administrator', MANAGER: 'Operations manager' },
+  vi: { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành', STAFF: 'Nhân viên vận hành' },
+  en: { CANDIDATE: 'Candidate', CAREER_CONSULTANT: 'Consultant', ADMIN: 'Administrator', MANAGER: 'Operations manager', STAFF: 'Operations staff' },
 };
 
 const copy = {
@@ -16,6 +16,7 @@ const copy = {
       CANDIDATE: 'Nộp CV, làm bài kiểm tra, chat AI',
       CAREER_CONSULTANT: 'Tư vấn, xem CV và phản hồi',
       ADMIN: 'Toàn quyền quản trị hệ thống', MANAGER: 'Quản lý vận hành',
+      STAFF: 'Việc làm, mẫu CV, sơ duyệt báo cáo đánh giá',
     } as Record<UserRole, string>,
   },
   en: {
@@ -26,6 +27,7 @@ const copy = {
       CANDIDATE: 'Upload CVs, take tests, chat with AI',
       CAREER_CONSULTANT: 'Consult, review CVs, give feedback',
       ADMIN: 'Full system administration', MANAGER: 'Operations manager',
+      STAFF: 'Jobs, CV templates, first review of rating reports',
     } as Record<UserRole, string>,
   },
 };
@@ -53,7 +55,7 @@ export function RolePicker({
       <div>
         <p className="border-b border-ink pb-2 text-[15px] font-medium text-ink">{c.step1}</p>
         <div role="radiogroup">
-          {(['CANDIDATE', 'CAREER_CONSULTANT', 'MANAGER', 'ADMIN'] as const).map((r) => (
+          {(['CANDIDATE', 'CAREER_CONSULTANT', 'STAFF', 'MANAGER', 'ADMIN'] as const).map((r) => (
             <button
               key={r}
               type="button"

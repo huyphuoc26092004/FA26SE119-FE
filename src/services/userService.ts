@@ -89,6 +89,24 @@ export const ALL_SYSTEM_PERMISSIONS: UserPermission[] = [
     category: 'admin',
   },
   {
+    key: 'manage_job_posts',
+    name: 'Quản lý việc làm',
+    description: 'Chạy thu thập, nhập tay và đổi trạng thái tin tuyển dụng',
+    category: 'admin',
+  },
+  {
+    key: 'manage_cv_templates',
+    name: 'Quản lý mẫu CV',
+    description: 'Tạo, sửa, bật/tắt mẫu CV cho ứng viên',
+    category: 'admin',
+  },
+  {
+    key: 'review_rating_appeals',
+    name: 'Sơ duyệt báo cáo đánh giá',
+    description: 'Xem báo cáo của tư vấn viên và đề xuất cho Manager',
+    category: 'consultation',
+  },
+  {
     key: 'toggle_maintenance',
     name: 'Điều khiển chế độ bảo trì',
     description: 'Khóa hệ thống để nâng cấp hoặc xóa bộ nhớ đệm cache',
@@ -101,6 +119,7 @@ const ROLE_PERMISSION_KEYS: Record<UserRole, string[]> = {
   CANDIDATE: ['upload_resumes', 'match_jobs', 'book_consultation', 'access_ai_assistant', 'run_ats_audit', 'generate_cover_letter'],
   CAREER_CONSULTANT: ['view_assigned_consultations', 'review_candidate_cv', 'provide_career_advice', 'access_ai_assistant'],
   MANAGER: ['view_system_telemetry', 'manage_subscriptions_revenue'],
+  STAFF: ['manage_job_posts', 'manage_cv_templates', 'review_rating_appeals'],
   ADMIN: ['manage_all_users', 'manage_roles_permissions', 'view_system_telemetry', 'manage_subscriptions_revenue', 'toggle_maintenance'],
 };
 

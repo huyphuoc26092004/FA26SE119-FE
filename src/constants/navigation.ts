@@ -22,6 +22,8 @@ import {
   GraduationCap,
   Route,
   FileStack,
+  Flag,
+  Database,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -95,6 +97,7 @@ export const managerNav: NavItem[] = [
   { label: 'Subscriptions', labelVi: 'Quản lý gói dịch vụ', translationKey: 'nav.subscriptions', to: '/manager/subscriptions', icon: CreditCard, group: 'management' },
   { label: 'Subscribers', labelVi: 'Đăng ký người dùng', translationKey: '', to: '/manager/subscribers', icon: CreditCard, group: 'management' },
   { label: 'Consultant quality', labelVi: 'Chất lượng tư vấn', translationKey: '', to: '/manager/consultants', icon: Users, group: 'management' },
+  { label: 'Rating reports', labelVi: 'Duyệt báo cáo đánh giá', translationKey: '', to: '/manager/rating-appeals', icon: Flag, group: 'management' },
   { label: 'Consultation pricing', labelVi: 'Bảng giá tư vấn', translationKey: 'nav.consultationServices', to: '/manager/consultation-services', icon: CreditCard, group: 'management' },
   { label: 'Payments', labelVi: 'Lịch sử thanh toán', translationKey: 'nav.payments', to: '/manager/payments', icon: Wallet, group: 'management' },
   { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/manager/templates', icon: LayoutTemplate, group: 'management' },
@@ -104,4 +107,13 @@ export const managerNav: NavItem[] = [
   { label: 'Feedback', labelVi: 'Ý kiến phản hồi', translationKey: 'nav.feedback', to: '/manager/feedback', icon: MessagesSquare, group: 'operations' },
   { label: 'Support tickets', labelVi: 'Phiếu hỗ trợ', translationKey: 'nav.supportTickets', to: '/manager/support', icon: LifeBuoy, group: 'operations' },
   { label: 'Analytics', labelVi: 'Phân tích & thống kê', translationKey: 'nav.analytics', to: '/manager/analytics', icon: ChartColumn, group: 'operations' },
+];
+
+/** Staff: nhân viên vận hành do Manager phân công — lo việc làm, mẫu CV và sơ duyệt báo cáo đánh giá. */
+export const staffNav: NavItem[] = [
+  { label: 'Dashboard', labelVi: 'Việc cần làm', translationKey: '', to: '/staff', icon: House, group: 'main' },
+  { label: 'Job collection', labelVi: 'Thu thập việc làm', translationKey: '', to: '/staff/jobs', icon: BriefcaseBusiness, group: 'management' },
+  { label: 'Job catalog', labelVi: 'Kho việc làm', translationKey: '', to: '/staff/jobs?tab=catalog', icon: Database, group: 'management' },
+  { label: 'CV Templates', labelVi: 'Mẫu CV', translationKey: '', to: '/staff/templates', icon: LayoutTemplate, group: 'management' },
+  { label: 'Rating reports', labelVi: 'Báo cáo đánh giá', translationKey: '', to: '/staff/rating-appeals', icon: Flag, group: 'management' },
 ];
