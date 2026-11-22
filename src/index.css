@@ -323,3 +323,61 @@
   .hp-sheen { animation: none; color: var(--color-brand); background: none; }
   .hp-float { animation: none; }
 }
+
+/* ---- Khám phá việc làm (/jobs, /candidate/jobs) ---- */
+@keyframes jd-rise {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes jd-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translate3d(0, -8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+/* Toast dùng sẵn class animate-fade-in nhưng trước đây chưa có keyframes. */
+.animate-fade-in { animation: fade-in 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* fill-mode backwards: chỉ giữ trạng thái ẩn trước khi chạy, xong thì trả lại transform cho hiệu ứng hover. */
+/* Phần đầu trang và hai thẻ chế độ hiện dần theo thứ tự (--jd-delay đặt trong JSX). */
+.jd-rise { animation: jd-rise 0.65s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; animation-delay: var(--jd-delay, 0ms); }
+
+/* Từng tin việc làm trượt lên nối tiếp nhau; tin nạp thêm khi bấm "Xem thêm" cũng chạy lại từ đầu lô. */
+.jd-item { animation: jd-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; animation-delay: var(--jd-delay, 0ms); }
+.jd-item { transition: background-color 0.2s ease, transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease; }
+@media (hover: hover) {
+  .jd-item:hover { transform: translate3d(0, -2px, 0); box-shadow: 0 10px 30px -18px rgb(23 32 28 / 35%); }
+}
+
+/* Thanh độ phù hợp chạy từ trái sang khi tin hiện ra. */
+.jd-bar { transform-origin: left; animation: jd-grow 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--jd-delay, 0ms) + 250ms); }
+
+/* Thẻ chế độ: biểu tượng nhích nhẹ khi rê chuột, thẻ đang chọn nổi lên một chút. */
+.jd-mode { transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease; }
+.jd-mode[aria-selected='true'] { box-shadow: 0 8px 24px -16px rgb(31 95 76 / 55%); }
+.jd-mode .jd-mode-icon { transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@media (hover: hover) {
+  .jd-mode:hover { transform: translate3d(0, -2px, 0); }
+  .jd-mode:hover .jd-mode-icon { transform: translate3d(2px, -2px, 0) rotate(-6deg); }
+}
+.jd-mode:active { transform: scale(0.99); }
+
+/* Nút Lưu: biểu tượng bật nảy khi vừa lưu. */
+@keyframes jd-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.jd-pop { animation: jd-pop 0.4s cubic-bezier(0.3, 1.4, 0.5, 1); }
+
+/* Kỹ năng đổi màu nhẹ khi rê chuột vào tin. */
+.jd-item .jd-skill { transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease; }
+.jd-item:hover .jd-skill { border-color: rgb(31 95 76 / 35%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .jd-rise, .jd-item, .jd-bar, .jd-pop, .animate-fade-in { animation: none; }
+  .jd-item:hover, .jd-mode:hover, .jd-mode:active { transform: none; }
+  .jd-mode:hover .jd-mode-icon { transform: none; }
+}

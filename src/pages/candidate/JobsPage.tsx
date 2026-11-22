@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type CSSProperties } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Bookmark, Check, ChevronDown, List, RotateCcw, Search, Sparkles, X } from 'lucide-react';
@@ -48,6 +48,9 @@ const LOCATION_ALIASES: Record<string, string[]> = {
   'Da Nang': ['da nang', 'đà nẵng'],
   Remote: ['remote', 'từ xa'],
 };
+/** Độ trễ cho hiệu ứng hiện dần (.jd-rise / .jd-item trong index.css). */
+const jdDelay = (ms: number) => ({ '--jd-delay': `${ms}ms` }) as CSSProperties;
+
 function matchesLocation(job: Job, value: string) {
   const text = job.location.toLowerCase();
   return (LOCATION_ALIASES[value] ?? [value.toLowerCase()]).some((alias) => text.includes(alias));
@@ -483,19 +486,20 @@ export default function JobsPage() {
         {/* Page Header */}
         <header className="mb-8 border-b border-ink/15 pb-8">
           <div>
-            <p className="mb-3 text-sm font-medium text-brand md:text-[0.9375rem]">
+            <p className="jd-rise mb-3 text-sm font-medium text-brand md:text-[0.9375rem]">
               {canRecommend ? 'Việc làm dành cho bạn' : 'Khám phá cơ hội nghề nghiệp'}
             </p>
-            <h1 className="text-[clamp(2.5rem,3.8vw,4.25rem)] font-light leading-[1.05] tracking-[-0.03em] text-ink">
+            <h1 className="jd-rise text-[clamp(2.5rem,3.8vw,4.25rem)] font-light leading-[1.05] tracking-[-0.03em] text-ink" style={jdDelay(80)}>
               {t('jobs.title')}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600 md:text-[1.0625rem]">
+            <p className="jd-rise mt-4 max-w-3xl text-base leading-relaxed text-slate-600 md:text-[1.0625rem]" style={jdDelay(160)}>
               {t('jobs.subtitle')}
             </p>
             {isCandidate && (
               <Link
                 to="/candidate/cv-job-fit"
-                className={`${textLink} mt-5 inline-flex items-center gap-1.5`}
+                className={`${textLink} jd-rise mt-5 inline-flex items-center gap-1.5`}
+                style={jdDelay(240)}
               >
                 <span>Xem độ phù hợp CV với một việc</span>
                 <ArrowRight size={14} />
@@ -506,18 +510,19 @@ export default function JobsPage() {
         </header>
 
         <div role="tablist" aria-label="Khám phá việc làm" className="mb-8 grid gap-3 sm:grid-cols-2">
-          {modes.map(({ key, label, description, Icon }) => (
+          {modes.map(({ key, label, description, Icon }, modeIndex) => (
             <button
               key={key}
               type="button"
               role="tab"
               aria-selected={activeTab === key}
               onClick={() => selectTab(key)}
-              className={`flex items-start gap-3 rounded-xl border p-4 text-left transition sm:p-5 ${
+              style={jdDelay(220 + modeIndex * 90)}
+              className={`jd-rise jd-mode flex items-start gap-3 rounded-xl border p-4 text-left sm:p-5 ${
                 activeTab === key ? 'border-brand bg-brand/5' : 'border-ink/15 hover:border-brand/60'
               }`}
             >
-              <Icon size={20} className="mt-0.5 shrink-0 text-brand" aria-hidden="true" />
+              <Icon size={20} className="jd-mode-icon mt-0.5 shrink-0 text-brand" aria-hidden="true" />
               <span>
                 <span className="block font-medium text-ink">{label}</span>
                 <span className="mt-1 block text-sm leading-6 text-slate-600">{description}</span>
@@ -714,7 +719,7 @@ export default function JobsPage() {
                   };
 
                   return (
-                    <li key={job.id} className="-mx-3 rounded-xl px-3 py-6 transition-colors hover:bg-ink/[0.03]">
+                    <li key={job.id} className="jd-item -mx-3 rounded-xl px-3 py-6 hover:bg-ink/[0.03]" style={jdDelay(Math.min(index % 20, 12) * 45)}>
                       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_10rem] lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_10rem] lg:gap-8">
                         {/* Title, company, description */}
                         <div className="min-w-0">
@@ -745,7 +750,7 @@ export default function JobsPage() {
                         <div className="min-w-0 text-[15px] md:col-span-2 md:row-start-2 lg:col-span-1 lg:row-start-auto">
                           <div className="flex flex-wrap gap-1.5">
                             {job.skills.slice(0, 5).map((skill) => (
-                              <span key={skill} className="rounded-full border border-ink/15 px-2.5 py-0.5 text-[13px] text-ink">{skill}</span>
+                              <span key={skill} className="jd-skill rounded-full border border-ink/15 px-2.5 py-0.5 text-[13px] text-ink">{skill}</span>
                             ))}
                             {job.skills.length > 5 && (
                               <span className="px-1 py-0.5 text-[13px] text-slate-600">+{job.skills.length - 5}</span>
@@ -774,7 +779,7 @@ export default function JobsPage() {
                                 aria-label={isRecommended ? 'Điểm phù hợp do AI đánh giá' : undefined}
                                 aria-valuenow={isRecommended ? displayedScore : undefined}
                               >
-                                <div className="h-full bg-brand" style={{ width: `${noAiScore || insufficientRequirements ? 0 : displayedScore}%` }} />
+                                <div className="jd-bar h-full bg-brand" style={{ width: `${noAiScore || insufficientRequirements ? 0 : displayedScore}%` }} />
                               </div>
                               <p className="mt-2 text-sm text-slate-600">
                                 {aiMatch ? 'Độ phù hợp do AI đánh giá' : recommendationMatch ? 'Độ bao phủ yêu cầu' : job.semanticMatch.evidenceReport?.verificationDeferred ? 'Độ bao phủ đã xác minh · còn yêu cầu chờ AI' : job.semanticMatch.evidenceReport ? 'Độ bao phủ yêu cầu bắt buộc' : quickMatch ? 'Đối chiếu yêu cầu' : <>Độ phù hợp · {job.match >= 85 ? 'Rất phù hợp'
@@ -823,7 +828,7 @@ export default function JobsPage() {
                           className={`${textLink} inline-flex items-center gap-1.5 ${isSaved ? 'text-brand' : ''}`}
                           title={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
                         >
-                          <Bookmark size={15} className={isSaved ? 'fill-brand' : ''} />
+                          <Bookmark key={isSaved ? 'saved' : 'unsaved'} size={15} className={isSaved ? 'jd-pop fill-brand' : ''} />
                           <span>{isSaved ? 'Đã lưu' : 'Lưu'}</span>
                         </button>
                         {isApplied ? (
