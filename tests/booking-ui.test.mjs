@@ -100,3 +100,16 @@ test('both role booking cards expose the same Meet access without a booking chat
     }
   } finally { cache.clear(); }
 });
+
+test('the consultant can report a review directly from the completed booking card', () => {
+  const cache = new QueryClient();
+  const renderCard = (rating) => renderToStaticMarkup(React.createElement(MemoryRouter, null,
+    React.createElement(QueryClientProvider, { client: cache },
+      React.createElement(ConsultantBookingCard, {
+        booking: { ...booking, status: 'COMPLETED', rating, rating_comment: 'Candidate feedback' },
+      }))));
+  try {
+    assert.match(renderCard(3), /Báo cáo đánh giá/);
+    assert.doesNotMatch(renderCard(null), /Báo cáo đánh giá/);
+  } finally { cache.clear(); }
+});

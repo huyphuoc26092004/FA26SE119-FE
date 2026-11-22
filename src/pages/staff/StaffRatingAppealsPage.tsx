@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Note, UnderlineTabs } from '../../components/admin/AdminKit';
 import { ManagerHead } from '../../components/manager/ManagerUi';
 import { AppealSummary, StaffOpinion, managerInput, managerPrimary } from '../../components/consultation/RatingAppeals';
-import { ApiNotConnectedError } from '../../services/apiPending';
 import { appealStage, getStaffRatingAppeals, reviewRatingAppeal, type RatingAppeal, type StaffVerdict } from '../../services/ratingAppealService';
 
 type Filter = 'staff' | 'manager' | 'closed' | 'all';
@@ -14,7 +13,7 @@ function StaffReviewForm({ appeal }: { appeal: RatingAppeal }) {
   const [verdict, setVerdict] = useState<StaffVerdict | ''>('');
   const [reason, setReason] = useState('');
   const send = useMutation({
-    mutationFn: () => reviewRatingAppeal(appeal.id, verdict as StaffVerdict, reason.trim()),
+    mutationFn: (value: StaffVerdict) => reviewRatingAppeal(appeal.id, value, reason.trim()),
     onSuccess: () => client.invalidateQueries({ queryKey: ['staff-rating-appeals'] }),
   });
   return (
@@ -22,16 +21,16 @@ function StaffReviewForm({ appeal }: { appeal: RatingAppeal }) {
       className="space-y-4 border-l-2 border-slate-300 pl-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (verdict && reason.trim()) send.mutate();
+        if (verdict && reason.trim()) send.mutate(verdict);
       }}
     >
       <fieldset>
-        <legend className="text-[12px] text-slate-500">Đề xuất của Staff</legend>
+        <legend className="text-[12px] text-slate-500">Quyết định sơ duyệt</legend>
         <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
           {(
             [
-              ['APPROVED', 'Báo cáo đúng, đề xuất ẩn đánh giá'],
-              ['REJECTED', 'Báo cáo chưa đủ căn cứ, đề xuất giữ đánh giá'],
+              ['APPROVED', 'Duyệt và chuyển Manager'],
+              ['REJECTED', 'Từ chối và giữ đánh giá'],
             ] as const
           ).map(([value, label]) => (
             <label key={value} className="inline-flex cursor-pointer items-center gap-2">
@@ -42,7 +41,7 @@ function StaffReviewForm({ appeal }: { appeal: RatingAppeal }) {
         </div>
       </fieldset>
       <label className="block text-[12px] text-slate-500">
-        Lý do (Manager sẽ đọc lý do này trước khi phê duyệt)
+        Lý do duyệt hoặc từ chối (bắt buộc)
         <textarea
           required
           rows={3}
@@ -53,9 +52,9 @@ function StaffReviewForm({ appeal }: { appeal: RatingAppeal }) {
           onChange={(e) => setReason(e.target.value)}
         />
       </label>
-      {send.isError && <Note tone={send.error instanceof ApiNotConnectedError ? 'warning' : 'danger'}>{send.error.message}</Note>}
+      {send.isError && <Note tone={'danger'}>{send.error.message}</Note>}
       <button type="submit" className={managerPrimary} disabled={send.isPending || !verdict || !reason.trim()}>
-        {send.isPending ? 'Đang gửi…' : 'Gửi Manager phê duyệt'}
+        {send.isPending ? 'Đang gửi…' : verdict === 'REJECTED' ? 'Xác nhận từ chối' : 'Gửi Manager phê duyệt'}
       </button>
     </form>
   );
@@ -73,7 +72,7 @@ export default function StaffRatingAppealsPage() {
       <ManagerHead
         crumbs={['Staff', 'Báo cáo đánh giá']}
         title="Xem xét báo cáo đánh giá"
-        intro="Tư vấn viên báo cáo những đánh giá họ cho là sai sự thật. Staff xem nhận xét gốc và bằng chứng, chọn đề xuất ẩn hay giữ đánh giá kèm lý do. Manager đọc lý do đó rồi quyết định cuối cùng."
+        intro="Xem đánh giá gốc và minh chứng, sau đó ghi lý do duyệt hoặc từ chối. Báo cáo qua sơ duyệt sẽ được chuyển cho Manager."
       />
 
       <UnderlineTabs
@@ -90,11 +89,7 @@ export default function StaffRatingAppealsPage() {
 
       {query.isPending && <p className="text-sm text-slate-500">Đang tải…</p>}
       {query.error && (
-        <Note tone={query.error instanceof ApiNotConnectedError ? 'warning' : 'danger'}>
-          {query.error instanceof ApiNotConnectedError
-            ? 'BE chưa có API cho bước Staff (GET /api/v1/staff/rating-appeals). Màn hình sẽ hiện báo cáo khi BE bổ sung.'
-            : query.error.message}
-        </Note>
+        <Note tone="danger">{query.error.message}</Note>
       )}
       {query.data && visible.length === 0 && (
         <div className="border-b border-border py-10 text-center">

@@ -1,14 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../services/apiClient';
+import { Flag } from 'lucide-react';
 import { formatDateTime } from '../../services/supportService';
-import { rows } from '../../services/candidateMappers';
 import { UnderlineTabs } from '../admin/AdminKit';
 import {
   appealStage,
   decideRatingAppeal,
+  getBookingRatingAppeals,
   getManagerRatingAppeals,
-  toRatingAppeal,
+  submitRatingAppeal,
   type RatingAppeal,
 } from '../../services/ratingAppealService';
 
@@ -17,6 +17,7 @@ export function appealLabel(appeal: RatingAppeal) {
   const stage = appealStage(appeal);
   if (stage === 'staff') return 'Chờ Staff xem xét';
   if (stage === 'manager') return 'Chờ Manager phê duyệt';
+  if (appeal.status === 'STAFF_REJECTED') return 'Staff từ chối, giữ nguyên đánh giá';
   return appeal.status === 'ACCEPTED' ? 'Đã chấp nhận, đánh giá đã bị ẩn' : 'Không chấp nhận, giữ đánh giá';
 }
 
@@ -28,25 +29,7 @@ export function appealTone(appeal: RatingAppeal) {
 }
 
 export const staffVerdictLabel = (verdict: RatingAppeal['staffStatus']) =>
-  verdict === 'APPROVED' ? 'Đề xuất ẩn đánh giá' : verdict === 'REJECTED' ? 'Đề xuất giữ đánh giá' : 'Chưa xem xét';
-
-/** Bốn bước: tư vấn viên báo cáo → Staff xem xét → Manager phê duyệt → ẩn hoặc giữ đánh giá. */
-export function AppealSteps({ appeal }: { appeal?: RatingAppeal }) {
-  const stage = appealStage(appeal);
-  const legacy = appeal?.staffStatus === null;
-  const last = appeal?.status === 'REJECTED' ? 'Giữ nguyên đánh giá' : 'Ẩn đánh giá';
-  const steps = legacy ? ['Tư vấn viên báo cáo', 'Manager xem xét', last] : ['Tư vấn viên báo cáo', 'Staff xem xét', 'Manager phê duyệt', last];
-  const reached = stage === 'none' ? 0 : stage === 'staff' ? 1 : stage === 'manager' ? (legacy ? 1 : 2) : steps.length;
-  return (
-    <ol className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-      {steps.map((step, i) => (
-        <li key={step} className={i < reached ? 'text-brand' : i === reached ? 'text-ink' : 'text-slate-400'}>
-          {i + 1}. {step}
-        </li>
-      ))}
-    </ol>
-  );
-}
+  verdict === 'APPROVED' ? 'Đã duyệt và chuyển Manager' : 'Đã từ chối báo cáo';
 
 /** Nội dung chung của một báo cáo: đánh giá gốc, lý do của tư vấn viên, bằng chứng. */
 export function AppealSummary({ appeal, children }: { appeal: RatingAppeal; children?: ReactNode }) {
@@ -61,7 +44,6 @@ export function AppealSummary({ appeal, children }: { appeal: RatingAppeal; chil
       <p className="whitespace-pre-wrap text-sm text-slate-600">Nhận xét: {appeal.comment || '(Không có nhận xét)'}</p>
       <p className="whitespace-pre-wrap text-sm">Lý do báo cáo: {appeal.reason}</p>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <AppealSteps appeal={appeal} />
         {appeal.createdAt && <span className="text-xs text-slate-500">Gửi lúc {formatDateTime(appeal.createdAt)}</span>}
       </div>
       {appeal.evidenceUrl && (
@@ -94,32 +76,48 @@ const button = 'rounded-lg border border-border px-4 py-2 text-sm disabled:opaci
 
 export function ConsultantRatingAppeal({ bookingId, hasRating }: { bookingId: string; hasRating: boolean }) {
   const client = useQueryClient();
+  const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [url, setUrl] = useState('');
+  const queryKey = ['rating-appeal', bookingId];
   const query = useQuery({
-    queryKey: ['rating-appeal', bookingId],
-    queryFn: async () => rows((await apiClient.get<unknown>(`/consultation-bookings/${bookingId}/rating-appeal`)).data).map(toRatingAppeal),
+    queryKey,
+    queryFn: () => getBookingRatingAppeals(bookingId),
     refetchInterval: 15000,
   });
   const send = useMutation({
-    mutationFn: () => apiClient.post(`/consultation-bookings/${bookingId}/rating-appeal`, { reason, evidenceUrl: url }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['rating-appeal', bookingId] }),
+    mutationFn: () => submitRatingAppeal(bookingId, reason.trim(), url.trim()),
+    onSuccess: async (appeal) => {
+      await client.cancelQueries({ queryKey });
+      client.setQueryData(queryKey, [appeal]);
+    },
   });
   const appeal = query.data?.[0];
   useEffect(() => {
     if (appeal?.status === 'ACCEPTED') {
       void client.invalidateQueries({ queryKey: ['consultation-bookings'] });
+      void client.invalidateQueries({ queryKey: ['consultant-stats'] });
     }
   }, [appeal?.status, client]);
   if (!hasRating && !appeal) return null;
+  if (!open) {
+    return (
+      <button type="button" className={`mt-3 inline-flex items-center gap-2 ${button}`} onClick={() => setOpen(true)}>
+        <Flag size={15} aria-hidden="true" />
+        {appeal ? `Xem báo cáo · ${appealLabel(appeal)}` : 'Báo cáo đánh giá'}
+      </button>
+    );
+  }
   return (
-    <section className="mt-6 space-y-3 rounded-xl border border-border p-5">
-      <h3 className="font-medium">Báo cáo đánh giá không đúng</h3>
-      <AppealSteps appeal={appeal} />
+    <section className="mt-3 space-y-3 rounded-xl border border-border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-medium">Báo cáo đánh giá</h3>
+        <button type="button" className={button} onClick={() => setOpen(false)}>Đóng</button>
+      </div>
       {query.isPending ? (
         <p>Đang tải…</p>
-      ) : query.isError ? (
-        <p role="alert">Không tải được báo cáo.</p>
+      ) : query.isError && !appeal ? (
+        <p role="alert" className="text-sm text-danger">{query.error.message}</p>
       ) : appeal ? (
         <>
           <p>{appealLabel(appeal)}</p>
@@ -127,7 +125,8 @@ export function ConsultantRatingAppeal({ bookingId, hasRating }: { bookingId: st
           <a href={appeal.evidenceUrl} target="_blank" rel="noopener noreferrer" className="text-sm underline">
             Xem bằng chứng Google Drive
           </a>
-          {appeal.decisionReason && <p className="whitespace-pre-wrap text-sm">Kết quả xem xét: {appeal.decisionReason}</p>}
+          <StaffOpinion appeal={appeal} />
+          {appeal.decisionReason && <p className="whitespace-pre-wrap text-sm">Lý do của Manager: {appeal.decisionReason}</p>}
         </>
       ) : (
         <form
@@ -138,15 +137,15 @@ export function ConsultantRatingAppeal({ bookingId, hasRating }: { bookingId: st
           }}
         >
           <p className="text-sm text-slate-500">
-            Nếu đánh giá không đúng sự thật, gửi lý do và bằng chứng. Staff sẽ xem xét trước, sau đó Manager phê duyệt. Khi được chấp nhận, đánh giá sẽ bị ẩn khỏi hồ sơ và không tính vào điểm trung bình. Mỗi đánh giá được báo cáo một lần.
+            Staff sẽ xem xét minh chứng. Báo cáo qua sơ duyệt sẽ được chuyển cho Manager. Mỗi đánh giá được báo cáo một lần.
           </p>
           <label className="block text-sm">
-            Lý do báo cáo
+            Mô tả sự việc và minh chứng
             <textarea required maxLength={5000} rows={4} value={reason} onChange={(e) => setReason(e.target.value)} className={input} />
           </label>
           <label className="block text-sm">
             Link bằng chứng Google Drive
-            <input required type="url" maxLength={2048} placeholder="https://drive.google.com/file/d/.../view" value={url} onChange={(e) => setUrl(e.target.value)} className={input} />
+            <input required type="url" pattern="https://drive\.google\.com/.+" title="Nhập link HTTPS từ drive.google.com" maxLength={2048} placeholder="https://drive.google.com/file/d/.../view" value={url} onChange={(e) => setUrl(e.target.value)} className={input} />
           </label>
           <p className="text-xs text-slate-500">Cấp quyền xem cho người xem xét để họ có thể mở video hoặc tài liệu bằng chứng.</p>
           {send.isError && (
@@ -171,7 +170,7 @@ function AppealReview({ appeal }: { appeal: RatingAppeal }) {
   const [reason, setReason] = useState('');
   const client = useQueryClient();
   const decision = useMutation({
-    mutationFn: (value: 'ACCEPTED' | 'REJECTED') => decideRatingAppeal(appeal.id, value, reason),
+    mutationFn: (value: 'ACCEPTED' | 'REJECTED') => decideRatingAppeal(appeal.id, value, reason.trim()),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ['rating-appeals'] });
       await client.invalidateQueries({ queryKey: ['manager-consultants'] });
@@ -179,12 +178,6 @@ function AppealReview({ appeal }: { appeal: RatingAppeal }) {
     },
   });
   const stage = appealStage(appeal);
-  const legacy = appeal.staffStatus === null;
-  // Manager chấp thuận = làm theo đề xuất của Staff; không chấp thuận = làm ngược lại.
-  const follow: 'ACCEPTED' | 'REJECTED' = appeal.staffStatus === 'APPROVED' ? 'ACCEPTED' : 'REJECTED';
-  const overrule: 'ACCEPTED' | 'REJECTED' = follow === 'ACCEPTED' ? 'REJECTED' : 'ACCEPTED';
-  const agreed = !legacy && stage === 'closed' && appeal.staffStatus !== 'PENDING' ? appeal.status === (appeal.staffStatus === 'APPROVED' ? 'ACCEPTED' : 'REJECTED') : null;
-
   return (
     <AppealSummary appeal={appeal}>
       <StaffOpinion appeal={appeal} />
@@ -195,45 +188,24 @@ function AppealReview({ appeal }: { appeal: RatingAppeal }) {
             Lý do của Manager
             <textarea rows={2} maxLength={5000} className={managerInput} value={reason} onChange={(e) => setReason(e.target.value)} />
           </label>
-          <p className="text-xs text-slate-500">
-            {legacy
-              ? 'Chấp nhận sẽ ẩn đánh giá này khỏi hồ sơ tư vấn viên và tính lại trung bình sao từ các đánh giá còn hiệu lực.'
-              : follow === 'ACCEPTED'
-                ? 'Chấp thuận đề xuất sẽ ẩn đánh giá và tính lại trung bình sao. Không chấp thuận sẽ giữ đánh giá.'
-                : 'Chấp thuận đề xuất sẽ giữ đánh giá. Không chấp thuận sẽ ẩn đánh giá và tính lại trung bình sao.'}
-          </p>
           {decision.isError && (
             <p role="alert" className="text-sm text-danger">
               {decision.error.message}
             </p>
           )}
           <div className="flex flex-wrap gap-3">
-            {legacy ? (
-              <>
-                <button className={managerPrimary} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate('ACCEPTED')}>
-                  Chấp nhận và ẩn đánh giá
-                </button>
-                <button className={managerOutline} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate('REJECTED')}>
-                  Không chấp nhận
-                </button>
-              </>
-            ) : (
-              <>
-                <button className={managerPrimary} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate(follow)}>
-                  Chấp thuận đề xuất của Staff
-                </button>
-                <button className={managerOutline} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate(overrule)}>
-                  Không chấp thuận
-                </button>
-              </>
-            )}
+            <button type="button" className={managerPrimary} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate('ACCEPTED')}>
+              Chấp thuận và ẩn đánh giá
+            </button>
+            <button type="button" className={managerOutline} disabled={decision.isPending || !reason.trim()} onClick={() => decision.mutate('REJECTED')}>
+              Từ chối và giữ đánh giá
+            </button>
           </div>
         </>
       )}
-      {stage === 'closed' && (
+      {appeal.decisionReason && (
         <p className="whitespace-pre-wrap text-sm text-slate-600">
-          {agreed !== null && <span className="text-ink">{agreed ? 'Manager chấp thuận đề xuất của Staff. ' : 'Manager không chấp thuận đề xuất của Staff. '}</span>}
-          {appeal.decisionReason && `Lý do của Manager: ${appeal.decisionReason}`}
+          Lý do của Manager: {appeal.decisionReason}
         </p>
       )}
     </AppealSummary>
