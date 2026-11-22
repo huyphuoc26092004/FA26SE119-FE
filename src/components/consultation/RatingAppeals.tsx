@@ -12,6 +12,7 @@ import {
   submitRatingAppeal,
   type RatingAppeal,
 } from '../../services/ratingAppealService';
+import { tagClass, TimeTag } from '../ui/Tag';
 
 /** Nhãn trạng thái theo bước của quy trình: tư vấn viên → Staff → Manager. */
 export function appealLabel(appeal: RatingAppeal) {
@@ -77,12 +78,12 @@ export function AppealSummary({ appeal, children }: { appeal: RatingAppeal; chil
         <h3 className="text-[15px] font-medium text-ink">
           {appeal.consultantName || 'Tư vấn viên'} · {appeal.rating}/5 từ {appeal.candidateName || 'ứng viên'}
         </h3>
-        <span className={`text-[12px] ${appealTone(appeal)}`}>{appealLabel(appeal)}</span>
+        <span className={tagClass(appealTone(appeal))}>{appealLabel(appeal)}</span>
       </div>
       <p className="whitespace-pre-wrap text-sm text-slate-600">Nhận xét: {appeal.comment || '(Không có nhận xét)'}</p>
       <p className="whitespace-pre-wrap text-sm">Lý do báo cáo: {appeal.reason}</p>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        {appeal.createdAt && <span className="text-xs text-slate-500">Gửi lúc {formatDateTime(appeal.createdAt)}</span>}
+        {appeal.createdAt && <TimeTag tone="muted" className="text-xs">Gửi lúc {formatDateTime(appeal.createdAt)}</TimeTag>}
       </div>
       {appeal.evidenceUrl && (
         <a href={appeal.evidenceUrl} target="_blank" rel="noopener noreferrer" className="inline-block border-b border-current pb-px text-sm text-ink hover:text-brand">

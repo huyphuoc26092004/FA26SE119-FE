@@ -33,6 +33,7 @@ import {
   type AiRuntimeConfiguration,
   type AiRuntimeModelConfiguration,
 } from '../../services/subscriptionManagementService';
+import { TimeTag } from '../../components/ui/Tag';
 
 type Tab = 'models' | 'prompts';
 const errorText = (error: unknown) => (error instanceof Error ? error.message : 'Có lỗi xảy ra.');
@@ -446,7 +447,7 @@ export default function AiConfigPage() {
                 <span className="text-[15px] text-ink">
                   v{version.version}
                   {version.isActive && <span className="ml-2 text-xs text-brand">đang bật</span>}
-                  <span className="ml-3 text-[13px] text-slate-500">{version.updatedAt}</span>
+                  <TimeTag tone="muted" className="ml-3">{version.updatedAt}</TimeTag>
                 </span>
                 {!version.isActive && canRestore && (
                   <button

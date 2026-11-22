@@ -5,6 +5,7 @@ import { crawlErrorMessage, getCrawlRun } from '../../../services/jobCrawlServic
 import type { CrawlRun } from '../../../types/jobCrawl';
 import { CrawlRunDetail } from './CrawlRunDetail';
 import { RunStatus, SITE_LABEL, formatDateTime } from './crawlFormat';
+import { TimeTag } from '../../../components/ui/Tag';
 
 export function CrawlHistoryTab({
   runs,
@@ -50,7 +51,7 @@ export function CrawlHistoryTab({
                   onClick={() => onOpen(run.id)}
                   className="grid w-full gap-x-6 gap-y-1 border-b border-border py-4 text-left transition-colors hover:bg-white/60 lg:grid-cols-[10rem_minmax(0,1fr)_7rem_repeat(3,5.5rem)] lg:items-baseline"
                 >
-                  <span className="text-[13px] tabular-nums text-slate-500">{formatDateTime(run.startedAt)}</span>
+                  <TimeTag tone="muted" className="w-fit">{formatDateTime(run.startedAt)}</TimeTag>
                   <span className="min-w-0 truncate text-[15px] text-ink">
                     <span className="text-slate-500">{SITE_LABEL[run.sourceSite] ?? run.sourceSite} · </span>
                     {run.keyword} · {run.roleCategory}

@@ -13,6 +13,7 @@ import {
   textLink,
   underlineInput,
 } from '../../../components/admin/AdminKit';
+import { tagClass } from '../../../components/ui/Tag';
 
 const STATUS_LABEL: Record<PlanStatus, string> = { ACTIVE: 'Đang bán', DRAFT: 'Bản nháp', ARCHIVED: 'Lưu trữ' };
 const statusTone = (s: PlanStatus) => (s === 'ACTIVE' ? 'text-brand' : s === 'DRAFT' ? 'text-orange-600' : 'text-slate-500');
@@ -195,7 +196,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
-                    <span className={statusTone(plan.status)}>{STATUS_LABEL[plan.status]}</span>
+                    <span className={tagClass(statusTone(plan.status))}>{STATUS_LABEL[plan.status]}</span>
                     <span
                       className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-medium ${
                         isTopup ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-700'
@@ -302,7 +303,7 @@ export const PlanManagementTab: React.FC<PlanManagementTabProps> = ({
                       {plan.name}
                     </button>
                     <p className="mt-0.5 text-[13px] text-slate-600">
-                      <span className={statusTone(plan.status)}>{STATUS_LABEL[plan.status]}</span>
+                      <span className={tagClass(statusTone(plan.status))}>{STATUS_LABEL[plan.status]}</span>
                       {plan.badge && ` · ${plan.badge}`}
                       {!isTopup && ` · ${plan.apiRateLimitRPM} RPM · ${(plan.apiRateLimitTPM / 1000).toFixed(0)}k TPM`}
                     </p>

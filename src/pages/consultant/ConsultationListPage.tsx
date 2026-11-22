@@ -29,6 +29,7 @@ import { useTranslation } from '../../i18n';
 import ConsultantBookingManager, { bookingDisplayStatus, ConsultantBookingCard, useBookingClock } from '../../components/consultation/ConsultantBookingManager';
 import { bookingPollInterval } from '../../utils/bookingMeeting';
 import { listBookings } from '../../services/bookingService';
+import { tagClass, TimeTag } from '../../components/ui/Tag';
 
 const copy = {
   vi: {
@@ -352,7 +353,7 @@ export default function ConsultationListPage() {
                 <p className="truncate text-[13px] text-slate-500">
                   {thread.channel === 'CHAT' ? c.chat : thread.topicLabel}
                   <span className="mx-1.5">·</span>
-                  <span className={statusTone(thread.status)}>{STATUS_LABEL[lang][thread.status]}</span>
+                  <span className={tagClass(statusTone(thread.status), { live: thread.status === 'IN_PROGRESS' })}>{STATUS_LABEL[lang][thread.status]}</span>
                 </p>
               </div>
               <Link
@@ -433,7 +434,7 @@ export default function ConsultationListPage() {
               {thread.channel !== 'CHAT' && <InfoRow label={c.rows.slot}>{formatDateTime(thread.meeting.scheduledAt, locale)}</InfoRow>}
               <InfoRow label={c.rows.sent}>{formatDateTime(thread.requestedAt, locale)}</InfoRow>
               <InfoRow label={c.rows.status}>
-                <span className={statusTone(thread.status)}>{STATUS_LABEL[lang][thread.status]}</span>
+                <span className={tagClass(statusTone(thread.status), { live: thread.status === 'IN_PROGRESS' })}>{STATUS_LABEL[lang][thread.status]}</span>
               </InfoRow>
               {!isClosed(thread) && !bookings.isLoading && !bookings.isError && !scheduledBooking && (
                 <button
@@ -481,7 +482,7 @@ export default function ConsultationListPage() {
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden="true" />
                     <span>
                       <span className="block text-ink">{e.title}</span>
-                      <span className="block text-[12px] text-slate-500">{formatDateTime(e.timestamp, locale)}</span>
+                      <TimeTag className="mt-1 text-[12px]" tone="muted">{formatDateTime(e.timestamp, locale)}</TimeTag>
                     </span>
                   </li>
                 ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Check, X } from 'lucide-react';
 import type { ConsultationPriority, ConsultationStatus } from '../../types/consultation';
+import { tagClass } from '../ui/Tag';
 
 /*
  * Shared building blocks for the consultant pages: same editorial language as the
@@ -56,8 +57,7 @@ export function statusTone(status: ConsultationStatus) {
 /** Status as plain coloured text; a small dot marks a live session. */
 export function StatusText({ status, lang }: { status: ConsultationStatus; lang: 'vi' | 'en' }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[13px] ${statusTone(status)}`}>
-      {status === 'IN_PROGRESS' && <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />}
+    <span className={tagClass(statusTone(status), { live: status === 'IN_PROGRESS' })}>
       {STATUS_LABEL[lang][status]}
     </span>
   );
@@ -65,9 +65,9 @@ export function StatusText({ status, lang }: { status: ConsultationStatus; lang:
 
 /** Priority only draws attention when it is above normal. */
 export function PriorityText({ priority, lang }: { priority: ConsultationPriority; lang: 'vi' | 'en' }) {
-  if (priority === 'NORMAL') return <span className="text-[13px] text-slate-500">{PRIORITY_LABEL[lang].NORMAL}</span>;
+  if (priority === 'NORMAL') return <span className={tagClass('muted', { dot: false })}>{PRIORITY_LABEL[lang].NORMAL}</span>;
   return (
-    <span className={`text-[13px] ${priority === 'URGENT' ? 'text-danger' : 'text-warning'}`}>
+    <span className={tagClass(priority === 'URGENT' ? 'danger' : 'warning', { live: priority === 'URGENT' })}>
       {PRIORITY_LABEL[lang][priority]}
     </span>
   );

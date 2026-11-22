@@ -16,6 +16,7 @@ import {
   type BookingStatus,
   type ConsultationBooking,
 } from '../../services/bookingService';
+import { tagClass, type TagTone } from '../ui/Tag';
 
 const button = 'rounded-lg bg-brand px-4 py-2 text-sm text-white disabled:opacity-50';
 const secondary = 'rounded-lg border border-border px-4 py-2 text-sm text-ink disabled:opacity-50';
@@ -26,6 +27,14 @@ export const statuses: Record<BookingStatus, [string, string]> = {
   DECLINED: ['Đã từ chối', 'Declined'],
   CANCELLED: ['Đã hủy', 'Cancelled'],
   COMPLETED: ['Đã hoàn tất', 'Completed'],
+};
+
+const BOOKING_TONE: Record<BookingStatus, TagTone> = {
+  PENDING: 'warning',
+  ACCEPTED: 'brand',
+  DECLINED: 'danger',
+  CANCELLED: 'muted',
+  COMPLETED: 'success',
 };
 
 export function bookingDisplayStatus(booking: ConsultationBooking, now: number): ConsultationStatus {
@@ -65,7 +74,7 @@ export function ConsultantBookingCard({ booking, showLinks = true }: {
           <h3 className="mt-1 text-lg font-medium text-ink">{booking.subject}</h3>
           <p className="mt-1 text-sm text-slate-600">{booking.candidate_name}</p>
         </div>
-        <span className="rounded-full bg-surface px-3 py-1 text-xs text-ink">{statuses[booking.status][vi ? 0 : 1]}</span>
+        <span className={tagClass(BOOKING_TONE[booking.status])}>{statuses[booking.status][vi ? 0 : 1]}</span>
       </div>
       <p className="mt-3 flex items-center gap-2 text-sm text-slate-700">
         <CalendarDays size={16} aria-hidden="true" />{format(booking.starts_at)} – {format(booking.ends_at)}

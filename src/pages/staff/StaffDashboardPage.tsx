@@ -7,6 +7,7 @@ import { getCrawlRuns } from '../../services/jobCrawlService';
 import { getStaffRatingAppeals } from '../../services/ratingAppealService';
 import { getStaffDashboard } from '../../services/staffService';
 import { RunStatus, formatDateTime } from '../admin/jobs/crawlFormat';
+import { TimeTag } from '../../components/ui/Tag';
 
 /** Phần việc Manager giao cho Staff, và những việc vẫn thuộc Manager/Admin. */
 const DUTIES = [
@@ -125,7 +126,7 @@ export default function StaffDashboardPage() {
                 <span className="text-ink">
                   {a.consultantName || 'Tư vấn viên'} · {a.rating}/5 từ {a.candidateName || 'ứng viên'}
                 </span>
-                <span className="text-[12px] text-slate-500">{a.createdAt ? formatDateTime(a.createdAt) : ''}</span>
+                {a.createdAt && <TimeTag tone="muted" className="text-[12px]">{formatDateTime(a.createdAt)}</TimeTag>}
               </li>
             ))}
           </ul>

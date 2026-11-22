@@ -28,6 +28,7 @@ import {
 import { getManagedUsers } from '../../services/userService';
 import { useAuthStore } from '../../stores/authStore';
 import type { TicketPriority, TicketStatus } from '../../types/support';
+import { tagClass } from '../../components/ui/Tag';
 
 const STATUS_LABEL: Record<TicketStatus, string> = {
   open: 'Mới',
@@ -236,7 +237,7 @@ export default function AdminSupportPage() {
                     {PRIORITY_LABEL[t.priority]}
                   </span>
                   <span
-                    className={`text-[13px] ${t.status === 'resolved' ? 'font-medium text-brand' : t.status === 'in_progress' ? 'text-amber-700' : 'text-ink'}`}
+                    className={`${tagClass(t.status === 'resolved' ? 'brand' : t.status === 'in_progress' ? 'warning' : t.status === 'closed' ? 'muted' : 'info')} w-fit`}
                   >
                     {STATUS_LABEL[t.status]}
                   </span>

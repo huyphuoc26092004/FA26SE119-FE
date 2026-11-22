@@ -13,6 +13,7 @@ import { getRecommendationFeedbackList } from '../../services/feedbackService';
 import { getUserSubscription } from '../../services/subscriptionService';
 import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
+import { tagClass, TimeTag } from '../../components/ui/Tag';
 
 // Features no longer offered in the candidate area. Their old records are hidden here
 // so the breakdown and filters only show what the user can actually use today.
@@ -564,7 +565,7 @@ export const UsagePage: React.FC = () => {
                               <span className="mt-1 flex flex-wrap gap-x-3 text-xs text-slate-500">
                                 <span className="font-mono">{item.model}</span>
                                 <span className="tabular-nums">{num(item.latencyMs)} ms</span>
-                                {statusLabel && <span className="text-amber-700">{statusLabel}</span>}
+                                {statusLabel && <span className={tagClass('warning')}>{statusLabel}</span>}
                               </span>
                             </span>
                             <span className="text-right">
@@ -642,7 +643,7 @@ export const UsagePage: React.FC = () => {
                           {fb.rating === 'like' ? c.fbLiked : c.fbDisliked}
                         </span>
                         <span className="text-slate-500">{c.targetType[fb.targetType] ?? fb.targetType}</span>
-                        <span className="text-slate-500 tabular-nums">{fb.createdAt}</span>
+                        <TimeTag tone="muted">{fb.createdAt}</TimeTag>
                       </p>
                       <h3 className="mt-1.5 text-[15px] leading-6 text-ink">{fb.targetTitle}</h3>
                       {fb.comment && (

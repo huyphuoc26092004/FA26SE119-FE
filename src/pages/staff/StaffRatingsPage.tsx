@@ -5,6 +5,7 @@ import { CheckBox, Note, underlineSelect } from '../../components/admin/AdminKit
 import { ManagerHead, ManagerSection, PagerRow, inkLink } from '../../components/manager/ManagerUi';
 import { formatDateTime } from '../admin/jobs/crawlFormat';
 import { getStaffConsultantRatings, getStaffConsultants } from '../../services/staffService';
+import { TimeTag } from '../../components/ui/Tag';
 
 const APPEAL_LABEL: Record<string, string> = {
   PENDING: 'Chờ Staff sơ duyệt',
@@ -99,7 +100,7 @@ export default function StaffRatingsPage() {
                     {r.rating}/5 · {r.candidateName || 'Ứng viên'} đánh giá {r.consultantName || 'tư vấn viên'}
                     {r.isRemoved && <span className="ml-2 text-[12px] text-slate-500">(đã ẩn)</span>}
                   </span>
-                  <span className="text-[12px] text-slate-500">{r.createdAt ? formatDateTime(r.createdAt) : ''}</span>
+                  {r.createdAt && <TimeTag tone="muted" className="text-[12px]">{formatDateTime(r.createdAt)}</TimeTag>}
                 </div>
                 {r.subject && <p className="text-[12px] text-slate-500">Buổi tư vấn: {r.subject}</p>}
                 <p className="whitespace-pre-wrap text-slate-600">{r.comment || '(Không có nhận xét)'}</p>

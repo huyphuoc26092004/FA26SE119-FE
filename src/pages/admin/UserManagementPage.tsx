@@ -39,6 +39,7 @@ import type {
 } from '../../types/userManagement';
 import type { UserRole } from '../../types/domain';
 import { useTranslation } from '../../i18n';
+import { tagClass, TimeTag } from '../../components/ui/Tag';
 
 const copy = {
   vi: {
@@ -661,14 +662,14 @@ export default function UserManagementPage() {
                 <p className="mt-0.5 truncate text-sm text-slate-600">{u.email}</p>
                 <p className="mt-1 text-[13px] text-slate-600 md:hidden">
                   {ROLE_LABEL[lang][u.role]} ·{' '}
-                  <span className={statusTone(u.status)}>{STATUS_LABEL[lang][u.status]}</span> · {u.createdAt}
+                  <span className={tagClass(statusTone(u.status))}>{STATUS_LABEL[lang][u.status]}</span> · {u.createdAt}
                 </p>
               </div>
               <span className="hidden text-sm text-ink md:block">{ROLE_LABEL[lang][u.role]}</span>
-              <span className={`hidden text-sm md:block ${statusTone(u.status)}`} title={u.suspendedReason}>
+              <span className={`${tagClass(statusTone(u.status))} hidden w-fit md:inline-flex`} title={u.suspendedReason}>
                 {STATUS_LABEL[lang][u.status]}
               </span>
-              <span className="hidden text-[13px] tabular-nums text-slate-600 md:block">{u.createdAt}</span>
+              <TimeTag icon="calendar" tone="muted" className="hidden w-fit md:inline-flex">{u.createdAt}</TimeTag>
               <div className="flex items-center justify-end gap-2">
                 <Link to={`/admin/users/${u.id}`} className={brandLink}>
                   {c.detail}
@@ -1097,7 +1098,7 @@ export default function UserManagementPage() {
           <ul>
             {quickInspectUser.recentActivities.slice(0, 3).map((act) => (
               <li key={act.id} className="grid gap-1 border-b border-border py-3 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-5">
-                <span className="text-[13px] tabular-nums text-slate-500">{act.timestamp}</span>
+                <TimeTag tone="muted">{act.timestamp}</TimeTag>
                 <span className="min-w-0">
                   <span className="block text-sm text-ink">{act.action}</span>
                   <span className="block text-[13px] text-slate-600">{act.details}</span>

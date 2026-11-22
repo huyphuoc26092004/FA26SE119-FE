@@ -22,6 +22,7 @@ import { authErrorMessage } from '../../services/authService';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { ProfileAlignmentSection } from './resume/ProfileAlignmentSection';
+import { tagClass } from '../../components/ui/Tag';
 
 // Short page-only strings that have no i18n key yet.
 const copy = {
@@ -272,7 +273,7 @@ export default function ResumeDetailsPage() {
       {/* Meta row */}
       <section className="mt-[clamp(2.5rem,5vw,3.5rem)] flex flex-col gap-3 border-y border-t-ink border-b-border py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
-          <span className="text-ink">{statusLabel}</span>
+          <span className={tagClass(cv.status === 'Ready' ? 'brand' : cv.status === 'Draft' ? 'warning' : 'info')}>{statusLabel}</span>
           {cv.isDefault ? (
             <span className="text-brand">{c.primary}</span>
           ) : (
