@@ -117,7 +117,7 @@ export default function JobCrawlManagementPage({ staff = false }: { staff?: bool
           />
         )}
 
-        {tab === 'catalog' && <JobCatalogTab onDone={showToast} />}
+        {tab === 'catalog' && <JobCatalogTab onDone={showToast} staff={staff} />}
       </div>
 
       {openRunId && <CrawlRunModal runId={openRunId} onClose={() => setOpenRunId(null)} />}

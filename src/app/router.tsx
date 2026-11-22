@@ -12,6 +12,8 @@ import ManagerRatingAppealsPage from '../pages/admin/ManagerRatingAppealsPage';
 import StaffLayout from '../layouts/StaffLayout';
 import StaffDashboardPage from '../pages/staff/StaffDashboardPage';
 import StaffRatingAppealsPage from '../pages/staff/StaffRatingAppealsPage';
+import StaffConsultantsPage from '../pages/staff/StaffConsultantsPage';
+import StaffFeedbackPage from '../pages/staff/StaffFeedbackPage';
 import { managerCanOpen } from '../utils/roleAccess';
 import { Navigate, createBrowserRouter, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -239,6 +241,8 @@ export const router = createBrowserRouter([
           { path: 'jobs', element: <JobCrawlManagementPage staff /> },
           { path: 'templates', element: <ResumeTemplateManagementPage /> },
           { path: 'rating-appeals', element: <StaffRatingAppealsPage /> },
+          { path: 'consultants', element: <StaffConsultantsPage /> },
+          { path: 'feedback', element: <StaffFeedbackPage /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'inbox', element: <NotificationsPage /> },
         ] }],

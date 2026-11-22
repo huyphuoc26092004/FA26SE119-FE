@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Note, UnderlineTabs } from '../../components/admin/AdminKit';
 import { ManagerHead } from '../../components/manager/ManagerUi';
-import { AppealSummary, StaffOpinion, managerInput, managerPrimary } from '../../components/consultation/RatingAppeals';
+import { AppealHistory, AppealSummary, StaffOpinion, managerInput, managerPrimary } from '../../components/consultation/RatingAppeals';
 import { appealStage, getStaffRatingAppeals, reviewRatingAppeal, type RatingAppeal, type StaffVerdict } from '../../services/ratingAppealService';
 
 type Filter = 'staff' | 'manager' | 'closed' | 'all';
@@ -61,7 +61,7 @@ function StaffReviewForm({ appeal }: { appeal: RatingAppeal }) {
 }
 
 export default function StaffRatingAppealsPage() {
-  const query = useQuery({ queryKey: ['staff-rating-appeals'], queryFn: getStaffRatingAppeals, refetchInterval: 30000, retry: false });
+  const query = useQuery({ queryKey: ['staff-rating-appeals'], queryFn: () => getStaffRatingAppeals(), refetchInterval: 30000 });
   const [filter, setFilter] = useState<Filter>('staff');
   const all = query.data ?? [];
   const byStage = (f: Filter) => (f === 'all' ? all : all.filter((a) => appealStage(a) === f));
@@ -105,6 +105,7 @@ export default function StaffRatingAppealsPage() {
               <AppealSummary key={appeal.id} appeal={appeal}>
                 {stage === 'staff' ? <StaffReviewForm appeal={appeal} /> : <StaffOpinion appeal={appeal} />}
                 {stage === 'closed' && appeal.decisionReason && <p className="whitespace-pre-wrap text-sm text-slate-600">Manager: {appeal.decisionReason}</p>}
+                <AppealHistory appealId={appeal.id} scope="staff" />
               </AppealSummary>
             );
           })}

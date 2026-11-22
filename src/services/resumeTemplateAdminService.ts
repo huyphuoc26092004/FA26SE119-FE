@@ -630,7 +630,46 @@ const writeBody = (payload: ResumeTemplateInput) => ({
   active: payload.active,
   trialEnabled: payload.trialEnabled,
   htmlContent: payload.htmlContent,
+  ...(payload.allowedTierCodes?.length ? { allowedTierCodes: payload.allowedTierCodes } : {}),
 });
+
+const DEFAULT_TIER_CODES = ['FREE', 'BASIC', 'PRO'];
+
+/** allowed_tier_codes là jsonb: có thể về dạng mảng hoặc chuỗi JSON. */
+export function templateTierCodes(template: Pick<ResumeTemplateAdmin, 'allowed_tier_codes'> | null | undefined): string[] {
+  const raw = template?.allowed_tier_codes;
+  let list: unknown = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      list = [];
+    }
+  }
+  const codes = Array.isArray(list) ? list.map((c) => String(c).trim().toUpperCase()).filter(Boolean) : [];
+  return codes.length ? codes : DEFAULT_TIER_CODES;
+}
+
+export interface TemplateTierOption {
+  code: string;
+  name: string;
+}
+
+/** Gói có thể gán cho mẫu CV: BE chỉ nhận tier_code của gói SUBSCRIPTION (không nhận gói nạp token). */
+export async function getTemplateTierOptions(): Promise<TemplateTierOption[]> {
+  try {
+    const { data } = await apiClient.get<Array<Record<string, unknown>>>('/subscriptions/tiers');
+    const options = (Array.isArray(data) ? data : [])
+      .filter((t) => String(t.tier_type ?? t.tierType ?? 'SUBSCRIPTION') === 'SUBSCRIPTION')
+      .map((t) => ({ code: String(t.tier_code ?? t.tierCode ?? '').toUpperCase(), name: String(t.display_name ?? t.displayName ?? t.tier_code ?? '') }))
+      .filter((t) => t.code);
+    if (options.length) return options;
+  } catch {
+    // Dùng danh sách mặc định của BE bên dưới.
+  }
+  return DEFAULT_TIER_CODES.map((code) => ({ code, name: code }));
+}
+
 
 export async function getAdminResumeTemplates(filter?: Partial<TemplateFilterState>): Promise<ResumeTemplateAdmin[]> {
   const res = await apiClient.get<ResumeTemplateAdmin[]>('/admin/resume-templates', { params: { limit: 100, offset: 0 } });
@@ -667,6 +706,7 @@ export async function duplicateResumeTemplate(id: string): Promise<ResumeTemplat
     active: false,
     trialEnabled: false,
     htmlContent: original.html_content,
+    allowedTierCodes: templateTierCodes(original),
   });
 }
 

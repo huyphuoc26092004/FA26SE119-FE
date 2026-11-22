@@ -16,9 +16,9 @@ import {
   underlineInput,
   underlineSelect,
 } from '../../../components/admin/AdminKit';
-import { getJobs } from '../../../services/candidateService';
 import {
   getJobIndexing,
+  getManagedJobs,
   getSalaryPolicy,
   importJob,
   indexJob,
@@ -30,18 +30,27 @@ import {
 import { crawlErrorMessage } from '../../../services/jobCrawlService';
 import { AutoIndexSection } from './AutoIndexSection';
 
-const STATUS_LABEL: Record<AdminJobStatus, string> = { ACTIVE: 'Đang tuyển', EXPIRED: 'Hết hạn', REMOVED: 'Đã gỡ', INVALID: 'Không hợp lệ' };
+const STATUS_LABEL: Record<AdminJobStatus, string> = {
+  PENDING: 'Chờ duyệt',
+  ACTIVE: 'Đang tuyển',
+  REJECTED: 'Bị từ chối',
+  EXPIRED: 'Hết hạn',
+  REMOVED: 'Đã gỡ',
+  INVALID: 'Không hợp lệ',
+};
 
 /** Tab "Kho việc làm": nhập tin thủ công, gỡ / đánh dấu hết hạn, lập chỉ mục lại và chính sách lương khi đối sánh. */
-export function JobCatalogTab({ onDone }: { onDone: (message: string) => void }) {
+/** `staff`: BE chỉ cho ADMIN/MANAGER gọi /admin/matching/salary-policy nên Staff không thấy mục chính sách lương. */
+export function JobCatalogTab({ onDone, staff = false }: { onDone: (message: string) => void; staff?: boolean }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [submitted, setSubmitted] = useState('');
   const [importing, setImporting] = useState(false);
   const [indexOf, setIndexOf] = useState<{ id: string; title: string } | null>(null);
-  const jobsQuery = useQuery({ queryKey: ['admin', 'catalog', submitted], queryFn: () => getJobs({ search: submitted }) });
+  const [statusFilter, setStatusFilter] = useState<AdminJobStatus | ''>('');
+  const jobsQuery = useQuery({ queryKey: ['admin', 'catalog', submitted, statusFilter], queryFn: () => getManagedJobs(submitted, statusFilter) });
   const indexQuery = useQuery({ queryKey: ['admin', 'job-index', indexOf?.id], queryFn: () => getJobIndexing(indexOf!.id), enabled: Boolean(indexOf) });
-  const policyQuery = useQuery({ queryKey: ['admin', 'salary-policy'], queryFn: getSalaryPolicy });
+  const policyQuery = useQuery({ queryKey: ['admin', 'salary-policy'], queryFn: getSalaryPolicy, enabled: !staff });
   const [tolerance, setTolerance] = useState<string>('');
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] });
@@ -79,7 +88,7 @@ export function JobCatalogTab({ onDone }: { onDone: (message: string) => void })
       <section className="space-y-4">
         <SectionHead
           index="01"
-          title="Tin đang hiển thị"
+          title="Kho tin tuyển dụng"
           meta={`${jobs.length} tin`}
           action={
             <button type="button" className={smallPrimary} onClick={() => setImporting(true)}>
@@ -94,7 +103,13 @@ export function JobCatalogTab({ onDone }: { onDone: (message: string) => void })
             setSubmitted(search.trim());
           }}
         >
-          <input className={boxInput} placeholder="Tìm theo tên việc..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className={boxInput} placeholder="Tìm theo tên việc hoặc công ty..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <select aria-label="Lọc trạng thái" className={underlineSelect} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as AdminJobStatus | '')}>
+            <option value="">Mọi trạng thái</option>
+            {Object.entries(STATUS_LABEL).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
           <button type="submit" className={outlineButton}>Tìm</button>
         </form>
         {jobsQuery.isError && <Note tone="danger">{crawlErrorMessage(jobsQuery.error, 'Không tải được việc làm.')}</Note>}
@@ -107,13 +122,13 @@ export function JobCatalogTab({ onDone }: { onDone: (message: string) => void })
                 <span className="min-w-0">
                   <span className="block truncate text-[15px] text-ink">{job.title}</span>
                   <span className="text-[12px] text-slate-500">
-                    {job.company} · {job.location} · {job.posted}
+                    {[job.company, job.location, job.sourceSite, job.collectedAt].filter(Boolean).join(' · ')}
                   </span>
                 </span>
                 <select
                   aria-label="Trạng thái tin"
                   className={underlineSelect}
-                  value="ACTIVE"
+                  value={job.status}
                   disabled={setStatus.isPending}
                   onChange={(e) => setStatus.mutate({ id: job.id, status: e.target.value as AdminJobStatus })}
                 >
@@ -133,11 +148,12 @@ export function JobCatalogTab({ onDone }: { onDone: (message: string) => void })
             ))}
           </ul>
         )}
-        <Note>Danh sách lấy từ tìm kiếm việc làm công khai nên chỉ gồm tin đang tuyển. Tin đã gỡ hoặc hết hạn không hiện ở đây. “Lập chỉ mục” gửi riêng một tin đi tạo vector ngay; muốn làm cho tất cả theo giờ, dùng mục 02 bên dưới.</Note>
+        <Note>Danh sách lấy từ GET /admin/jobs nên gồm mọi trạng thái; chọn trạng thái để lọc tin hết hạn, đã gỡ hoặc chờ duyệt. “Lập chỉ mục” gửi riêng một tin đi tạo vector ngay; muốn làm cho tất cả theo giờ, dùng mục 02 bên dưới.</Note>
       </section>
 
       <AutoIndexSection index="02" />
 
+      {!staff && (
       <section className="space-y-4">
         <SectionHead index="03" title="Chính sách lương khi đối sánh" />
         {policy && (
@@ -165,6 +181,7 @@ export function JobCatalogTab({ onDone }: { onDone: (message: string) => void })
           </button>
         </form>
       </section>
+      )}
 
       {importing && (
         <ImportJobModal

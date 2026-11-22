@@ -23,6 +23,7 @@ import {
   toggleResumeTemplateStatus,
   duplicateResumeTemplate,
   exportResumeTemplateHtml,
+  templateTierCodes,
 } from '../../services/resumeTemplateAdminService';
 import { renderTemplateWithSampleData } from '../../utils/resumeTemplatePreview';
 
@@ -247,7 +248,7 @@ export default function ResumeTemplateManagementPage() {
   ];
 
   const metaLine = (item: ResumeTemplateAdmin) =>
-    [item.language === 'vi' ? 'Tiếng Việt' : 'English', item.is_trial_enabled ? 'Cho dùng thử' : '', item.career_path || '']
+    [item.language === 'vi' ? 'Tiếng Việt' : 'English', item.is_trial_enabled ? 'Cho dùng thử' : '', item.career_path || '', `Gói ${templateTierCodes(item).join(', ')}`]
       .filter(Boolean)
       .join(' · ');
 

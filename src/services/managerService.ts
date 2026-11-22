@@ -48,6 +48,8 @@ export const isTopupTier = (tier: ApiRow) => String(tier.tier_type ?? tier.tierT
  * Gói tài liệu (DOCUMENT_PACK): bán số lượt tìm tài liệu học qua Google Search API để bù chi phí gọi API.
  * TODO(api): BE chưa nhận tierType DOCUMENT_PACK / searchCallAmount / validDays trên /admin/subscription-tiers.
  */
+/** BE main chưa có loại gói DOCUMENT_PACK: ẩn nút tạo và không gửi lên /admin/subscription-tiers. */
+export const DOCUMENT_PACK_SUPPORTED = false;
 export const isDocumentPackTier = (tier: ApiRow) => String(tier.tier_type ?? tier.tierType ?? '') === 'DOCUMENT_PACK';
 /** Giá Google Custom Search JSON API: 5 USD / 1.000 lượt (sau 100 lượt miễn phí mỗi ngày). */
 export const GOOGLE_SEARCH_USD_PER_1000 = 5;
@@ -69,6 +71,7 @@ export interface ManagerPlanInput {
 export const saveManagerPlan = async (id: string, input: ManagerPlanInput, quotas: ManagerPlanQuota[], limits?: ManagerQuotaLimits) => {
   const topup = input.tierType === 'TOKEN_TOPUP';
   const docPack = input.tierType === 'DOCUMENT_PACK';
+  if (docPack && !DOCUMENT_PACK_SUPPORTED) throw new Error('BE chưa hỗ trợ gói tài liệu (DOCUMENT_PACK), chưa lưu được gói này.');
   if (topup && (!Number.isSafeInteger(input.tokenAmount) || input.tokenAmount < 1)) throw new Error('Số token của gói nạp phải là số nguyên lớn hơn 0.');
   if (docPack && (!Number.isSafeInteger(input.searchCallAmount) || (input.searchCallAmount ?? 0) < 1)) throw new Error('Số lượt tìm tài liệu phải là số nguyên lớn hơn 0.');
   if (docPack && (!Number.isSafeInteger(input.validDays) || (input.validDays ?? 0) < 1)) throw new Error('Thời hạn gói tài liệu phải là số ngày lớn hơn 0.');

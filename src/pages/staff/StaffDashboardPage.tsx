@@ -4,8 +4,8 @@ import { Note, StatRow } from '../../components/admin/AdminKit';
 import { ManagerHead, ManagerSection, inkLink } from '../../components/manager/ManagerUi';
 import { useAuthStore } from '../../stores/authStore';
 import { getCrawlRuns } from '../../services/jobCrawlService';
-import { getAdminResumeTemplates } from '../../services/resumeTemplateAdminService';
-import { appealStage, getStaffRatingAppeals } from '../../services/ratingAppealService';
+import { getStaffRatingAppeals } from '../../services/ratingAppealService';
+import { getStaffDashboard } from '../../services/staffService';
 import { RunStatus, formatDateTime } from '../admin/jobs/crawlFormat';
 
 /** Phần việc Manager giao cho Staff, và những việc vẫn thuộc Manager/Admin. */
@@ -26,7 +26,13 @@ const DUTIES = [
     no: '03',
     title: 'Xem xét báo cáo đánh giá',
     to: '/staff/rating-appeals',
-    body: 'Đọc báo cáo của tư vấn viên về đánh giá của ứng viên, mở bằng chứng, đề xuất ẩn hoặc giữ đánh giá kèm lý do rồi gửi Manager phê duyệt.',
+    body: 'Đọc báo cáo của tư vấn viên về đánh giá của ứng viên, mở bằng chứng rồi sơ duyệt kèm lý do: từ chối thì giữ đánh giá, duyệt thì chuyển Manager quyết định.',
+  },
+  {
+    no: '04',
+    title: 'Theo dõi tư vấn viên và phản hồi',
+    to: '/staff/consultants',
+    body: 'Xem số buổi tư vấn, điểm trung bình và từng đánh giá của tư vấn viên; đọc phản hồi của người dùng về đối sánh CV, trợ lý AI và buổi tư vấn.',
   },
 ];
 
@@ -34,13 +40,15 @@ const MANAGER_ONLY = 'Gói dịch vụ và giá, thanh toán, lịch tự độn
 
 export default function StaffDashboardPage() {
   const name = useAuthStore((s) => s.user?.name);
-  const appeals = useQuery({ queryKey: ['staff-rating-appeals'], queryFn: getStaffRatingAppeals, retry: false });
-  const templates = useQuery({ queryKey: ['staff', 'templates'], queryFn: () => getAdminResumeTemplates() });
-  const runs = useQuery({ queryKey: ['admin', 'crawl-runs', 'latest'], queryFn: () => getCrawlRuns(10, 0) });
+  // Số liệu tổng hợp từ GET /staff/dashboard; danh sách chờ lấy riêng các báo cáo PENDING.
+  const dashboard = useQuery({ queryKey: ['staff', 'dashboard'], queryFn: getStaffDashboard });
+  const appeals = useQuery({ queryKey: ['staff-rating-appeals', 'PENDING'], queryFn: () => getStaffRatingAppeals('PENDING') });
+  const runs = useQuery({ queryKey: ['admin', 'crawl-runs', 'latest'], queryFn: () => getCrawlRuns(1, 0) });
 
-  const waiting = (appeals.data ?? []).filter((a) => appealStage(a) === 'staff');
+  const d = dashboard.data;
+  const waiting = appeals.data ?? [];
   const latest = runs.data?.[0];
-  const activeTemplates = (templates.data ?? []).filter((t) => t.is_active).length;
+  const failed = dashboard.error ? 'Không tải được' : undefined;
 
   return (
     <main className="space-y-[clamp(2.5rem,5vw,3.5rem)] pb-10">
@@ -53,10 +61,16 @@ export default function StaffDashboardPage() {
       <StatRow
         items={[
           {
-            label: 'Báo cáo đánh giá chờ bạn',
-            value: appeals.data ? waiting.length : '—',
-            valueTone: waiting.length ? 'warning' : 'ink',
-            detail: appeals.data ? `${appeals.data.length} báo cáo tất cả` : undefined,
+            label: 'Báo cáo chờ sơ duyệt',
+            value: d ? d.pendingRatingAppeals : '—',
+            valueTone: d?.pendingRatingAppeals ? 'warning' : 'ink',
+            detail: d ? `${d.forwardedRatingAppeals} chờ Manager · ${d.resolvedRatingAppeals} đã chốt` : failed,
+          },
+          {
+            label: 'Tin đang tuyển',
+            value: d ? d.activeJobs : '—',
+            valueTone: 'brand',
+            detail: d ? `${d.pendingJobs} chờ duyệt · ${d.expiredOrInvalidJobs} hết hạn/sai · ${d.duplicateJobGroups} nhóm trùng` : failed,
           },
           {
             label: 'Lần thu thập gần nhất',
@@ -64,20 +78,20 @@ export default function StaffDashboardPage() {
             detail: latest ? formatDateTime(latest.startedAt) : runs.error ? 'Không tải được' : 'Chưa chạy lần nào',
           },
           {
-            label: 'Việc mới (10 lần gần nhất)',
-            value: runs.data ? runs.data.reduce((sum, r) => sum + r.importedJobs, 0) : '—',
-            valueTone: 'brand',
+            label: 'Mẫu CV đang dùng',
+            value: d ? d.activeResumeTemplates : '—',
+            detail: d ? `${d.inactiveResumeTemplates} mẫu đang tắt` : failed,
           },
           {
-            label: 'Mẫu CV đang dùng',
-            value: templates.data ? activeTemplates : '—',
-            detail: templates.data ? `${templates.data.length} mẫu tất cả` : templates.error ? 'Không tải được' : undefined,
+            label: 'Tư vấn viên đang hoạt động',
+            value: d ? d.activeConsultants : '—',
+            detail: d ? `${d.averageConsultantRating === null ? '—' : d.averageConsultantRating.toFixed(2)} sao TB · ${d.totalConsultantRatings} đánh giá` : failed,
           },
         ]}
       />
 
       <section>
-        <ManagerSection title="Phân công cho Staff" meta="3 nhóm việc" />
+        <ManagerSection title="Phân công cho Staff" meta={`${DUTIES.length} nhóm việc`} />
         <ol className="divide-y divide-border border-b border-border">
           {DUTIES.map((duty) => (
             <li key={duty.no} className="grid gap-x-8 gap-y-2 py-5 sm:grid-cols-[3rem_minmax(0,14rem)_minmax(0,1fr)_auto] sm:items-baseline">
