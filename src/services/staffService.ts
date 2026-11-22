@@ -135,18 +135,3 @@ export async function getStaffFeedback(source: FeedbackSource | '', offset = 0, 
   }));
 }
 
-/**
- * GET /staff/consultants/{id}/ratings — các buổi tư vấn đã được ứng viên đánh giá của một tư vấn viên.
- * BE chưa có endpoint lịch tư vấn cho Staff (GET /manager/consultants/{id}/bookings chỉ ADMIN/MANAGER),
- * nên buổi chưa có đánh giá, trạng thái buổi và Google Meet không có ở đây.
- */
-export async function getStaffConsultantSessions(
-  consultantId: string,
-  params: { rating?: number; includeRemoved?: boolean; offset?: number; limit?: number } = {},
-): Promise<StaffConsultantRating[]> {
-  const { rating, includeRemoved = false, offset = 0, limit = 20 } = params;
-  const { data } = await apiClient.get<unknown>(`/staff/consultants/${encodeURIComponent(consultantId)}/ratings`, {
-    params: { rating: rating || undefined, includeRemoved, limit, offset },
-  });
-  return rows(data).map(toRating);
-}

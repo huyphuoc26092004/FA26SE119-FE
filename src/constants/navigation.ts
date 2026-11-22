@@ -24,6 +24,7 @@ import {
   FileStack,
   Flag,
   Database,
+  Star,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -116,6 +117,6 @@ export const staffNav: NavItem[] = [
   { label: 'Job catalog', labelVi: 'Kho việc làm', translationKey: '', to: '/staff/jobs?tab=catalog', icon: Database, group: 'management' },
   { label: 'CV Templates', labelVi: 'Mẫu CV', translationKey: '', to: '/staff/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'Rating reports', labelVi: 'Báo cáo đánh giá', translationKey: '', to: '/staff/rating-appeals', icon: Flag, group: 'management' },
-  { label: 'Consultants', labelVi: 'Tư vấn viên', translationKey: '', to: '/staff/consultants', icon: Users, group: 'operations' },
+  { label: 'Consultant ratings', labelVi: 'Đánh giá tư vấn viên', translationKey: '', to: '/staff/ratings', icon: Star, group: 'management' },
   { label: 'Feedback', labelVi: 'Phản hồi', translationKey: '', to: '/staff/feedback', icon: MessageSquare, group: 'operations' },
 ];

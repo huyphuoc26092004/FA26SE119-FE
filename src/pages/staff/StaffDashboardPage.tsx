@@ -30,9 +30,9 @@ const DUTIES = [
   },
   {
     no: '04',
-    title: 'Theo dõi tư vấn viên và phản hồi',
-    to: '/staff/consultants',
-    body: 'Xem số buổi tư vấn, điểm trung bình và từng đánh giá của tư vấn viên; đọc phản hồi của người dùng về đối sánh CV, trợ lý AI và buổi tư vấn.',
+    title: 'Xem đánh giá tư vấn viên',
+    to: '/staff/ratings',
+    body: 'Đọc đánh giá ứng viên để lại cho tư vấn viên, lọc theo tư vấn viên hoặc số sao, và xem đánh giá nào đang bị báo cáo.',
   },
 ];
 
@@ -83,9 +83,9 @@ export default function StaffDashboardPage() {
             detail: d ? `${d.inactiveResumeTemplates} mẫu đang tắt` : failed,
           },
           {
-            label: 'Tư vấn viên đang hoạt động',
-            value: d ? d.activeConsultants : '—',
-            detail: d ? `${d.averageConsultantRating === null ? '—' : d.averageConsultantRating.toFixed(2)} sao TB · ${d.totalConsultantRatings} đánh giá` : failed,
+            label: 'Đánh giá tư vấn viên',
+            value: d ? d.totalConsultantRatings : '—',
+            detail: d ? `${d.averageConsultantRating === null ? '—' : d.averageConsultantRating.toFixed(2)} sao trung bình` : failed,
           },
         ]}
       />
