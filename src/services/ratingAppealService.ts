@@ -71,8 +71,34 @@ export const getManagerRatingAppeals = async () =>
 export const decideRatingAppeal = (id: string, decision: 'ACCEPTED' | 'REJECTED', reason: string) =>
   apiClient.post(`/manager/rating-appeals/${encodeURIComponent(id)}/decision`, { decision, reason });
 
-export const getStaffRatingAppeals = async () =>
-  rows((await apiClient.get<unknown>('/staff/rating-appeals')).data).map(toRatingAppeal);
+export const getStaffRatingAppeals = async (status?: AppealStatus) =>
+  rows((await apiClient.get<unknown>('/staff/rating-appeals', { params: { status } })).data).map(toRatingAppeal);
 
 export const reviewRatingAppeal = (id: string, decision: StaffVerdict, reason: string) =>
   apiClient.post(`/staff/rating-appeals/${encodeURIComponent(id)}/preliminary-decision`, { decision, reason });
+
+export interface AppealHistoryEntry {
+  id: string;
+  actorName: string;
+  actorRole: string;
+  stage: string;
+  fromStatus: string;
+  toStatus: string;
+  decision: string;
+  reason: string;
+  createdAt: string;
+}
+
+/** GET /{staff|manager}/rating-appeals/{id}/history — từng bước: SUBMISSION, PRELIMINARY_REVIEW, FINAL_REVIEW. */
+export const getRatingAppealHistory = async (scope: 'staff' | 'manager', id: string): Promise<AppealHistoryEntry[]> =>
+  rows((await apiClient.get<unknown>(`/${scope}/rating-appeals/${encodeURIComponent(id)}/history`)).data).map((row) => ({
+    id: str(row.id),
+    actorName: str(row.actor_name ?? row.actorName),
+    actorRole: str(row.actor_role ?? row.actorRole),
+    stage: str(row.stage),
+    fromStatus: str(row.from_status ?? row.fromStatus),
+    toStatus: str(row.to_status ?? row.toStatus),
+    decision: str(row.decision),
+    reason: str(row.reason),
+    createdAt: str(row.created_at ?? row.createdAt),
+  }));

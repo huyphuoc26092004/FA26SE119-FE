@@ -8,6 +8,8 @@ export interface ResumeTemplateAdmin {
   description: string;
   is_active: boolean;
   is_trial_enabled: boolean;
+  /** Gói đăng ký được dùng mẫu này (BE V44: resume_templates.allowed_tier_codes, mặc định FREE/BASIC/PRO). */
+  allowed_tier_codes?: string[] | string | null;
   html_content: string;
   created_at?: string;
   updated_at?: string;
@@ -21,6 +23,8 @@ export interface ResumeTemplateInput {
   active: boolean;
   trialEnabled: boolean;
   htmlContent: string;
+  /** Bỏ trống thì BE đặt mặc định FREE, BASIC, PRO. */
+  allowedTierCodes?: string[];
 }
 
 export interface TemplateImportBlock {

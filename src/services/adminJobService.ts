@@ -3,7 +3,38 @@ import { apiClient } from './apiClient';
 import { type ApiRow, num, rows, str } from './candidateMappers';
 import { formatDateTime } from './supportService';
 
-export type AdminJobStatus = 'ACTIVE' | 'EXPIRED' | 'REMOVED' | 'INVALID';
+/** Trạng thái tin BE nhận (JobService: PENDING, ACTIVE, REJECTED, EXPIRED, REMOVED, INVALID). */
+export type AdminJobStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'EXPIRED' | 'REMOVED' | 'INVALID';
+
+export interface ManagedJob {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  status: AdminJobStatus;
+  sourceSite: string;
+  ingestionMethod: string;
+  createdBy: string;
+  collectedAt: string;
+}
+
+const toManagedJob = (row: ApiRow): ManagedJob => ({
+  id: str(row.id),
+  title: str(row.job_title ?? row.title),
+  company: str(row.company_name),
+  location: str(row.location),
+  status: (str(row.status).toUpperCase() || 'ACTIVE') as AdminJobStatus,
+  sourceSite: str(row.source_site ?? row.original_source_site),
+  ingestionMethod: str(row.ingestion_method),
+  createdBy: str(row.created_by_full_name ?? row.created_by_email),
+  collectedAt: row.collected_at ? formatDateTime(str(row.collected_at)) : '',
+});
+
+/** GET /admin/jobs (ADMIN, MANAGER, STAFF): mọi trạng thái, lọc theo từ khoá và trạng thái. */
+export async function getManagedJobs(q: string, status: AdminJobStatus | '', limit = 50, offset = 0): Promise<ManagedJob[]> {
+  const { data } = await apiClient.get<unknown>('/admin/jobs', { params: { q, status: status || undefined, limit, offset } });
+  return rows(data).map(toManagedJob);
+}
 
 export interface ImportJobInput {
   sourceSite: string;

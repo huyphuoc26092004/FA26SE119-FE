@@ -8,6 +8,7 @@ import {
   decideRatingAppeal,
   getBookingRatingAppeals,
   getManagerRatingAppeals,
+  getRatingAppealHistory,
   submitRatingAppeal,
   type RatingAppeal,
 } from '../../services/ratingAppealService';
@@ -30,6 +31,43 @@ export function appealTone(appeal: RatingAppeal) {
 
 export const staffVerdictLabel = (verdict: RatingAppeal['staffStatus']) =>
   verdict === 'APPROVED' ? 'Đã duyệt và chuyển Manager' : 'Đã từ chối báo cáo';
+
+const STAGE_LABEL: Record<string, string> = { SUBMISSION: 'Gửi báo cáo', PRELIMINARY_REVIEW: 'Sơ duyệt', FINAL_REVIEW: 'Phê duyệt cuối' };
+const ROLE_LABEL: Record<string, string> = { CAREER_CONSULTANT: 'Tư vấn viên', STAFF: 'Staff', MANAGER: 'Manager', ADMIN: 'Admin' };
+const DECISION_LABEL: Record<string, string> = {
+  SUBMITTED: 'Đã gửi báo cáo',
+  APPROVED: 'Duyệt, chuyển Manager',
+  ACCEPTED: 'Chấp nhận, ẩn đánh giá',
+  REJECTED: 'Từ chối',
+};
+
+/** Lịch sử xử lý (GET /{staff|manager}/rating-appeals/{id}/history), chỉ tải khi mở. */
+export function AppealHistory({ appealId, scope }: { appealId: string; scope: 'staff' | 'manager' }) {
+  const [open, setOpen] = useState(false);
+  const query = useQuery({ queryKey: ['rating-appeal-history', scope, appealId], queryFn: () => getRatingAppealHistory(scope, appealId), enabled: open });
+  return (
+    <details className="text-sm" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary className="cursor-pointer text-[12px] text-slate-500 hover:text-ink">Lịch sử xử lý</summary>
+      {open && query.isPending && <p className="mt-2 text-[12px] text-slate-500">Đang tải…</p>}
+      {query.isError && <p className="mt-2 text-[12px] text-danger">Không tải được lịch sử.</p>}
+      {query.data && (
+        <ol className="mt-2 space-y-2 border-l border-border pl-4">
+          {query.data.length === 0 && <li className="text-[12px] text-slate-500">Chưa có lịch sử.</li>}
+          {query.data.map((h) => (
+            <li key={h.id}>
+              <p className="text-[12px] text-slate-500">
+                {formatDateTime(h.createdAt)} · {STAGE_LABEL[h.stage] ?? h.stage} · {h.actorName || ROLE_LABEL[h.actorRole] || h.actorRole}
+                {h.actorName && ROLE_LABEL[h.actorRole] ? ` (${ROLE_LABEL[h.actorRole]})` : ''}
+              </p>
+              <p className="text-ink">{DECISION_LABEL[h.decision] ?? h.decision}</p>
+              {h.reason && <p className="whitespace-pre-wrap text-slate-600">{h.reason}</p>}
+            </li>
+          ))}
+        </ol>
+      )}
+    </details>
+  );
+}
 
 /** Nội dung chung của một báo cáo: đánh giá gốc, lý do của tư vấn viên, bằng chứng. */
 export function AppealSummary({ appeal, children }: { appeal: RatingAppeal; children?: ReactNode }) {
@@ -208,6 +246,7 @@ function AppealReview({ appeal }: { appeal: RatingAppeal }) {
           Lý do của Manager: {appeal.decisionReason}
         </p>
       )}
+      <AppealHistory appealId={appeal.id} scope="manager" />
     </AppealSummary>
   );
 }

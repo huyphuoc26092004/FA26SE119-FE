@@ -11,6 +11,7 @@ import {
   getManagerQuotaLimits,
   googleSearchCostVnd,
   isDocumentPackTier,
+  DOCUMENT_PACK_SUPPORTED,
   isTopupTier,
   saveManagerPlan,
   validateManagerPlanQuotas,
@@ -137,22 +138,24 @@ export default function ManagerPlansPage() {
         >
           <Plus size={15} /> Thêm gói
         </button>
-        <button
-          type="button"
-          className={inkLink}
-          onClick={() =>
-            edit({ tier_code: '', display_name: '', price_monthly: 49000, currency: 'VND', is_active: true, tier_type: 'DOCUMENT_PACK', search_call_amount: 200, valid_days: 30, quotas: [] })
-          }
-        >
-          Thêm gói tài liệu
-        </button>
+        {DOCUMENT_PACK_SUPPORTED && (
+          <button
+            type="button"
+            className={inkLink}
+            onClick={() =>
+              edit({ tier_code: '', display_name: '', price_monthly: 49000, currency: 'VND', is_active: true, tier_type: 'DOCUMENT_PACK', search_call_amount: 200, valid_days: 30, quotas: [] })
+            }
+          >
+            Thêm gói tài liệu
+          </button>
+        )}
       </ManagerHead>
 
       {(catalog.error || limits.error) && <Note tone="danger">{catalog.error?.message || limits.error?.message}</Note>}
       {toggle.error && <Note tone="danger">{toggle.error.message}</Note>}
 
       <section>
-        <ManagerSection title="Các gói hiện có" meta={catalog.data ? `${selling} / ${plans.length} gói đang bán · ${plans.length - topupCount} gói thuê bao · ${topupCount} gói nạp token · ${docPackCount} gói tài liệu` : undefined} />
+        <ManagerSection title="Các gói hiện có" meta={catalog.data ? `${selling} / ${plans.length} gói đang bán · ${plans.length - topupCount} gói thuê bao · ${topupCount} gói nạp token${docPackCount ? ` · ${docPackCount} gói tài liệu` : ''}` : undefined} />
         {catalog.isPending && <p className="py-6 text-[13px] text-slate-500">Đang tải gói…</p>}
         {catalog.data && plans.length === 0 && <p className="py-6 text-[13px] text-slate-500">Chưa có gói nào.</p>}
         <div className="grid border-b border-border sm:grid-cols-2 lg:grid-cols-3">

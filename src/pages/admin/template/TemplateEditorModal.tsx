@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Code2,
   Eye,
@@ -25,7 +26,7 @@ import {
   validateTemplateHtml,
   renderTemplateWithSampleData,
 } from '../../../utils/resumeTemplatePreview';
-import { SEED_TEMPLATES } from '../../../services/resumeTemplateAdminService';
+import { SEED_TEMPLATES, getTemplateTierOptions, templateTierCodes } from '../../../services/resumeTemplateAdminService';
 
 interface TemplateEditorModalProps {
   template: ResumeTemplateAdmin | null; // null for Create, object for Edit
@@ -155,6 +156,10 @@ export function TemplateEditorModal({
   const [description, setDescription] = useState(template?.description ?? '');
   const [active, setActive] = useState(template?.is_active ?? true);
   const [trialEnabled, setTrialEnabled] = useState(template?.is_trial_enabled ?? true);
+  const [tierCodes, setTierCodes] = useState<string[]>(() => templateTierCodes(template));
+  const tierOptions = useQuery({ queryKey: ['template-tier-options'], queryFn: getTemplateTierOptions, staleTime: 5 * 60_000 });
+  const toggleTier = (code: string) =>
+    setTierCodes((current) => (current.includes(code) ? current.filter((c) => c !== code) : [...current, code]));
   const [htmlContent, setHtmlContent] = useState(
     initialHtmlContent ?? template?.html_content ?? DEFAULT_STARTER_HTML
   );
@@ -225,6 +230,10 @@ export function TemplateEditorModal({
       alert('Mã HTML chưa hợp lệ: ' + validation.errors.join(' '));
       return;
     }
+    if (tierCodes.length === 0) {
+      alert('Chọn ít nhất một gói được dùng mẫu CV này.');
+      return;
+    }
 
     await onSave({
       name: name.trim(),
@@ -234,6 +243,7 @@ export function TemplateEditorModal({
       active,
       trialEnabled,
       htmlContent,
+      allowedTierCodes: tierCodes,
     });
   };
 
@@ -339,6 +349,20 @@ export function TemplateEditorModal({
               description="Cho phép khách truy cập dùng thử tại /guest-trial mà không cần đăng nhập."
             />
           </div>
+
+          <fieldset className="sm:col-span-2 lg:col-span-3">
+            <legend className={fieldLabel}>Gói được dùng mẫu này *</legend>
+            <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2">
+              {(tierOptions.data ?? tierCodes.map((code) => ({ code, name: code }))).map((tier) => (
+                <label key={tier.code} className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                  <input type="checkbox" className="accent-brand" checked={tierCodes.includes(tier.code)} onChange={() => toggleTier(tier.code)} />
+                  {tier.name}
+                  {tier.name !== tier.code && <span className="text-[12px] text-slate-500">({tier.code})</span>}
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-[12px] text-slate-500">Ứng viên ở gói không được chọn sẽ không dựng CV bằng mẫu này.</p>
+          </fieldset>
         </div>
 
         {/* Middle: Slot Fast-Insertion Toolbar & Preset Templates */}
