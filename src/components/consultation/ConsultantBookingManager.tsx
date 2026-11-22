@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Clock, Star } from 'lucide-react';
 import BookingMeetingAccess from './BookingMeetingAccess';
 import BookingAttachments from './BookingAttachments';
+import { ConsultantRatingAppeal } from './RatingAppeals';
 import { useBookingClock } from './useBookingClock';
 import { bookingPollInterval } from '../../utils/bookingMeeting';
 export { useBookingClock } from './useBookingClock';
@@ -102,6 +103,9 @@ export function ConsultantBookingCard({ booking, showLinks = true }: {
           <p className="flex items-center gap-1 font-medium text-ink"><Star size={15} className="text-amber-500" aria-hidden="true" />{booking.rating}/5 · {vi ? 'Ứng viên đánh giá' : 'Candidate review'}</p>
           <p className="mt-1 whitespace-pre-wrap text-slate-600">{booking.rating_comment}</p>
         </div>
+      )}
+      {(booking.status === 'COMPLETED' || booking.rating != null) && (
+        <ConsultantRatingAppeal bookingId={booking.id} hasRating={booking.rating != null} />
       )}
     </article>
   );

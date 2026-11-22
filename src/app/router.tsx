@@ -233,7 +233,6 @@ export const router = createBrowserRouter([
         ] }],
       },
       {
-        // Staff: việc làm, mẫu CV, sơ duyệt báo cáo đánh giá (BE chưa có role STAFF — xem tài liệu API cần bổ sung).
         element: <RoleRoute role="STAFF" />,
         children: [{ path: '/staff', element: <StaffLayout />, children: [
           { index: true, element: <StaffDashboardPage /> },

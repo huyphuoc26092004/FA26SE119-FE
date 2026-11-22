@@ -5,7 +5,6 @@ import { ManagerHead, ManagerSection, inkLink } from '../../components/manager/M
 import { useAuthStore } from '../../stores/authStore';
 import { getCrawlRuns } from '../../services/jobCrawlService';
 import { getAdminResumeTemplates } from '../../services/resumeTemplateAdminService';
-import { ApiNotConnectedError } from '../../services/apiPending';
 import { appealStage, getStaffRatingAppeals } from '../../services/ratingAppealService';
 import { RunStatus, formatDateTime } from '../admin/jobs/crawlFormat';
 
@@ -57,7 +56,7 @@ export default function StaffDashboardPage() {
             label: 'Báo cáo đánh giá chờ bạn',
             value: appeals.data ? waiting.length : '—',
             valueTone: waiting.length ? 'warning' : 'ink',
-            detail: appeals.error instanceof ApiNotConnectedError ? 'BE chưa có API' : appeals.data ? `${appeals.data.length} báo cáo tất cả` : undefined,
+            detail: appeals.data ? `${appeals.data.length} báo cáo tất cả` : undefined,
           },
           {
             label: 'Lần thu thập gần nhất',
@@ -101,7 +100,7 @@ export default function StaffDashboardPage() {
         {appeals.isPending && <p className="py-5 text-sm text-slate-500">Đang tải…</p>}
         {appeals.error && (
           <div className="py-5">
-            <Note tone="warning">{appeals.error instanceof ApiNotConnectedError ? 'BE chưa có API cho bước Staff (GET /api/v1/staff/rating-appeals).' : appeals.error.message}</Note>
+            <Note tone="warning">{appeals.error.message}</Note>
           </div>
         )}
         {appeals.data && waiting.length === 0 && <p className="py-5 text-sm text-slate-500">Không có báo cáo nào đang chờ.</p>}
