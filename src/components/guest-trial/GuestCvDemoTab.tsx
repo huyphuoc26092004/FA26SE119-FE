@@ -4,6 +4,7 @@ import { ArrowRight, ExternalLink } from 'lucide-react';
 import { toDemoCv, type DemoCvData } from './guestTrialData';
 import { getGuestDemoResumes, getGuestRecommendations, guestErrorMessage } from '../../services/guestService';
 import { useTranslation } from '../../i18n';
+import { gtDelay } from './guestTrialMotion';
 
 interface GuestCvDemoTabProps {
   onSelectTemplateForBuilder?: (cv: DemoCvData) => void;
@@ -31,7 +32,31 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
   const cvs = demos.data ?? [];
   const currentCv = cvs.find((cv) => cv.id === selectedCvId) ?? cvs[0];
 
-  if (demos.isPending) return <p className="py-10 text-base text-slate-500">{vi ? 'Đang tải CV mẫu…' : 'Loading sample CVs…'}</p>;
+  if (demos.isPending) {
+    return (
+      <div role="status" className="py-10">
+        <span className="sr-only">{vi ? 'Đang tải CV mẫu…' : 'Loading sample CVs…'}</span>
+        <div aria-hidden="true" className="space-y-4">
+          <div className="gt-skel h-6 w-40" />
+          <div className="gt-skel h-4 w-2/3" />
+          <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,1fr)]">
+            <div className="space-y-3 rounded-panel border border-border p-8">
+              <div className="gt-skel h-8 w-1/2" />
+              <div className="gt-skel h-4 w-1/3" />
+              <div className="gt-skel mt-6 h-4 w-full" />
+              <div className="gt-skel h-4 w-5/6" />
+              <div className="gt-skel h-4 w-4/6" />
+            </div>
+            <div className="space-y-3 pt-5">
+              <div className="gt-skel h-4 w-1/2" />
+              <div className="gt-skel h-4 w-full" />
+              <div className="gt-skel h-10 w-44" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (demos.isError) return <p className="py-10 text-base text-danger" role="alert">{guestErrorMessage(demos.error, vi)}</p>;
   if (!currentCv) {
     return (
@@ -72,7 +97,8 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
                 role="tab"
                 aria-selected={isSelected}
                 onClick={() => select(cv.id)}
-                className={`group -mb-px flex items-baseline gap-3 border-b-2 py-5 text-left transition-colors cursor-pointer sm:pr-6 ${
+                style={gtDelay(index * 60)}
+                className={`gt-rise group -mb-px flex items-baseline gap-3 border-b-2 py-5 text-left transition-colors duration-300 cursor-pointer sm:pr-6 ${
                   isSelected ? 'border-b-brand' : 'border-b-transparent'
                 }`}
               >
@@ -90,7 +116,7 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
       )}
 
       <div className="mt-8 grid gap-[clamp(2rem,3.5vw,4rem)] xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,1fr)]">
-        <article className="rounded-panel border border-border bg-surface p-[clamp(1.5rem,3vw,3.5rem)]">
+        <article key={currentCv.id} className="gt-fade gt-card rounded-panel border border-border bg-surface p-[clamp(1.5rem,3vw,3.5rem)]">
           <header className="border-b border-ink/80 pb-6">
             <h2 className="text-3xl font-normal tracking-[-0.02em] text-ink">{currentCv.name}</h2>
             <p className="mt-1 text-lg text-brand">{currentCv.title}</p>
@@ -172,6 +198,7 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
                 >
                   {recommend.isPending ? (vi ? 'Đang so khớp…' : 'Matching…') : vi ? 'Tìm việc phù hợp' : 'Find matching jobs'}
                 </button>
+                {recommend.isPending && <div aria-hidden="true" className="gt-progress mt-4" />}
               </>
             )}
             {recommend.isError && <p className="mt-3 text-sm text-danger" role="alert">{guestErrorMessage(recommend.error, vi)}</p>}
@@ -180,11 +207,14 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
             )}
             {recommend.data && recommend.data.length > 0 && (
               <ul className="mt-3">
-                {recommend.data.map((job) => (
-                  <li key={job.id} className="border-t border-border py-4 first:border-t-0">
+                {recommend.data.map((job, index) => (
+                  <li key={job.id} style={gtDelay(index * 90)} className="gt-item border-t border-border py-4 first:border-t-0">
                     <div className="flex items-baseline justify-between gap-3">
                       <p className="min-w-0 text-base text-ink">{job.title}</p>
                       <span className="shrink-0 text-sm tabular-nums text-brand">{job.score}%</span>
+                    </div>
+                    <div aria-hidden="true" className="mt-2 h-0.5 w-full bg-ink/10">
+                      <div className="gt-bar h-full bg-brand" style={{ ...gtDelay(index * 90), width: `${Math.max(0, Math.min(100, job.score))}%` }} />
                     </div>
                     <p className="mt-0.5 text-sm text-slate-600">{[job.company, job.location].filter(Boolean).join(' · ')}</p>
                     {job.strengths.length > 0 && (
@@ -218,7 +248,7 @@ export function GuestCvDemoTab({ onSelectTemplateForBuilder }: GuestCvDemoTabPro
             </p>
             <button
               type="button"
-              className="mt-6 inline-flex min-h-12 w-full items-center justify-between gap-4 rounded-full bg-mint px-6 text-base font-medium text-night transition-colors hover:bg-white cursor-pointer"
+              className="gt-arrow mt-6 inline-flex min-h-12 w-full items-center justify-between gap-4 rounded-full bg-mint px-6 text-base font-medium text-night transition-colors hover:bg-white cursor-pointer"
               onClick={() => onSelectTemplateForBuilder?.(currentCv)}
             >
               {vi ? 'Tạo CV từ nội dung này' : 'Build a CV from this content'}
