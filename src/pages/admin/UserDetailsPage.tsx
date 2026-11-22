@@ -31,6 +31,7 @@ import {
 import type { AdminManagedUser, UpdateUserPayload } from '../../types/userManagement';
 import type { UserRole } from '../../types/domain';
 import { useTranslation } from '../../i18n';
+import { tagClass, TimeTag } from '../../components/ui/Tag';
 
 const copy = {
   vi: {
@@ -357,8 +358,8 @@ export default function UserDetailsPage() {
       {/* Header */}
       <header className="mt-[clamp(1.75rem,3.5vw,2.5rem)]">
         <p className="text-[13px] text-slate-600">
-          {c.roles[user.role]} · <span className={statusTone}>{c.status[user.status]}</span> ·{' '}
-          {user.isVerified ? c.verified : <span className="text-orange-600">{c.unverified}</span>}
+          {c.roles[user.role]} · <span className={tagClass(statusTone)}>{c.status[user.status]}</span> ·{' '}
+          {user.isVerified ? c.verified : <span className={tagClass('orange')}>{c.unverified}</span>}
         </p>
         <h1 className="mt-3 text-[clamp(2.25rem,4.6vw,4rem)] font-normal leading-[1.08] tracking-[-0.03em] text-ink">
           {user.name}.
@@ -499,7 +500,7 @@ export default function UserDetailsPage() {
           <ul>
             {user.recentActivities.map((act) => (
               <li key={act.id} className="grid gap-1 border-b border-border py-3.5 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-6">
-                <span className="text-[13px] tabular-nums text-slate-500">{act.timestamp}</span>
+                <TimeTag tone="muted">{act.timestamp}</TimeTag>
                 <div className="min-w-0">
                   <p className="text-sm text-ink">{act.action}</p>
                   <p className="mt-0.5 text-[13px] text-slate-600">

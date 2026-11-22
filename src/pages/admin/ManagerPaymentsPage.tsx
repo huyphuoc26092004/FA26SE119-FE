@@ -5,6 +5,7 @@ import { num, obj, str, type ApiRow } from '../../services/candidateMappers';
 import { operationalDate, OperationalPagination } from '../../components/admin/OperationalTable';
 import { InfoRow, Modal, Note, SectionHead, brandLink, underlineInput, underlineSelect } from '../../components/admin/AdminKit';
 import { PaymentReportsTab } from './payment/PaymentReportsTab';
+import { TimeTag } from '../../components/ui/Tag';
 
 const STATUS: Record<string, { label: string; tone: string }> = {
   PENDING: { label: 'Đang chờ', tone: 'text-orange-600' },
@@ -145,7 +146,7 @@ export default function ManagerPaymentsPage() {
               { label: 'Loại đơn', render: (row) => ORDER_TYPE[str(row.order_type)] ?? (str(row.order_type) || '—') },
               { label: 'Số tiền', align: 'right', render: (row) => money(row, 'amount') },
               { label: 'Trạng thái', render: (row) => <Status value={row.status} /> },
-              { label: 'Ngày tạo', render: (row) => <span className="text-slate-600">{operationalDate(row.created_at)}</span> },
+              { label: 'Ngày tạo', render: (row) => <TimeTag icon="calendar" tone="muted">{operationalDate(row.created_at)}</TimeTag> },
             ]}
           />
         )}
@@ -167,7 +168,7 @@ export default function ManagerPaymentsPage() {
               { label: 'Người nhận', render: (row) => str(row.payer_email) || '—' },
               { label: 'Tổng tiền', align: 'right', render: (row) => money(row, 'total_amount') },
               { label: 'Trạng thái', render: (row) => <Status value={row.status} /> },
-              { label: 'Phát hành', render: (row) => <span className="text-slate-600">{operationalDate(row.issued_at)}</span> },
+              { label: 'Phát hành', render: (row) => <TimeTag icon="calendar" tone="muted">{operationalDate(row.issued_at)}</TimeTag> },
             ]}
           />
         )}

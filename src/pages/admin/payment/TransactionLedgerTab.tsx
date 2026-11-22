@@ -9,6 +9,7 @@ import {
   textLink,
   underlineInput,
 } from '../../../components/admin/AdminKit';
+import { tagClass } from '../../../components/ui/Tag';
 
 interface TransactionLedgerTabProps {
   transactions: AdminPaymentTransaction[];
@@ -275,7 +276,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
                 </p>
                 <p className="mt-1 text-[13px] text-slate-600 md:hidden">
                   {METHOD_LABEL[tx.paymentMethod] ?? tx.paymentMethod} · <span className="text-ink">{tx.finalAmountVND.toLocaleString('vi-VN')}đ</span> ·{' '}
-                  <span className={paymentStatusTone(tx.status)}>{PAYMENT_STATUS_LABEL[tx.status]}</span>
+                  <span className={tagClass(paymentStatusTone(tx.status))}>{PAYMENT_STATUS_LABEL[tx.status]}</span>
                 </p>
               </div>
               <span className="hidden text-sm text-slate-700 md:block">{METHOD_LABEL[tx.paymentMethod] ?? tx.paymentMethod}</span>
@@ -285,7 +286,7 @@ export const TransactionLedgerTab: React.FC<TransactionLedgerTabProps> = ({
                   <span className="block text-xs text-slate-500">−{tx.discountAmountVND.toLocaleString('vi-VN')}đ</span>
                 )}
               </span>
-              <span className={`hidden text-sm md:block ${paymentStatusTone(tx.status)}`}>{PAYMENT_STATUS_LABEL[tx.status]}</span>
+              <span className={`${tagClass(paymentStatusTone(tx.status))} hidden w-fit md:inline-flex`}>{PAYMENT_STATUS_LABEL[tx.status]}</span>
               <span className="text-right">
                 {tx.status === 'pending' && (
                   <button type="button" onClick={() => handleApprove(tx.id)} disabled={approvingId === tx.id} className={brandLink}>

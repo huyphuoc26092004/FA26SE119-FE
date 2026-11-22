@@ -32,6 +32,7 @@ import {
   getNotifications,
 } from '../../services/notificationService';
 import NotificationsPage from '../shared/NotificationsPage';
+import { tagClass } from '../../components/ui/Tag';
 
 const STATUS_LABEL: Record<AnnouncementStatus, string> = { DRAFT: 'Bản nháp', PUBLISHED: 'Đã phát hành', ARCHIVED: 'Đã lưu trữ' };
 const ROLE_LABEL = { CANDIDATE: 'Ứng viên', CAREER_CONSULTANT: 'Tư vấn viên', ADMIN: 'Quản trị viên', MANAGER: 'Quản lý vận hành', STAFF: 'Nhân viên vận hành' } as const;
@@ -114,7 +115,7 @@ export default function AnnouncementsPage() {
                         {a.expiresAt && ` · hết hạn ${a.expiresAt}`}
                       </span>
                     </span>
-                    <span className={`text-[13px] ${a.status === 'PUBLISHED' ? 'text-brand' : 'text-slate-600'}`}>{STATUS_LABEL[a.status] ?? a.status}</span>
+                    <span className={`${tagClass(a.status === 'PUBLISHED' ? 'brand' : a.status === 'DRAFT' ? 'warning' : 'muted')} w-fit`}>{STATUS_LABEL[a.status] ?? a.status}</span>
                     <span className="flex gap-5">
                       {a.status === 'DRAFT' && (
                         <>

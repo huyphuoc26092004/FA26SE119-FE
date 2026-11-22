@@ -51,16 +51,15 @@ export function Badge({
   children: ReactNode;
   tone?: 'blue' | 'green' | 'amber' | 'gray';
 }) {
+  // Dùng chung hệ tag (.tag-* trong index.css): nền nhạt + viền mảnh theo tông.
   const colors = {
-    blue: 'border-brand-200 text-brand-700',
-    green: 'border-emerald-200 text-success',
-    amber: 'border-amber-200 text-warning',
-    gray: 'border-slate-300 text-slate-600',
+    blue: 'tag-brand',
+    green: 'tag-success',
+    amber: 'tag-warning',
+    gray: 'tag-muted',
   };
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium leading-5 ${colors[tone]}`}
-    >
+    <span className={`tag text-xs ${colors[tone]}`}>
       {children}
     </span>
   );

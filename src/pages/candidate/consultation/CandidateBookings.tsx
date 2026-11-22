@@ -6,6 +6,7 @@ import BookingAttachments from '../../../components/consultation/BookingAttachme
 import PublishedConsultationAdvice from '../../../components/consultation/PublishedConsultationAdvice';
 import { useBookingClock } from '../../../components/consultation/useBookingClock';
 import { useTranslation } from '../../../i18n';
+import { tagClass, TimeTag } from '../../../components/ui/Tag';
 import {
   bookingAction,
   rateBooking,
@@ -117,16 +118,18 @@ function BookingCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p
-            className={`mb-2 text-xs font-medium ${booking.status === 'ACCEPTED' ? 'text-emerald-700' : booking.status === 'PENDING' ? 'text-amber-700' : 'text-slate-500'}`}
-          >
-            {status[booking.status]}
+          <p className="mb-2">
+            <span
+              className={tagClass(booking.status === 'ACCEPTED' ? 'brand' : booking.status === 'PENDING' ? 'warning' : booking.status === 'COMPLETED' ? 'success' : booking.status === 'DECLINED' ? 'danger' : 'muted')}
+            >
+              {status[booking.status]}
+            </span>
           </p>
           <h3 className="text-lg font-medium text-ink">{booking.subject}</h3>
           <p className="mt-1 text-sm text-slate-600">
             {booking.target_role} · {booking.consultant_name}
           </p>
-          <p className="mt-3 text-sm font-medium text-ink">
+          <TimeTag icon="calendar" dateTime={booking.starts_at} className="mt-3 text-sm">
             {starts.toLocaleDateString(locale, {
               weekday: 'short',
               day: '2-digit',
@@ -136,7 +139,7 @@ function BookingCard({
             · {starts.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} –{' '}
             {ends.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} (
             {booking.duration_minutes} {vi ? 'phút' : 'min'})
-          </p>
+          </TimeTag>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm">
           {canCancel && (

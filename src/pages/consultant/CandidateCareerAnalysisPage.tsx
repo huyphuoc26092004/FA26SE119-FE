@@ -20,6 +20,7 @@ import {
 } from '../../services/consultationService';
 import type { CandidateCareerAnalysis } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
+import { tagClass } from '../../components/ui/Tag';
 
 type Tab = 'profile' | 'ats' | 'assessment' | 'gap' | 'advice';
 type Readiness = CandidateCareerAnalysis['readinessLevel'];
@@ -699,8 +700,8 @@ export default function CandidateCareerAnalysisPage() {
                     <div className="min-w-0">
                       <p className="flex flex-wrap items-baseline gap-x-3 text-[15px] text-ink">
                         {sk.name}
-                        <span className={`text-[13px] ${statusTone(sk.status)}`}>{c.status[sk.status]}</span>
-                        {sk.importance === 'critical' && <span className="text-[13px] text-danger">{c.critical}</span>}
+                        <span className={tagClass(statusTone(sk.status))}>{c.status[sk.status]}</span>
+                        {sk.importance === 'critical' && <span className={tagClass('danger', { dot: false })}>{c.critical}</span>}
                       </p>
                       <p className="text-[13px] text-slate-500">{sk.category}</p>
                     </div>

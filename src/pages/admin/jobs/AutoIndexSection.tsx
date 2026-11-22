@@ -11,6 +11,7 @@ import {
   type AutoIndexRun,
 } from '../../../services/autoIndexSchedule';
 import { RunStatus, formatDateTime } from './crawlFormat';
+import { TimeTag } from '../../../components/ui/Tag';
 
 const timeInput =
   'border-0 border-b border-slate-300 bg-transparent px-0 py-1.5 text-[15px] tabular-nums text-ink outline-none focus:border-brand';
@@ -19,7 +20,7 @@ function RunRow({ run }: { run: AutoIndexRun }) {
   const progress = run.total ? `${run.ok + run.failed}/${run.total} tin` : '…';
   return (
     <li className="grid gap-1 border-b border-border py-3 text-[14px] md:grid-cols-[11rem_7rem_8rem_minmax(0,1fr)] md:items-baseline md:gap-6">
-      <span className="tabular-nums text-ink">{formatDateTime(run.startedAt)}</span>
+      <TimeTag>{formatDateTime(run.startedAt)}</TimeTag>
       <span className="text-[13px] text-slate-600">{run.trigger === 'AUTO' ? `Theo lịch ${run.slot?.slice(-5) ?? ''}` : 'Chạy tay'}</span>
       <span className="text-[13px]">
         <RunStatus status={run.status} />

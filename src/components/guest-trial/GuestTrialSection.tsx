@@ -11,6 +11,7 @@ import type { DemoCvData } from './guestTrialData';
 import { Button } from '../ui';
 import { useTranslation } from '../../i18n';
 import { CcvLogo } from '../brand/CcvLogo';
+import { gtDelay } from './guestTrialMotion';
 
 export type GuestTrialTab = 'jobs' | 'resumes' | 'builder';
 
@@ -58,7 +59,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
 
   const tabList = (
     <div>
-      <p className="pb-4 text-sm text-slate-600">
+      <p className="gt-rise pb-4 text-sm text-slate-600" style={gtDelay(120)}>
         {isVietnamese ? 'Ba thứ bạn có thể thử' : 'Three things you can try'}
       </p>
       <div role="tablist" className="grid grid-cols-3 gap-x-4 border-b border-border lg:block">
@@ -71,14 +72,15 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveTab(tab.id)}
-              className="group flex w-full items-baseline gap-3 border-t border-border py-4 text-left"
+              className="gt-rise gt-tab group relative flex w-full items-baseline gap-3 border-t border-border py-4 text-left"
+              style={gtDelay(180 + index * 70)}
             >
               <span
                 className={`w-6 shrink-0 text-xs tabular-nums ${isActive ? 'text-brand' : 'text-slate-600'}`}
               >
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <span className="min-w-0">
+              <span className="gt-tab-label min-w-0">
                 <span
                   className={`block text-base transition-colors sm:text-lg ${
                     isActive ? 'text-brand' : 'text-slate-800 group-hover:text-brand'
@@ -88,6 +90,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
                 </span>
                 <span className="mt-1 hidden text-sm leading-snug text-slate-600 sm:block">{tab.hint}</span>
               </span>
+              <span aria-hidden="true" className="gt-tab-line absolute inset-x-0 -bottom-px z-10 h-px bg-brand" />
             </button>
           );
         })}
@@ -122,7 +125,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
   );
 
   const content = (
-    <div className="min-h-[500px]">
+    <div key={activeTab} className="gt-fade min-h-[500px]">
       {activeTab === 'jobs' && <GuestJobsTab />}
       {activeTab === 'resumes' && (
         <GuestCvDemoTab onSelectTemplateForBuilder={handleSelectTemplateForBuilder} />
@@ -138,10 +141,10 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
 
   const heading = (
     <header className="mb-[clamp(3rem,6vh,5rem)]">
-      <p className="text-base text-brand">
+      <p className="gt-rise text-base text-brand">
         {isVietnamese ? 'Trải nghiệm dùng thử dành cho khách' : 'Guest trial for visitors'}
       </p>
-      <h1 className="mt-5 text-[clamp(2.25rem,4.4vw,5.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-ink">
+      <h1 className="gt-rise mt-5 text-[clamp(2.25rem,4.4vw,5.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-ink" style={gtDelay(90)}>
         {isVietnamese ? (
           <>
             Dùng thử không cần tài khoản,
@@ -156,7 +159,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
           </>
         )}
       </h1>
-      <p className="mt-7 max-w-3xl text-lg leading-relaxed text-slate-700">
+      <p className="gt-rise mt-7 max-w-3xl text-lg leading-relaxed text-slate-700" style={gtDelay(180)}>
         {isVietnamese
           ? 'Xem việc làm công khai, đọc bản phân tích CV mẫu, tự tạo CV bằng AI và trò chuyện với trợ lý nghề nghiệp.'
           : 'Browse public jobs, read a sample CV analysis, build a CV and chat with the career assistant.'}
@@ -227,7 +230,7 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
             <div className={`mt-8 ${collapsed ? 'lg:hidden' : ''}`}>
               <Link
                 to="/register"
-                className="btn btn-p btn-m min-h-12 w-full justify-between!"
+                className="gt-arrow btn btn-p btn-m min-h-12 w-full justify-between!"
               >
                 {t('common.getStarted', isVietnamese ? 'Bắt đầu ngay' : 'Get started')}
                 <ArrowRight size={18} aria-hidden="true" />
@@ -265,11 +268,11 @@ export function GuestTrialSection({ isStandalone = false }: { isStandalone?: boo
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+          className="gt-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
           onClick={() => setShowSaveModal(false)}
         >
           <div
-            className="relative w-full max-w-lg rounded-3xl bg-surface p-6 sm:p-8 shadow-sm"
+            className="gt-panel relative w-full max-w-lg rounded-3xl bg-surface p-6 sm:p-8 shadow-sm"
             onClick={(e) => e.stopPropagation()}
           >
             <button

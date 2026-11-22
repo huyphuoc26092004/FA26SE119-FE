@@ -14,6 +14,7 @@ import {
 } from '../../services/supportService';
 import { authErrorMessage } from '../../services/authService';
 import { useTranslation } from '../../i18n';
+import { tagClass, type TagTone } from '../../components/ui/Tag';
 
 const copy = {
   vi: {
@@ -134,13 +135,6 @@ const statusLabels: Record<TicketStatus, { vi: string; en: string }> = {
   closed: { vi: 'Đã đóng', en: 'Closed' },
 };
 
-const statusDot: Record<TicketStatus, string> = {
-  open: 'bg-brand',
-  in_progress: 'bg-warning',
-  resolved: 'bg-success',
-  closed: 'bg-slate-400',
-};
-
 const priorityLabels: Record<TicketPriority, { vi: string; en: string }> = {
   low: { vi: 'Thấp', en: 'Low' },
   medium: { vi: 'Trung bình', en: 'Medium' },
@@ -228,12 +222,11 @@ function SelectChevron() {
   );
 }
 
+const TICKET_TONE: Record<TicketStatus, TagTone> = { open: 'info', in_progress: 'warning', resolved: 'brand', closed: 'muted' };
+
 function StatusMark({ status, label }: { status: TicketStatus; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap text-sm text-slate-700">
-      <span className={`h-1.5 w-1.5 rounded-full ${statusDot[status]}`} aria-hidden="true" />
-      {label}
-    </span>
+    <span className={tagClass(TICKET_TONE[status], { live: status === 'in_progress' })}>{label}</span>
   );
 }
 

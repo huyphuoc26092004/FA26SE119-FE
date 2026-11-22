@@ -17,6 +17,7 @@ import {
 import { getConsultantCandidates } from '../../services/consultationService';
 import type { ConsultantCandidateSummary } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
+import { tagClass } from '../../components/ui/Tag';
 
 type Readiness = ConsultantCandidateSummary['readinessLevel'];
 
@@ -409,7 +410,7 @@ export default function ConsultantCandidatesPage() {
                   </div>
 
                   <div className="col-start-2 min-w-0 lg:col-start-auto">
-                    <p className={`text-[13px] ${readinessTone(cand.readinessLevel)}`}>
+                    <p className={`${tagClass(readinessTone(cand.readinessLevel))} w-fit`}>
                       {c.readiness[cand.readinessLevel]}
                     </p>
                     <p className="truncate text-xs text-slate-400">

@@ -1,0 +1,93 @@
+/* Chuyển động nhẹ cho trang Dùng thử ngay. Thời gian ngắn, chỉ dùng opacity/transform,
+   và tắt hẳn khi người dùng bật "giảm chuyển động". */
+@keyframes gt-rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-fade {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes gt-panel {
+  from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Tiêu đề, mô tả và các mục ở thanh bên hiện dần theo thứ tự (--gt-delay đặt trong JSX).
+   fill-mode backwards để sau khi chạy xong, transform được trả lại cho hiệu ứng hover. */
+.gt-rise { animation: gt-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; animation-delay: var(--gt-delay, 0ms); }
+
+/* Đổi tab hoặc đổi CV mẫu: nội dung mới mờ dần lên. */
+.gt-fade { animation: gt-fade 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+
+/* Mục ở thanh bên: chữ nhích sang phải khi rê chuột, vạch xanh chạy ra dưới mục đang chọn. */
+.gt-tab .gt-tab-label { transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), color 0.2s ease; }
+.gt-tab .gt-tab-line { transform: scaleX(0); transform-origin: left; transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.gt-tab[aria-selected='true'] .gt-tab-line { transform: scaleX(1); }
+@media (hover: hover) {
+  .gt-tab:hover .gt-tab-label { transform: translate3d(4px, 0, 0); }
+}
+
+/* Tin việc làm và việc gợi ý: trượt lên nối tiếp, nổi nhẹ khi rê chuột. */
+.gt-item {
+  animation: gt-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  animation-delay: var(--gt-delay, 0ms);
+  transition: background-color 0.2s ease, transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease;
+}
+@media (hover: hover) {
+  .gt-item.gt-hover:hover { transform: translate3d(0, -2px, 0); background-color: rgb(23 32 28 / 2.5%); box-shadow: 0 10px 30px -20px rgb(23 32 28 / 35%); }
+}
+
+/* Mũi tên trong liên kết nhích sang phải khi rê chuột. */
+.gt-arrow svg { transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@media (hover: hover) {
+  .gt-arrow:hover svg { transform: translate3d(3px, 0, 0); }
+}
+
+/* Thẻ CV mẫu nổi nhẹ khi rê chuột. */
+.gt-card { transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.3s ease; }
+@media (hover: hover) {
+  .gt-card:hover { transform: translate3d(0, -3px, 0); box-shadow: 0 18px 40px -28px rgb(23 32 28 / 40%); }
+}
+
+/* Thanh tải khi đang so khớp: một vệt xanh chạy qua lại. */
+@keyframes gt-indeterminate {
+  0% { transform: translate3d(-100%, 0, 0); }
+  100% { transform: translate3d(250%, 0, 0); }
+}
+.gt-progress { position: relative; height: 2px; overflow: hidden; background: rgb(23 32 28 / 8%); }
+.gt-progress::after { content: ''; position: absolute; inset: 0; width: 40%; background: var(--color-brand); animation: gt-indeterminate 1.2s ease-in-out infinite; }
+
+/* Khung chờ khi đang tải CV mẫu. */
+@keyframes gt-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+.gt-skel {
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(23 32 28 / 6%) 25%, rgb(23 32 28 / 11%) 40%, rgb(23 32 28 / 6%) 60%);
+  background-size: 300% 100%;
+  animation: gt-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Điểm phù hợp: thanh chạy từ trái sang. */
+.gt-bar { transform-origin: left; animation: gt-grow 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--gt-delay, 0ms) + 200ms); }
+
+/* Hộp thoại: nền mờ dần, khung trượt lên và phóng nhẹ. */
+.gt-backdrop { animation: gt-backdrop 0.2s ease-out both; }
+.gt-panel { animation: gt-panel 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-rise, .gt-fade, .gt-item, .gt-bar, .gt-backdrop, .gt-panel, .gt-skel { animation: none; }
+  .gt-progress::after { animation: none; width: 100%; opacity: 0.4; }
+  .gt-tab .gt-tab-line { transition: none; }
+  .gt-tab:hover .gt-tab-label, .gt-item.gt-hover:hover, .gt-arrow:hover svg, .gt-card:hover { transform: none; }
+}

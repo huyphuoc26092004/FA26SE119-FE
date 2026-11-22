@@ -32,6 +32,7 @@ import type { AdminDashboardData } from '../../types/admin';
 import type { UserRole } from '../../types/domain';
 import type { ConsultationRequest, ConsultationStatus } from '../../types/consultation';
 import { useTranslation } from '../../i18n';
+import { tagClass, TimeTag } from '../../components/ui/Tag';
 
 type TimeRange = '24h' | '7d' | '30d' | '90d';
 type DetailTab = 'system' | 'ai' | 'revenue' | 'users';
@@ -894,7 +895,7 @@ export default function AdminDashboardPage() {
               <ul>
                 {systemHealth.auditLogs.map((log) => (
                   <li key={log.id} className="grid gap-1 border-b border-border py-4 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-6">
-                    <span className="text-[13px] tabular-nums text-slate-500">{log.timestamp}</span>
+                    <TimeTag tone="muted" className="w-fit">{log.timestamp}</TimeTag>
                     <div className="min-w-0">
                       <p className="text-[15px] text-ink">
                         {log.action}
@@ -1064,7 +1065,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <span className="text-sm text-slate-700">{tx.paymentMethod}</span>
                     <span className="text-[15px] tabular-nums text-ink sm:text-right">{tx.amountVND.toLocaleString(locale)}đ</span>
-                    <span className={`text-sm ${txTone(tx.status)}`}>{c.revenue.status[tx.status]}</span>
+                    <span className={`${tagClass(txTone(tx.status))} w-fit`}>{c.revenue.status[tx.status]}</span>
                     <span className="sm:text-right">
                       <button type="button" onClick={() => setSelectedTx(tx)} className={brandLink}>
                         {c.revenue.receipt}
@@ -1187,7 +1188,7 @@ export default function AdminDashboardPage() {
             <InfoRow label={c.receipt.plan}>{selectedTx.planName}</InfoRow>
             <InfoRow label={c.receipt.method}>{selectedTx.paymentMethod}</InfoRow>
             <InfoRow label={c.receipt.status}>
-              <span className={txTone(selectedTx.status)}>{c.revenue.status[selectedTx.status]}</span>
+              <span className={tagClass(txTone(selectedTx.status))}>{c.revenue.status[selectedTx.status]}</span>
             </InfoRow>
             <InfoRow label={c.receipt.time}>{selectedTx.createdAt}</InfoRow>
           </dl>
@@ -1408,8 +1409,8 @@ function ConsultationsView({
                   </select>
                 </label>
               )}
-              <span className="text-sm tabular-nums text-slate-600">{fmt(r.meeting.scheduledAt)}</span>
-              <span className={`text-sm ${statusTone(r.status)}`}>{c.consult.status[r.status]}</span>
+              <TimeTag icon="calendar" className="w-fit">{fmt(r.meeting.scheduledAt)}</TimeTag>
+              <span className={`${tagClass(statusTone(r.status), { live: r.status === 'IN_PROGRESS' })} w-fit`}>{c.consult.status[r.status]}</span>
             </li>
           ))}
         </ul>

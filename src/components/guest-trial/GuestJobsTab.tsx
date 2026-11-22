@@ -13,6 +13,7 @@ import { getJobs } from '../../services/candidateService';
 import type { Job } from '../../types/domain';
 import { Badge, Button } from '../ui';
 import { useTranslation } from '../../i18n';
+import { gtDelay } from './guestTrialMotion';
 
 export function GuestJobsTab() {
   const { isVietnamese } = useTranslation();
@@ -87,10 +88,11 @@ export function GuestJobsTab() {
           <span>{isVietnamese ? 'Xem độ khớp ở tab CV mẫu' : 'See match scores in the Sample CVs tab'}</span>
         </div>
 
-        {filteredJobs.map((job) => (
+        {filteredJobs.map((job, index) => (
           <article
             key={job.id}
-            className="grid gap-5 border-b border-border px-2 py-7 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_150px_120px] lg:gap-8"
+            style={gtDelay(Math.min(index, 10) * 50)}
+            className="gt-item gt-hover grid gap-5 border-b border-border px-2 py-7 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_150px_120px] lg:gap-8"
           >
             <div className="min-w-0">
               <h4 className="text-xl font-medium text-ink">{job.title}</h4>
@@ -109,7 +111,7 @@ export function GuestJobsTab() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 whitespace-nowrap text-base text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
+                  className="gt-arrow inline-flex items-center gap-1 whitespace-nowrap text-base text-ink underline decoration-1 underline-offset-4 transition-colors hover:text-brand"
                   onClick={() => setSelectedJob(job)}
                 >
                   {isVietnamese ? 'Xem nhanh' : 'Quick view'}
@@ -128,7 +130,7 @@ export function GuestJobsTab() {
         ))}
 
         {filteredJobs.length === 0 && (
-          <div className="border-b border-border py-10 text-center text-base text-slate-600">
+          <div className="gt-fade border-b border-border py-10 text-center text-base text-slate-600">
             {isVietnamese
               ? 'Không tìm thấy việc làm công khai phù hợp với từ khóa này.'
               : 'No public jobs found matching your criteria.'}
@@ -141,11 +143,11 @@ export function GuestJobsTab() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+          className="gt-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
           onClick={() => setSelectedJob(null)}
         >
           <div
-            className="relative w-full max-w-2xl rounded-2xl bg-surface p-6 shadow-sm max-h-[90vh] overflow-y-auto"
+            className="gt-panel relative w-full max-w-2xl rounded-2xl bg-surface p-6 shadow-sm max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button

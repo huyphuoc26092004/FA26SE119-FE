@@ -4,6 +4,7 @@ import { Note, UnderlineTabs } from '../../components/admin/AdminKit';
 import { ManagerHead, PagerRow } from '../../components/manager/ManagerUi';
 import { formatDateTime } from '../admin/jobs/crawlFormat';
 import { getStaffFeedback, type FeedbackSource } from '../../services/staffService';
+import { TimeTag } from '../../components/ui/Tag';
 
 const SOURCE_LABEL: Record<string, string> = {
   CONSULTATION: 'Đánh giá tư vấn',
@@ -51,7 +52,7 @@ export default function StaffFeedbackPage() {
                   {SOURCE_LABEL[f.source] ?? f.source}
                   {f.rating !== null ? ` · ${f.rating} sao` : ''} · {f.userName || f.email || 'Người dùng'}
                 </span>
-                <span className="text-[12px] text-slate-500">{f.createdAt ? formatDateTime(f.createdAt) : ''}</span>
+                {f.createdAt && <TimeTag tone="muted" className="text-[12px]">{formatDateTime(f.createdAt)}</TimeTag>}
               </div>
               <p className="whitespace-pre-wrap text-slate-600">{f.text || '(Không có nội dung)'}</p>
             </li>
