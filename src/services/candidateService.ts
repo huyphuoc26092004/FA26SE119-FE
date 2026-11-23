@@ -34,6 +34,12 @@ import {
 } from './candidateMappers';
 
 // `indexes: null` gửi mảng dạng `skills=a&skills=b` để Spring đọc được.
+export function analyzeJdSkillProficiency(jdText: string) {
+  return apiClient
+    .post<NonNullable<Job['skillProficiencyAnalysis']>>('/assessments/skill-proficiency', { jdText }, { timeout: 180_000 })
+    .then((response) => response.data);
+}
+
 const get = <T = ApiRow>(url: string, params?: object) =>
   apiClient.get<T>(url, { params, paramsSerializer: { indexes: null } }).then((res) => res.data);
 const post = <T = ApiRow>(url: string, body?: unknown) => apiClient.post<T>(url, body).then((res) => res.data);
@@ -134,8 +140,7 @@ export interface RecommendationResult {
   salaryFilter?: { active?: boolean; examinedJobs?: number; eligibleJobs?: number };
   mode?: string;
   verificationDeferred?: boolean;
-  retrieval?: { vectorUsed: boolean; status: string; activeJobs: number; compatibleVectors: number; rerankStatus: string;
-    aiSelectedJobs?: number; aiScoredJobs?: number; failureCode?: string; failureMessage?: string };
+  retrieval?: { vectorUsed: boolean; status: string; activeJobs: number; compatibleVectors: number };
 }
 
 // Share only requests still running for the same account. The backend caches by
@@ -188,11 +193,6 @@ function toRecommendationResult(run: ApiRow, basis: MatchBasis): RecommendationR
       status: str(recommendation.semantic_status),
       activeJobs: num(recommendation.active_jobs),
       compatibleVectors: num(recommendation.compatible_vectors),
-      rerankStatus: str(obj(recommendation.rerank).status),
-      ...(obj(recommendation.rerank).selected_jobs == null ? {} : { aiSelectedJobs: num(obj(recommendation.rerank).selected_jobs) }),
-      ...(obj(recommendation.rerank).assessed_jobs == null ? {} : { aiScoredJobs: num(obj(recommendation.rerank).assessed_jobs) }),
-      ...(obj(recommendation.rerank).failure_code == null ? {} : { failureCode: str(obj(recommendation.rerank).failure_code) }),
-      ...(obj(recommendation.rerank).failure_message == null ? {} : { failureMessage: str(obj(recommendation.rerank).failure_message) }),
     } : undefined,
     salaryFilter: Object.keys(salary).length ? {
       active: typeof salary.active === 'boolean' ? salary.active : undefined,

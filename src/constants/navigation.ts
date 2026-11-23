@@ -83,7 +83,7 @@ export const adminNav: NavItem[] = [
   { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/admin/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'AI configuration', labelVi: 'Cấu hình AI', translationKey: 'nav.aiConfig', to: '/admin/ai', icon: Settings, group: 'platform' },
   { label: 'Job collection', labelVi: 'Thu thập việc làm', translationKey: 'nav.jobProcessing', to: '/admin/jobs', icon: BriefcaseBusiness, group: 'platform' },
-  { label: 'Documents', labelVi: 'Tài liệu', translationKey: 'nav.vectorDatabase', to: '/admin/vector', icon: FileStack, group: 'platform' },
+  { label: 'Courses', labelVi: 'Khóa học', translationKey: 'nav.vectorDatabase', to: '/admin/vector', icon: FileStack, group: 'platform' },
   { label: 'System logs', labelVi: 'Nhật ký hệ thống', translationKey: 'nav.systemLogs', to: '/admin/logs', icon: ScrollText, group: 'operations' },
   { label: 'Audit logs', labelVi: 'Nhật ký kiểm toán', translationKey: 'nav.auditLogs', to: '/admin/audit', icon: ScrollText, group: 'operations' },
   { label: 'Notifications', labelVi: 'Thông báo', translationKey: 'nav.notifications', to: '/admin/notifications', icon: Bell, group: 'operations' },
@@ -114,6 +114,7 @@ export const managerNav: NavItem[] = [
 export const staffNav: NavItem[] = [
   { label: 'Dashboard', labelVi: 'Việc cần làm', translationKey: '', to: '/staff', icon: House, group: 'main' },
   { label: 'Job collection', labelVi: 'Thu thập việc làm', translationKey: '', to: '/staff/jobs', icon: BriefcaseBusiness, group: 'management' },
+  { label: 'Course search', labelVi: 'Tìm khóa học', translationKey: '', to: '/staff/courses', icon: Database, group: 'management' },
   { label: 'Job catalog', labelVi: 'Kho việc làm', translationKey: '', to: '/staff/jobs?tab=catalog', icon: Database, group: 'management' },
   { label: 'CV Templates', labelVi: 'Mẫu CV', translationKey: '', to: '/staff/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'Rating reports', labelVi: 'Báo cáo đánh giá', translationKey: '', to: '/staff/rating-appeals', icon: Flag, group: 'management' },

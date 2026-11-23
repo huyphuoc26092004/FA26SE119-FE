@@ -159,7 +159,7 @@ export async function getLatestJdAssessment(jobId: string, resumeId = ''): Promi
 }
 
 /** Sinh bài đánh giá mới theo JD, kèm CV nếu có (gọi AI, có thể mất vài phút). */
-export async function startJdAssessment(jobId: string, resumeId?: string, pasted?: { targetJobTitle: string; jdText: string }): Promise<JdAssessment> {
+export async function startJdAssessment(jobId: string, resumeId?: string, pasted?: { jdText: string }): Promise<JdAssessment> {
   const body = pasted ? { ...pasted, ...(resumeId ? { resumeId } : {}) } : resumeId ? { jobId, resumeId } : { jobId };
   const session = await apiClient.post<ApiRow>('/assessments', body, { timeout: AI_TIMEOUT }).then((res) => res.data);
   return toAssessment(session);

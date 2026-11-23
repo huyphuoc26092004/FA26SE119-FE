@@ -312,6 +312,19 @@ export interface Job {
   benefits?: string[];
   /** Kết quả bóc tách yêu cầu JD của BE (requirement_extraction): câu yêu cầu, kỹ năng và mức Bloom. */
   requirementExtraction?: unknown;
+  skillProficiencyAnalysis?: {
+    rubric_version: string;
+    results: Array<{
+      skill_id: string;
+      skill_name: string;
+      required_level: number | null;
+      level_label: string | null;
+      status: 'ASSESSED' | 'INSUFFICIENT_EVIDENCE';
+      evidence: string;
+      reason: string;
+      confidence: number;
+    }>;
+  };
   externalSource?: ExternalApplicationSource;
   semanticMatch?: SemanticMatchingDetail;
 }

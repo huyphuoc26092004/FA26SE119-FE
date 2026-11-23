@@ -116,17 +116,17 @@ test('semantic recommendation preserves retrieval status and separate scores fro
   respond = () => ({ data: matchingRun({
     profile_snapshot: { mode: 'RECOMMENDATION' },
     recommendation: { vector_used: true, semantic_status: 'PARTIAL_INDEX', active_jobs: 129,
-      compatible_vectors: 36, rerank: { status: 'SKIPPED' } },
-    results: [matchedJob({ rank_position: 2, final_score: 0.5, vector_similarity_score: 0.91, llm_rerank_score: 0.8,
-      match_reason_json: { method: 'SEMANTIC_RULE_RECOMMENDATION', assessment: { score_kind: 'RECOMMENDATION_RULE_COVERAGE' } } })],
+      compatible_vectors: 36 },
+    results: [matchedJob({ rank_position: 2, final_score: 0.91, vector_similarity_score: 0.91, llm_rerank_score: null,
+      match_reason_json: { method: 'SIMILARITY_RECOMMENDATION', assessment: { score_kind: 'RECOMMENDATION_RULE_COVERAGE' } } })],
   }) });
   const result = await service.getRecommendationResult({ basis: 'ALL_CVS' });
   assert.equal(result.mode, 'RECOMMENDATION');
   assert.deepEqual(result.retrieval, { vectorUsed: true, status: 'PARTIAL_INDEX', activeJobs: 129,
-    compatibleVectors: 36, rerankStatus: 'SKIPPED' });
-  assert.equal(result.jobs[0].match, 50);
+    compatibleVectors: 36 });
+  assert.equal(result.jobs[0].match, 91);
   assert.equal(result.jobs[0].semanticMatch.semanticSimilarity, 0.91);
-  assert.equal(result.jobs[0].semanticMatch.aiRerankScore, 0.8);
+  assert.equal(result.jobs[0].semanticMatch.aiRerankScore, undefined);
   assert.equal(result.jobs[0].semanticMatch.rankPosition, 2);
 });
 
@@ -154,13 +154,12 @@ test('AI suitability is the displayed percentage and rule coverage remains separ
   assert.equal(result.jobs[0].semanticMatch.scoreStatus, 'SCORED');
 });
 
-test('recommendation retains the quota failure reason returned by the backend', async () => {
-  respond = () => ({ data: matchingRun({ recommendation: { vector_used: true, active_jobs: 129, compatible_vectors: 36,
-    semantic_status: 'PARTIAL_INDEX', rerank: { status: 'SKIPPED', selected_jobs: 10, assessed_jobs: 0,
-      failure_code: 'AI_QUOTA_EXCEEDED', failure_message: 'AI token quota exceeded' } } }) });
+test('recommendation retains the embedding fallback status returned by the backend', async () => {
+  respond = () => ({ data: matchingRun({ recommendation: { vector_used: false, active_jobs: 129,
+    compatible_vectors: 36, semantic_status: 'PROVIDER_ERROR' } }) });
   const result = await service.getRecommendationResult({ basis: 'ALL_CVS' });
-  assert.equal(result.retrieval.failureCode, 'AI_QUOTA_EXCEEDED');
-  assert.equal(result.retrieval.failureMessage, 'AI token quota exceeded');
+  assert.equal(result.retrieval.status, 'PROVIDER_ERROR');
+  assert.equal(result.retrieval.vectorUsed, false);
 });
 
 test('an unassessed recommendation exposes score unavailability instead of treating coverage as AI suitability', async () => {

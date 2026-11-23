@@ -361,21 +361,21 @@ test('missing JD extraction is shown as unavailable rather than a full compatibi
   assert.doesNotMatch(page.text(job), /100\s*%/);
 });
 
-test('AI suitability is displayed as the main percentage with rule coverage separately', () => {
+test('vector similarity is displayed as the recommendation percentage', () => {
   const page = mountJobsPage({ recommendations: { ...defaultRecommendations, jobs: [{ ...ranked, match: 87,
-    semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_AI_SUITABILITY', scoreAvailable: true,
+    semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_VECTOR_SIMILARITY', scoreAvailable: true,
       requirementCoverageScore: 20, requirementCoverageAvailable: true } }],
   } });
   page.click(page.tab('Việc làm phù hợp với bạn'));
   const job = page.one((node) => node.type === 'li');
   assert.match(page.text(job), /87%/);
-  assert.match(page.text(job), /Độ phù hợp do AI đánh giá/);
-  assert.match(page.text(job), /Đối chiếu quy tắc: 20% yêu cầu/);
+  assert.match(page.text(job), /Độ tương đồng vị trí và kỹ năng/);
+  assert.doesNotMatch(page.text(job), /do AI đánh giá/);
 });
 
-test('unscored jobs are omitted from the AI ranking', () => {
+test('unscored jobs are omitted from the recommendation ranking', () => {
   const page = mountJobsPage({ recommendations: { ...defaultRecommendations, jobs: [{ ...ranked, match: 0,
-    semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_AI_SUITABILITY', scoreAvailable: false,
+    semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_VECTOR_SIMILARITY', scoreAvailable: false,
       requirementCoverageScore: 20, requirementCoverageAvailable: true } }],
   } });
   page.click(page.tab('Việc làm phù hợp với bạn'));
@@ -383,21 +383,21 @@ test('unscored jobs are omitted from the AI ranking', () => {
   assert.match(page.text(), /Chưa có đề xuất/);
 });
 
-test('AI quota failures explain why percentages are unavailable instead of only suggesting a retry', () => {
+test('partial vector coverage explains which jobs are included', () => {
   const page = mountJobsPage({ recommendations: { ...defaultRecommendations, retrieval: {
     vectorUsed: true, status: 'PARTIAL_INDEX', activeJobs: 129, compatibleVectors: 36,
-    rerankStatus: 'SKIPPED', aiSelectedJobs: 10, aiScoredJobs: 0, failureCode: 'AI_QUOTA_EXCEEDED',
+
   } } });
   page.click(page.tab('Việc làm phù hợp với bạn'));
-  assert.match(page.text(), /Không đủ hạn mức AI/);
-  assert.match(page.text(), /mức sử dụng AI và gói đăng ký/);
+  assert.match(page.text(), /36\/129 việc làm đang tuyển/);
+  assert.match(page.text(), /Chỉ hiển thị việc làm có vector tương thích/);
 });
 
 for (const count of [0, 6, 10, 14]) {
-  test('AI ranking limits and orders ' + count + ' scored jobs', () => {
+  test('Recommendation ranking limits and orders ' + count + ' scored jobs', () => {
     const scored = Array.from({ length: count }, (_, index) => catalogJob('ranked-' + index, 'Job ' + index, {
       match: index < 2 ? 100 : index,
-      semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_AI_SUITABILITY' },
+      semanticMatch: { ...ranked.semanticMatch, scoreKind: 'RECOMMENDATION_VECTOR_SIMILARITY' },
     }));
     const expired = { ...ranked, id: 'expired', status: 'EXPIRED', match: 100 };
     const invalid = { ...ranked, id: 'invalid', match: NaN };

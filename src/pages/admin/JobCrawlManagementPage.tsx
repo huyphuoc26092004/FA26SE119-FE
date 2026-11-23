@@ -7,15 +7,17 @@ import { CrawlRunTab } from './jobs/CrawlRunTab';
 import { CrawlScheduleTab } from './jobs/CrawlScheduleTab';
 import { CrawlHistoryTab, CrawlRunModal } from './jobs/CrawlHistoryTab';
 import { JobCatalogTab } from './jobs/JobCatalogTab';
+import { SkillProficiencyTab } from './jobs/SkillProficiencyTab';
 import { RunStatus, describeDelay, formatDateTime } from './jobs/crawlFormat';
 
-type Tab = 'run' | 'schedule' | 'history' | 'catalog';
+type Tab = 'run' | 'schedule' | 'history' | 'catalog' | 'skill-rubric';
 
 const TABS: { value: Tab; label: string }[] = [
   { value: 'run', label: 'Chạy ngay' },
   { value: 'schedule', label: 'Lịch tự động' },
   { value: 'history', label: 'Lịch sử' },
   { value: 'catalog', label: 'Kho việc làm' },
+  { value: 'skill-rubric', label: 'Skill Rubric' },
 ];
 
 const PAGE_SIZE = 20;
@@ -118,6 +120,7 @@ export default function JobCrawlManagementPage({ staff = false }: { staff?: bool
         )}
 
         {tab === 'catalog' && <JobCatalogTab onDone={showToast} staff={staff} />}
+        {tab === 'skill-rubric' && <SkillProficiencyTab staff={staff} />}
       </div>
 
       {openRunId && <CrawlRunModal runId={openRunId} onClose={() => setOpenRunId(null)} />}

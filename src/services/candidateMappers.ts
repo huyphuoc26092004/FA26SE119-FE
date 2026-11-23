@@ -128,6 +128,10 @@ export function toJob(row: ApiRow): Job {
     ...(row.requirement_extraction && typeof row.requirement_extraction === 'object'
       ? { requirementExtraction: row.requirement_extraction }
       : {}),
+    ...(row.skill_proficiency_analysis && typeof row.skill_proficiency_analysis === 'object'
+      && Array.isArray(obj(row.skill_proficiency_analysis).results)
+      ? { skillProficiencyAnalysis: row.skill_proficiency_analysis as Job['skillProficiencyAnalysis'] }
+      : {}),
     externalSource: sourceUrl
       ? {
           sourceName: sourceSiteName(row.source_site || row.original_source_site),

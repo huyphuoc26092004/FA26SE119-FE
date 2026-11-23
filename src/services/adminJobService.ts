@@ -3,7 +3,40 @@ import { apiClient } from './apiClient';
 import { type ApiRow, num, rows, str } from './candidateMappers';
 import { formatDateTime } from './supportService';
 
+export type SkillProficiencyStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'RETRY' | 'FAILED';
+
+export interface SkillProficiencyMonitor {
+  counts: { status: SkillProficiencyStatus; total: number }[];
+  jobs: {
+    id: string;
+    job_title: string;
+    company_name: string | null;
+    status: SkillProficiencyStatus;
+    attempts: number;
+    updated_at: string | null;
+    retry_at: string | null;
+    error_code: string | null;
+    rubric_version: string | null;
+    skill_count: number;
+  }[];
+}
+
+export async function getSkillProficiencyMonitor(staff: boolean, status: SkillProficiencyStatus, limit: number, offset: number) {
+  const prefix = staff ? '/staff/jobs' : '/admin/jobs';
+  const { data } = await apiClient.get<SkillProficiencyMonitor>(prefix + '/skill-proficiency', {
+    params: { status, limit, offset },
+  });
+  return data;
+}
+
 /** Trạng thái tin BE nhận (JobService: PENDING, ACTIVE, REJECTED, EXPIRED, REMOVED, INVALID). */
+export async function retrySkillProficiency(staff: boolean, jobId?: string) {
+  const prefix = staff ? '/staff/jobs' : '/admin/jobs';
+  const action = jobId ? `/${encodeURIComponent(jobId)}/retry` : '/retry-failed';
+  const { data } = await apiClient.post<{ queued: number }>(prefix + '/skill-proficiency' + action);
+  return data;
+}
+
 export type AdminJobStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'EXPIRED' | 'REMOVED' | 'INVALID';
 
 export interface ManagedJob {
