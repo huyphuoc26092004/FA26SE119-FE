@@ -318,6 +318,7 @@ export default function ManagerWorkSchedulePage() {
                     return (
                       <tr key={str(row.id) || i} className="border-b border-border">
                         <td className="py-3.5 pr-5 text-ink">{str(row.subject) || '—'}</td>
+                        <td className="py-3.5 pr-5 text-ink">{str(row.consultant_name) || '—'}</td>
                         <td className="py-3.5 pr-5 text-ink">{str(row.candidate_name) || '—'}</td>
                         <td className="py-3.5 pr-5 tabular-nums text-ink">{dateTime(row.starts_at)}</td>
                         <td className="py-3.5 pr-5 tabular-nums text-ink">{dateTime(row.ends_at)}</td>

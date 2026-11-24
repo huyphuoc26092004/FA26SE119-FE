@@ -24,12 +24,12 @@ test('stored job request keeps optional CV and sends no pasted JD', async () => 
   assert.deepEqual(await request('job-1', 'cv-1'), { jobId: 'job-1', resumeId: 'cv-1' });
 });
 
-test('pasted JD without CV sends title and text without the previous selected job', async () => {
-  assert.deepEqual(await request('old-job', undefined, { targetJobTitle: 'Backend', jdText: 'Use Java' }),
-    { targetJobTitle: 'Backend', jdText: 'Use Java' });
+test('pasted JD without CV sends text without the previous selected job', async () => {
+  assert.deepEqual(await request('old-job', undefined, { jdText: 'Use Java' }),
+    { jdText: 'Use Java' });
 });
 
 test('pasted JD can include a confirmed CV', async () => {
-  assert.deepEqual(await request('', 'cv-1', { targetJobTitle: 'Backend', jdText: 'Use Java' }),
-    { targetJobTitle: 'Backend', jdText: 'Use Java', resumeId: 'cv-1' });
+  assert.deepEqual(await request('', 'cv-1', { jdText: 'Use Java' }),
+    { jdText: 'Use Java', resumeId: 'cv-1' });
 });

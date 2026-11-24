@@ -13,7 +13,7 @@ import { JOB_ACTIVITY_QUERY_KEY, getJobActivity } from '../../services/jobActivi
 import { Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
 import { JobPicker, jobPickerCopy } from './cv-job-fit/JobPicker';
-import { ErrorLine, Muted, PathView, Section, Working, skillPathCopy } from './SkillAssessmentPage';
+import { ErrorLine, Muted, PathView, RoadmapBuildError, Section, Working, skillPathCopy } from './SkillAssessmentPage';
 
 const copy = {
   vi: {
@@ -30,7 +30,7 @@ const copy = {
     create: 'Tạo lộ trình học',
     rebuild: 'Tạo lại lộ trình',
     noPath: 'Chưa có lộ trình cho việc này.',
-    noPathNote: 'Lộ trình dựa trên JD và hồ sơ nghề nghiệp, dùng một lượt AI.',
+    noPathNote: 'Tạo lộ trình cần gói AI trả phí hoặc đủ token đã mua.',
     creating: 'Đang tạo lộ trình học. Việc này có thể mất vài phút.',
     testLink: 'Muốn biết chính xác mình yếu kỹ năng nào? Làm bài đánh giá kỹ năng',
     testSub: 'Câu hỏi theo JD; lộ trình sau bài đánh giá chỉ gồm kỹ năng bạn chưa đạt.',
@@ -49,7 +49,7 @@ const copy = {
     create: 'Create learning path',
     rebuild: 'Rebuild path',
     noPath: 'No learning path for this job yet.',
-    noPathNote: 'The path is based on the JD and your career profile and uses one AI credit.',
+    noPathNote: 'Creating a path requires a paid AI plan or enough purchased tokens.',
     creating: 'Building the learning path. This can take a few minutes.',
     testLink: 'Want to know exactly which skills are weak? Take the skill assessment',
     testSub: 'Questions from the JD; a path built after the test only covers the skills you missed.',
@@ -192,7 +192,8 @@ export default function LearningPathPage() {
             <PathView path={path} c={sc} busy={nodeStatus.isPending} onStatus={(nodeId, status) => nodeStatus.mutate({ nodeId, status })} />
           </div>
         )}
-        <ErrorLine error={buildPath.error ?? nodeStatus.error} c={sc} />
+        <RoadmapBuildError error={buildPath.error} c={sc} vi={isVietnamese} />
+        <ErrorLine error={nodeStatus.error} c={sc} />
       </Section>
 
       {job && (

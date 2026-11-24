@@ -1,70 +1,53 @@
 import { useState } from 'react';
+import { authErrorMessage } from '../../services/authService';
 import { LearningResourcesTab } from './LearningResourcesTab';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  CheckBox,
   EmptyRow,
   Headline,
-  Modal,
   Note,
   SectionHead,
   StatRow,
   Toast,
   UnderlineTabs,
-  boxInput,
   brandLink,
   dangerLink,
-  fieldLabel,
-  outlineButton,
-  primaryButton,
+  boxInput,
   smallPrimary,
-  underlineInput,
-  underlineSelect,
 } from '../../components/admin/AdminKit';
 import {
   approveRagCourse,
   archiveRagCourse,
-  archiveRagDocument,
-  createRagCourse,
-  createRagDocument,
+  getCourseSearchStatus,
   getRagCourses,
-  getRagDocument,
-  getRagDocuments,
   indexRagCourse,
-  indexRagDocument,
-  type RagDocument,
+  searchRagCourses,
+  type CourseSearchInput,
 } from '../../services/ragService';
 
-type Tab = 'documents' | 'courses' | 'resources';
+type Tab = 'courses' | 'resources';
 const errorText = (error: unknown) => (error instanceof Error ? error.message : 'Có lỗi xảy ra.');
 
-const EMBED_LABEL: Record<string, string> = { PENDING: 'Chờ lập chỉ mục', PROCESSING: 'Đang xử lý', COMPLETED: 'Đã lập chỉ mục', FAILED: 'Lỗi' };
 const COURSE_LABEL: Record<string, string> = { PENDING_REVIEW: 'Chờ duyệt', APPROVED: 'Đã duyệt', ARCHIVED: 'Đã lưu trữ' };
 
-/** /admin/vector — trang "Tài liệu": tài liệu và khoá học để AI tra cứu (tư vấn, lộ trình học). */
-export default function KnowledgeBasePage() {
+export default function KnowledgeBasePage({ staff = false }: { staff?: boolean }) {
   const [params, setParams] = useSearchParams();
-  const tab: Tab = params.get('tab') === 'resources' ? 'resources' : params.get('tab') === 'courses' ? 'courses' : 'documents';
+  const tab: Tab = !staff && params.get('tab') === 'resources' ? 'resources' : 'courses';
   const queryClient = useQueryClient();
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (m: string) => {
     setToast(m);
     setTimeout(() => setToast(null), 3000);
   };
-  const [creating, setCreating] = useState<Tab | null>(null);
-  const [viewId, setViewId] = useState<string | null>(null);
 
-  const docsQuery = useQuery({ queryKey: ['admin', 'rag-docs'], queryFn: getRagDocuments, refetchInterval: 5000 });
-  const coursesQuery = useQuery({ queryKey: ['admin', 'rag-courses'], queryFn: getRagCourses });
-  const viewQuery = useQuery({ queryKey: ['admin', 'rag-doc', viewId], queryFn: () => getRagDocument(viewId!), enabled: Boolean(viewId) });
-  const docs = (docsQuery.data ?? []).filter((document) => !document.metadata.course_id);
+  const coursesQuery = useQuery({ queryKey: ['admin', 'rag-courses', staff], queryFn: () => getRagCourses(staff) });
   const courses = coursesQuery.data ?? [];
 
   const action = useMutation({
-    mutationFn: async ({ run }: { run: () => Promise<unknown>; done: string; key: string }) => run(),
-    onSuccess: (_, { done, key }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', key] });
+    mutationFn: ({ run }: { run: () => Promise<unknown>; done: string }) => run(),
+    onSuccess: (_, { done }) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'rag-courses'] });
       showToast(done);
     },
     onError: (e) => showToast(errorText(e)),
@@ -74,64 +57,27 @@ export default function KnowledgeBasePage() {
     <div className="space-y-[clamp(2.5rem,5vw,4rem)]">
       <Headline
         eyebrow="Nền tảng"
-        line1="Tài liệu."
-        line2="Tài liệu và khoá học để AI tra cứu."
-        intro="Thêm tài liệu bằng đường link (Google Docs, PDF…) và ghi rõ dùng để làm gì. Hệ thống chia nội dung thành đoạn và lập chỉ mục để trợ lý AI tra cứu khi tư vấn. Khoá học YouTube/Coursera cần duyệt trước khi xuất hiện trong lộ trình học."
+        line1="Khóa học."
+        line2={staff ? 'Tìm nguồn học để gửi duyệt.' : 'Tìm và duyệt nguồn học.'}
       />
       <StatRow
         items={[
-          { label: 'Tài liệu', value: docs.length },
-          { label: 'Đã lập chỉ mục', value: docs.filter((d) => d.embeddingStatus === 'COMPLETED').length, valueTone: 'brand' },
-          { label: 'Tổng số đoạn', value: docs.reduce((s, d) => s + d.chunksCount, 0) },
           { label: 'Khoá học chờ duyệt', value: courses.filter((c) => c.status === 'PENDING_REVIEW').length, valueTone: 'warning' },
         ]}
       />
-      <UnderlineTabs
+      {!staff && <UnderlineTabs
         value={tab}
-        onChange={(t) => setParams(t === 'documents' ? {} : { tab: t }, { replace: true })}
+        onChange={(t) => setParams(t === 'courses' ? {} : { tab: t }, { replace: true })}
         tabs={[
-          { value: 'documents', label: 'Tài liệu', count: docs.length },
           { value: 'courses', label: 'Khoá học', count: courses.length },
           { value: 'resources', label: 'Tài nguyên học' },
         ]}
-      />
+      />}
 
-      {tab === 'resources' ? <LearningResourcesTab /> : tab === 'documents' ? (
+      {tab === 'resources' ? <LearningResourcesTab /> : (
         <section className="space-y-4">
-          <SectionHead index="01" title="Tài liệu" action={<button type="button" className={smallPrimary} onClick={() => setCreating('documents')}>Thêm tài liệu</button>} />
-          {docsQuery.isError && <Note tone="danger">{errorText(docsQuery.error)}</Note>}
-          {docs.length === 0 ? (
-            <EmptyRow>{docsQuery.isLoading ? 'Đang tải...' : 'Chưa có tài liệu nào.'}</EmptyRow>
-          ) : (
-            <ul>
-              {docs.map((d) => (
-                <li key={d.id} className="grid gap-2 border-b border-border py-4 md:grid-cols-[minmax(0,1fr)_12rem_auto] md:items-baseline md:gap-6">
-                  <span className="min-w-0">
-                    {docUrl(d) ? (
-                      <a href={docUrl(d)} target="_blank" rel="noreferrer" className="block truncate text-[15px] text-ink hover:text-brand">{d.title}</a>
-                    ) : (
-                      <span className="block truncate text-[15px] text-ink">{d.title}</span>
-                    )}
-                    <span className="text-[12px] text-slate-500">
-                      {[purposeLabel(d), docKindLabel(d), `${d.chunksCount} đoạn`, d.createdAt].filter(Boolean).join(' · ')}
-                    </span>
-                  </span>
-                  <span className={`text-[13px] ${d.embeddingStatus === 'FAILED' ? 'text-danger' : d.embeddingStatus === 'COMPLETED' ? 'text-brand' : 'text-slate-600'}`}>
-                    {EMBED_LABEL[d.embeddingStatus] ?? d.embeddingStatus}
-                  </span>
-                  <span className="flex gap-5">
-                    <button type="button" className={brandLink} onClick={() => setViewId(d.id)}>Xem</button>
-                    <button type="button" className={brandLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => indexRagDocument(d.id), done: 'Đã gửi lập chỉ mục', key: 'rag-docs' })}>Lập chỉ mục</button>
-                    <button type="button" className={dangerLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => archiveRagDocument(d.id), done: 'Đã lưu trữ tài liệu', key: 'rag-docs' })}>Lưu trữ</button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : (
-        <section className="space-y-4">
-          <SectionHead index="01" title="Khoá học đề xuất" action={<button type="button" className={smallPrimary} onClick={() => setCreating('courses')}>Thêm khoá học</button>} />
+          <SectionHead index="01" title="Khoá học đề xuất" />
+          <CourseSearch staff={staff} />
           {coursesQuery.isError && <Note tone="danger">{errorText(coursesQuery.error)}</Note>}
           {courses.length === 0 ? (
             <EmptyRow>{coursesQuery.isLoading ? 'Đang tải...' : 'Chưa có khoá học nào.'}</EmptyRow>
@@ -147,14 +93,14 @@ export default function KnowledgeBasePage() {
                   </span>
                   <span className={`text-[13px] ${c.status === 'APPROVED' ? 'text-brand' : 'text-slate-600'}`}>{COURSE_LABEL[c.status] ?? c.status}</span>
                   <span className="flex gap-5">
-                    {c.status === 'PENDING_REVIEW' && (
-                      <button type="button" className={brandLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => approveRagCourse(c.id), done: 'Đã duyệt khoá học, hệ thống sẽ tự lập chỉ mục nền', key: 'rag-courses' })}>Duyệt</button>
+                    {!staff && c.status === 'PENDING_REVIEW' && (
+                      <button type="button" className={brandLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => approveRagCourse(c.id), done: 'Đã duyệt khoá học, hệ thống sẽ tự lập chỉ mục nền' })}>Duyệt</button>
                     )}
-                    {c.status === 'APPROVED' && (
-                      <button type="button" className={brandLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => indexRagCourse(c.id), done: 'Đã gửi lập chỉ mục', key: 'rag-courses' })}>Lập chỉ mục</button>
+                    {!staff && c.status === 'APPROVED' && (
+                      <button type="button" className={brandLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => indexRagCourse(c.id), done: 'Đã gửi lập chỉ mục' })}>Lập chỉ mục</button>
                     )}
-                    {c.status !== 'ARCHIVED' && (
-                      <button type="button" className={dangerLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => archiveRagCourse(c.id), done: 'Đã lưu trữ khoá học', key: 'rag-courses' })}>Lưu trữ</button>
+                    {!staff && c.status !== 'ARCHIVED' && (
+                      <button type="button" className={dangerLink} disabled={action.isPending} onClick={() => action.mutate({ run: () => archiveRagCourse(c.id), done: 'Đã lưu trữ khoá học' })}>Lưu trữ</button>
                     )}
                   </span>
                 </li>
@@ -164,188 +110,56 @@ export default function KnowledgeBasePage() {
         </section>
       )}
 
-      {creating === 'documents' && (
-        <DocumentModal
-          onClose={() => setCreating(null)}
-          onSaved={() => {
-            queryClient.invalidateQueries({ queryKey: ['admin', 'rag-docs'] });
-            setCreating(null);
-            showToast('Đã thêm tài liệu, hệ thống sẽ tự lập chỉ mục nền');
-          }}
-        />
-      )}
-      {creating === 'courses' && (
-        <CourseModal
-          onClose={() => setCreating(null)}
-          onSaved={() => {
-            queryClient.invalidateQueries({ queryKey: ['admin', 'rag-courses'] });
-            setCreating(null);
-            showToast('Đã thêm khoá học, đang chờ duyệt');
-          }}
-        />
-      )}
-      {viewId && (
-        <Modal title={viewQuery.data?.title ?? 'Tài liệu'} width="max-w-3xl" onClose={() => setViewId(null)}>
-          {viewQuery.isLoading ? (
-            <p className="text-sm text-slate-500">Đang tải...</p>
-          ) : (
-            <p className="whitespace-pre-line text-[14px] leading-7 text-slate-700">{viewQuery.data?.content || 'Tài liệu không có nội dung văn bản.'}</p>
-          )}
-        </Modal>
-      )}
       <Toast message={toast} />
     </div>
   );
 }
 
-const DOC_PURPOSES = [
-  { value: 'CAREER_ADVICE', label: 'Tư vấn định hướng nghề nghiệp' },
-  { value: 'CV_WRITING', label: 'Hướng dẫn viết CV' },
-  { value: 'INTERVIEW', label: 'Chuẩn bị phỏng vấn' },
-  { value: 'SKILL_LEARNING', label: 'Học kỹ năng / lộ trình học' },
-  { value: 'MARKET', label: 'Thị trường việc làm, mức lương' },
-  { value: 'POLICY', label: 'Quy định, chính sách hệ thống' },
-  { value: 'OTHER', label: 'Khác' },
-];
-
-const meta = (d: RagDocument, key: string) => (typeof d.metadata[key] === 'string' ? (d.metadata[key] as string) : '');
-const docUrl = (d: RagDocument) => d.fileUrl || meta(d, 'url');
-const purposeLabel = (d: RagDocument) => DOC_PURPOSES.find((p) => p.value === meta(d, 'purpose'))?.label ?? '';
-const docKindLabel = (d: RagDocument) => ({ PDF: 'PDF', DOCS: 'Google Docs', LINK: 'Trang web' })[meta(d, 'kind')] ?? '';
-
-/** Đoán loại tài liệu từ đường link để hiện nhãn PDF / Google Docs. */
-function kindOf(url: string): 'PDF' | 'DOCS' | 'LINK' {
-  if (/\.pdf($|[?#])/i.test(url)) return 'PDF';
-  if (/docs\.google\.com|drive\.google\.com/i.test(url)) return 'DOCS';
-  return 'LINK';
-}
-
-/** Thêm tài liệu từ nội dung văn bản, kèm đường dẫn và thông tin phân loại. */
-function DocumentModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ url: '', title: '', purpose: 'CAREER_ADVICE', skills: '', language: 'vi', content: '' });
-  const save = useMutation({
-    mutationFn: () => {
-      const url = form.url.trim();
-      const skills = form.skills.split(',').map((s) => s.trim()).filter(Boolean);
-      const content = form.content.trim();
-      return createRagDocument({
-        title: form.title.trim(),
-        content,
-        metadata: { url, kind: url ? kindOf(url) : undefined, purpose: form.purpose,  skills, language: form.language },
-      });
-    },
-    onSuccess: onSaved,
+function CourseSearch({ staff }: { staff: boolean }) {
+  const queryClient = useQueryClient();
+  const [input, setInput] = useState<CourseSearchInput>({ skill: '', language: 'vi', provider: 'ALL' });
+  const status = useQuery({ queryKey: ['rag-course-search', staff], queryFn: () => getCourseSearchStatus(staff) });
+  const search = useMutation({
+    mutationFn: () => searchRagCourses(staff, { ...input, skill: input.skill.trim() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'rag-courses'] }),
   });
-  const canSave = form.title.trim() && form.content.trim();
   return (
-    <Modal
-      title="Thêm tài liệu"
-      width="max-w-3xl"
-      onClose={onClose}
-      footer={
-        <>
-          <button type="button" className={outlineButton} onClick={onClose}>Huỷ</button>
-          <button type="button" className={primaryButton} disabled={save.isPending || !canSave} onClick={() => save.mutate()}>
-            {save.isPending ? 'Đang lưu...' : 'Lưu tài liệu'}
-          </button>
-        </>
-      }
-    >
-      <div className="grid gap-5 md:grid-cols-2">
-        <label className="block md:col-span-2">
-          <span className={fieldLabel}>Đường dẫn tài liệu (Google Docs, file PDF hoặc trang web)</span>
-          <input type="url" className={underlineInput} value={form.url} placeholder="https://docs.google.com/… hoặc https://…/tai-lieu.pdf" onChange={(e) => setForm({ ...form, url: e.target.value })} />
+    <form className="space-y-3 py-3" onSubmit={(event) => {
+      event.preventDefault();
+      if (status.data?.configured && input.skill.trim() && !search.isPending) search.mutate();
+    }}>
+      <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_10rem_10rem_auto]">
+        <label className="space-y-1 text-sm">
+          <span>Kỹ năng</span>
+          <input className={boxInput} placeholder="Ví dụ: Spring Boot" value={input.skill} maxLength={150}
+            required onChange={(event) => setInput({ ...input, skill: event.target.value })} />
         </label>
-        <label className="block md:col-span-2">
-          <span className={fieldLabel}>Tên tài liệu</span>
-          <input className={underlineInput} maxLength={255} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-        </label>
-        <label className="block">
-          <span className={fieldLabel}>Dùng để làm gì</span>
-          <select className={underlineSelect} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })}>
-            {DOC_PURPOSES.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
+        <label className="space-y-1 text-sm">
+          <span>Ngôn ngữ tìm kiếm</span>
+          <select className={boxInput} value={input.language}
+            onChange={(event) => setInput({ ...input, language: event.target.value as CourseSearchInput['language'] })}>
+            <option value="vi">Tiếng Việt</option><option value="en">Tiếng Anh</option>
           </select>
         </label>
-        <label className="block">
-          <span className={fieldLabel}>Ngôn ngữ</span>
-          <select className={underlineSelect} value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })}>
-            <option value="vi">Tiếng Việt</option>
-            <option value="en">English</option>
+        <label className="space-y-1 text-sm">
+          <span>Nguồn</span>
+          <select className={boxInput} value={input.provider}
+            onChange={(event) => setInput({ ...input, provider: event.target.value as CourseSearchInput['provider'] })}>
+            <option value="ALL">Tất cả</option><option value="YOUTUBE">YouTube</option><option value="COURSERA">Coursera</option>
           </select>
         </label>
-<label className="block md:col-span-2">
-          <span className={fieldLabel}>Kỹ năng liên quan (tuỳ chọn, cách nhau bằng dấu phẩy)</span>
-          <input className={underlineInput} value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} placeholder="Phỏng vấn, React, SQL" />
-        </label>
-        <label className="block md:col-span-2">
-          <span className={fieldLabel}>Nội dung tài liệu để AI tra cứu (bắt buộc)</span>
-          <textarea required maxLength={100000} rows={8} className={`${boxInput} mt-2 text-[14px]`} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
-          <span className="mt-1 block text-[12px] text-slate-500">Dán nội dung kiến thức để AI tra cứu. Hệ thống chưa tự đọc nội dung từ đường dẫn tài liệu.</span>
-        </label>
+        <button className={smallPrimary} type="submit" disabled={!status.data?.configured || !input.skill.trim() || search.isPending}>
+          {search.isPending ? 'Đang tìm…' : 'Tìm khóa học từ Google'}
+        </button>
       </div>
-      {save.isError && <p className="mt-3 text-sm text-danger">{errorText(save.error)}</p>}
-    </Modal>
+      {status.isError && <Note tone="danger">{authErrorMessage(status.error, 'Không kiểm tra được cấu hình SerpApi.')}</Note>}
+      {status.data?.configured === false && <Note>Backend chưa cấu hình SERPAPI_API_KEY.</Note>}
+      {search.isError && <Note tone="danger">{authErrorMessage(search.error, 'Không tìm được khóa học từ Google.')}</Note>}
+      {search.data && <p role="status" className="text-sm text-slate-600">
+        {search.data.found === 0 ? 'Không tìm thấy link khóa học phù hợp.' :
+          `Tìm thấy ${search.data.found} link. Đã gửi duyệt ${search.data.added}, bỏ qua ${search.data.duplicates} link đã có.`}
+      </p>}
+    </form>
   );
 }
 
-function CourseModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ title: '', url: '', description: '', skills: '', language: 'vi', isFree: true });
-  const save = useMutation({
-    mutationFn: () =>
-      createRagCourse({
-        title: form.title.trim(),
-        url: form.url.trim(),
-        description: form.description.trim(),
-        skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean),
-        language: form.language,
-        isFree: form.isFree,
-      }),
-    onSuccess: onSaved,
-  });
-  return (
-    <Modal
-      title="Thêm khoá học"
-      onClose={onClose}
-      footer={
-        <>
-          <button type="button" className={outlineButton} onClick={onClose}>Huỷ</button>
-          <button type="button" className={primaryButton} disabled={save.isPending || !form.title.trim() || !form.url.trim() || !form.skills.trim()} onClick={() => save.mutate()}>
-            {save.isPending ? 'Đang lưu...' : 'Lưu khoá học'}
-          </button>
-        </>
-      }
-    >
-      <div className="grid gap-5 md:grid-cols-2">
-        <label className="block md:col-span-2">
-          <span className={fieldLabel}>Đường dẫn (YouTube hoặc Coursera)</span>
-          <input type="url" className={underlineInput} value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
-        </label>
-        <label className="block md:col-span-2">
-          <span className={fieldLabel}>Tên khoá học</span>
-          <input className={underlineInput} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-        </label>
-        <label className="block md:col-span-2">
-          <span className={fieldLabel}>Mô tả</span>
-          <textarea rows={4} className={`${boxInput} mt-2 text-[14px]`} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        </label>
-        <label className="block">
-          <span className={fieldLabel}>Kỹ năng (cách nhau bằng dấu phẩy)</span>
-          <input className={underlineInput} value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} placeholder="React, TypeScript" />
-        </label>
-        <label className="block">
-          <span className={fieldLabel}>Ngôn ngữ</span>
-          <select className={underlineSelect} value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })}>
-            <option value="vi">Tiếng Việt</option>
-            <option value="en">English</option>
-          </select>
-        </label>
-        <div className="md:col-span-2">
-          <CheckBox checked={form.isFree} onChange={(v) => setForm({ ...form, isFree: v })} label="Khoá học miễn phí" />
-        </div>
-      </div>
-      {save.isError && <p className="mt-3 text-sm text-danger">{errorText(save.error)}</p>}
-    </Modal>
-  );
-}

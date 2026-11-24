@@ -239,6 +239,7 @@ export const router = createBrowserRouter([
         children: [{ path: '/staff', element: <StaffLayout />, children: [
           { index: true, element: <StaffDashboardPage /> },
           { path: 'jobs', element: <JobCrawlManagementPage staff /> },
+          { path: 'courses', element: <KnowledgeBasePage staff /> },
           { path: 'templates', element: <ResumeTemplateManagementPage /> },
           { path: 'rating-appeals', element: <StaffRatingAppealsPage /> },
           { path: 'ratings', element: <StaffRatingsPage /> },

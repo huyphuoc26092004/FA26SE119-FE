@@ -66,7 +66,7 @@ export const en: Translations = {
     payments: 'Payments',
     aiConfig: 'AI Configuration',
     jobProcessing: 'Job Collection',
-    vectorDatabase: 'Documents',
+    vectorDatabase: 'Courses',
     systemLogs: 'System Logs',
     auditLogs: 'Audit Logs',
     notifications: 'Notifications',

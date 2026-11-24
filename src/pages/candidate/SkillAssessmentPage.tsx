@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -6,8 +6,11 @@ import { ArrowRight, ArrowUpRight, Check, ChevronDown, Loader2 } from 'lucide-re
 import {
   SKILL_PASS_SCORE,
   createLearningPath,
+  getJdAssessment,
+  getLearningPathForAssessment,
   getLatestJdAssessment,
   getLatestLearningPath,
+  listSavedPastedLearningPaths,
   setLearningNodeStatus,
   skillTestHref,
   startJdAssessment,
@@ -17,9 +20,7 @@ import {
 } from '../../services/skillPathService';
 import type { LearningResource } from '../../types/assessment';
 import { authErrorMessage } from '../../services/authService';
-import { getAssessmentTopics, getJobById, getJobs, getResumes } from '../../services/candidateService';
-import { JdSkillBloomMap } from '../../components/jobs/JdSkillBloomMap';
-import { mappingFromExtraction, mappingFromPastedJd } from '../../utils/bloomMapping';
+import { analyzeJdSkillProficiency, getJobById, getJobs, getResumes } from '../../services/candidateService';
 import { AssessmentHistory } from './skill-assessment/AssessmentHistory';
 import { JOB_ACTIVITY_QUERY_KEY, getJobActivity } from '../../services/jobActivityService';
 import { Loading } from '../../components/ui';
@@ -33,7 +34,7 @@ const copy = {
     crumbPage: 'Chuẩn bị phỏng vấn',
     heroA: 'Chuẩn bị phỏng vấn theo JD.',
     heroB: 'CV không bắt buộc.',
-    introShort: 'Tìm công việc bạn nhắm tới hoặc dán thẳng JD. Hệ thống tách JD thành kỹ năng kèm mức Bloom, ra câu hỏi đúng mức đó, chấm điểm từng kỹ năng và lập lộ trình cho phần còn yếu.',
+    introShort: 'Tìm công việc bạn nhắm tới hoặc dán thẳng JD. Hệ thống nhận diện kỹ năng trong JD, tạo câu hỏi đánh giá và lập lộ trình cho phần còn yếu.',
     sumNotPassed: `Chưa đạt mức ${SKILL_PASS_SCORE}`,
     sumPassed: `Đạt mức ${SKILL_PASS_SCORE}`,
     sumSkills: (d: number, n: number) => `${d} / ${n} kỹ năng`,
@@ -322,6 +323,19 @@ export function Muted({ children }: { children: ReactNode }) {
   return <p className="border-b border-border py-6 text-[15px] leading-7 text-slate-500">{children}</p>;
 }
 
+export function RoadmapBuildError({ error, c, vi }: { error: unknown; c: Copy; vi: boolean }) {
+  const status = isAxiosError(error) ? error.response?.status : undefined;
+  if (status !== 402 && status !== 429) return <ErrorLine error={error} c={c} />;
+  return (
+    <div role="alert" className="mt-3 text-[13px] leading-6">
+      <p className="text-danger">{status === 402
+        ? (vi ? 'Bạn cần gói AI trả phí hoặc đủ token đã mua để tạo lộ trình.' : 'A paid AI plan or enough purchased tokens are required to create a roadmap.')
+        : (vi ? 'Bạn đã hết hạn mức AI khả dụng để tạo lộ trình.' : 'You have reached your available AI quota for roadmaps.')}</p>
+      <Link to="/candidate/subscription" className={textLink}>{vi ? 'Xem gói AI và nạp token' : 'View AI plans and top up'}</Link>
+    </div>
+  );
+}
+
 // ─── Assessment ─────────────────────────────────────────────────────────────
 
 /** Bài đang làm dở: chỉ tóm tắt, việc làm bài diễn ra ở trang riêng. */
@@ -385,7 +399,7 @@ export function AssessmentResult({ session, c, vi, reviewOpen }: { session: JdAs
         <ol className="mt-8 border-t border-border">
           {session.questions.map((q, i) => {
             const picked = session.answers[q.id];
-            const right = picked === q.correctOptionId;
+            const right = !!picked && picked === q.correctOptionId;
             return (
               <li key={q.id} className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-3 border-b border-border py-4">
                 <span className="pt-0.5 text-xs tabular-nums text-slate-500">{pad2(i + 1)}</span>
@@ -393,12 +407,10 @@ export function AssessmentResult({ session, c, vi, reviewOpen }: { session: JdAs
                   <p className={`text-[12px] ${right ? 'text-brand' : 'text-danger'}`}>{q.topic}</p>
                   <p className="mt-1 text-[15px] leading-7 text-ink">{q.text}</p>
                   <dl className="mt-1.5 space-y-1 text-[13px] leading-6">
-                    {!right && (
-                      <div className="flex flex-wrap gap-x-2">
-                        <dt className="text-slate-500">{c.yourAnswer}:</dt>
-                        <dd className="text-danger line-through decoration-1">{q.options.find((o) => o.id === picked)?.text ?? c.noAnswer}</dd>
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="text-slate-500">{c.yourAnswer}:</dt>
+                      <dd className={right ? 'text-brand' : 'text-danger'}>{q.options.find((o) => o.id === picked)?.text ?? c.noAnswer}</dd>
+                    </div>
                     <div className="flex flex-wrap gap-x-2">
                       <dt className="text-slate-500">{c.correctAnswer}:</dt>
                       <dd className="text-ink">{q.options.find((o) => o.id === q.correctOptionId)?.text}</dd>
@@ -539,11 +551,16 @@ export default function SkillAssessmentPage() {
   const jobId = searchParams.get('jobId') ?? '';
   const cvParam = searchParams.get('cvId') ?? '';
   const [jdOpen, setJdOpen] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [pastedMode, setPastedMode] = useState(false);
-  const [pastedTitle, setPastedTitle] = useState('');
+  const historySessionId = searchParams.get('assessmentSessionId') ?? '';
+  const [reviewOpen, setReviewOpen] = useState(!!historySessionId);
+  const pastedSessionId = searchParams.get('pastedSessionId') ?? '';
+  const [pasteSelected, setPastedMode] = useState(false);
+  const selectedSessionId = historySessionId || pastedSessionId;
+  const pastedMode = selectedSessionId ? !jobId : pasteSelected;
+  const savedRoadmapId = pastedMode && selectedSessionId ? searchParams.get('roadmapId') ?? '' : '';
   const [pastedJd, setPastedJd] = useState('');
-  const pastedValid = pastedTitle.trim().length > 0 && pastedJd.trim().length >= 30;
+  const pastedValid = pastedJd.trim().length >= 30;
+  const targetHint = pastedMode ? (isVietnamese ? 'Dán nội dung JD để bắt đầu.' : 'Paste the JD to get started.') : c.pickFirst;
 
   // Chỉ CV đã xác nhận (READY) mới dùng được cho bài đánh giá; không có CV thì ẩn ô chọn CV.
   const resumesQuery = useQuery({ queryKey: ['resumes'], queryFn: getResumes });
@@ -556,40 +573,66 @@ export default function SkillAssessmentPage() {
   const { data: activity } = useQuery({ queryKey: JOB_ACTIVITY_QUERY_KEY, queryFn: getJobActivity });
   const { data: job } = useQuery({ queryKey: ['job', jobId], queryFn: () => getJobById(jobId), enabled: !!jobId });
 
-  // JD → Kỹ năng → Bloom: job có sẵn đọc snapshot BE; JD dán thì ước lượng theo danh mục kỹ năng.
-  const catalogQuery = useQuery({ queryKey: ['skill-catalog'], queryFn: getAssessmentTopics, enabled: pastedMode, staleTime: 10 * 60_000 });
-  const deferredJd = useDeferredValue(pastedJd);
-  const bloomMapping = useMemo(() => {
-    if (pastedMode) return deferredJd.trim().length >= 30 && catalogQuery.data ? mappingFromPastedJd(deferredJd, catalogQuery.data) : null;
-    return job ? mappingFromExtraction(job.requirementExtraction) : null;
-  }, [pastedMode, deferredJd, catalogQuery.data, job]);
 
-  const contextKey = pastedMode ? ['pasted', pastedTitle, pastedJd] : [jobId];
+  const proficiencyPreview = useMutation({ mutationFn: analyzeJdSkillProficiency });
+  const previewIsCurrent = proficiencyPreview.variables === pastedJd.trim();
+  const skillProficiency = pastedMode
+    ? (previewIsCurrent ? proficiencyPreview.data : undefined)
+    : job?.skillProficiencyAnalysis;
+
+  const contextKey = pastedMode && selectedSessionId ? ['pasted-session', selectedSessionId] : pastedMode ? ['pasted', pastedJd] : [jobId];
   const testKey = ['jdAssessment', ...contextKey, cvId];
-  const pathKey = ['learningPath', ...contextKey, cvId];
-  const testQuery = useQuery({ queryKey: testKey, queryFn: () => getLatestJdAssessment(jobId, cvId), enabled: !pastedMode && !!jobId && cvsLoaded });
-  const pathQuery = useQuery({ queryKey: pathKey, queryFn: () => getLatestLearningPath(jobId, cvId), enabled: !pastedMode && !!jobId && cvsLoaded });
-  const session = testQuery.data ?? null;
+  const pathKey = pastedMode && selectedSessionId
+    ? ['learningPath', 'pasted-session', selectedSessionId, savedRoadmapId]
+    : ['learningPath', ...contextKey, cvId];
+  const testQuery = useQuery({ queryKey: testKey, queryFn: () => getLatestJdAssessment(jobId, cvId), enabled: !selectedSessionId && !pastedMode && !!jobId && cvsLoaded });
+  const canLoadPath = pastedMode ? !!selectedSessionId : !!jobId && cvsLoaded;
+  const pathQuery = useQuery({
+    queryKey: pathKey,
+    queryFn: () => pastedMode ? getLearningPathForAssessment(selectedSessionId, savedRoadmapId) : getLatestLearningPath(jobId, cvId),
+    enabled: canLoadPath,
+  });
+  const savedPaths = useQuery({ queryKey: ['learningPath', 'saved-pasted'], queryFn: listSavedPastedLearningPaths });
+  const selectedSessionQuery = useQuery({
+    queryKey: ['jdAssessment', 'session', selectedSessionId],
+    queryFn: () => getJdAssessment(selectedSessionId),
+    enabled: !!selectedSessionId,
+    staleTime: Infinity,
+  });
+  const activeTestQuery = selectedSessionId ? selectedSessionQuery : testQuery;
+  const session = activeTestQuery.data ?? null;
+  const hasAssessmentTarget = pastedMode ? pastedValid || !!selectedSessionId : !!jobId;
   const path = pathQuery.data ?? null;
   const completedTest = session?.status === 'completed' ? session : null;
 
   const updateParams = (patch: Record<string, string>) => {
     const next = new URLSearchParams(searchParams);
-    Object.entries(patch).forEach(([k, v]) => next.set(k, v));
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    });
     setSearchParams(next, { replace: true });
   };
   const selectJob = (id: string) => {
-    updateParams({ jobId: id });
+    updateParams({ jobId: id, pastedSessionId: '', assessmentSessionId: '', roadmapId: '' });
     setJdOpen(false);
     setReviewOpen(false);
   };
   const selectCv = (id: string) => {
-    updateParams({ cvId: id || 'none' });
+    updateParams({ cvId: id || 'none', pastedSessionId: '', assessmentSessionId: '', roadmapId: '' });
     setReviewOpen(false);
   };
 
+  const editPastedJd = (value: string) => {
+    setPastedJd(value);
+    if (selectedSessionId) {
+      setPastedMode(true);
+      updateParams({ pastedSessionId: '', assessmentSessionId: '', roadmapId: '' });
+    }
+  };
+
   const startTest = useMutation({
-    mutationFn: () => startJdAssessment(jobId, cvId || undefined, pastedMode ? { targetJobTitle: pastedTitle.trim(), jdText: pastedJd.trim() } : undefined),
+    mutationFn: () => startJdAssessment(jobId, cvId || undefined, pastedMode ? { jdText: pastedJd.trim() } : undefined),
     onSuccess: (data) => {
       queryClient.setQueryData(testKey, data);
       queryClient.setQueryData(['jdAssessment', 'session', data.id], data);
@@ -601,8 +644,23 @@ export default function SkillAssessmentPage() {
   });
   const buildPath = useMutation({
     // CV đi theo bài đánh giá; không có bài thì chỉ lập theo JD.
-    mutationFn: () => createLearningPath({ jobId: pastedMode ? undefined : jobId, assessmentId: completedTest?.id }),
-    onSuccess: (data) => queryClient.setQueryData(pathKey, data),
+    mutationFn: ({ request }: {
+      request: Parameters<typeof createLearningPath>[0];
+      key: string[];
+      openedRoadmapId: string;
+    }) => createLearningPath(request),
+    onSuccess: (data, { key, openedRoadmapId }) => {
+      queryClient.setQueryData(key, data);
+      if (openedRoadmapId && openedRoadmapId === savedRoadmapId && key[2] === selectedSessionId) {
+        updateParams({ roadmapId: '' });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['learningPath', 'saved-pasted'] });
+    },
+  });
+  const requestBuildPath = () => buildPath.mutate({
+    request: { jobId: pastedMode ? undefined : jobId, assessmentId: completedTest?.id },
+    key: savedRoadmapId ? ['learningPath', 'pasted-session', selectedSessionId, ''] : pathKey,
+    openedRoadmapId: savedRoadmapId,
   });
   const nodeStatus = useMutation({
     mutationFn: ({ nodeId, status }: { nodeId: string; status: LearningPathNode['status'] }) => setLearningNodeStatus(path!.id, nodeId, status),
@@ -610,12 +668,15 @@ export default function SkillAssessmentPage() {
   });
 
   // Quay về từ trang làm bài (#step-2 / #step-3): cuộn tới đúng phần khi dữ liệu đã tải.
-  const { hash } = useLocation();
-  const sectionsReady = !testQuery.isPending && !pathQuery.isPending;
+  const { hash, key: locationKey } = useLocation();
+  useEffect(() => {
+    if (historySessionId) setReviewOpen(true);
+  }, [historySessionId, locationKey]);
+  const sectionsReady = !activeTestQuery.isLoading && !pathQuery.isLoading;
   useEffect(() => {
     if (!hash || !sectionsReady) return;
     document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' });
-  }, [hash, sectionsReady]);
+  }, [hash, locationKey, sectionsReady]);
 
   const weakSkills = completedTest?.skillScores.filter((s) => s.score < SKILL_PASS_SCORE).map((s) => s.skill) ?? [];
   const pathBeforeTest = !!path && !!completedTest?.submittedAt && new Date(path.createdAt) < new Date(completedTest.submittedAt);
@@ -626,7 +687,7 @@ export default function SkillAssessmentPage() {
   const testPassed = !!completedTest && completedTest.score >= SKILL_PASS_SCORE;
 
   const summary = [
-    { label: c.jobTitle, value: pastedMode ? pastedTitle || c.stepNone : job?.title ?? c.stepNone, sub: pastedMode ? '' : job?.company ?? '', tone: '' },
+    { label: c.jobTitle, value: pastedMode ? (pastedValid ? (isVietnamese ? 'JD đã dán' : 'Pasted JD') : c.stepNone) : job?.title ?? c.stepNone, sub: pastedMode ? '' : job?.company ?? '', tone: '' },
     {
       label: c.testTitle,
       value: completedTest ? `${completedTest.score}%` : session ? c.testOpen : c.stepNone,
@@ -696,7 +757,10 @@ export default function SkillAssessmentPage() {
               role="tab"
               aria-selected={pastedMode === tab.value}
               disabled={busyAi}
-              onClick={() => setPastedMode(tab.value)}
+              onClick={() => {
+                setPastedMode(tab.value);
+                if (tab.value !== pastedMode && selectedSessionId) updateParams({ pastedSessionId: '', assessmentSessionId: '', roadmapId: '' });
+              }}
               className={`rounded-full px-4 py-1.5 text-[13px] transition-colors ${pastedMode === tab.value ? 'bg-ink text-white' : 'text-slate-700 hover:text-ink'}`}
             >
               {tab.label}
@@ -709,25 +773,22 @@ export default function SkillAssessmentPage() {
             : isVietnamese ? 'Gõ tên vị trí, công ty hoặc kỹ năng để tìm. Không thấy công việc thì chuyển sang “Dán JD trực tiếp”.' : 'Type a role, company or skill. Not found? Switch to “Paste a JD”.'}
         </p>
         {pastedMode && <div className="mt-4 space-y-4">
-          <label className="block text-[12px] text-slate-500">{isVietnamese ? 'Tên vị trí' : 'Job title'}
-            <input value={pastedTitle} maxLength={255} disabled={busyAi} placeholder={isVietnamese ? 'VD: Java Backend Developer' : 'e.g. Java Backend Developer'} onChange={(event) => setPastedTitle(event.target.value)} className={`${lineField} mt-1`} />
-          </label>
           <label className="block text-[12px] text-slate-500">{isVietnamese ? 'Nội dung JD (30–50.000 ký tự)' : 'JD text (30–50,000 characters)'}
-            <textarea value={pastedJd} maxLength={50000} rows={8} disabled={busyAi} placeholder={isVietnamese ? 'Dán phần mô tả công việc và yêu cầu ứng viên…' : 'Paste the job description and requirements…'} onChange={(event) => setPastedJd(event.target.value)} className="mt-1 block w-full rounded-xl border border-border bg-transparent p-3 text-sm text-ink outline-none focus:border-ink" />
+            <textarea value={pastedJd} maxLength={50000} rows={8} disabled={busyAi} placeholder={isVietnamese ? 'Dán phần mô tả công việc và yêu cầu ứng viên…' : 'Paste the job description and requirements…'} onChange={(event) => editPastedJd(event.target.value)} className="mt-1 block w-full rounded-xl border border-border bg-transparent p-3 text-sm text-ink outline-none focus:border-ink" />
             <span className="mt-1 block text-right tabular-nums">{pastedJd.trim().length.toLocaleString()} / 50.000</span>
           </label>
         </div>}
         <div className="grid items-end gap-x-[clamp(1.5rem,3vw,2.5rem)] gap-y-6 pt-5 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.75fr)_auto]">
-          <div className="min-w-0">
+          {!pastedMode && <div className="min-w-0">
             <p className="text-[12px] text-slate-500">{c.jobLabel}</p>
             <div className="mt-1">
-              {pastedMode ? <p className="py-2 text-sm">{pastedTitle || '—'}</p> : jobsQuery.isPending ? (
+              {jobsQuery.isPending ? (
                 <p className="py-2 text-sm text-slate-500">…</p>
               ) : (
                 <JobPicker jobs={jobsQuery.data ?? []} selectedId={jobId} activity={activity} onSelect={selectJob} c={pickerCopy} label={c.jobLabel} />
               )}
             </div>
-          </div>
+          </div>}
           {readyCvs.length > 0 ? (
             <div className="min-w-0">
               <label htmlFor="assess-cv" className="block text-[12px] text-slate-500">
@@ -770,9 +831,9 @@ export default function SkillAssessmentPage() {
             )}
             {readyCvs.length > 0 && <p>{cvId ? c.cvWith : c.cvWithout}</p>}
           </div>
-        ) : (
-          <p className="mt-4 text-[13px] text-slate-500">{c.pickFirst}</p>
-        )}
+        ) : !hasAssessmentTarget ? (
+          <p className="mt-4 text-[13px] text-slate-500">{targetHint}</p>
+        ) : null}
 
         {!pastedMode && jdOpen && job && (
           <div className="mt-5 border-t border-border">
@@ -781,25 +842,51 @@ export default function SkillAssessmentPage() {
         )}
       </Section>
 
-      {/* 02 JD → Kỹ năng → Bloom */}
       <Section
-        id="step-bloom"
+        id="step-proficiency"
         index="02"
-        title={isVietnamese ? 'Kỹ năng trong JD theo mức Bloom' : 'JD skills by Bloom level'}
+        title={isVietnamese ? 'Mức kỹ năng JD yêu cầu' : 'Required skill proficiency'}
       >
-        {!(pastedMode ? pastedJd.trim().length >= 30 : jobId) ? (
-          <Muted>{c.pickFirst}</Muted>
-        ) : pastedMode && catalogQuery.isPending ? (
-          <Loading />
+        {pastedMode && pastedValid && (
+          <div className="py-3">
+            <button
+              type="button"
+              disabled={proficiencyPreview.isPending}
+              onClick={() => proficiencyPreview.mutate(pastedJd.trim())}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium disabled:opacity-50"
+            >
+              {proficiencyPreview.isPending
+                ? (isVietnamese ? 'Đang phân tích…' : 'Analyzing…')
+                : (isVietnamese ? 'Phân tích mức kỹ năng bằng AI' : 'Analyze skill proficiency with AI')}
+            </button>
+            {previewIsCurrent && proficiencyPreview.isError && (
+              <p role="alert" className="mt-2 text-sm text-rose-700">
+                {authErrorMessage(proficiencyPreview.error, isVietnamese ? 'Không phân tích được JD.' : 'Could not analyze the JD.')}
+              </p>
+            )}
+          </div>
+        )}
+        {!hasAssessmentTarget ? (
+          <Muted>{targetHint}</Muted>
         ) : !pastedMode && !job ? (
           <Loading />
-        ) : !pastedMode && !bloomMapping && job ? (
-          <p className="border-b border-border py-5 text-[13px] text-slate-500">
-            {isVietnamese ? 'Tin này chưa được bóc tách yêu cầu. Kỹ năng trong JD: ' : 'This job has not been extracted yet. JD skills: '}
-            <span className="text-ink">{job.skills.join(', ') || '—'}</span>
-          </p>
+        ) : !skillProficiency?.results.length ? (
+          <Muted>{isVietnamese ? 'Chưa có kết quả phân tích mức kỹ năng.' : 'No skill proficiency analysis is available yet.'}</Muted>
         ) : (
-          <JdSkillBloomMap mapping={bloomMapping} vi={isVietnamese} />
+          <ul className="divide-y divide-border">
+            {skillProficiency.results.map((skill) => (
+              <li key={skill.skill_id} className="py-3 text-sm">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                  <strong>{skill.skill_name}</strong>
+                  <span>{skill.required_level === null
+                    ? (isVietnamese ? 'Chưa đủ bằng chứng' : 'Insufficient evidence')
+                    : `${skill.required_level}/4 · ${skill.level_label}`}</span>
+                </div>
+                <p className="mt-1 text-slate-600"><q>{skill.evidence}</q></p>
+                <p className="mt-1 text-slate-600">{skill.reason}</p>
+              </li>
+            ))}
+          </ul>
         )}
       </Section>
 
@@ -817,12 +904,12 @@ export default function SkillAssessmentPage() {
           ) : undefined
         }
       >
-        {!(pastedMode ? pastedValid : jobId) ? (
-          <Muted>{c.pickFirst}</Muted>
-        ) : !pastedMode && testQuery.isPending ? (
+        {!hasAssessmentTarget ? (
+          <Muted>{targetHint}</Muted>
+        ) : activeTestQuery.isLoading ? (
           <Loading />
-        ) : testQuery.isError ? (
-          <ErrorLine error={testQuery.error} c={c} />
+        ) : activeTestQuery.isError ? (
+          <ErrorLine error={activeTestQuery.error} c={c} />
         ) : startTest.isPending ? (
           <Working text={c.testCreating} />
         ) : !session ? (
@@ -845,15 +932,15 @@ export default function SkillAssessmentPage() {
         title={c.pathTitle}
         action={
           path && !busyAi && canBuildPath ? (
-            <button type="button" onClick={() => buildPath.mutate()} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+            <button type="button" onClick={requestBuildPath} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
               {c.pathRebuild}
             </button>
           ) : undefined
         }
       >
-        {!(pastedMode ? pastedValid : jobId) ? (
-          <Muted>{c.pickFirst}</Muted>
-        ) : !pastedMode && pathQuery.isPending ? (
+        {!hasAssessmentTarget ? (
+          <Muted>{targetHint}</Muted>
+        ) : canLoadPath && pathQuery.isPending ? (
           <Loading />
         ) : pathQuery.isError ? (
           <ErrorLine error={pathQuery.error} c={c} />
@@ -866,15 +953,18 @@ export default function SkillAssessmentPage() {
                 {completedTest ? (weakSkills.length ? c.pathWeak(weakSkills.join(', ')) : c.pathAllPass) : cvId ? c.pathNeedsTest : c.pathLocked}
               </p>
               <p className="mt-1 text-[13px] text-slate-500">{c.pathNote}</p>
+              {canBuildPath && <p className="mt-1 text-[13px] text-slate-500">
+                {isVietnamese ? 'Tạo lộ trình cần gói AI trả phí hoặc đủ token đã mua.' : 'Creating a path requires a paid AI plan or enough purchased tokens.'}
+              </p>}
             </div>
             {completedTest ? (
-              <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${primaryButton} shrink-0`}>
+              <button type="button" onClick={requestBuildPath} disabled={busyAi} className={`${primaryButton} shrink-0`}>
                 {c.pathCreate}
                 <ArrowRight size={15} aria-hidden="true" />
               </button>
             ) : (
               canBuildPath && (
-                <button type="button" onClick={() => buildPath.mutate()} disabled={busyAi} className={`${textLink} shrink-0 text-[13px] text-slate-600`}>
+                <button type="button" onClick={requestBuildPath} disabled={busyAi} className={`${textLink} shrink-0 text-[13px] text-slate-600`}>
                   {c.pathWithoutTest}
                 </button>
               )
@@ -890,16 +980,35 @@ export default function SkillAssessmentPage() {
             <PathView path={path} c={c} busy={nodeStatus.isPending} onStatus={(nodeId, status) => nodeStatus.mutate({ nodeId, status })} />
           </div>
         )}
-        <ErrorLine error={buildPath.error ?? nodeStatus.error} c={c} />
+        <RoadmapBuildError error={buildPath.error} c={c} vi={isVietnamese} />
+        <ErrorLine error={nodeStatus.error} c={c} />
+      </Section>
+
+      <Section id="saved-pasted-paths" index="05" title={isVietnamese ? 'Lộ trình đã lưu từ JD dán' : 'Saved paths from pasted JDs'}>
+        {savedPaths.isPending ? <Loading /> : savedPaths.isError ? <ErrorLine error={savedPaths.error} c={c} /> :
+          savedPaths.data.length === 0 ? <Muted>{isVietnamese ? 'Chưa có lộ trình đã lưu.' : 'No saved paths yet.'}</Muted> : (
+            <ul className="pt-4">
+              {savedPaths.data.map(({ id, assessmentId, title, createdAt }) => (
+                <li key={id} className="flex flex-wrap justify-between gap-2 border-b border-border py-3 text-sm">
+                  <Link to={`/candidate/skill-assessment?${new URLSearchParams({ pastedSessionId: assessmentId, roadmapId: id })}#step-3`} className={textLink}>
+                    {title}
+                  </Link>
+                  <time dateTime={createdAt} className="text-slate-500">
+                    {new Date(createdAt).toLocaleDateString(isVietnamese ? 'vi-VN' : 'en-GB')}
+                  </time>
+                </li>
+              ))}
+            </ul>
+          )}
       </Section>
 
       {/* 05 Lịch sử, nhóm theo tiêu đề */}
-      <Section id="step-history" index="05" title={isVietnamese ? 'Lịch sử chuẩn bị phỏng vấn' : 'Preparation history'}>
+      <Section id="step-history" index="06" title={isVietnamese ? 'Lịch sử chuẩn bị phỏng vấn' : 'Preparation history'}>
         <AssessmentHistory
           vi={isVietnamese}
           onOpen={(item) => {
             setPastedMode(false);
-            updateParams({ jobId: item.jobId, cvId: item.resumeId || 'none' });
+            updateParams({ jobId: item.jobId, cvId: item.resumeId || 'none', pastedSessionId: '', assessmentSessionId: '', roadmapId: '' });
             setReviewOpen(false);
             document.getElementById('step-1')?.scrollIntoView({ behavior: 'smooth' });
           }}

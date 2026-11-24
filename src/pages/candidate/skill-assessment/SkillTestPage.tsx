@@ -70,8 +70,10 @@ const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(se
 
 /** Đường dẫn quay về trang đánh giá, giữ đúng công việc và CV của bài. */
 function assessmentHref(session: JdAssessment | undefined, hash = '') {
-  if (!session?.jobId) return `/candidate/skill-assessment${hash}`;
-  const params = new URLSearchParams({ jobId: session.jobId, cvId: session.resumeId || 'none' });
+  if (!session) return `/candidate/skill-assessment${hash}`;
+  const params = new URLSearchParams({ cvId: session.resumeId || 'none' });
+  if (session.jobId) params.set('jobId', session.jobId);
+  else params.set('pastedSessionId', session.id);
   return `/candidate/skill-assessment?${params}${hash}`;
 }
 
@@ -386,10 +388,11 @@ export default function SkillTestPage() {
     onSuccess: (data) => {
       queryClient.setQueryData(key, data);
       queryClient.invalidateQueries({ queryKey: ['jdAssessment'], predicate: (q) => q.queryKey[1] !== 'session' });
+      if (data.jobId) queryClient.setQueryData(['jdAssessment', data.jobId, data.resumeId || ''], data);
       queryClient.invalidateQueries({ queryKey: ['jdAssessments'] });
       // Nộp bài làm lộ trình cũ hết hiệu lực ở backend.
       queryClient.invalidateQueries({ queryKey: ['learningPath'] });
-      window.scrollTo({ top: 0 });
+      navigate(assessmentHref(data, '#step-2'), { replace: true });
     },
   });
   const { mutate: submitMutate } = submit;

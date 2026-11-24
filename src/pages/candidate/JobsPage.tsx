@@ -191,7 +191,7 @@ export default function JobsPage() {
     error: recommendationError,
     refetch: refreshRecommendations,
   } = useQuery({
-    queryKey: ['jobRecommendations', userId, recommendationSource, 'REQUIREMENT_EVIDENCE_V1', sourceVersion, catalogUpdatedAt],
+    queryKey: ['jobRecommendations', userId, recommendationSource, 'RECOMMENDATION_VECTOR_V2', sourceVersion, catalogUpdatedAt],
     queryFn: () => getRecommendationResult({
       basis: selectedResumeId ? 'SELECTED_CV' : 'CAREER_PROFILE',
       resumeId: selectedResumeId,
@@ -366,7 +366,7 @@ export default function JobsPage() {
 
   const modes = [
     { key: 'all', label: 'Tất cả việc làm', description: 'Khám phá các cơ hội việc làm và tìm kiếm theo nhu cầu của bạn.', Icon: List },
-    { key: 'recommended', label: 'Việc làm phù hợp với bạn', description: 'AI phân tích CV và đề xuất 10 công việc phù hợp nhất.', Icon: Sparkles },
+    { key: 'recommended', label: 'Việc làm phù hợp với bạn', description: 'So khớp vị trí và kỹ năng để đề xuất tối đa 10 việc làm.', Icon: Sparkles },
   ] as const;
   const tabs = [
     { key: 'saved', label: `${t('jobs.savedJobsTab')} (${savedIds.length})` },
@@ -539,7 +539,7 @@ export default function JobsPage() {
             {isRecommended && (
               <div className="mb-5">
                 <h2 className="text-2xl font-medium text-ink">Top 10 công việc phù hợp nhất với bạn</h2>
-                <p className="mt-1 text-sm text-slate-600">Được AI phân tích và xếp hạng dựa trên CV và năng lực của bạn.</p>
+                <p className="mt-1 text-sm text-slate-600">Xếp hạng dựa trên vị trí và kỹ năng từ nguồn bạn chọn.</p>
               </div>
             )}
             {isRecommended && canRecommend && (
@@ -621,18 +621,8 @@ export default function JobsPage() {
             {activeTab === 'recommended' && recommendationResult?.retrieval && !recommendationsLoading && (
               <p role="status" className="mb-5 border-l-2 border-brand px-4 py-3 text-sm leading-6 text-slate-600">
                 {recommendationResult.retrieval.vectorUsed
-                  ? `Hệ thống có dữ liệu ngữ nghĩa cho ${recommendationResult.retrieval.compatibleVectors}/${recommendationResult.retrieval.activeJobs} việc làm đang tuyển.`
-                  : 'Hệ thống dùng dữ liệu yêu cầu tuyển dụng để hỗ trợ AI đánh giá.'}
-                {' '}Điểm % là mức phù hợp do AI đánh giá; không phải xác suất trúng tuyển.
-                {recommendationResult.retrieval.aiSelectedJobs != null && ` AI đã cho điểm ${recommendationResult.retrieval.aiScoredJobs ?? 0}/${recommendationResult.retrieval.aiSelectedJobs} việc làm đủ điều kiện đánh giá.`}
-                {recommendationResult.retrieval.failureCode === 'AI_QUOTA_EXCEEDED'
-                  ? ' Không đủ hạn mức AI để chấm các việc làm đã chọn. Vui lòng kiểm tra mức sử dụng AI và gói đăng ký.'
-                  : recommendationResult.retrieval.failureCode === 'AI_OUTPUT_INVALID'
-                    ? ' AI chưa trả về kết quả đánh giá hợp lệ. Bạn có thể cập nhật đề xuất để thử lại.'
-                    : recommendationResult.retrieval.failureCode === 'AI_PROVIDER_ERROR'
-                      ? ' Dịch vụ AI tạm thời gián đoạn. Xếp hạng chỉ gồm các việc làm đã có điểm hợp lệ.'
-                      : ['SKIPPED', 'PARTIAL', 'INSUFFICIENT_EVIDENCE'].includes(recommendationResult.retrieval.rerankStatus)
-                        && ' Xếp hạng chỉ gồm các việc làm đã có điểm AI hợp lệ.'}
+                  ? `So khớp vị trí và kỹ năng bằng vector cho ${recommendationResult.retrieval.compatibleVectors}/${recommendationResult.retrieval.activeJobs} việc làm đang tuyển. Chỉ hiển thị việc làm có vector tương thích.`
+                  : 'Chưa có kết quả so khớp vector cho nguồn đã chọn.'}
               </p>
             )}
             {activeTab === 'recommended' && recommendationResult?.verificationDeferred && !recommendationsLoading && (
@@ -707,9 +697,8 @@ export default function JobsPage() {
                   const isApplied = appliedIds.includes(job.id);
                   const quickMatch = job.semanticMatch?.method?.startsWith('SKILL_OVERLAP') ?? false;
                   const recommendationMatch = job.semanticMatch?.scoreKind === 'RECOMMENDATION_RULE_COVERAGE';
-                  const aiMatch = job.semanticMatch?.scoreKind === 'RECOMMENDATION_AI_SUITABILITY';
-                  const noAiScore = aiMatch && job.semanticMatch?.scoreAvailable !== true;
-                  const insufficientRequirements = !aiMatch && (job.semanticMatch?.requirementCoverageAvailable === false
+                  const vectorMatch = job.semanticMatch?.scoreKind === 'RECOMMENDATION_VECTOR_SIMILARITY';
+                  const insufficientRequirements = !vectorMatch && (job.semanticMatch?.requirementCoverageAvailable === false
                     || (quickMatch && ['MISSING_SOURCE', 'TRUNCATED'].includes(job.semanticMatch?.extractionStatus ?? '')));
                   const displayedScore = job.match;
                   const externalSource = job.externalSource || {
@@ -756,10 +745,10 @@ export default function JobsPage() {
                               <span className="px-1 py-0.5 text-[13px] text-slate-600">+{job.skills.length - 5}</span>
                             )}
                           </div>
-                          {isRecommended && !!job.semanticMatch?.matchedSkills.length && (
+                          {isRecommended && !vectorMatch && !!job.semanticMatch?.matchedSkills.length && (
                             <p className="mt-2 text-sm text-brand">Phù hợp · {job.semanticMatch.matchedSkills.join(', ')}</p>
                           )}
-                          {isRecommended && !!job.semanticMatch?.missingSkills.length && (
+                          {isRecommended && !vectorMatch && !!job.semanticMatch?.missingSkills.length && (
                             <p className="mt-1 text-sm text-slate-600">Cần bổ sung · {job.semanticMatch.missingSkills.join(', ')}</p>
                           )}
                           <p className="mt-2.5 text-ink">{job.salary}</p>
@@ -772,29 +761,20 @@ export default function JobsPage() {
                         <div>
                           {job.semanticMatch ? (
                             <>
-                              <p className="text-[clamp(1.75rem,2vw,2.25rem)] font-light leading-none text-brand">{noAiScore ? 'Chưa có điểm AI' : insufficientRequirements ? 'Chưa đủ dữ liệu' : `${displayedScore}%`}</p>
+                              <p className="text-[clamp(1.75rem,2vw,2.25rem)] font-light leading-none text-brand">{insufficientRequirements ? 'Chưa đủ dữ liệu' : `${displayedScore}%`}</p>
                               <div
                                 className="mt-3 h-0.5 w-full bg-ink/10"
                                 role={isRecommended ? 'progressbar' : undefined}
-                                aria-label={isRecommended ? 'Điểm phù hợp do AI đánh giá' : undefined}
+                                aria-label={isRecommended ? 'Điểm phù hợp' : undefined}
                                 aria-valuenow={isRecommended ? displayedScore : undefined}
                               >
-                                <div className="jd-bar h-full bg-brand" style={{ width: `${noAiScore || insufficientRequirements ? 0 : displayedScore}%` }} />
+                                <div className="jd-bar h-full bg-brand" style={{ width: `${insufficientRequirements ? 0 : displayedScore}%` }} />
                               </div>
                               <p className="mt-2 text-sm text-slate-600">
-                                {aiMatch ? 'Độ phù hợp do AI đánh giá' : recommendationMatch ? 'Độ bao phủ yêu cầu' : job.semanticMatch.evidenceReport?.verificationDeferred ? 'Độ bao phủ đã xác minh · còn yêu cầu chờ AI' : job.semanticMatch.evidenceReport ? 'Độ bao phủ yêu cầu bắt buộc' : quickMatch ? 'Đối chiếu yêu cầu' : <>Độ phù hợp · {job.match >= 85 ? 'Rất phù hợp'
+                                {vectorMatch ? 'Độ tương đồng vị trí và kỹ năng' : recommendationMatch ? 'Độ bao phủ yêu cầu' : job.semanticMatch.evidenceReport?.verificationDeferred ? 'Độ bao phủ đã xác minh · còn yêu cầu chờ AI' : job.semanticMatch.evidenceReport ? 'Độ bao phủ yêu cầu bắt buộc' : quickMatch ? 'Đối chiếu yêu cầu' : <>Độ phù hợp · {job.match >= 85 ? 'Rất phù hợp'
                                   : job.match >= 70 ? 'Phù hợp tốt' : job.match >= 50 ? 'Phù hợp một phần' : 'Cần bổ sung kỹ năng'}</>}
                               </p>
-                              {aiMatch && job.semanticMatch.requirementCoverageScore != null && (
-                                <p className="mt-2 text-xs text-slate-500">Đối chiếu quy tắc: {job.semanticMatch.requirementCoverageScore}% yêu cầu</p>
-                              )}
-                              {(recommendationMatch || aiMatch) && job.semanticMatch.semanticSimilarity != null && (
-                                <p className="mt-2 text-xs text-slate-500">Tương đồng ngữ nghĩa: {job.semanticMatch.semanticSimilarity.toFixed(3)}</p>
-                              )}
-                              {recommendationMatch && job.semanticMatch.aiRerankScore != null && (
-                                <p className="mt-2 text-xs text-slate-500">AI đánh giá sâu: {job.semanticMatch.aiRerankScore.toFixed(3)}/1</p>
-                              )}
-                              {job.semanticMatch.recommendation && (
+                              {!vectorMatch && job.semanticMatch.recommendation && (
                                 <p className="mt-2 text-xs leading-5 text-slate-500">{job.semanticMatch.recommendation}</p>
                               )}
                               {quickMatch && job.semanticMatch.experienceStatus === 'UNVERIFIED' && (
@@ -896,7 +876,7 @@ export default function JobsPage() {
                   </span>
                   {redirectJob.semanticMatch && <>
                     <span className="mx-2">·</span>
-                    <span className="text-brand">{redirectJob.semanticMatch.scoreAvailable === false ? 'Chưa có điểm AI' : `${redirectJob.match}% phù hợp`}</span>
+                    <span className="text-brand">{redirectJob.semanticMatch.scoreAvailable === false ? 'Chưa có điểm phù hợp' : `${redirectJob.match}% phù hợp`}</span>
                   </>}
                 </p>
               </div>

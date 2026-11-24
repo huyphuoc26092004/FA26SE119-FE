@@ -66,7 +66,7 @@ export const vi: Translations = {
     payments: 'Lịch sử thanh toán',
     aiConfig: 'Cấu hình AI',
     jobProcessing: 'Thu thập việc làm',
-    vectorDatabase: 'Tài liệu',
+    vectorDatabase: 'Khóa học',
     systemLogs: 'Nhật ký hệ thống',
     auditLogs: 'Nhật ký kiểm toán',
     notifications: 'Thông báo',

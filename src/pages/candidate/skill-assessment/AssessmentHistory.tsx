@@ -13,6 +13,12 @@ const dayKey = (iso: string) => {
     : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+function reviewHref(item: AssessmentHistoryItem) {
+  const params = new URLSearchParams({ assessmentSessionId: item.id, cvId: item.resumeId || 'none' });
+  if (item.jobId) params.set('jobId', item.jobId);
+  return `/candidate/skill-assessment?${params}#step-2`;
+}
+
 /** Lịch sử bài chuẩn bị phỏng vấn: nhóm theo tiêu đề công việc, lọc theo tên và khoảng ngày. */
 export function AssessmentHistory({ vi, onOpen }: { vi: boolean; onOpen: (item: AssessmentHistoryItem) => void }) {
   const query = useQuery({ queryKey: ['jdAssessments', 'history'], queryFn: listAssessmentHistory, staleTime: 30_000 });
@@ -98,7 +104,7 @@ export function AssessmentHistory({ vi, onOpen }: { vi: boolean; onOpen: (item: 
                           <span className={item.score === undefined ? 'text-slate-500' : item.score >= 70 ? 'text-brand' : 'text-danger'}>
                             {item.score === undefined ? (vi ? 'Đang làm dở' : 'In progress') : `${item.score}%`}
                           </span>
-                          <Link to={skillTestHref(item.id)} className="text-ink underline underline-offset-4 hover:text-brand">
+                          <Link to={item.score === undefined ? skillTestHref(item.id) : reviewHref(item)} className="text-ink underline underline-offset-4 hover:text-brand">
                             {item.score === undefined ? (vi ? 'Làm tiếp' : 'Continue') : vi ? 'Xem bài' : 'View'}
                           </Link>
                           {item.jobId && (

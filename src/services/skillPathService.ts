@@ -159,7 +159,7 @@ export async function getLatestJdAssessment(jobId: string, resumeId = ''): Promi
 }
 
 /** Sinh bài đánh giá mới theo JD, kèm CV nếu có (gọi AI, có thể mất vài phút). */
-export async function startJdAssessment(jobId: string, resumeId?: string, pasted?: { targetJobTitle: string; jdText: string }): Promise<JdAssessment> {
+export async function startJdAssessment(jobId: string, resumeId?: string, pasted?: { jdText: string }): Promise<JdAssessment> {
   const body = pasted ? { ...pasted, ...(resumeId ? { resumeId } : {}) } : resumeId ? { jobId, resumeId } : { jobId };
   const session = await apiClient.post<ApiRow>('/assessments', body, { timeout: AI_TIMEOUT }).then((res) => res.data);
   return toAssessment(session);
@@ -180,13 +180,37 @@ export async function getLatestLearningPath(jobId: string, resumeId = ''): Promi
   return latest ? toLearningPath(await get(`/roadmaps/${str(latest.id)}`)) : null;
 }
 
+export async function getLearningPathForAssessment(assessmentId: string, roadmapId?: string): Promise<LearningPath | null> {
+  if (roadmapId) {
+    const roadmap = await get(`/roadmaps/${encodeURIComponent(roadmapId)}`);
+    return str(obj(roadmap.input_context).assessment_id) === assessmentId ? toLearningPath(roadmap) : null;
+  }
+  const [latest] = await get<ApiRow[]>(`/roadmaps?${new URLSearchParams({ assessmentId })}`);
+  return latest ? toLearningPath(await get(`/roadmaps/${str(latest.id)}`)) : null;
+}
+
+export async function listSavedPastedLearningPaths() {
+  const saved: { id: string; assessmentId: string; title: string; createdAt: string }[] = [];
+  for (const row of await get<ApiRow[]>('/roadmaps')) {
+    const context = obj(row.input_context);
+    const assessmentId = str(context.assessment_id);
+    if (context.jd_source === 'PASTED' && assessmentId) {
+      saved.push({
+        id: str(row.id),
+        assessmentId,
+        title: str(row.target_job_title) || str(row.title),
+        createdAt: str(row.created_at),
+      });
+    }
+  }
+  return saved;
+}
+
 /** Lập lộ trình cho kỹ năng bắt buộc của JD mà CV chưa có hoặc bài đánh giá dưới 70 điểm. */
 export async function createLearningPath(params: { jobId?: string; resumeId?: string; assessmentId?: string }): Promise<LearningPath> {
   const roadmap = await apiClient
     .post<ApiRow>('/roadmaps', params, { timeout: AI_TIMEOUT })
     .then((res) => res.data);
-    console.log(roadmap);
-
   return toLearningPath(roadmap);
 }
 
