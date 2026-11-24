@@ -103,6 +103,7 @@ export const managerNav: NavItem[] = [
   { label: 'Payments', labelVi: 'Lịch sử thanh toán', translationKey: 'nav.payments', to: '/manager/payments', icon: Wallet, group: 'management' },
   { label: 'CV Templates', labelVi: 'Quản lý mẫu CV', translationKey: 'nav.templates', to: '/manager/templates', icon: LayoutTemplate, group: 'management' },
   { label: 'Job collection', labelVi: 'Thu thập việc làm', translationKey: 'nav.jobProcessing', to: '/manager/jobs', icon: BriefcaseBusiness, group: 'platform' },
+  { label: 'Courses', labelVi: 'Khóa học', translationKey: 'nav.vectorDatabase', to: '/manager/vector', icon: FileStack, group: 'platform' },
   { label: 'Collection reports', labelVi: 'Báo cáo thu thập', translationKey: '', to: '/manager/crawl-reports', icon: ScrollText, group: 'operations' },
   { label: 'Notifications', labelVi: 'Thông báo', translationKey: 'nav.notifications', to: '/manager/notifications', icon: Bell, group: 'operations' },
   { label: 'Feedback', labelVi: 'Ý kiến phản hồi', translationKey: 'nav.feedback', to: '/manager/feedback', icon: MessagesSquare, group: 'operations' },

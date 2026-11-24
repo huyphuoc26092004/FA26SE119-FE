@@ -88,7 +88,8 @@ test('server paging can retrieve records beyond the first 100 across primary mon
 test('all Manager navigation entries resolve to allowed operations without infrastructure editing', () => {
   assert.ok(nav.every((item) => access.managerCanOpen(item.to)));
   assert.ok(nav.some((item) => item.to === '/manager/consultants'));
-  assert.ok(nav.every((item) => !/\/(ai|vector|users|logs|audit)(\/|$)/.test(item.to)));
+  assert.ok(nav.some((item) => item.to === '/manager/vector' && item.label === 'Courses'));
+  assert.ok(nav.every((item) => !/\/(ai|users|logs|audit)(\/|$)/.test(item.to)));
 });
 
 test('invoice links reject scripts, insecure protocols, credentials and malformed values', () => {
