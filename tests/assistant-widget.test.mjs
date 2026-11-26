@@ -96,6 +96,7 @@ function mountWidget(overrides = {}) {
     '../../../services/jobActivityService': { JOB_ACTIVITY_QUERY_KEY: ['job-activity'] },
     '../../../services/assistantService': service,
     '../../../services/authService': { authErrorMessage: (error, fallback) => error?.message || fallback },
+    '../../../layouts/CandidateAiTasks': { useCandidateAi: () => ({ busy: false }) },
     './MarkdownMessage': { MarkdownMessage: () => null },
     './ContextInspectorModal': { ContextInspectorModal: () => null },
     './assistantChatBus': { subscribeAssistantChat: () => () => undefined },

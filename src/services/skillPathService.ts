@@ -2,6 +2,7 @@ import type { AssessmentQuestion, LearningResource } from '../types/assessment';
 import { apiClient } from './apiClient';
 import { toQuestion, toResource } from './candidateService';
 import { type ApiRow, num, obj, optStr, rows, str } from './candidateMappers';
+import type { AiTask } from '../layouts/CandidateAiTasks';
 import { orderLearningNodes } from '../utils/learningOrder';
 
 // Bài đánh giá kỹ năng và lộ trình học theo JD của một công việc (trang /candidate/skill-assessment).
@@ -45,7 +46,7 @@ export interface JdAssessment {
   resumeId: string;
 }
 
-export type MissingSkillStatus = 'NEEDS_PRACTICE' | 'MISSING_EVIDENCE';
+export type MissingSkillStatus = 'NEEDS_PRACTICE' | 'MISSING_EVIDENCE' | 'OPTIONAL_REVIEW';
 
 export interface LearningPathNode {
   id: string;
@@ -59,6 +60,7 @@ export interface LearningPathNode {
 }
 
 export interface LearningPath {
+  generationSource?: 'CATALOG_FALLBACK';
   id: string;
   title: string;
   /** CV, hồ sơ hoặc bài đánh giá đã đổi sau khi lập lộ trình. */
@@ -68,7 +70,7 @@ export interface LearningPath {
   createdAt: string;
   missing: { skill: string; status: MissingSkillStatus; reasoning: string; score?: number }[];
   nodes: LearningPathNode[];
-  skillStates: { skill: string; status: 'SATISFIED' | 'MISSING' | 'NEEDS_IMPROVEMENT' | 'DECLARED'; priority: string; action: string; reasoning: string }[];
+  skillStates: { skill: string; status: 'SATISFIED' | 'MISSING' | 'NEEDS_IMPROVEMENT' | 'DECLARED' | 'UNVERIFIED'; priority: string; action: string; reasoning: string }[];
   unverifiedRequirements: string[];
   gapAnalysisVersion: string;
 }
@@ -118,20 +120,25 @@ function toLearningPath(roadmap: ApiRow): LearningPath {
   return {
     id: str(roadmap.id),
     title: str(roadmap.title),
+    generationSource: roadmap.generation_source === 'CATALOG_FALLBACK' ? 'CATALOG_FALLBACK' : undefined,
     outdated: roadmap.is_outdated === true,
     progress: Math.round(num(roadmap.progress_percent)),
     totalHours: num(roadmap.estimated_total_hours) || nodes.reduce((sum, n) => sum + n.hours, 0),
     createdAt: str(roadmap.created_at),
     missing: rows(roadmap.missing_skills ?? roadmap.skill_gaps).map((g) => ({
       skill: str(g.skill_name),
-      status: str(g.gap_status) === 'NEEDS_PRACTICE' ? 'NEEDS_PRACTICE' : 'MISSING_EVIDENCE',
+      status: g.gap_status === 'OPTIONAL_REVIEW' || g.gap_status === 'NEEDS_PRACTICE'
+        ? g.gap_status
+        : 'MISSING_EVIDENCE',
       reasoning: str(g.reasoning),
       score: g.assessment_score === undefined || g.assessment_score === null ? undefined : Math.round(num(g.assessment_score)),
     })),
     nodes: orderLearningNodes(nodes),
     skillStates: rows(roadmap.skill_states).map((row) => ({
       skill: str(row.skill_name),
-      status: ['SATISFIED', 'MISSING', 'NEEDS_IMPROVEMENT', 'DECLARED'].includes(str(row.status)) ? str(row.status) as 'SATISFIED' | 'MISSING' | 'NEEDS_IMPROVEMENT' : row.declared_evidence === true ? 'DECLARED' : 'MISSING',
+      status: row.status === 'SATISFIED' || row.status === 'MISSING' || row.status === 'NEEDS_IMPROVEMENT'
+        || row.status === 'DECLARED' || row.status === 'UNVERIFIED'
+        ? row.status : row.declared_evidence === true ? 'DECLARED' : 'MISSING',
       priority: str(row.priority), action: str(row.action), reasoning: str(row.reasoning),
     })),
     unverifiedRequirements: rows(roadmap.unverified_requirements).map((row) => str(row.text)),
@@ -160,9 +167,19 @@ export async function getLatestJdAssessment(jobId: string, resumeId = ''): Promi
 
 /** Sinh bài đánh giá mới theo JD, kèm CV nếu có (gọi AI, có thể mất vài phút). */
 export async function startJdAssessment(jobId: string, resumeId?: string, pasted?: { jdText: string }): Promise<JdAssessment> {
-  const body = pasted ? { ...pasted, ...(resumeId ? { resumeId } : {}) } : resumeId ? { jobId, resumeId } : { jobId };
+  const body = assessmentInput(jobId, resumeId, pasted);
   const session = await apiClient.post<ApiRow>('/assessments', body, { timeout: AI_TIMEOUT }).then((res) => res.data);
   return toAssessment(session);
+}
+
+function assessmentInput(jobId: string, resumeId?: string, pasted?: { jdText: string }) {
+  return pasted ? { ...pasted, ...(resumeId ? { resumeId } : {}) } : resumeId ? { jobId, resumeId } : { jobId };
+}
+
+export async function enqueueJdAssessment(jobId: string, resumeId?: string, pasted?: { jdText: string }): Promise<AiTask> {
+  const body = assessmentInput(jobId, resumeId, pasted);
+  const { data } = await apiClient.post<Pick<AiTask, 'id' | 'status' | 'job_id'>>('/assessments/generations', body);
+  return { ...data, kind: 'ASSESSMENT' };
 }
 
 export async function saveJdAssessmentAnswer(sessionId: string, questionId: string, selectedOption: string): Promise<void> {
@@ -212,6 +229,15 @@ export async function createLearningPath(params: { jobId?: string; resumeId?: st
     .post<ApiRow>('/roadmaps', params, { timeout: AI_TIMEOUT })
     .then((res) => res.data);
   return toLearningPath(roadmap);
+}
+
+export async function enqueueLearningPath(params: Parameters<typeof createLearningPath>[0]): Promise<AiTask> {
+  const { data } = await apiClient.post<Pick<AiTask, 'id' | 'status'>>('/ai-tasks/roadmaps', params);
+  return { ...data, kind: 'ROADMAP', job_id: params.jobId, assessment_id: params.assessmentId };
+}
+
+export async function getLearningPathById(id: string): Promise<LearningPath> {
+  return toLearningPath(await get('/roadmaps/' + encodeURIComponent(id)));
 }
 
 export async function setLearningNodeStatus(

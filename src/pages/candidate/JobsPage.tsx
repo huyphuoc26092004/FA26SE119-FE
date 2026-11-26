@@ -1,4 +1,4 @@
-import { useState, useMemo, type CSSProperties } from 'react';
+import { useEffect, useState, useMemo, type CSSProperties } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Bookmark, Check, ChevronDown, List, RotateCcw, Search, Sparkles, X } from 'lucide-react';
@@ -22,6 +22,7 @@ import {
 import type { Job } from '../../types/domain';
 import { ErrorState, Loading } from '../../components/ui';
 import { useTranslation } from '../../i18n';
+import { useCandidateAi } from '../../layouts/CandidateAiTasks';
 
 // Design tokens (CCV template): ink #14231e, accent #0b6b52, muted #5d6b65, rule #14231e/15
 const LOCATION_OPTIONS = [
@@ -128,6 +129,7 @@ export default function JobsPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'recommended' | 'saved' | 'applied'>('all');
   const [visibleCount, setVisibleCount] = useState(20);
   const isRecommended = activeTab === 'recommended';
+  const { busy: aiBusy } = useCandidateAi();
   const selectTab = (tab: typeof activeTab) => {
     setActiveTab(tab);
     setVisibleCount(20);
@@ -191,7 +193,7 @@ export default function JobsPage() {
     error: recommendationError,
     refetch: refreshRecommendations,
   } = useQuery({
-    queryKey: ['jobRecommendations', userId, recommendationSource, 'RECOMMENDATION_VECTOR_V2', sourceVersion, catalogUpdatedAt],
+    queryKey: ['jobRecommendations', userId, recommendationSource, 'RECOMMENDATION_VECTOR_V3', sourceVersion, catalogUpdatedAt],
     queryFn: () => getRecommendationResult({
       basis: selectedResumeId ? 'SELECTED_CV' : 'CAREER_PROFILE',
       resumeId: selectedResumeId,
@@ -204,6 +206,12 @@ export default function JobsPage() {
   });
   const recommendationsLoading = canRecommend && (!resumesFetched || !profileFetched || isPending || recommendationsPending);
   const recommendationStatus = (recommendationError as { response?: { status?: number } } | null)?.response?.status;
+  const waitingForVector = recommendationStatus === 409
+    && authErrorMessage(recommendationError, '').includes('An AI task is already running.');
+  useEffect(() => {
+    if (isRecommended && waitingForVector && !aiBusy) void refreshRecommendations();
+  }, [isRecommended, waitingForVector, aiBusy, refreshRecommendations]);
+
   const needsRecommendationData = recommendationStatus !== undefined && [400, 404, 409].includes(recommendationStatus);
   const recommendationSourceNote = recommendationResult?.basis === 'CAREER_PROFILE'
     ? 'Dựa trên hồ sơ cá nhân'
@@ -563,7 +571,7 @@ export default function JobsPage() {
                       <option value="CAREER_PROFILE">Hồ sơ cá nhân</option>
                     </select>
                   </label>
-                  <button type="button" disabled={recommendationsFetching || isPending || !resumesFetched || !profileFetched}
+                  <button type="button" disabled={recommendationsFetching || (waitingForVector && aiBusy) || isPending || !resumesFetched || !profileFetched}
                     onClick={() => void refreshRecommendations()}
                     className={`${textLink} inline-flex items-center gap-1.5 pb-3 disabled:opacity-50`}>
                     <RotateCcw size={14} /> Cập nhật đề xuất
@@ -618,19 +626,6 @@ export default function JobsPage() {
             </div>
 
             {/* Main Jobs Listing */}
-            {activeTab === 'recommended' && recommendationResult?.retrieval && !recommendationsLoading && (
-              <p role="status" className="mb-5 border-l-2 border-brand px-4 py-3 text-sm leading-6 text-slate-600">
-                {recommendationResult.retrieval.vectorUsed
-                  ? `So khớp vị trí và kỹ năng bằng vector cho ${recommendationResult.retrieval.compatibleVectors}/${recommendationResult.retrieval.activeJobs} việc làm đang tuyển. Chỉ hiển thị việc làm có vector tương thích.`
-                  : 'Chưa có kết quả so khớp vector cho nguồn đã chọn.'}
-              </p>
-            )}
-            {activeTab === 'recommended' && recommendationResult?.verificationDeferred && !recommendationsLoading && (
-              <p role="status" className="mb-5 border-l-2 border-amber-500 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-                Một số yêu cầu đang chờ AI xác minh. Các việc làm vẫn được hiển thị; điểm chỉ ghi nhận phần đã đối chiếu được.
-                Những yêu cầu chưa xác minh được giữ riêng. Bạn có thể bấm Cập nhật đề xuất sau.
-              </p>
-            )}
             {activeTab === 'recommended' && !canRecommend ? (
               <div className="py-20 text-center">
                 <p className="text-lg text-ink">Đăng nhập bằng tài khoản ứng viên để nhận đề xuất theo CV hoặc hồ sơ.</p>
@@ -640,7 +635,11 @@ export default function JobsPage() {
               <div role="status" className="py-20 text-center text-slate-600">
                 Đang tìm việc làm phù hợp…
               </div>
-            ) : activeTab === 'recommended' && recommendationsFailed ? (
+            ) : activeTab === 'recommended' && waitingForVector && !rankedJobs.length ? (
+              <p role="status" className="py-16 text-center text-slate-600">
+                Nguồn đã chọn cần tạo vector để so khớp. Đề xuất sẽ tự tải lại sau khi tác vụ AI đang chạy hoàn tất.
+              </p>
+            ) : activeTab === 'recommended' && recommendationsFailed && !waitingForVector ? (
               <div className="py-10">
                 <ErrorState message={authErrorMessage(recommendationError, 'Không tải được đề xuất việc làm. Vui lòng thử lại.')} />
                 {needsRecommendationData && (
@@ -666,7 +665,11 @@ export default function JobsPage() {
                 <p className="mx-auto mt-3 max-w-lg text-base leading-7 text-slate-600">
                   {recommendationResult?.salaryFilter?.active && recommendationResult.salaryFilter.eligibleJobs === 0
                     ? 'Các việc làm hiện tại chưa đáp ứng điều kiện lương kỳ vọng trong hồ sơ. Bạn có thể cập nhật mức lương hoặc xem tất cả cơ hội.'
-                    : 'Thử chọn CV khác hoặc hồ sơ cá nhân. Kiểm tra dữ liệu đã xác nhận và mức lương kỳ vọng của bạn.'}
+                    : recommendationResult?.retrieval?.status === 'NO_COMPATIBLE_VECTORS'
+                      ? 'Danh mục việc làm chưa có vector tương thích để so khớp.'
+                      : recommendationResult?.retrieval?.status === 'PROVIDER_ERROR'
+                        ? 'Dịch vụ tạo vector đang tạm thời gián đoạn. Bạn có thể bấm Cập nhật đề xuất để thử lại.'
+                        : 'Thử chọn CV khác hoặc hồ sơ cá nhân. Kiểm tra dữ liệu đã xác nhận và mức lương kỳ vọng của bạn.'}
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-5">
                   <button type="button" onClick={() => selectTab('all')} className={textLink}>Xem tất cả việc làm</button>

@@ -2,9 +2,10 @@ import React from 'react';
 
 interface MarkdownMessageProps {
   content: string;
+  bilingual?: boolean;
 }
 
-export function MarkdownMessage({ content }: MarkdownMessageProps) {
+export function MarkdownMessage({ content, bilingual = false }: MarkdownMessageProps) {
   const lines = content.split('\n');
 
   const renderFormattedText = (text: string): React.ReactNode => {
@@ -63,12 +64,15 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
   const renderedElements: React.ReactNode[] = [];
   let currentList: React.ReactNode[] = [];
   let isNumberedList = false;
+  let listStart = 1;
+  let nestedThrough = -1;
 
   const flushList = () => {
     if (currentList.length > 0) {
       if (isNumberedList) {
         renderedElements.push(
           <ol
+            start={listStart}
             key={`list-${renderedElements.length}`}
             className="my-2.5 space-y-1.5 pl-5 list-decimal text-slate-700 text-sm leading-relaxed"
           >
@@ -90,10 +94,12 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
   };
 
   lines.forEach((line, lineIndex) => {
+    if (lineIndex <= nestedThrough) return;
     const trimmed = line.trim();
 
     // Empty line
     if (!trimmed) {
+      if (isNumberedList && /^\d+\.\s+/.test(lines[lineIndex + 1]?.trim() ?? '')) return;
       flushList();
       return;
     }
@@ -155,10 +161,27 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
       if (currentList.length > 0 && !isNumberedList) {
         flushList();
       }
+      if (!currentList.length) listStart = Number(numberMatch[1]);
       isNumberedList = true;
+
+      const nested: string[] = [];
+      const indent = line.length - line.trimStart().length;
+      for (let index = lineIndex + 1; index < lines.length; index += 1) {
+        const child = lines[index];
+        if (!child.trim()) {
+          nested.push('');
+          continue;
+        }
+        const childIndent = child.length - child.trimStart().length;
+        if (childIndent <= indent) break;
+        nested.push(child.slice(indent + 1));
+        nestedThrough = index;
+      }
+
       currentList.push(
         <li key={lineIndex} className="text-sm">
           {renderFormattedText(numberMatch[2])}
+          {nestedThrough > lineIndex && <MarkdownMessage content={nested.join('\n')} bilingual={bilingual} />}
         </li>
       );
       return;
@@ -171,10 +194,16 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
       }
       isNumberedList = false;
       const text = trimmed.slice(2);
+      const following = lines[lineIndex + 1]?.trim();
+      const translation = bilingual && following && /^\*[^*].*\*$/.test(following) ? following : undefined;
+      if (translation) nestedThrough = lineIndex + 1;
       currentList.push(
         <li key={lineIndex} className="flex items-start gap-2 text-sm">
           <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-brand-600 shrink-0" />
-          <span>{renderFormattedText(text)}</span>
+          <span>
+            {renderFormattedText(text)}
+            {translation && <span className="block">{renderFormattedText(translation)}</span>}
+          </span>
         </li>
       );
       return;

@@ -258,7 +258,7 @@ export const toLanguageCode = (language?: string): 'vi' | 'en' =>
 const PRESENT = /hiện tại|present|now|current/i;
 
 /** '01/2023', '2023-01', '2023' hoặc '2023-01-15' thành 'YYYY-MM-DD'; giá trị khác trả undefined. */
-function toIsoDate(value?: string): string | undefined {
+export function toIsoDate(value?: string): string | undefined {
   const text = (value ?? '').trim();
   let match = /^(\d{1,2})\/(\d{4})$/.exec(text);
   if (match) return `${match[2]}-${match[1].padStart(2, '0')}-01`;
@@ -305,7 +305,8 @@ export function toResume(row: ApiRow): Resume {
     position: str(data.position) || str(experience[0]?.job_title),
     language: LANGUAGE_NAME[str(row.language)] ?? 'Vietnamese',
     updatedAt: str(row.updated_at || row.created_at),
-    atsScore: 0,
+    atsScore: Math.round(num(row.ats_score)),
+    atsScoreAvailable: row.ats_score != null,
     status: RESUME_STATUS[str(row.status)] ?? 'Draft',
     isDefault: Boolean(row.is_primary),
     templateId: optStr(row.template_id),
@@ -483,8 +484,6 @@ export interface ProfileFrontendFields {
   github?: string;
   avatar?: string;
   experienceLevel?: string;
-  expectedSalary?: string;
-  salaryMax?: number;
   careerField?: string;
   preferredLocations?: string[];
   availability?: string;
@@ -502,6 +501,9 @@ export function toCandidateProfile(row: ApiRow, user?: { name?: string; email?: 
     fe.headline || [str(row.current_job_title), str(row.current_company)].filter(Boolean).join(' · ');
   const years = row.years_experience == null ? '' : `${num(row.years_experience)} năm kinh nghiệm`;
 
+  const expectedSalaryAmount = row.expected_salary == null ? undefined : num(row.expected_salary);
+  const salaryCurrency = str(row.salary_currency) || 'VND';
+
   const profile: CandidateProfile = {
     name: fe.name || user?.name || '',
     headline,
@@ -516,10 +518,11 @@ export function toCandidateProfile(row: ApiRow, user?: { name?: string; email?: 
     targetPosition: str(row.target_job_title),
     experienceLevel: fe.experienceLevel || years,
     employmentType: optStr(row.employment_type),
-    expectedSalary: fe.expectedSalary,
-    salaryMin: row.expected_salary == null ? undefined : num(row.expected_salary),
-    salaryMax: fe.salaryMax,
-    salaryCurrency: str(row.salary_currency) || 'VND',
+    expectedSalary: expectedSalaryAmount
+      ? `${expectedSalaryAmount.toLocaleString()} ${salaryCurrency}`
+      : undefined,
+    expectedSalaryAmount,
+    salaryCurrency,
     careerField: fe.careerField,
     preferredLocations: fe.preferredLocations,
     availability: fe.availability,
@@ -535,7 +538,7 @@ export function toCandidateProfile(row: ApiRow, user?: { name?: string; email?: 
     profile.location,
     profile.targetPosition,
     profile.experienceLevel,
-    profile.salaryMin,
+    profile.expectedSalaryAmount,
     profile.careerGoal,
     profile.bio,
     profile.skills.length > 0,

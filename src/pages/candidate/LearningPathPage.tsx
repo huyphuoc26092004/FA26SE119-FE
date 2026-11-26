@@ -1,9 +1,11 @@
+import { AI_QUEUE_MUTATION, useCandidateAi, useRegisterAiTask } from '../../layouts/CandidateAiTasks';
 import { useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight } from 'lucide-react';
 import {
-  createLearningPath,
+  enqueueLearningPath,
+  getLearningPathById,
   getLatestLearningPath,
   setLearningNodeStatus,
   type LearningPathNode,
@@ -74,20 +76,25 @@ export default function LearningPathPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const jobId = searchParams.get('jobId') ?? '';
   const autoBuild = searchParams.get('build') === '1';
+  const roadmapId = searchParams.get('roadmapId');
+  const ai = useCandidateAi();
+  const registerAiTask = useRegisterAiTask();
 
   const jobsQuery = useQuery({ queryKey: ['jobs'], queryFn: () => getJobs() });
   const { data: activity } = useQuery({ queryKey: JOB_ACTIVITY_QUERY_KEY, queryFn: getJobActivity });
   const { data: job } = useQuery({ queryKey: ['job', jobId], queryFn: () => getJobById(jobId), enabled: !!jobId });
 
   // Cùng khoá với trang Đánh giá kỹ năng khi không dùng CV, nên hai trang thấy cùng một lộ trình.
-  const pathKey = ['learningPath', jobId, ''];
-  const pathQuery = useQuery({ queryKey: pathKey, queryFn: () => getLatestLearningPath(jobId, ''), enabled: !!jobId });
+  const pathKey = roadmapId ? ['learningPath', 'result', roadmapId] : ['learningPath', jobId, ''];
+  const pathQuery = useQuery({ queryKey: pathKey, queryFn: () => roadmapId ? getLearningPathById(roadmapId) : getLatestLearningPath(jobId, ''), enabled: !!jobId });
   const path = pathQuery.data ?? null;
 
   const buildPath = useMutation({
-    mutationFn: () => createLearningPath({ jobId }),
-    onSuccess: (data) => queryClient.setQueryData(pathKey, data),
+    mutationKey: AI_QUEUE_MUTATION,
+    mutationFn: () => enqueueLearningPath({ jobId }),
+    onSuccess: registerAiTask,
   });
+  const buildingPath = buildPath.isPending || (ai.active?.kind === 'ROADMAP' && ai.active.job_id === jobId);
   const nodeStatus = useMutation({
     mutationFn: ({ nodeId, status }: { nodeId: string; status: LearningPathNode['status'] }) => setLearningNodeStatus(path!.id, nodeId, status),
     onSuccess: (data) => queryClient.setQueryData(pathKey, data),
@@ -96,16 +103,17 @@ export default function LearningPathPage() {
   // Bấm "Tạo lộ trình học" ở Khám phá việc làm: tạo ngay một lần nếu việc này chưa có lộ trình.
   const autoBuilt = useRef('');
   useEffect(() => {
-    if (!autoBuild || !jobId || !pathQuery.isSuccess || pathQuery.data || buildPath.isPending) return;
+    if (!autoBuild || !jobId || !pathQuery.isSuccess || pathQuery.data || ai.busy) return;
     if (autoBuilt.current === jobId) return;
     autoBuilt.current = jobId;
     buildPath.mutate();
-  }, [autoBuild, jobId, pathQuery.isSuccess, pathQuery.data, buildPath]);
+  }, [autoBuild, jobId, pathQuery.isSuccess, pathQuery.data, ai.busy, buildPath]);
 
   const selectJob = (id: string) => {
     const next = new URLSearchParams(searchParams);
     next.set('jobId', id);
     next.delete('build');
+    next.delete('roadmapId');
     setSearchParams(next, { replace: true });
   };
 
@@ -160,8 +168,8 @@ export default function LearningPathPage() {
         index="02"
         title={c.pathTitle}
         action={
-          path && !buildPath.isPending ? (
-            <button type="button" onClick={() => buildPath.mutate()} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
+          path && !buildingPath ? (
+            <button type="button" onClick={() => buildPath.mutate()} disabled={ai.busy} className={`${textLink} text-[13px] text-brand hover:text-ink`}>
               {c.rebuild}
             </button>
           ) : undefined
@@ -173,7 +181,7 @@ export default function LearningPathPage() {
           <Loading />
         ) : pathQuery.isError ? (
           <ErrorLine error={pathQuery.error} c={sc} />
-        ) : buildPath.isPending ? (
+        ) : buildingPath ? (
           <Working text={c.creating} />
         ) : !path ? (
           <div className="flex flex-col gap-4 border-b border-border py-6 sm:flex-row sm:items-center sm:justify-between">
@@ -181,7 +189,7 @@ export default function LearningPathPage() {
               <p className="max-w-xl text-[15px] leading-7 text-ink">{c.noPath}</p>
               <p className="mt-1 text-[13px] text-slate-500">{c.noPathNote}</p>
             </div>
-            <button type="button" onClick={() => buildPath.mutate()} className={`${primaryButton} shrink-0`}>
+            <button type="button" onClick={() => buildPath.mutate()} disabled={ai.busy} className={`${primaryButton} shrink-0`}>
               {c.create}
               <ArrowRight size={15} aria-hidden="true" />
             </button>

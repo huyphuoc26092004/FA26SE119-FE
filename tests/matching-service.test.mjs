@@ -446,7 +446,7 @@ test('catalog assessment distinguishes recognized skill coverage from requiremen
   assert.equal(detail.catalogVersion, 'test-catalog');
 });
 
-test('evidence matching preserves source quotes and the same fractional score in list and selected-pair analysis', async () => {
+test('matching preserves evidence quotes while selected-pair ATS displays its own score', async () => {
   const report = {
     version: 'requirement-evidence-v1', requirement_coverage_available: true, coverage_complete: true,
     required_count: 3, preferred_count: 1, unverified_requirements: 0, preferred_coverage: 0,
@@ -467,10 +467,10 @@ test('evidence matching preserves source quotes and the same fractional score in
   const fit = await service.getCvJobFitAnalysis('resume-1', 'job-1');
   const listed = recommendations.jobs[0].semanticMatch;
   assert.equal(listed.overallScore, 66.6);
-  assert.equal(fit.overallScore, listed.overallScore);
-  assert.deepEqual(fit.evidenceReport, listed.evidenceReport);
-  assert.equal(fit.evidenceReport.requirements[0].evidence[0].quote, 'Added indexes to reduce query time');
-  assert.equal(fit.dimensions.length, 1, 'a shared total is not copied into fabricated dimension scores');
+  assert.equal(fit.overallScore, 67);
+  assert.equal(listed.evidenceReport.requirements[0].evidence[0].quote, 'Added indexes to reduce query time');
+  assert.equal(fit.evidenceReport, undefined);
+  assert.equal(fit.dimensions, undefined);
 });
 
 test('two selected jobs for one CV cannot share an in-flight detail result', async () => {
@@ -500,19 +500,21 @@ test('a deferred AI verification keeps actual jobs and exposes the pending statu
   assert.equal(result.jobs[0].match, 50);
 });
 
-test('unverified provider-dependent requirements do not become missing skills or learning gaps', async () => {
+test('deferred matching evidence does not affect the ATS result', async () => {
   respond = (config) => ({ data: config.method === 'get'
     ? config.url.startsWith('/resumes/')
       ? { id: 'resume-1', title: 'Backend CV', status: 'READY', structured_data: {} }
       : { id: 'job-1', job_title: 'Backend Developer' }
-    : { ats_score: 0, strengths_json: [], missing_skills_json: [], improvement_suggestions_json: [], evidence_report: {
+    : { ats_score: 75, dimension_scores: { skills: 82, experience: 67, education: null },
+      strengths_json: [], missing_skills_json: [], improvement_suggestions_json: [], evidence_report: {
       version: 'requirement-evidence-v1', verification_status: 'DEFERRED', requirement_coverage_available: false,
       required_count: 1, requirements: [{ requirement_id: 'r0', text: 'Experience building APIs',
         importance: 'MANDATORY', status: 'UNVERIFIED', reason: 'AI temporarily unavailable', skills: ['REST API'], evidence: [] }],
     } } });
   const fit = await service.getCvJobFitAnalysis('resume-1', 'job-1');
-  assert.equal(fit.evidenceReport.scoreAvailable, false);
-  assert.equal(fit.evidenceReport.requirements.length, 1);
+  assert.equal(fit.overallScore, 75);
+  assert.deepEqual(fit.dimensions.map(({ score }) => score), [82, 67, null]);
+  assert.equal(fit.evidenceReport, undefined);
   assert.deepEqual(fit.skillsAnalysis, []);
   assert.deepEqual(fit.gaps, []);
 });
