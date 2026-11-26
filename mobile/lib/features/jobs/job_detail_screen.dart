@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
@@ -13,13 +14,16 @@ import '../assistant/assistant_screens.dart';
 import 'jobs_screen.dart';
 
 class JobDetailScreen extends ConsumerWidget {
-  const JobDetailScreen({super.key, required this.jobId});
+  const JobDetailScreen({super.key, required this.jobId, this.resumeId, this.careerProfile = false});
   final String jobId;
+  final String? resumeId;
+  final bool careerProfile;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(jobProvider(jobId));
-    final match = ref.watch(matchesProvider).value?.where((m) => m.job.id == jobId).firstOrNull;
+    final fit = jobFitProvider((jobId: jobId, resumeId: resumeId, careerProfile: careerProfile));
+    final match = ref.watch(fit);
     return Scaffold(
       appBar: AppBar(title: Text(tr('Việc làm', 'Job'))),
       body: async.when(
@@ -28,20 +32,22 @@ class JobDetailScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: ErrorBox(error: e, onRetry: () => ref.invalidate(jobProvider(jobId))),
         ),
-        data: (job) => _Body(job: job, match: match),
+        data: (job) => _Body(job: job, match: match, retryMatch: () => ref.invalidate(fit)),
       ),
-      bottomNavigationBar: async.hasValue ? _ActionBar(job: async.value!) : null,
+      bottomNavigationBar: async.hasValue ? _ActionBar(job: async.value!, resumeId: resumeId) : null,
     );
   }
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.job, this.match});
+  const _Body({required this.job, required this.match, required this.retryMatch});
   final Job job;
-  final JobMatch? match;
+  final AsyncValue<JobMatch?> match;
+  final VoidCallback retryMatch;
 
   @override
   Widget build(BuildContext context) {
+    final detail = match.value;
     final facts = <(String, String?)>[
       (tr('Mức lương', 'Salary'), job.salary),
       (tr('Hình thức', 'Type'), _employmentLabel(job.jobType)),
@@ -89,35 +95,37 @@ class _Body extends StatelessWidget {
               ),
           ]);
         }),
-      if (match != null)
+      if (match.isLoading) const Skeleton(),
+      if (match.hasError) ErrorBox(error: match.error!, onRetry: retryMatch),
+      if (detail != null)
         AppCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              ScoreRing(value: match!.score, size: 64),
+              ScoreRing(value: detail.scoreAvailable ? detail.score : null, size: 64),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(tr('Mức độ phù hợp với bạn', 'How well you fit'),
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                  if (match!.explanation != null)
-                    Text(match!.explanation!, style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                  if (detail.explanation != null)
+                    Text(detail.explanation!, style: const TextStyle(fontSize: 13, color: AppColors.muted)),
                 ]),
               ),
             ]),
-            if (match!.matchedSkills.isNotEmpty) ...[
+            if (detail.matchedSkills.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(tr('Bạn đã có', 'You have'), style: const TextStyle(fontSize: 13, color: AppColors.subtle)),
               const SizedBox(height: 8),
               Wrap(spacing: 6, runSpacing: 6, children: [
-                for (final s in match!.matchedSkills) Tag(s, tone: TagTone.brand, icon: Icons.check),
+                for (final s in detail.matchedSkills) Tag(s, tone: TagTone.brand, icon: Icons.check),
               ]),
             ],
-            if (match!.missingSkills.isNotEmpty) ...[
+            if (detail.missingSkills.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(tr('Còn thiếu', 'Missing'), style: const TextStyle(fontSize: 13, color: AppColors.subtle)),
               const SizedBox(height: 8),
               Wrap(spacing: 6, runSpacing: 6, children: [
-                for (final s in match!.missingSkills) Tag(s, tone: TagTone.warn),
+                for (final s in detail.missingSkills) Tag(s, tone: TagTone.warn),
               ]),
             ],
           ]),
@@ -142,8 +150,6 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// AI tools for this job: ATS check of a CV, a learning roadmap for the
-/// missing skills, and an assistant chat about the job.
 class _AiTools extends ConsumerStatefulWidget {
   const _AiTools({required this.job});
   final Job job;
@@ -152,9 +158,10 @@ class _AiTools extends ConsumerStatefulWidget {
 }
 
 class _AiToolsState extends ConsumerState<_AiTools> {
-  String? _busy; // 'ats' | 'roadmap' | 'chat'
+  String? _busy;
   AtsResult? _ats;
   String? _atsCv;
+  SalaryEstimate? _salary;
 
   Future<Resume?> _pickCv() async {
     final resumes = (await ref.read(resumesProvider.future)).where((r) => r.status == 'READY').toList();
@@ -188,6 +195,7 @@ class _AiToolsState extends ConsumerState<_AiTools> {
   }
 
   Future<void> _run(String what, Future<void> Function() action) async {
+    if (_busy != null) return;
     setState(() => _busy = what);
     try {
       await action();
@@ -198,29 +206,40 @@ class _AiToolsState extends ConsumerState<_AiTools> {
     }
   }
 
-  Future<void> _checkAts() async {
+  Future<void> _checkAts() => _run('ats', () async {
     final cv = await _pickCv();
-    if (cv == null) return;
-    await _run('ats', () async {
-      final res = await ref.read(repositoryProvider).ats(widget.job.id, cv.id);
-      if (mounted) {
-        setState(() {
-          _ats = res;
-          _atsCv = cv.name;
-        });
-      }
-    });
-  }
+    if (cv == null || !mounted) return;
+    final res = await ref.read(repositoryProvider).ats(widget.job.id, cv.id);
+    if (mounted) {
+      setState(() {
+        _ats = res;
+        _atsCv = cv.name;
+      });
+    }
+  });
 
-  Future<void> _roadmap() async {
+  Future<void> _roadmap() => _run('roadmap', () async {
     final cv = await _pickCv();
-    if (cv == null) return;
-    await _run('roadmap', () async {
-      final r = await ref.read(repositoryProvider).createRoadmap(jobId: widget.job.id, resumeId: cv.id);
-      ref.invalidate(roadmapsProvider);
-      if (mounted) context.push('/roadmaps/${r.id}');
-    });
-  }
+    if (cv == null || !mounted) return;
+    final r = await ref.read(repositoryProvider).createRoadmap(jobId: widget.job.id, resumeId: cv.id);
+    if (!mounted) return;
+    ref.invalidate(roadmapsProvider);
+    context.push('/roadmaps/${r.id}');
+  });
+
+  Future<void> _estimateSalary() => _run('salary', () async {
+    final estimate = await ref.read(repositoryProvider).estimateJobSalary(widget.job.id);
+    if (mounted) setState(() => _salary = estimate);
+  });
+
+  Future<void> _tailorResume() => _run('resume', () async {
+    final cv = await _pickCv();
+    if (cv == null || !mounted) return;
+    final id = await ref.read(repositoryProvider).createTargetedResume(widget.job, cv.id);
+    if (!mounted) return;
+    ref.invalidate(resumesProvider);
+    context.push('/resumes/$id/edit');
+  });
 
   Future<void> _chat() => _run('chat', () => startAssistantChat(
         context,
@@ -246,6 +265,8 @@ class _AiToolsState extends ConsumerState<_AiTools> {
   @override
   Widget build(BuildContext context) {
     final ats = _ats;
+    final salary = _salary;
+    final money = NumberFormat.decimalPattern(tr('vi_VN', 'en_US'));
     final slow = tr('AI chạy trên máy chủ, có thể mất vài phút.', 'AI runs on the server and can take a few minutes.');
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -277,6 +298,33 @@ class _AiToolsState extends ConsumerState<_AiTools> {
           icon: Icons.fact_check_outlined,
           busy: _busy == 'ats',
           onPressed: _busy == null ? _checkAts : null,
+        ),
+        const SizedBox(height: 10),
+        if (salary != null) ...[
+          Text('${money.format(salary.min.round())} – ${money.format(salary.max.round())} ${salary.currency}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          if (salary.reasoning.isNotEmpty)
+            _list(tr('Cơ sở ước lượng', 'Reasoning'), salary.reasoning.take(4).toList()),
+          const SizedBox(height: 10),
+        ],
+        BigButton(
+          label: tr('Ước lượng lương', 'Estimate salary'),
+          tone: ButtonTone.secondary,
+          busy: _busy == 'salary',
+          onPressed: _busy == null ? _estimateSalary : null,
+        ),
+        const SizedBox(height: 10),
+        BigButton(
+          label: tr('Tạo CV theo việc này', 'Tailor a CV for this job'),
+          tone: ButtonTone.secondary,
+          busy: _busy == 'resume',
+          onPressed: _busy == null ? _tailorResume : null,
+        ),
+        const SizedBox(height: 10),
+        BigButton(
+          label: tr('Hỗ trợ ứng tuyển', 'Application help'),
+          tone: ButtonTone.secondary,
+          onPressed: _busy == null ? () => context.push('/applications?jobId=${Uri.encodeQueryComponent(widget.job.id)}') : null,
         ),
         const SizedBox(height: 10),
         BigButton(
@@ -338,8 +386,9 @@ class _Collapsible extends StatelessWidget {
 }
 
 class _ActionBar extends ConsumerStatefulWidget {
-  const _ActionBar({required this.job});
+  const _ActionBar({required this.job, this.resumeId});
   final Job job;
+  final String? resumeId;
   @override
   ConsumerState<_ActionBar> createState() => _ActionBarState();
 }
@@ -349,15 +398,17 @@ class _ActionBarState extends ConsumerState<_ActionBar> {
 
   String get _source => widget.job.sourceName ?? 'ITviec / TopCV';
 
-  Future<void> _apply() async {
-    Navigator.of(context).pop();
+  Future<void> _apply(String? resumeId) async {
     setState(() => _busy = true);
     try {
       // The backend logs the click and returns the live source link.
-      final url = await ref.read(repositoryProvider).externalApply(widget.job.id) ?? widget.job.sourceUrl;
+      final url = await ref.read(repositoryProvider).externalApply(widget.job.id, resumeId: resumeId) ?? widget.job.sourceUrl;
       if (url == null) throw ApiException(tr('Việc làm này không còn link gốc.', 'This job has no source link.'));
+      if (!mounted) return;
       await ref.read(appliedJobsProvider.notifier).add(widget.job.id);
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
+        throw ApiException(tr('Không mở được trang tuyển dụng.', 'Could not open the job source.'));
+      }
     } catch (e) {
       if (mounted) toast(context, ApiException.from(e).message);
     } finally {
@@ -365,8 +416,41 @@ class _ActionBarState extends ConsumerState<_ActionBar> {
     }
   }
 
+  Future<void> _confirmApply() async {
+    final resumes = ref.read(resumesProvider).value ?? const <Resume>[];
+    var resumeId = widget.resumeId ?? '';
+    final ready = resumes.where((cv) => cv.status == 'READY').toList();
+    if (!ready.any((cv) => cv.id == resumeId)) resumeId = '';
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => StatefulBuilder(builder: (context, setDialogState) => AlertDialog(
+        title: Text(tr('Ứng tuyển qua $_source', 'Apply on $_source')),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(tr('Bạn sẽ được chuyển sang $_source để nộp hồ sơ.', 'Continue on $_source to submit your application.')),
+          if (ready.isNotEmpty)
+            DropdownButton<String>(
+              value: resumeId,
+              isExpanded: true,
+              items: [
+                DropdownMenuItem(value: '', child: Text(tr('Không chọn CV', 'No CV selected'))),
+                for (final cv in ready)
+                  DropdownMenuItem(value: cv.id, child: Text(cv.name, overflow: TextOverflow.ellipsis)),
+              ],
+              onChanged: (id) => setDialogState(() => resumeId = id ?? ''),
+            ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(tr('Hủy', 'Cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(context, resumeId), child: Text(tr('Mở $_source', 'Open $_source'))),
+        ],
+      )),
+    );
+    if (choice != null && mounted) await _apply(choice.isEmpty ? null : choice);
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.watch(resumesProvider);
     final saved = ref.watch(savedJobsProvider).contains(widget.job.id);
     final applied = ref.watch(appliedJobsProvider).contains(widget.job.id);
     return Container(
@@ -394,18 +478,7 @@ class _ActionBarState extends ConsumerState<_ActionBar> {
             child: BigButton(
               label: applied ? tr('Đã ứng tuyển · Mở lại', 'Applied · Open again') : tr('Ứng tuyển', 'Apply'),
               busy: _busy,
-              onPressed: () => showActionSheet(
-                context,
-                title: tr('Ứng tuyển qua $_source', 'Apply on $_source'),
-                body: tr(
-                  'Bạn sẽ được chuyển sang $_source để nộp hồ sơ. CCV sẽ đánh dấu việc này là đã ứng tuyển để bạn theo dõi.',
-                  'You will continue on $_source to send your application. CCV marks this job as applied so you can track it.',
-                ),
-                actions: [
-                  BigButton(label: tr('Mở $_source', 'Open $_source'), icon: Icons.open_in_new, onPressed: _apply),
-                  BigButton(label: tr('Để sau', 'Later'), tone: ButtonTone.secondary, onPressed: () => Navigator.of(context).pop()),
-                ],
-              ),
+              onPressed: _confirmApply,
             ),
           ),
         ]),

@@ -156,6 +156,15 @@ class AccountScreen extends ConsumerWidget {
             onTap: () => context.push('/account/sessions'),
           ),
         ]),
+        SectionTitle(tr('Ứng tuyển', 'Applications')),
+        ListGroup(children: [
+          ListRowTile(
+            icon: Icons.mail_outline,
+            title: tr('Hỗ trợ ứng tuyển', 'Application help'),
+            detail: tr('Thư xin việc, email', 'Cover letters, emails'),
+            onTap: () => context.push('/applications'),
+          ),
+        ]),
         SectionTitle(tr('Trên bản web', 'On the web app')),
         ListGroup(children: [
           ListRowTile(
@@ -163,12 +172,6 @@ class AccountScreen extends ConsumerWidget {
             title: tr('Hồ sơ nghề nghiệp', 'Career profile'),
             detail: tr('Thông tin, mục tiêu, kỹ năng', 'Info, goals, skills'),
             onTap: () => _openWeb('/candidate/profile'),
-          ),
-          ListRowTile(
-            icon: Icons.mail_outline,
-            title: tr('Hỗ trợ ứng tuyển', 'Application help'),
-            detail: tr('Thư xin việc, email', 'Cover letters, emails'),
-            onTap: () => _openWeb('/candidate/applications'),
           ),
           ListRowTile(
             icon: Icons.task_alt,
