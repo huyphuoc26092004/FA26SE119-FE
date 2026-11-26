@@ -178,6 +178,7 @@ function mountFitPage(options = {}) {
     getJobSemanticMatch: async (...args) => { calls.semantic.push(args); return {}; } };
   const modules = {
     axios: { default: axios },
+    '../../layouts/CandidateAiTasks': { AI_QUEUE_MUTATION: ['candidate-ai'], useCandidateAi: () => ({ busy: false }) },
     '@tanstack/react-query': {
       useQuery: (config) => {
         if (config.queryKey[0] === 'fit-job') {
@@ -211,8 +212,8 @@ function mountFitPage(options = {}) {
   return { ...page, data, calls, match: () => mutations[0] };
 }
 
-test('a unified evidence report completes a selected pair without a second matching request', async () => {
-  const fit = { evidenceReport: { version: 'requirement-evidence-v1' } };
+test('an ATS score completes a selected pair without a second matching request', async () => {
+  const fit = { overallScore: 45 };
   const page = mountFitPage({ fit });
   const result = await page.match().mutationFn({ cvId: 'ready-cv', jobId: 'active-job' });
   assert.equal(result.fit, fit);

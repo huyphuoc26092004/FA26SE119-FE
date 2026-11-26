@@ -48,7 +48,7 @@ export const vi: Translations = {
     cvJobFit: 'Độ phù hợp CV',
     careerIntelligence: 'Trí tuệ nghề nghiệp',
     salaryEstimation: 'Ước tính lương',
-    skillAssessment: 'Chuẩn bị phỏng vấn',
+    skillAssessment: 'Đánh giá kỹ năng',
     learningPath: 'Lộ trình học',
     learningRoadmap: 'Lộ trình học tập',
     skillGapAnalysis: 'Phân tích khoảng trống kỹ năng',

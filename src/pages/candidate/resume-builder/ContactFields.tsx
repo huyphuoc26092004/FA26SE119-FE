@@ -1,11 +1,31 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { z } from 'zod';
 import type { Resume } from '../../../types/domain';
 
 const inputClass =
   'w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-[15px] text-ink placeholder:text-slate-400 focus:border-ink focus:outline-none focus:ring-0';
 
 const DIAL_CODES = ['+84', '+1', '+44', '+61', '+65', '+81', '+82', '+86', '+49', '+33'];
+
+const emailSchema = z.email();
+
+export function emailError(value: string | undefined, lang: 'vi' | 'en') {
+  const email = value?.trim();
+  if (email && !emailSchema.safeParse(email).success) {
+    return lang === 'vi'
+      ? 'Nhập email đúng định dạng, ví dụ ten@example.com.'
+      : 'Enter a valid email address, such as name@example.com.';
+  }
+}
+
+export function phoneError(value: string | undefined, lang: 'vi' | 'en') {
+  if (value?.trim() && !/^(?:0\d{9,10}|\+84[1-9]\d{8,9}|\+(?!84)[1-9]\d{7,14})$/.test(value.replace(/[\s().-]/g, ''))) {
+    return lang === 'vi'
+      ? 'Nhập số điện thoại hợp lệ theo mã quốc gia đã chọn.'
+      : 'Enter a valid phone number for the selected country code.';
+  }
+}
 
 const copy = {
   vi: {
@@ -48,7 +68,10 @@ export function splitName(fullName = '') {
 }
 
 export function splitPhone(phone = '') {
-  const match = phone.trim().match(/^(\+\d{1,3})\s*(.*)$/);
+  const text = phone.trim();
+  const knownCode = DIAL_CODES.find((code) => text.startsWith(code));
+  if (knownCode) return { code: knownCode, number: text.slice(knownCode.length).trim() };
+  const match = text.match(/^(\+\d{1,3})\s+(.*)$/);
   return match ? { code: match[1], number: match[2] } : { code: '+84', number: phone.trim() };
 }
 
@@ -60,18 +83,21 @@ export function splitLocation(location = '') {
   return { address: '', city: parts[0] ?? '', country: '' };
 }
 
-function Field({ label, value, onChange, placeholder, type = 'text', className = '' }: {
+function Field({ label, value, onChange, placeholder, type = 'text', className = '', error }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
   className?: string;
+  error?: string;
 }) {
+  const errorId = useId();
   return (
     <label className={`block ${className}`}>
       <span className="text-[13px] text-slate-500">{label}</span>
-      <input type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className={inputClass} />
+      <input type={type} aria-invalid={!!error} aria-describedby={error ? errorId : undefined} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className={inputClass} />
+      {error && <span id={errorId} className="block text-xs text-danger">{error}</span>}
     </label>
   );
 }
@@ -79,6 +105,8 @@ function Field({ label, value, onChange, placeholder, type = 'text', className =
 /** Bước Liên hệ theo bố cục mẫu: Tên/Họ, chức danh, điện thoại có mã vùng, email; phần "Thông tin thêm" thu gọn. */
 export function ContactFields({ cv, lang, onChange }: { cv: Partial<Resume>; lang: 'vi' | 'en'; onChange: (patch: Partial<Resume>) => void }) {
   const t = copy[lang];
+  const phoneErrorId = useId();
+  const invalidPhone = phoneError(cv.phone, lang);
   const [name, setName] = useState(() => splitName(cv.fullName));
   const [phone, setPhone] = useState(() => splitPhone(cv.phone));
   const [place, setPlace] = useState(() => splitLocation(cv.location));
@@ -94,7 +122,7 @@ export function ContactFields({ cv, lang, onChange }: { cv: Partial<Resume>; lan
     setPhone(next);
     const number = next.number.trim();
     // Số Việt Nam ghi theo kiểu trong nước (0…); mã vùng khác thì ghi kèm.
-    onChange({ phone: !number ? '' : next.code === '+84' ? number : `${next.code} ${number}` });
+    onChange({ phone: !number ? '' : next.code === '+84' && number.startsWith('0') ? number : `${next.code} ${number}` });
   };
   const setPlacePart = (patch: Partial<typeof place>) => {
     const next = { ...place, ...patch };
@@ -122,10 +150,11 @@ export function ContactFields({ cv, lang, onChange }: { cv: Partial<Resume>; lan
               </option>
             ))}
           </select>
-          <input type="tel" value={phone.number} placeholder="0372 093 877" onChange={(e) => setPhonePart({ number: e.target.value })} className={inputClass} />
+          <input type="tel" aria-invalid={!!invalidPhone} aria-describedby={invalidPhone ? phoneErrorId : undefined} autoComplete="tel-national" value={phone.number} placeholder="0372 093 877" onChange={(e) => setPhonePart({ number: e.target.value })} className={inputClass} />
         </span>
+        {invalidPhone && <span id={phoneErrorId} className="block text-xs text-danger">{invalidPhone}</span>}
       </label>
-      <Field label={t.email} type="email" value={cv.email ?? ''} onChange={(v) => onChange({ email: v })} />
+      <Field label={t.email} type="email" error={emailError(cv.email, lang)} value={cv.email ?? ''} onChange={(v) => onChange({ email: v })} />
 
       <button
         type="button"

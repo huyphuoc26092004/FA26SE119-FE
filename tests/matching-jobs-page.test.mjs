@@ -37,6 +37,7 @@ function mountJobsPage(options = {}) {
   let effects = [];
   const queries = new Map();
   const calls = { refetch: 0, recommendations: [] };
+  const refetch = () => { calls.refetch++; };
   const sameDeps = (a, b) => a && b && a.length === b.length && a.every((value, i) => Object.is(value, b[i]));
   const hooks = {
     useState(initial) {
@@ -91,7 +92,7 @@ function mountJobsPage(options = {}) {
           : key === 'jobRecommendations' ? options.recommendations ?? defaultRecommendations : [];
         return {
           data, isPending: false, isLoading: false, isFetching: false, isFetched: true,
-          isError: false, error: null, refetch: () => { calls.refetch++; },
+          isError: false, error: null, refetch,
           ...(key === 'jobRecommendations' ? options.recommendationState : {}),
         };
       },
@@ -105,6 +106,7 @@ function mountJobsPage(options = {}) {
     '../../services/authService': { authErrorMessage: (error, fallback) => error?.message || fallback },
     '../../stores/authStore': { useAuthStore },
     '../../components/ui': { ErrorState: 'ErrorState', Loading: 'Loading' },
+    '../../layouts/CandidateAiTasks': { useCandidateAi: () => ({ busy: options.aiBusy ?? false }) },
     '../../i18n': { useTranslation: () => ({ isVietnamese: true, t: (key) => labels[key] ?? key }) },
   };
   const exports = {};
@@ -144,9 +146,10 @@ function mountJobsPage(options = {}) {
       .props.onChange({ target: { value } });
     render();
   };
+  const setAiBusy = (value) => { options.aiBusy = value; dirty = true; render(); };
   const updateResumes = (resumes) => { options.resumes = resumes; dirty = true; render(); };
   render();
-  return { nodes, one, text, click, tab, selectSource, updateResumes, queries, calls, render };
+  return { nodes, one, text, click, tab, selectSource, updateResumes, setAiBusy, queries, calls, render };
 }
 
 test('recommended jobs come from matching results even when their score is below 85 percent', () => {
@@ -157,19 +160,6 @@ test('recommended jobs come from matching results even when their score is below
   assert.doesNotMatch(page.text(), /DevOps Engineer/);
   assert.match(page.text(), /72\s*%/);
   assert.doesNotMatch(page.text(), /Không tìm thấy việc làm phù hợp/);
-});
-
-test('a provider outage displays available jobs with pending verification instead of an empty error page', () => {
-  const page = mountJobsPage({ recommendations: { ...defaultRecommendations, verificationDeferred: true,
-    jobs: [{ ...ranked, match: 50, semanticMatch: { ...ranked.semanticMatch, overallScore: 50,
-      evidenceReport: { verificationDeferred: true } } }],
-  } });
-  page.click(page.tab('Việc làm phù hợp với bạn'));
-  assert.match(page.text(), /React Engineer/);
-  assert.match(page.text(), /50\s*%/);
-  assert.match(page.text(), /đang chờ AI xác minh/);
-  assert.match(page.text(), /còn yêu cầu chờ AI/);
-  assert.equal(page.nodes((node) => node.type === 'ErrorState').length, 0);
 });
 
 test('the full catalog remains searchable by skills with employment filters', () => {
@@ -383,14 +373,28 @@ test('unscored jobs are omitted from the recommendation ranking', () => {
   assert.match(page.text(), /Chưa có đề xuất/);
 });
 
-test('partial vector coverage explains which jobs are included', () => {
-  const page = mountJobsPage({ recommendations: { ...defaultRecommendations, retrieval: {
-    vectorUsed: true, status: 'PARTIAL_INDEX', activeJobs: 129, compatibleVectors: 36,
-
-  } } });
+test('the recommendation tab requests vector matching', async () => {
+  const page = mountJobsPage();
   page.click(page.tab('Việc làm phù hợp với bạn'));
-  assert.match(page.text(), /36\/129 việc làm đang tuyển/);
-  assert.match(page.text(), /Chỉ hiển thị việc làm có vector tương thích/);
+  await page.queries.get('jobRecommendations').queryFn();
+  assert.equal(page.calls.recommendations.at(-1).rulesOnly, undefined);
+  assert.ok(page.queries.get('jobRecommendations').queryKey.includes('RECOMMENDATION_VECTOR_V3'));
+});
+
+test('an embedding blocked by active AI work waits and refreshes once that task finishes', () => {
+  const error = Object.assign(new Error('An AI task is already running. Wait for it to finish.'), {
+    response: { status: 409 },
+  });
+  const page = mountJobsPage({
+    aiBusy: true,
+    recommendationState: { data: undefined, isError: true, error },
+  });
+  page.click(page.tab('Việc làm phù hợp với bạn'));
+  assert.match(page.text(), /cần tạo vector/);
+  assert.equal(page.nodes((node) => node.type === 'ErrorState').length, 0);
+  assert.equal(page.calls.refetch, 0);
+  page.setAiBusy(false);
+  assert.equal(page.calls.refetch, 1);
 });
 
 for (const count of [0, 6, 10, 14]) {

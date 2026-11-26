@@ -401,10 +401,6 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
   const role = headlineParts[0] || profile.targetPosition;
   const metaLine = [headlineParts[1], profile.experienceLevel, ...headlineParts.slice(2)].filter(Boolean);
 
-  const salaryText =
-    profile.expectedSalary ||
-    `${profile.salaryMin?.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`;
-  const salary = splitDetail(salaryText);
   const availability = splitDetail(profile.availability || 'Sẵn sàng trong vòng 2 tuần');
   const employmentType = (profile.employmentType || t('profile.employmentTypeValue')).split(' / ').join(' · ');
 
@@ -616,13 +612,7 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
             <Row label={t('profile.targetPosition')}>{profile.targetPosition}</Row>
             <Row label={c.level}>{profile.experienceLevel}</Row>
             <Row label={t('profile.expectedSalary')}>
-              <span className="text-brand">{salary.main}</span>
-              {salary.detail && <span className="text-slate-600"> {salary.detail}</span>}
-              {profile.salaryMin ? (
-                <span className="mt-0.5 block text-[13px] text-slate-600">
-                  {t('profile.minSalary')}: {profile.salaryMin.toLocaleString()} {profile.salaryCurrency || 'VNĐ'}
-                </span>
-              ) : null}
+              <span className="text-brand">{profile.expectedSalary || "—"}</span>
             </Row>
             <Row label={t('profile.employmentType')}>{employmentType}</Row>
             <Row label={t('profile.preferredLocation')}>
@@ -857,50 +847,28 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                   <option value="Engineering Manager">Engineering Manager / Director</option>
                 </select>
               </Row>
-              <Row label={t('profile.expectedSalary')}>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <label className="block">
-                    <span className="mb-1 block text-xs text-slate-600">{t('profile.minSalary')}</span>
-                    <Input
-                      type="number"
-                      step={1000000}
-                      value={formData.salaryMin ?? profile.salaryMin ?? ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          salaryMin: Number(e.target.value),
-                          expectedSalary: `${Number(e.target.value).toLocaleString()} - ${(
-                            prev.salaryMax ?? profile.salaryMax ?? 55000000
-                          ).toLocaleString()} ${prev.salaryCurrency ?? profile.salaryCurrency ?? 'VNĐ'}`,
-                        }))
-                      }
-                      placeholder="35000000"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs text-slate-600">{t('profile.maxSalary')}</span>
-                    <Input
-                      type="number"
-                      step={1000000}
-                      value={formData.salaryMax ?? profile.salaryMax ?? ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          salaryMax: Number(e.target.value),
-                          expectedSalary: `${(
-                            prev.salaryMin ?? profile.salaryMin ?? 35000000
-                          ).toLocaleString()} - ${Number(e.target.value).toLocaleString()} ${
-                            prev.salaryCurrency ?? profile.salaryCurrency ?? 'VNĐ'
-                          }`,
-                        }))
-                      }
-                      placeholder="55000000"
-                    />
-                  </label>
+              <Row label={t('profile.expectedSalary')} htmlFor="pf-expected-salary">
+                <div className="grid gap-3 sm:grid-cols-2 sm:items-end">
+                  <Input
+                    id="pf-expected-salary"
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={('expectedSalaryAmount' in formData
+                      ? formData.expectedSalaryAmount
+                      : profile.expectedSalaryAmount) ?? ''}
+                    onChange={(e) => {
+                      const amount = e.target.valueAsNumber;
+                      setFormData((prev) => ({
+                        ...prev,
+                        expectedSalaryAmount: amount > 0 ? amount : undefined,
+                      }));
+                    }}
+                  />
                   <label className="block">
                     <span className="mb-1 block text-xs text-slate-600">{t('profile.salaryUnit')}</span>
                     <select
-                      value={formData.salaryCurrency ?? profile.salaryCurrency ?? 'VNĐ'}
+                      value={formData.salaryCurrency ?? profile.salaryCurrency ?? 'VND'}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -909,8 +877,9 @@ export default function ProfilePage({ isEditMode = false }: ProfilePageProps) {
                       }
                       className={fieldControl}
                     >
-                      <option value="VNĐ">VNĐ (Việt Nam Đồng)</option>
+                      <option value="VND">VNĐ (Việt Nam Đồng)</option>
                       <option value="USD">USD (Đô la Mỹ)</option>
+                      <option value="EUR">EUR (Euro)</option>
                     </select>
                   </label>
                 </div>

@@ -91,7 +91,7 @@ interface GuestMessage {
 }
 
 /** Hỏi trợ lý nghề nghiệp bằng AI thật; cả phiên dùng chung một cuộc trò chuyện để AI nhớ ngữ cảnh. */
-export async function askGuestAssistant(message: string, options?: { freshConversation?: boolean }): Promise<string> {
+export async function askGuestAssistant(message: string, options?: { freshConversation?: boolean; language?: 'vi' | 'en' }): Promise<string> {
   return withSession(async (key, session) => {
     const headers = { 'X-Guest-Session': key };
     let conversationId = options?.freshConversation ? undefined : session.conversationId;
@@ -103,7 +103,7 @@ export async function askGuestAssistant(message: string, options?: { freshConver
     try {
       const { data } = await guestClient.post<GuestMessage>(
         `/guest/assistant/conversations/${conversationId}/messages`,
-        { message: message.slice(0, 7900), retrieve: false },
+        { message: message.slice(0, 7900), retrieve: false, language: options?.language },
         { headers, timeout: AI_TIMEOUT },
       );
       return data.message_text ?? '';

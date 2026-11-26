@@ -29,8 +29,7 @@ export interface CandidateProfile {
   experienceLevel: string;
   employmentType?: string;
   expectedSalary?: string;
-  salaryMin?: number;
-  salaryMax?: number;
+  expectedSalaryAmount?: number;
   salaryCurrency?: string;
   careerField?: string;
   preferredLocations?: string[];
@@ -141,6 +140,7 @@ export interface Resume {
   language: string;
   updatedAt: string;
   atsScore: number;
+  atsScoreAvailable?: boolean;
   status: 'Draft' | 'Processing' | 'Ready' | 'Needs Review';
   isDefault?: boolean;
   /** Mẫu CV (resume_templates.id) dùng để hiển thị. */
@@ -319,7 +319,7 @@ export interface Job {
       skill_name: string;
       required_level: number | null;
       level_label: string | null;
-      status: 'ASSESSED' | 'INSUFFICIENT_EVIDENCE';
+      status: 'ASSESSED' | 'INSUFFICIENT_EVIDENCE' | 'NOT_ASSESSED';
       evidence: string;
       reason: string;
       confidence: number;
@@ -370,7 +370,7 @@ export interface CvJobFitResult {
   }[];
   analyzedAt: string;
   /** Điểm từng nhóm tiêu chí của rubric ATS (bỏ nhóm không áp dụng). */
-  dimensions?: { code: string; label: string; score: number }[];
+  dimensions?: { code: string; label: string; score: number | null }[];
   /** Điểm ATS nên đạt trước khi nộp. */
   targetScore?: number;
 }

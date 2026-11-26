@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useDeferredValue, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, ChevronDown, Plus, X } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import {
   updateResume,
   type CvTemplate,
 } from '../../services/candidateService';
+import { toIsoDate, toLanguageCode } from '../../services/candidateMappers';
 import { authErrorMessage } from '../../services/authService';
 import type {
   AwardItem,
@@ -27,7 +28,7 @@ import { renderTemplateWithResume } from '../../utils/resumeTemplateRender';
 import { useTranslation } from '../../i18n';
 import { AiSuggest, StepTipsPanel } from './resume-builder/BuilderAssist';
 import { STEP_TIPS, stepChecks, type BuilderStep } from './resume-builder/builderTips';
-import { ContactFields } from './resume-builder/ContactFields';
+import { ContactFields, emailError, phoneError } from './resume-builder/ContactFields';
 
 // Short page-only strings that have no i18n key yet.
 const copy = {
@@ -38,6 +39,7 @@ const copy = {
     cvName: 'Tên CV',
     cvNamePlaceholder: 'Ví dụ: CV Frontend Developer',
     cvLanguage: 'Ngôn ngữ CV',
+    sections: 'Các mục trong CV',
     saveDraft: 'Lưu nháp',
     save: 'Lưu CV',
     saving: 'Đang lưu…',
@@ -143,6 +145,7 @@ const copy = {
     cvName: 'CV name',
     cvNamePlaceholder: 'e.g. Frontend Developer CV',
     cvLanguage: 'CV language',
+    sections: 'CV sections',
     saveDraft: 'Save draft',
     save: 'Save CV',
     saving: 'Saving…',
@@ -288,6 +291,8 @@ const filled = (v?: string) => Boolean(v && v.trim());
 function cleanCv(cv: Partial<Resume>): Partial<Resume> {
   return {
     ...cv,
+    email: cv.email?.trim(),
+    phone: cv.phone?.trim(),
     experience: cv.experience?.filter((e) => filled(e.role) || filled(e.company) || filled(e.description)),
     education: cv.education?.filter((e) => filled(e.school) || filled(e.degree) || filled(e.field)),
     projects: cv.projects?.filter((p) => filled(p.name) || filled(p.description)),
@@ -296,6 +301,62 @@ function cleanCv(cv: Partial<Resume>): Partial<Resume> {
     languages: cv.languages?.filter((x) => filled(x.name)),
     skills: cv.skills?.map((s) => s.trim()).filter(Boolean),
   };
+}
+
+function dateError(value: string | undefined, lang: 'vi' | 'en') {
+  if (!value?.trim()) return undefined;
+  const iso = toIsoDate(value);
+  const date = iso ? new Date(iso) : undefined;
+  const vi = lang === 'vi';
+  if (!iso || !date || !Number.isFinite(date.valueOf()) || date.toISOString().slice(0, 10) !== iso || iso.startsWith('0000')) {
+    return vi ? 'Nhập thời gian theo định dạng MM/YYYY.' : 'Enter a valid date in MM/YYYY format.';
+  }
+  const now = new Date();
+  const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
+    .map((part) => String(part).padStart(2, '0')).join('-');
+  if (iso > today) {
+    return vi ? 'Thời gian không được nằm trong tương lai.' : 'Dates cannot be in the future.';
+  }
+}
+
+function endDateError(startValue: string | undefined, endValue: string | undefined, lang: 'vi' | 'en') {
+  const error = dateError(endValue, lang);
+  if (error) return error;
+  const start = toIsoDate(startValue);
+  const end = toIsoDate(endValue);
+  if (start && end && end < start && !dateError(startValue, lang)) {
+    return lang === 'vi'
+      ? 'Thời gian kết thúc phải từ thời gian bắt đầu trở đi.'
+      : 'End date must be on or after the start date.';
+  }
+}
+
+function awardYearError(value: string | undefined, lang: 'vi' | 'en') {
+  if (value?.trim() && !/^\d{4}$/.test(value.trim())) {
+    return lang === 'vi' ? 'Nhập năm nhận giải theo định dạng YYYY.' : 'Enter the award year in YYYY format.';
+  }
+  return dateError(value, lang);
+}
+
+function validateCv(cv: Partial<Resume>, lang: 'vi' | 'en') {
+  const contact = emailError(cv.email, lang) || phoneError(cv.phone, lang);
+  if (contact) return { step: 'personal' as const, message: contact };
+
+  for (const step of ['experience', 'education'] as const) {
+    for (const item of cv[step] ?? []) {
+      const ongoing = step === 'experience' && 'isCurrent' in item && item.isCurrent;
+      const message = dateError(item.startDate, lang)
+        || (ongoing ? undefined : endDateError(item.startDate, item.endDate, lang));
+      if (message) return { step, id: item.id, message };
+    }
+  }
+
+  for (const item of [...(cv.certifications ?? []), ...(cv.awards ?? [])]) {
+    const message = 'year' in item
+      ? awardYearError(item.year, lang)
+      : dateError('date' in item ? item.date : undefined, lang);
+    if (message) return { step: 'finish' as const, id: item.id, message };
+  }
 }
 
 function completeness(cv: Partial<Resume>): number {
@@ -323,6 +384,7 @@ function Field({
   type = 'text',
   className = '',
   disabled = false,
+  error,
 }: {
   label: string;
   value?: string;
@@ -331,7 +393,9 @@ function Field({
   type?: string;
   className?: string;
   disabled?: boolean;
+  error?: string;
 }) {
+  const errorId = useId();
   return (
     <label className={`block ${className}`}>
       <span className="text-[13px] text-slate-500">{label}</span>
@@ -340,9 +404,12 @@ function Field({
         value={value ?? ''}
         placeholder={placeholder}
         disabled={disabled}
+        aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
         onChange={(e) => onChange(e.target.value)}
         className={`${inputClass} disabled:text-slate-500`}
       />
+      {error && <span id={errorId} className="block text-xs text-danger">{error}</span>}
     </label>
   );
 }
@@ -495,8 +562,6 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
   const resumeId = guest ? undefined : params.resumeId;
   const isEdit = Boolean(resumeId);
   const { isVietnamese } = useTranslation();
-  const uiLang = isVietnamese ? 'vi' : 'en';
-  const c = copy[uiLang];
   const navigate = useNavigate();
   // Mở từ trang Độ phù hợp CV: lưu xong quay lại đó để chấm lại.
   const [searchParams] = useSearchParams();
@@ -547,16 +612,17 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
   const template: CvTemplate | undefined = templates.find((t) => t.id === templateId) ?? templates[0];
 
   const deferredCv = useDeferredValue(cv);
-  const cvLang = /^en/i.test(cv?.language ?? '') ? 'en' : 'vi';
+  const cvLang = cv?.language ? toLanguageCode(cv.language) : isVietnamese ? 'vi' : 'en';
+  const c = copy[cvLang];
   const previewHtml = useMemo(
     () =>
       template && deferredCv
         ? renderTemplateWithResume(template.htmlContent, deferredCv, {
-            lang: /^en/i.test(deferredCv.language ?? '') ? 'en' : 'vi',
-            namePlaceholder: copy[/^en/i.test(deferredCv.language ?? '') ? 'en' : 'vi'].namePlaceholder,
+            lang: cvLang,
+            namePlaceholder: c.namePlaceholder,
           })
         : '',
-    [template, deferredCv],
+    [template, deferredCv, cvLang, c.namePlaceholder],
   );
 
   if (templatesQuery.isLoading || (isEdit && resumeQuery.isLoading)) return <Loading />;
@@ -594,8 +660,19 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
 
   const toggle = (id: string) => setOpenItem((prev) => (prev === id ? null : id));
 
+  const issue = validateCv(cv, cvLang);
+  const issueStep = issue ? STEPS.indexOf(issue.step) : STEPS.length;
+  const isForwardBlocked = (index: number) => index > step && index > issueStep;
+
   const save = async (asDraft: boolean) => {
     if (guest) return guest.onRequireSignup();
+    if (issue) {
+      goTo(issueStep);
+      setOpenItem(issue.id ?? null);
+      setMobileView('edit');
+      setNotice({ tone: 'error', text: issue.message });
+      return;
+    }
     const cleaned = cleanCv(cv);
     const name =
       cleaned.name?.trim() ||
@@ -638,7 +715,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
   const renderStep = (key: StepKey = stepKey): ReactNode => {
     switch (key) {
       case 'personal':
-        return <ContactFields cv={cv} lang={uiLang} onChange={update} />;
+        return <ContactFields cv={cv} lang={cvLang} onChange={update} />;
       case 'summary':
         return (
           <>
@@ -651,7 +728,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
           />
           <AiSuggest
                       guest={!!guest}
-            lang={uiLang}
+            lang={cvLang}
             onApply={(text) => update({ summary: text })}
             params={() => ({
               resumeId,
@@ -685,11 +762,12 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                 >
                   <Field label={f.role} value={e.role} onChange={(v) => experience.change(e.id, { role: v })} />
                   <Field label={f.company} value={e.company} onChange={(v) => experience.change(e.id, { company: v })} />
-                  <Field label={f.start} value={e.startDate} placeholder={f.datePh} onChange={(v) => experience.change(e.id, { startDate: v })} />
+                  <Field label={f.start} value={e.startDate} error={dateError(e.startDate, cvLang)} placeholder={f.datePh} onChange={(v) => experience.change(e.id, { startDate: v })} />
                   <div>
                     <Field
                       label={f.end}
                       value={e.isCurrent ? c.present : e.endDate}
+                      error={e.isCurrent ? undefined : endDateError(e.startDate, e.endDate, cvLang)}
                       placeholder={f.datePh}
                       disabled={Boolean(e.isCurrent)}
                       onChange={(v) => experience.change(e.id, { endDate: v })}
@@ -718,12 +796,12 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                         }
                         className="mt-2 text-[13px] text-brand underline underline-offset-4"
                       >
-                        {uiLang === 'vi' ? 'Gộp “điểm nổi bật” cũ vào mô tả' : 'Merge old highlights into the description'}
+                        {cvLang === 'vi' ? 'Gộp “điểm nổi bật” cũ vào mô tả' : 'Merge old highlights into the description'}
                       </button>
                     )}
                     <AiSuggest
                       guest={!!guest}
-                      lang={uiLang}
+                      lang={cvLang}
                       onApply={(text) => experience.change(e.id, { description: text })}
                       params={() => ({
                         resumeId,
@@ -761,8 +839,8 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                   <Field className="sm:col-span-2" label={f.school} value={e.school} onChange={(v) => education.change(e.id, { school: v })} />
                   <Field label={f.degree} value={e.degree} placeholder={f.degreePh} onChange={(v) => education.change(e.id, { degree: v })} />
                   <Field label={f.field} value={e.field} onChange={(v) => education.change(e.id, { field: v })} />
-                  <Field label={f.start} value={e.startDate} placeholder={f.datePh} onChange={(v) => education.change(e.id, { startDate: v })} />
-                  <Field label={f.end} value={e.endDate} placeholder={f.datePh} onChange={(v) => education.change(e.id, { endDate: v })} />
+                  <Field label={f.start} value={e.startDate} error={dateError(e.startDate, cvLang)} placeholder={f.datePh} onChange={(v) => education.change(e.id, { startDate: v })} />
+                  <Field label={f.end} value={e.endDate} error={endDateError(e.startDate, e.endDate, cvLang)} placeholder={f.datePh} onChange={(v) => education.change(e.id, { endDate: v })} />
                   <Field label={f.gpa} value={e.gpa} placeholder="3.5/4" onChange={(v) => education.change(e.id, { gpa: v })} />
                 </ItemRow>
               ))}
@@ -831,7 +909,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                     <TextArea label={f.description} rows={4} value={p.description} onChange={(v) => projects.change(p.id, { description: v })} />
                     <AiSuggest
                       guest={!!guest}
-                      lang={uiLang}
+                      lang={cvLang}
                       onApply={(text) => projects.change(p.id, { description: text })}
                       params={() => ({
                         resumeId,
@@ -866,7 +944,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                 >
                   <Field className="sm:col-span-2" label={f.certName} value={x.name} onChange={(v) => certifications.change(x.id, { name: v })} />
                   <Field label={f.issuer} value={x.issuer} onChange={(v) => certifications.change(x.id, { issuer: v })} />
-                  <Field label={f.date} value={x.date} placeholder={f.datePh} onChange={(v) => certifications.change(x.id, { date: v })} />
+                  <Field label={f.date} value={x.date} error={dateError(x.date, cvLang)} placeholder={f.datePh} onChange={(v) => certifications.change(x.id, { date: v })} />
                   <Field className="sm:col-span-2" label={f.link} value={x.link} onChange={(v) => certifications.change(x.id, { link: v })} />
                 </ItemRow>
               ))}
@@ -888,7 +966,7 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                 >
                   <Field className="sm:col-span-2" label={f.awardTitle} value={a.title} onChange={(v) => awards.change(a.id, { title: v })} />
                   <Field label={f.issuer} value={a.issuer} onChange={(v) => awards.change(a.id, { issuer: v })} />
-                  <Field label={f.year} value={a.year} placeholder="2025" onChange={(v) => awards.change(a.id, { year: v })} />
+                  <Field label={f.year} value={a.year} error={awardYearError(a.year, cvLang)} placeholder="2025" onChange={(v) => awards.change(a.id, { year: v })} />
                   <div className="sm:col-span-2">
                     <TextArea label={f.description} rows={2} value={a.description} onChange={(v) => awards.change(a.id, { description: v })} />
                   </div>
@@ -902,13 +980,14 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
   };
 
   const goTo = (index: number) => {
+    if (isForwardBlocked(index)) return;
     setStep(index);
     setOpenItem(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="w-full pb-[clamp(2rem,5vw,4rem)]">
+    <div lang={cvLang} className="w-full pb-[clamp(2rem,5vw,4rem)]">
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         {guest ? (
@@ -980,7 +1059,8 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                     key={lang}
                     type="button"
                     onClick={() => update({ language: lang })}
-                    className={`cursor-pointer border-b pb-1 text-sm ${cv.language === lang ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'}`}
+                    aria-pressed={cvLang === toLanguageCode(lang)}
+                    className={`cursor-pointer border-b pb-1 text-sm ${cvLang === toLanguageCode(lang) ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'}`}
                   >
                     {lang === 'Vietnamese' ? 'Tiếng Việt' : 'English'}
                   </button>
@@ -1001,15 +1081,16 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
           </div>
 
           {/* Steps */}
-          <nav className="mt-8 border-b border-border" aria-label="CV sections">
+          <nav className="mt-8 border-b border-border" aria-label={c.sections}>
             <ol className="flex flex-wrap gap-x-6 gap-y-1">
               {STEPS.map((key, i) => (
                 <li key={key}>
                   <button
                     type="button"
                     onClick={() => goTo(i)}
+                    disabled={isForwardBlocked(i)}
                     aria-current={i === step ? 'step' : undefined}
-                    className={`-mb-px flex cursor-pointer items-baseline gap-2 border-b-2 pb-3 text-sm transition-colors ${
+                    className={`-mb-px flex cursor-pointer items-baseline gap-2 border-b-2 pb-3 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                       i === step ? 'border-ink text-ink' : 'border-transparent text-slate-500 hover:text-ink'
                     }`}
                   >
@@ -1024,26 +1105,26 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
           <div className="mt-8">
             <h2 className="text-[clamp(1.375rem,2.2vw,1.75rem)] font-normal tracking-[-0.01em] text-ink">{c.steps[stepKey]}</h2>
             <p className="mt-2 max-w-[36rem] text-[15px] leading-7 text-slate-600">{c.hints[stepKey]}</p>
-            <StepTipsPanel tips={STEP_TIPS[uiLang][tipsKey]} checks={stepChecks(tipsKey, cv, uiLang)} lang={uiLang} />
+            <StepTipsPanel tips={STEP_TIPS[cvLang][tipsKey]} checks={stepChecks(tipsKey, cv, cvLang)} lang={cvLang} />
             <div className="mt-8">{renderStep()}</div>
           </div>
 
           {stepKey === 'experience' && !(cv.experience ?? []).some((e) => e.role?.trim() || e.company?.trim()) && (
             <div role="note" className="mt-10 rounded-xl border border-warning/40 bg-amber-50/60 p-4 text-sm leading-6 text-ink">
               <p className="font-medium">
-                {uiLang === 'vi' ? 'Bạn đang bỏ qua phần Kinh nghiệm' : 'You are skipping Experience'}
+                {cvLang === 'vi' ? 'Bạn đang bỏ qua phần Kinh nghiệm' : 'You are skipping Experience'}
               </p>
               <p className="mt-1 text-slate-700">
-                {uiLang === 'vi' ? 'CV không có kinh nghiệm thường gặp các vấn đề sau:' : 'A CV without experience usually runs into:'}
+                {cvLang === 'vi' ? 'CV không có kinh nghiệm thường gặp các vấn đề sau:' : 'A CV without experience usually runs into:'}
               </p>
               <ul className="mt-1 list-disc pl-5 text-slate-700">
-                {(uiLang === 'vi'
+                {(cvLang === 'vi'
                   ? ['Khó đánh giá CV: hệ thống và nhà tuyển dụng không có bằng chứng về kỹ năng.', 'Khó tìm được công việc phù hợp: gợi ý việc làm và điểm ATS sẽ thấp hơn.', 'Tư vấn viên khó góp ý cụ thể cho bạn.']
                   : ['Hard to evaluate: no evidence of your skills for the system or recruiters.', 'Harder to find a matching job: recommendations and ATS scores drop.', 'Consultants have less to give specific feedback on.']
                 ).map((line) => <li key={line}>{line}</li>)}
               </ul>
               <p className="mt-2 text-slate-700">
-                {uiLang === 'vi'
+                {cvLang === 'vi'
                   ? 'Chưa đi làm? Bạn có thể ghi thực tập, dự án môn học, đồ án, việc làm thêm hoặc hoạt động câu lạc bộ.'
                   : 'No job yet? Add internships, course projects, a capstone, part-time work or club activities.'}
               </p>
@@ -1068,7 +1149,12 @@ export function ResumeBuilder({ guest }: { guest?: GuestBuilderOptions } = {}) {
                 {guest ? c.guestSave : saving ? c.saving : c.finish}
               </button>
             ) : (
-              <button type="button" onClick={() => goTo(step + 1)} className={primaryButton}>
+              <button
+                type="button"
+                onClick={() => goTo(step + 1)}
+                disabled={isForwardBlocked(step + 1)}
+                className={`${primaryButton} disabled:cursor-not-allowed disabled:opacity-50`}
+              >
                 {c.next(c.steps[STEPS[step + 1]])}
                 <ArrowRight size={16} aria-hidden="true" />
               </button>

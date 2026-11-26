@@ -77,8 +77,9 @@ export default function DashboardPage() {
     queryFn: getResumes,
   });
 
-  const bestResume = resumes?.[0];
-  const atsScore = bestResume?.atsScore || null;
+  const scoredResume = resumes?.find((resume) => resume.atsScoreAvailable ?? resume.atsScore > 0);
+  const bestResume = scoredResume ?? resumes?.[0];
+  const atsScore = scoredResume?.atsScore ?? null;
   const profileCompletion = profile?.completion ?? 0;
   const candidateFirstName = profile?.name ? profile.name.split(' ').slice(-1)[0] : '';
   const recommendedCount = jobs?.length ?? 0;
@@ -87,10 +88,7 @@ export default function DashboardPage() {
 
   const greeting = c.greeting(candidateFirstName);
   const salary =
-    profile?.expectedSalary ||
-    (profile?.salaryMin
-      ? `${profile.salaryMin.toLocaleString()} – ${profile.salaryMax?.toLocaleString()} ${profile.salaryCurrency}`
-      : '');
+    profile?.expectedSalary || '—';
   const goalMeta = [
     salary ? `${salary} / ${c.perMonth}` : '',
     profile?.employmentType || '',

@@ -30,7 +30,6 @@ import {
   toResume,
   toResumeWrite,
   toSemanticMatch,
-  toEvidenceReport,
 } from './candidateMappers';
 
 // `indexes: null` gửi mảng dạng `skills=a&skills=b` để Spring đọc được.
@@ -368,7 +367,7 @@ export async function updateCandidateProfile(updates: Partial<CandidateProfile>)
     targetJobTitle: next.targetPosition || undefined,
     careerGoal: next.careerGoal || undefined,
     yearsExperience: parseYears(next.experienceLevel) ?? (row.years_experience == null ? undefined : num(row.years_experience)),
-    expectedSalary: next.salaryMin && next.salaryMin > 0 ? next.salaryMin : undefined,
+    expectedSalary: next.expectedSalaryAmount,
     salaryCurrency: ['VND', 'USD', 'EUR'].includes(next.salaryCurrency ?? '') ? next.salaryCurrency : 'VND',
     preferredLocation: next.location || next.preferredLocations?.[0] || undefined,
     workplacePreference: optStr(row.workplace_preference),
@@ -386,8 +385,6 @@ export async function updateCandidateProfile(updates: Partial<CandidateProfile>)
         github: next.github,
         avatar: next.avatar,
         experienceLevel: next.experienceLevel,
-        expectedSalary: next.expectedSalary,
-        salaryMax: next.salaryMax,
         careerField: next.careerField,
         preferredLocations: next.preferredLocations,
         availability: next.availability,
@@ -495,36 +492,18 @@ export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<
   const missing = texts(ats.missing_skills_json);
   const tips = texts(ats.improvement_suggestions_json);
   const report = obj(ats.ats_report);
-  const evidenceReport = toEvidenceReport(ats.evidence_report);
-  if (evidenceReport) {
-    const score = Math.trunc(num(ats.ats_score) * 10) / 10;
-    const required = evidenceReport.requirements.filter((row) => row.importance === 'MANDATORY');
-    const preferred = evidenceReport.requirements.filter((row) => row.importance === 'PREFERRED');
-    return {
-      cvId, cvName: cv?.name ?? '', jobId, jobTitle: job?.title ?? '', company: job?.company ?? '',
-      overallScore: score, skillsScore: score, experienceScore: score, educationScore: score, cultureScore: score,
-      fitGrade: grade(score),
-      verdict: evidenceReport.scoreAvailable
-        ? `Độ bao phủ thông tin cho ${evidenceReport.requiredCount} yêu cầu bắt buộc. Chưa có bằng chứng không đồng nghĩa chưa có năng lực.`
-        : 'Chưa đủ nguồn JD để tính độ bao phủ yêu cầu bắt buộc.',
-      strengths, evidenceReport,
-      gaps: [...required, ...preferred].filter((row) => row.status !== 'MET' && row.status !== 'UNVERIFIED').map((row) => ({
-        title: row.text, description: row.reason,
-        impact: row.importance === 'MANDATORY' ? 'critical' as const : 'moderate' as const,
-        recommendation: 'Bổ sung thông tin thực tế nếu đã có kinh nghiệm; đánh giá kỹ năng trước khi chọn nội dung cần học.',
-      })),
-      skillsAnalysis: [...required, ...preferred].filter((row) => row.status !== 'UNVERIFIED').map((row) => ({
-        name: row.text, category: row.importance === 'MANDATORY' ? 'required' as const : 'preferred' as const,
-        status: row.status === 'MET' ? 'matched' as const : row.status === 'PARTIAL' ? 'partial' as const : 'missing' as const,
-        cvMention: row.evidence.map((citation) => citation.quote).join(' · '),
-        importance: row.importance === 'MANDATORY' ? 'high' as const : 'medium' as const,
-      })),
-      tailoringTips: tips, suggestedBulletPoints: [], analyzedAt: str(ats.created_at),
-      dimensions: evidenceReport.scoreAvailable
-        ? [{ code: 'REQUIREMENT_COVERAGE', label: 'Độ bao phủ yêu cầu bắt buộc', score }] : [],
-    };
-  }
   if (Object.keys(report).length > 0) return fromAtsReport(report, { cvId, cv, jobId, job, score, strengths, tips, analyzedAt: str(ats.created_at) });
+  const scores = obj(ats.dimension_scores);
+  const dimensions = [
+    { key: 'skills', code: 'HARD_SKILLS', label: 'Technical skills' },
+    { key: 'experience', code: 'EXPERIENCE', label: 'Experience' },
+    { key: 'education', code: 'EDUCATION', label: 'Education' },
+  ].flatMap(({ key, code, label }) => {
+    const value = scores[key];
+    return value === null || (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100)
+      ? [{ code, label, score: value }]
+      : [];
+  });
   return {
     cvId,
     cvName: cv?.name ?? '',
@@ -532,9 +511,9 @@ export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<
     jobTitle: job?.title ?? '',
     company: job?.company ?? '',
     overallScore: score,
-    skillsScore: score,
-    experienceScore: score,
-    educationScore: score,
+    skillsScore: dimensions.find((dimension) => dimension.code === 'HARD_SKILLS')?.score ?? 0,
+    experienceScore: dimensions.find((dimension) => dimension.code === 'EXPERIENCE')?.score ?? 0,
+    educationScore: dimensions.find((dimension) => dimension.code === 'EDUCATION')?.score ?? 0,
     cultureScore: score,
     fitGrade: grade(score),
     verdict: tips[0] ?? '',
@@ -552,6 +531,7 @@ export async function getCvJobFitAnalysis(cvId: string, jobId: string): Promise<
     tailoringTips: tips,
     suggestedBulletPoints: [],
     analyzedAt: str(ats.created_at) || new Date().toISOString(),
+    dimensions: dimensions.length > 0 ? dimensions : undefined,
   };
 }
 
