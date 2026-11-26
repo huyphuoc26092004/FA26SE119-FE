@@ -11,17 +11,16 @@ interface SavedApplicationsListProps {
   onCreateNew: () => void;
 }
 
-type SortKey = 'recent' | 'score' | 'title';
+type SortKey = 'recent' | 'title';
 
 const copy = {
   vi: {
     statTotal: 'Email đã lưu',
-    statAvg: 'Điểm trung bình',
     statLatest: 'Cập nhật gần nhất',
     all: 'Tất cả',
     search: 'Tìm theo tiêu đề, công ty, vị trí…',
     sortLabel: 'Sắp xếp',
-    sorts: { recent: 'Mới nhất', score: 'Điểm cao nhất', title: 'Tên A–Z' } as Record<SortKey, string>,
+    sorts: { recent: 'Mới nhất', title: 'Tên A–Z' } as Record<SortKey, string>,
     results: (n: number) => `${n} thư`,
     noMatch: 'Không có thư nào khớp bộ lọc.',
     clearFilters: 'Xoá bộ lọc',
@@ -31,7 +30,6 @@ const copy = {
     download: 'Tải .txt',
     remove: 'Xoá',
     create: 'Viết email mới',
-    score: 'điểm',
     previewTitle: 'Xem trước',
     pickHint: 'Chọn một thư bên trái để xem toàn bộ nội dung.',
     subject: 'Tiêu đề',
@@ -45,10 +43,6 @@ const copy = {
     words: (n: number) => `${n} từ`,
     showMore: 'Xem toàn bộ thư',
     showLess: 'Thu gọn',
-    relevance: 'Độ khớp JD',
-    persuasion: 'Bố cục',
-    clarity: 'Rõ ràng',
-    toneScore: 'Văn phong',
     emailLabel: 'Email ứng tuyển',
     tones: { professional: 'Chuyên nghiệp', impactful: 'Ấn tượng', enthusiastic: 'Thân thiện', concise: 'Ngắn gọn' } as Record<string, string>,
     focuses: {
@@ -61,12 +55,11 @@ const copy = {
   },
   en: {
     statTotal: 'Saved emails',
-    statAvg: 'Average score',
     statLatest: 'Last updated',
     all: 'All',
     search: 'Search title, company, role…',
     sortLabel: 'Sort',
-    sorts: { recent: 'Newest', score: 'Highest score', title: 'Title A–Z' } as Record<SortKey, string>,
+    sorts: { recent: 'Newest', title: 'Title A–Z' } as Record<SortKey, string>,
     results: (n: number) => `${n} ${n === 1 ? 'letter' : 'letters'}`,
     noMatch: 'No letters match these filters.',
     clearFilters: 'Clear filters',
@@ -76,7 +69,6 @@ const copy = {
     download: 'Download .txt',
     remove: 'Delete',
     create: 'Create a new email',
-    score: 'score',
     previewTitle: 'Preview',
     pickHint: 'Pick a letter on the left to read it in full.',
     subject: 'Subject',
@@ -90,10 +82,6 @@ const copy = {
     words: (n: number) => `${n} words`,
     showMore: 'Read full letter',
     showLess: 'Show less',
-    relevance: 'JD match',
-    persuasion: 'Structure',
-    clarity: 'Clarity',
-    toneScore: 'Tone',
     emailLabel: 'Application email',
     tones: { professional: 'Professional', impactful: 'Impactful', enthusiastic: 'Friendly', concise: 'Concise' } as Record<string, string>,
     focuses: {
@@ -114,14 +102,31 @@ const textLink =
 const primaryButton =
   'inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-800 cursor-pointer';
 
-/** Dates are stored as dd/mm/yyyy; turn them into a sortable number. */
+const dateOptions = { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short' } as const;
+const savedDateTime = {
+  vi: new Intl.DateTimeFormat('vi-VN', dateOptions),
+  en: new Intl.DateTimeFormat('en-GB', dateOptions),
+};
+
+const legacyDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+
 function dateValue(value?: string): number {
-  if (!value) return 0;
-  const m = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (m) return Number(m[3]) * 10000 + Number(m[2]) * 100 + Number(m[1]);
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed / 86400000;
+  if (!value) return NaN;
+  const legacy = legacyDate.exec(value);
+  if (!legacy) return Date.parse(value);
+  const [, day, month, year] = legacy;
+  return Date.parse([year, month.padStart(2, '0'), day.padStart(2, '0')].join('-') + 'T00:00:00+07:00');
 }
+
+function formatSavedDate(value: string | undefined, lang: keyof typeof savedDateTime) {
+  if (!value) return undefined;
+  const timestamp = dateValue(value);
+  if (!Number.isFinite(timestamp)) return undefined;
+  return legacyDate.test(value) ? value : savedDateTime[lang].format(timestamp);
+}
+
+const sortByLatest = (a: ApplicationDraft, b: ApplicationDraft) =>
+  (dateValue(b.updatedAt) || 0) - (dateValue(a.updatedAt) || 0);
 
 function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -135,6 +140,7 @@ function fullText(draft: ApplicationDraft): string {
 function DraftPreview({
   draft,
   c,
+  lang,
   copied,
   onCopy,
   onDownload,
@@ -144,6 +150,7 @@ function DraftPreview({
 }: {
   draft: ApplicationDraft;
   c: Copy;
+  lang: keyof typeof savedDateTime;
   copied: boolean;
   onCopy: (e: React.MouseEvent) => void;
   onDownload: (e: React.MouseEvent) => void;
@@ -152,25 +159,15 @@ function DraftPreview({
   compact?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const score = draft.reviewScore;
 
   useEffect(() => setExpanded(false), [draft.id]);
 
   const meta = [
     { label: c.to, value: draft.recipientName },
     { label: c.cv, value: draft.cvName },
-    { label: c.created, value: draft.createdAt },
-    { label: c.updated, value: draft.updatedAt },
+    { label: c.created, value: formatSavedDate(draft.createdAt, lang) },
+    { label: c.updated, value: formatSavedDate(draft.updatedAt, lang) },
   ].filter((m) => !!m.value);
-
-  const bars = score?.overallScore
-    ? [
-        { label: c.relevance, value: score.relevanceScore },
-        { label: c.persuasion, value: score.structureScore ?? score.persuasivenessScore },
-        { label: c.clarity, value: score.clarityScore },
-        { label: c.toneScore, value: score.toneScore },
-      ]
-    : [];
 
   return (
     <article onClick={(e) => e.stopPropagation()} className="cursor-default">
@@ -191,31 +188,6 @@ function DraftPreview({
             </p>
           )}
         </header>
-      )}
-
-      {/* Score */}
-      {score?.overallScore > 0 && (
-        <div className={`${compact ? '' : 'mt-5'} flex flex-wrap items-end gap-x-8 gap-y-4 border-y border-border py-4`}>
-          <p className="flex items-baseline text-ink">
-            <span className="text-[2.5rem] font-normal leading-none tracking-[-0.03em] tabular-nums">
-              {score.overallScore}
-            </span>
-            <span className="ml-1 text-sm text-slate-500">/100</span>
-          </p>
-          <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-6 gap-y-3">
-            {bars.map((b) => (
-              <div key={b.label} className="min-w-0">
-                <div className="flex items-baseline justify-between gap-2 text-[12px]">
-                  <span className="truncate text-slate-600">{b.label}</span>
-                  <span className="tabular-nums text-ink">{b.value}</span>
-                </div>
-                <div className="mt-1.5 h-px w-full bg-border">
-                  <div className="h-[2px] -translate-y-[0.5px] bg-brand" style={{ width: `${Math.min(100, b.value)}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
 
       {/* Meta */}
@@ -282,7 +254,8 @@ export function SavedApplicationsList({
   onCreateNew,
 }: SavedApplicationsListProps) {
   const { isVietnamese, t } = useTranslation();
-  const c = isVietnamese ? copy.vi : copy.en;
+  const lang = isVietnamese ? 'vi' : 'en';
+  const c = copy[lang];
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('recent');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -298,9 +271,8 @@ export function SavedApplicationsList({
       return matchesSearch;
     });
     return [...list].sort((a, b) => {
-      if (sortBy === 'score') return (b.reviewScore?.overallScore ?? 0) - (a.reviewScore?.overallScore ?? 0);
       if (sortBy === 'title') return a.title.localeCompare(b.title);
-      return dateValue(b.updatedAt) - dateValue(a.updatedAt);
+      return sortByLatest(a, b);
     });
   }, [drafts, search, sortBy]);
 
@@ -313,15 +285,7 @@ export function SavedApplicationsList({
 
   const previewDraft = filteredDrafts.find((d) => d.id === previewId);
 
-  const stats = useMemo(() => {
-    const scored = drafts.filter((d) => d.reviewScore?.overallScore);
-    const avg = scored.length
-      ? Math.round(scored.reduce((sum, d) => sum + d.reviewScore.overallScore, 0) / scored.length)
-      : 0;
-    const latest = [...drafts].sort((a, b) => dateValue(b.updatedAt) - dateValue(a.updatedAt))[0]?.updatedAt;
-    return { avg, latest };
-  }, [drafts]);
-
+  const latest = useMemo(() => [...drafts].sort(sortByLatest)[0]?.updatedAt, [drafts]);
 
   const handleCopy = (draft: ApplicationDraft, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -370,9 +334,10 @@ export function SavedApplicationsList({
     );
   }
 
-  const previewProps = (draft: ApplicationDraft) => ({
+  const previewProps = (draft: ApplicationDraft): React.ComponentProps<typeof DraftPreview> => ({
     draft,
     c,
+    lang,
     copied: copiedId === draft.id,
     onCopy: (e: React.MouseEvent) => handleCopy(draft, e),
     onDownload: (e: React.MouseEvent) => handleDownload(draft, e),
@@ -383,11 +348,10 @@ export function SavedApplicationsList({
   return (
     <div>
       {/* Summary */}
-      <dl className="grid grid-cols-3 border-y border-border">
+      <dl className="grid grid-cols-2 border-y border-border">
         {[
           { label: c.statTotal, value: String(drafts.length) },
-          { label: c.statAvg, value: String(stats.avg) },
-          { label: c.statLatest, value: stats.latest ?? '—' },
+          { label: c.statLatest, value: formatSavedDate(latest, lang) ?? '—' },
         ].map((s, idx) => (
           <div key={s.label} className={`min-w-0 py-4 ${idx > 0 ? 'border-l border-border pl-4 sm:pl-6' : ''}`}>
             <dt className="truncate text-[12px] text-slate-600 sm:text-[13px]">{s.label}</dt>
@@ -462,7 +426,7 @@ export function SavedApplicationsList({
                     type="button"
                     onClick={() => setPreviewId(active ? null : draft.id)}
                     aria-expanded={active}
-                    className={`group grid w-full grid-cols-[2rem_1fr_auto] gap-x-4 py-4 text-left transition-colors cursor-pointer lg:pl-3 ${
+                    className={`group grid w-full grid-cols-[2rem_minmax(0,1fr)] gap-x-4 py-4 text-left transition-colors cursor-pointer lg:pl-3 ${
                       active ? 'lg:border-l-2 lg:border-brand lg:bg-brand-50/40' : 'lg:border-l-2 lg:border-transparent'
                     }`}
                   >
@@ -471,7 +435,7 @@ export function SavedApplicationsList({
                       <span className="block text-[12px] text-slate-600">
                         {c.emailLabel}
                         <span className="mx-1.5 text-slate-400">·</span>
-                        {draft.updatedAt}
+                        {formatSavedDate(draft.updatedAt, lang) ?? '—'}
                       </span>
                       <span
                         className={`mt-1 block text-[15px] leading-6 transition-colors group-hover:text-brand ${
@@ -487,12 +451,6 @@ export function SavedApplicationsList({
                           {draft.jobTitle}
                         </span>
                       )}
-                    </span>
-                    <span className="text-right">
-                      <span className="block text-[1.625rem] font-normal leading-none tracking-[-0.02em] tabular-nums text-ink">
-                        {draft.reviewScore?.overallScore || '—'}
-                      </span>
-                      <span className="mt-1 block text-[11px] text-slate-500">{c.score}</span>
                     </span>
                   </button>
 

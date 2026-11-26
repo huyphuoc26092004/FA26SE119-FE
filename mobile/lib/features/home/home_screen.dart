@@ -23,8 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _runMatching() async {
     setState(() => _matching = true);
     try {
-      await ref.read(repositoryProvider).runMatching();
-      ref.invalidate(matchesProvider);
+      await ref.refresh(matchesProvider.future);
     } catch (e) {
       if (mounted) toast(context, ApiException.from(e).message);
     } finally {
@@ -44,7 +43,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final primary = resumes.where((r) => r.isPrimary).firstOrNull ?? resumes.firstOrNull;
     final readyCount = resumes.where((r) => r.status == 'READY').length;
     final list = matches.value ?? const <JobMatch>[];
-    final avg = list.isEmpty ? null : (list.map((m) => m.score).reduce((a, b) => a + b) / list.length).round();
+    final scores = list.where((match) => match.scoreAvailable).map((match) => match.score).toList();
+    final avg = scores.isEmpty ? null : (scores.reduce((a, b) => a + b) / scores.length).round();
 
     final actions = <(IconData, String, String)>[
       (Icons.description_outlined, tr('CV của tôi', 'My CVs'), '/resumes'),
@@ -120,17 +120,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           data: (m) => m.isEmpty
               ? [
                   EmptyBox(
-                    title: readyCount == 0
-                        ? tr('Bạn cần ít nhất một CV ở trạng thái Sẵn sàng để so khớp việc làm.',
-                            'You need at least one Ready CV to match jobs.')
-                        : tr('Chưa có kết quả so khớp.', 'No matching results yet.'),
-                    action: readyCount == 0
-                        ? null
-                        : BigButton(label: tr('So khớp việc làm với CV', 'Match jobs to my CVs'), busy: _matching, onPressed: _runMatching),
+                    title: tr('Chưa tìm thấy việc phù hợp.', 'No matching jobs found.'),
+                    action: BigButton(label: tr('Tìm lại việc phù hợp', 'Refresh recommendations'), busy: _matching, onPressed: _runMatching),
                   ),
                 ]
               : [
-                  for (final x in m.take(5)) JobCard(job: x.job, match: x.score),
+                  for (final x in m.take(5)) JobCard(job: x.job, match: x.scoreAvailable ? x.score : null),
                   BigButton(
                     label: tr('So khớp lại', 'Run matching again'),
                     tone: ButtonTone.secondary,

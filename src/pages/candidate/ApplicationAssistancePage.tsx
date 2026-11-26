@@ -704,6 +704,7 @@ export default function ApplicationAssistancePage() {
                 />
                 <ApplicationReviewPanel
                   key={draft.id}
+                  draftId={draft.id}
                   text={[draft.subject, draft.content].filter(Boolean).join('\n\n')}
                   language={state.language}
                   vi={isVietnamese}

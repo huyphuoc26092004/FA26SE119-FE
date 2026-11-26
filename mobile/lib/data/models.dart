@@ -155,6 +155,7 @@ class JobMatch {
     required this.id,
     required this.job,
     required this.score,
+    this.scoreAvailable = true,
     this.matchedSkills = const [],
     this.missingSkills = const [],
     this.explanation,
@@ -162,21 +163,54 @@ class JobMatch {
   final String id;
   final Job job;
   final int score;
+  final bool scoreAvailable;
   final List<String> matchedSkills;
   final List<String> missingSkills;
   final String? explanation;
 
   factory JobMatch.fromJson(Json j) {
     final jobJson = pick(j, ['job']) is Map ? Json.from(pick(j, ['job']) as Map) : j;
+    final method = str(j, ['match_reason_json.method']);
+    final extractionStatus = str(j, ['match_reason_json.assessment.extraction_status']);
+    final score = number(j, ['final_score', 'llm_rerank_score', 'vector_similarity_score', 'score']);
     return JobMatch(
       id: str(j, ['id']) ?? '',
       job: Job.fromJson({...jobJson, 'id': str(j, ['market_job_id', 'job_id']) ?? jobJson['id']}),
-      score: percent(number(j, ['final_score', 'llm_rerank_score', 'vector_similarity_score', 'score'])),
+      score: score != null && score < 1 ? percent(score).clamp(0, 99) : percent(score),
+      scoreAvailable: score != null &&
+          pick(j, ['match_reason_json.assessment.requirement_coverage_available']) != false &&
+          pick(j, ['match_reason_json.assessment.suitability_score_available']) != false &&
+          !(method?.startsWith('SKILL_OVERLAP') == true &&
+              (extractionStatus == 'MISSING_SOURCE' || extractionStatus == 'TRUNCATED')),
       matchedSkills: strings(j, ['strengths_json', 'strengths']),
       missingSkills: strings(j, ['skill_gaps_json', 'skill_gaps']),
       explanation: str(j, ['match_reason_json.reason', 'explanation.reason']),
     );
   }
+}
+
+class SalaryEstimate {
+  SalaryEstimate.fromJson(Json json)
+      : min = number(json, ['estimated_min']) ?? 0,
+        max = number(json, ['estimated_max']) ?? 0,
+        currency = str(json, ['currency']) ?? 'VND',
+        reasoning = strings(json, ['reasoning']);
+
+  final num min;
+  final num max;
+  final String currency;
+  final List<String> reasoning;
+}
+
+class ApplicationDraft {
+  ApplicationDraft.fromJson(Json json)
+      : id = str(json, ['id']) ?? '',
+        isEmail = str(json, ['draft_type']) == 'APPLICATION_EMAIL',
+        content = str(json, ['content']) ?? '';
+
+  final String id;
+  final bool isEmail;
+  final String content;
 }
 
 class ResumeEntry {

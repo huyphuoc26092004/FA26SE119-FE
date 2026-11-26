@@ -11,6 +11,7 @@ import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
 import 'features/consultations/consultations_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/jobs/application_drafts_screen.dart';
 import 'features/jobs/job_detail_screen.dart';
 import 'features/jobs/jobs_screen.dart';
 import 'features/learning/roadmap_screens.dart';
@@ -60,8 +61,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       // Detail screens open full-screen above the tab bar, with a back arrow.
-      GoRoute(path: '/jobs/:id', builder: (_, s) => JobDetailScreen(jobId: s.pathParameters['id']!)),
+      GoRoute(path: '/jobs/:id', builder: (_, s) => JobDetailScreen(
+        jobId: s.pathParameters['id']!,
+        resumeId: s.uri.queryParameters['cvId'],
+        careerProfile: s.uri.queryParameters['basis'] == 'CAREER_PROFILE',
+      )),
+      GoRoute(path: '/applications', builder: (_, s) => ApplicationDraftsScreen(jobId: s.uri.queryParameters['jobId'])),
       GoRoute(path: '/resumes/:id', builder: (_, s) => ResumeDetailScreen(resumeId: s.pathParameters['id']!)),
+      GoRoute(path: '/resumes/:id/edit', builder: (_, s) => ResumeDetailScreen(resumeId: s.pathParameters['id']!, edit: true)),
       GoRoute(path: '/consultations/new', builder: (_, _) => const NewConsultationScreen()),
       GoRoute(path: '/consultations/:id', builder: (_, s) => ConsultationDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),

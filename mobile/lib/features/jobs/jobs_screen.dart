@@ -13,16 +13,24 @@ import '../../widgets/kit.dart';
 
 /// One job as a tappable card; shared by the home and jobs screens.
 class JobCard extends ConsumerWidget {
-  const JobCard({super.key, required this.job, this.match});
+  const JobCard({super.key, required this.job, this.match, this.resumeId, this.careerProfile = false});
   final Job job;
   final int? match;
+  final String? resumeId;
+  final bool careerProfile;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final saved = ref.watch(savedJobsProvider).contains(job.id);
     final applied = ref.watch(appliedJobsProvider).contains(job.id);
     return AppCard(
-      onTap: () => context.push('/jobs/${job.id}'),
+      onTap: () => context.push(Uri(
+        path: '/jobs/${job.id}',
+        queryParameters: {
+          if (resumeId != null) 'cvId': resumeId!,
+          if (careerProfile) 'basis': 'CAREER_PROFILE',
+        },
+      ).toString()),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           CompanyBadge(job.initial),
@@ -108,6 +116,7 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
   final _search = TextEditingController();
   String _keyword = '';
   _Tab _tab = _Tab.all;
+  String? _recommendationSource;
   Timer? _debounce;
 
   @override
@@ -134,13 +143,23 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
   Widget build(BuildContext context) {
     final saved = ref.watch(savedJobsProvider);
     final applied = ref.watch(appliedJobsProvider);
-    final matches = ref.watch(matchesProvider).value ?? const <JobMatch>[];
-    final scoreOf = {for (final m in matches) m.job.id: m.score};
+    final resumes = ref.watch(resumesProvider);
+    final ready = (resumes.value ?? const <Resume>[]).where((cv) => cv.status == 'READY').toList();
+    final primary = ready.where((cv) => cv.isPrimary).firstOrNull ?? ready.firstOrNull;
+    final selection = _recommendationSource;
+    final sourceId = selection == 'CAREER_PROFILE' || ready.any((cv) => cv.id == selection)
+        ? selection! : primary?.id ?? 'CAREER_PROFILE';
+    final resumeId = sourceId == 'CAREER_PROFILE' ? null : sourceId;
+    final matchesState = _tab != _Tab.recommended
+        ? const AsyncData(<JobMatch>[])
+        : resumes.hasValue
+            ? ref.watch(jobRecommendationsProvider(resumeId))
+            : resumes.whenData((_) => const <JobMatch>[]);
+    final matches = matchesState.value ?? const <JobMatch>[];
+    final scoreOf = {for (final m in matches) if (m.scoreAvailable) m.job.id: m.score};
 
-    // "For you" lists the latest matching run, "Saved" the server saved jobs;
-    // the other tabs use the job search.
     final AsyncValue<List<Job>> source = switch (_tab) {
-      _Tab.recommended => ref.watch(matchesProvider).whenData((m) => m.map((x) => x.job).toList()),
+      _Tab.recommended => matchesState.whenData((m) => m.map((x) => x.job).toList()),
       _Tab.saved => ref.watch(savedJobListProvider),
       _ => ref.watch(jobsProvider(_keyword)),
     };
@@ -175,6 +194,17 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
           PillRow(children: [
             for (final t in _Tab.values) Pill(label: _tabLabel(t), active: _tab == t, onTap: () => setState(() => _tab = t)),
           ]),
+          if (_tab == _Tab.recommended && resumes.hasValue)
+            DropdownButton<String>(
+              value: sourceId,
+              isExpanded: true,
+              items: [
+                for (final cv in ready)
+                  DropdownMenuItem(value: cv.id, child: Text(cv.name, overflow: TextOverflow.ellipsis)),
+                DropdownMenuItem(value: 'CAREER_PROFILE', child: Text(tr('Hồ sơ nghề nghiệp', 'Career profile'))),
+              ],
+              onChanged: (value) => setState(() => _recommendationSource = value),
+            ),
         ]),
       ),
       Expanded(
@@ -186,6 +216,8 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
               ref.invalidate(jobsProvider(_keyword));
               ref.invalidate(savedJobListProvider);
               ref.invalidate(matchesProvider);
+              ref.invalidate(resumesProvider);
+              ref.invalidate(jobRecommendationsProvider(resumeId));
             }),
           ),
           data: (jobs) {
@@ -202,7 +234,7 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
               onRefresh: () async {
                 ref.invalidate(jobsProvider(_keyword));
                 ref.invalidate(savedJobListProvider);
-                ref.invalidate(matchesProvider);
+                if (_tab == _Tab.recommended) await ref.refresh(jobRecommendationsProvider(resumeId).future);
               },
               children: [
                 Padding(
@@ -213,10 +245,16 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
                 if (list.isEmpty)
                   EmptyBox(
                     title: _tab == _Tab.recommended
-                        ? tr('Chưa có kết quả so khớp. Chạy so khớp ở Trang chủ.', 'No matches yet. Run matching from Home.')
+                        ? tr('Chưa tìm thấy việc phù hợp với nguồn này.', 'No matches for this source.')
                         : tr('Không có việc làm nào khớp.', 'No jobs match.'),
                   ),
-                for (final j in list) JobCard(job: j, match: scoreOf[j.id]),
+                for (final j in list)
+                  JobCard(
+                    job: j,
+                    match: scoreOf[j.id],
+                    resumeId: _tab == _Tab.recommended ? resumeId : null,
+                    careerProfile: _tab == _Tab.recommended && resumeId == null,
+                  ),
               ],
             );
           },

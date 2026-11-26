@@ -1,3 +1,4 @@
+import { useCandidateAi } from '../../../layouts/CandidateAiTasks';
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { suggestCvText, type CvSuggestParams } from '../../../services/assistantService';
@@ -101,9 +102,11 @@ export function StepTipsPanel({ tips, checks, lang }: { tips: StepTips; checks: 
  */
 export function AiSuggest({ params, onApply, lang, guest = false }: { params: () => CvSuggestParams; onApply: (text: string) => void; lang: Lang; guest?: boolean }) {
   const c = copy[lang];
+  const { busy: aiBusy } = useCandidateAi();
   const [state, setState] = useState<{ status: 'idle' | 'loading' | 'done' | 'error'; text?: string }>({ status: 'idle' });
 
   const run = async () => {
+    if (aiBusy) return;
     setState({ status: 'loading' });
     try {
       setState({ status: 'done', text: await suggestCvText(params(), { guest }) });
@@ -119,7 +122,7 @@ export function AiSuggest({ params, onApply, lang, guest = false }: { params: ()
           <button
             type="button"
             onClick={run}
-            disabled={state.status === 'loading'}
+            disabled={aiBusy || state.status === 'loading'}
             className="inline-flex cursor-pointer items-center gap-1 border-b border-current pb-px text-sm text-brand transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-50"
           >
             {c.ai}

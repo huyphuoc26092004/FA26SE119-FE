@@ -16,9 +16,9 @@ const statuses: { value: SkillProficiencyStatus; label: string }[] = [
 
 function errorLabel(code: string) {
   switch (code) {
-    case 'INVALID_EVIDENCE': return 'Kết quả AI thiếu bằng chứng hợp lệ';
+    case 'INVALID_EVIDENCE': return 'Kết quả AI không qua kiểm tra kỹ năng hoặc bằng chứng JD';
     case 'HTTP_429': return 'Vượt hạn mức hoặc tần suất gọi AI';
-    case 'HTTP_503': return 'Dịch vụ AI chưa sẵn sàng';
+    case 'HTTP_503': return 'Dịch vụ AI tạm thời không khả dụng hoặc đã chạm giới hạn';
     case 'INTERNAL': return 'Lỗi xử lý nội bộ';
     default: return code.replace('HTTP_', 'AI trả mã ');
   }

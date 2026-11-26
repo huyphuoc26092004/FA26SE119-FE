@@ -10,6 +10,7 @@ import 'models.dart';
 
 /// Allow enough time for AI tasks to return the backend's result or timeout error.
 const aiTimeout = Duration(minutes: 16);
+const careerToolsTimeout = Duration(minutes: 10);
 
 /// All candidate calls to the backend, grouped like the API list
 /// (backend-docs/Danh-sach-API-backend.md).
@@ -64,35 +65,97 @@ class CandidateRepository {
 
   /// ATS check of one CV against this job's description.
   Future<AtsResult> ats(String jobId, String resumeId) async =>
-      AtsResult.fromJson(asMap(await api.post('/jobs/$jobId/ats', data: {'resumeId': resumeId}, timeout: aiTimeout)));
+      AtsResult.fromJson(asMap(await api.post('/jobs/$jobId/ats', data: {'resumeId': resumeId}, timeout: careerToolsTimeout)));
 
   /// Records the click and returns the original ITviec/TopCV link.
-  Future<String?> externalApply(String jobId) async {
-    final body = asMap(await api.post('/jobs/$jobId/external-apply', data: {}));
+  Future<String?> externalApply(String jobId, {String? resumeId}) async {
+    final body = asMap(await api.post('/jobs/$jobId/external-apply',
+        data: resumeId == null ? null : {'resumeId': resumeId}));
     return str(body, ['target_url']);
   }
 
-  // Matching
-  Future<List<JobMatch>> latestMatches() async {
-    final runs = asList(await api.get('/matching', query: {'limit': 1}));
-    if (runs.isEmpty) return const [];
-    final id = str(runs.first, ['id']);
-    if (id == null) return const [];
-    return _results(await api.get('/matching/$id'));
+  Future<SalaryEstimate> estimateJobSalary(String jobId) async =>
+      SalaryEstimate.fromJson(asMap(await api.post(
+        '/jobs/$jobId/salary-estimation',
+        timeout: careerToolsTimeout,
+      )));
+
+  Future<String> createTargetedResume(Job job, String sourceId) async {
+    final source = asMap(await api.get('/resumes/$sourceId'));
+    final created = asMap(await api.post('/jobs/${job.id}/resume-draft', data: {
+      'language': str(source, ['language']) ?? 'vi',
+      'structured_data': asMap(source['structured_data']),
+      'raw_content': ?str(source, ['raw_content']),
+      'template_id': ?str(source, ['template_id']),
+      'title': 'CV - ${job.title}',
+    }, timeout: careerToolsTimeout));
+    return str(created, ['id']) ?? (throw ApiException(tr('Backend không trả mã CV.', 'The backend returned no resume ID.')));
   }
 
+  Future<void> updateResumeSummary(String id, String title, String summary) async {
+    final source = asMap(await api.get('/resumes/$id'));
+    final structured = asMap(source['structured_data']);
+    structured['summary'] = summary;
+    await api.patch('/resumes/$id', data: {'title': title, 'structured_data': structured});
+  }
+
+  Future<List<ApplicationDraft>> applicationDrafts({String? jobId}) async =>
+      asList(await api.get('/application-drafts', query: {'jobId': ?jobId}))
+          .map(ApplicationDraft.fromJson).toList();
+
+  Future<List<ApplicationDraft>> generateApplicationDrafts(String jobId, String resumeId, String language) async =>
+      asList(await api.post('/jobs/$jobId/application-drafts',
+        data: {'resumeId': resumeId, 'language': language}, timeout: careerToolsTimeout))
+          .map(ApplicationDraft.fromJson).toList();
+
+  Future<void> saveApplicationDraft(String id, String content) async {
+    await api.patch('/application-drafts/$id', data: {'content': content});
+  }
+
+  // Matching
   /// basis: ALL_CVS (every READY CV), SELECTED_CV (with resumeIds) or CAREER_PROFILE.
-  Future<List<JobMatch>> runMatching({String basis = 'ALL_CVS', List<String>? resumeIds}) async =>
+  Future<List<JobMatch>> runMatching({String basis = 'ALL_CVS', List<String>? resumeIds, String? jobId}) async =>
       _results(await api.post('/matching', data: {
         'basis': basis,
         'resumeIds': ?resumeIds,
-        'limit': 20,
-      }));
+        'mode': jobId == null ? 'RECOMMENDATION' : 'DETAILED',
+        'limit': jobId == null ? 10 : 1,
+        'jobId': ?jobId,
+      }, timeout: careerToolsTimeout), recommendations: jobId == null);
 
-  List<JobMatch> _results(dynamic res) {
+  Future<List<JobMatch>> recommendations() async {
+    List<JobMatch>? emptyCvResult;
+    try {
+      final matches = await runMatching();
+      if (matches.isNotEmpty) return matches;
+      emptyCvResult = matches;
+    } on ApiException catch (error) {
+      if (!_cvMatchingValidation(error)) rethrow;
+    }
+    try {
+      return await runMatching(basis: 'CAREER_PROFILE');
+    } on ApiException catch (error) {
+      if (emptyCvResult != null &&
+          _matchingValidation(error, r'Complete your career profile first|Set expectedSalary in your career profile|Set a positive monthly expectedSalary and a supported salaryCurrency')) {
+        return emptyCvResult;
+      }
+      rethrow;
+    }
+  }
+
+  bool _cvMatchingValidation(ApiException error) =>
+      _matchingValidation(error, r'At least one confirmed CV is required|ALL_CVS supports at most 100 confirmed resumes|Confirm CV data before matching');
+
+  bool _matchingValidation(ApiException error, String pattern) =>
+      (error.status == 400 || error.status == 409) &&
+      RegExp(pattern, caseSensitive: false).hasMatch(error.message);
+
+  List<JobMatch> _results(dynamic res, {required bool recommendations}) {
     final body = asMap(res);
-    return maps(body, ['results']).map(JobMatch.fromJson).toList()
-      ..sort((a, b) => b.score.compareTo(a.score));
+    return maps(body, ['results']).where((row) {
+      final status = str(row, ['job_status']);
+      return !recommendations || status == null || status == 'ACTIVE';
+    }).map(JobMatch.fromJson).toList();
   }
 
   // Resumes
@@ -237,7 +300,44 @@ final jobProvider = FutureProvider.autoDispose.family<Job, String>(
   (ref, id) => ref.watch(repositoryProvider).job(id),
 );
 final matchesProvider = FutureProvider.autoDispose<List<JobMatch>>(
-  (ref) => ref.watch(repositoryProvider).latestMatches(),
+  (ref) async {
+    ref.watch(authProvider.select((auth) => auth.user?.id));
+    final repository = ref.watch(repositoryProvider);
+    final resumes = ref.watch(resumesProvider.future);
+    final profile = ref.watch(careerProfileProvider.future);
+    await Future.wait<Object?>([resumes, profile]);
+    return repository.recommendations();
+  },
+  retry: (_, _) => null,
+);
+
+final jobRecommendationsProvider = FutureProvider.autoDispose.family<List<JobMatch>, String?>(
+  (ref, resumeId) async {
+    ref.watch(authProvider.select((auth) => auth.user?.id));
+    final repository = ref.watch(repositoryProvider);
+    final profile = ref.watch(careerProfileProvider.future);
+    await profile;
+    final matches = await repository.runMatching(
+      basis: resumeId == null ? 'CAREER_PROFILE' : 'SELECTED_CV',
+      resumeIds: resumeId == null ? null : [resumeId],
+    );
+    return matches.where((match) => match.scoreAvailable).toList();
+  },
+  retry: (_, _) => null,
+);
+
+final jobFitProvider = FutureProvider.autoDispose.family<JobMatch?, ({String jobId, String? resumeId, bool careerProfile})>(
+  (ref, source) async {
+    ref.watch(authProvider.select((auth) => auth.user?.id));
+    final resumeId = source.resumeId;
+    final results = await ref.watch(repositoryProvider).runMatching(
+      basis: resumeId != null ? 'SELECTED_CV' : source.careerProfile ? 'CAREER_PROFILE' : 'ALL_CVS',
+      resumeIds: resumeId == null ? null : [resumeId],
+      jobId: source.jobId,
+    );
+    return results.where((match) => match.job.id == source.jobId).firstOrNull;
+  },
+  retry: (_, _) => null,
 );
 final resumesProvider = FutureProvider.autoDispose<List<Resume>>(
   (ref) => ref.watch(repositoryProvider).resumes(),

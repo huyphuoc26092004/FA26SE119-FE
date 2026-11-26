@@ -248,3 +248,13 @@ test('citations render as safe external links while unsafe protocols remain plai
   assert.match(html, /\[Unsafe\]\(javascript:alert\)/);
   assert.match(html, /\[Malformed\]\(https:\/\/\)/);
 });
+
+test('numbered feedback keeps indented bullets in the same ordered list', () => {
+  const html = renderToStaticMarkup(React.createElement(MarkdownMessage, {
+    content: '1. Subject\n   - Fix the typo\n\n1. Closing\n   - Add a call to action',
+  }));
+  assert.equal((html.match(/<ol\b/g) ?? []).length, 1);
+  assert.equal((html.match(/<ul\b/g) ?? []).length, 2);
+  assert.match(html, /<li[^>]*>Subject<div[^>]*><ul/);
+  assert.match(html, /<li[^>]*>Closing<div[^>]*><ul/);
+});

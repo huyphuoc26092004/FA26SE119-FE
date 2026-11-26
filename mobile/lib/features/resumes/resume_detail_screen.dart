@@ -10,14 +10,16 @@ import '../../widgets/kit.dart';
 import 'resumes_screen.dart';
 
 class ResumeDetailScreen extends ConsumerStatefulWidget {
-  const ResumeDetailScreen({super.key, required this.resumeId});
+  const ResumeDetailScreen({super.key, required this.resumeId, this.edit = false});
   final String resumeId;
+  final bool edit;
   @override
   ConsumerState<ResumeDetailScreen> createState() => _ResumeDetailScreenState();
 }
 
 class _ResumeDetailScreenState extends ConsumerState<ResumeDetailScreen> {
   String? _busy; // which action is running
+  bool _savedEdits = false;
 
   CandidateRepository get _repo => ref.read(repositoryProvider);
 
@@ -25,9 +27,11 @@ class _ResumeDetailScreenState extends ConsumerState<ResumeDetailScreen> {
     setState(() => _busy = key);
     try {
       await action();
-      ref.invalidate(resumeProvider(widget.resumeId));
-      ref.invalidate(resumesProvider);
-      if (mounted && done != null) toast(context, done);
+      if (mounted) {
+        ref.invalidate(resumeProvider(widget.resumeId));
+        ref.invalidate(resumesProvider);
+        if (done != null) toast(context, done);
+      }
     } catch (e) {
       if (mounted) toast(context, ApiException.from(e).message);
     } finally {
@@ -81,6 +85,17 @@ class _ResumeDetailScreenState extends ConsumerState<ResumeDetailScreen> {
               ref.invalidate(analysesProvider(widget.resumeId));
             },
             children: [
+              if (widget.edit && !_savedEdits)
+                _ResumeDraftFields(
+                  name: cv.name,
+                  summary: cv.summary ?? '',
+                  saving: _busy == 'edit',
+                  onReview: () => setState(() => _savedEdits = true),
+                  onSave: (name, summary) => _run('edit', () async {
+                    await _repo.updateResumeSummary(cv.id, name, summary);
+                    if (mounted) setState(() => _savedEdits = true);
+                  }, done: tr('Đã lưu CV', 'CV saved')),
+                ),
               AppCard(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
@@ -113,7 +128,7 @@ class _ResumeDetailScreenState extends ConsumerState<ResumeDetailScreen> {
                   ],
                 ]),
               ),
-              if (cv.status == 'REVIEW_REQUIRED' || cv.status == 'DRAFT')
+              if ((cv.status == 'REVIEW_REQUIRED' || cv.status == 'DRAFT') && (!widget.edit || _savedEdits))
                 AppCard(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(
@@ -162,6 +177,62 @@ class _ResumeDetailScreenState extends ConsumerState<ResumeDetailScreen> {
       ),
     );
   }
+}
+
+class _ResumeDraftFields extends StatefulWidget {
+  const _ResumeDraftFields({required this.name, required this.summary, required this.saving, required this.onSave, required this.onReview});
+
+  final String name;
+  final String summary;
+  final bool saving;
+  final void Function(String name, String summary) onSave;
+  final VoidCallback onReview;
+
+  @override
+  State<_ResumeDraftFields> createState() => _ResumeDraftFieldsState();
+}
+
+class _ResumeDraftFieldsState extends State<_ResumeDraftFields> {
+  late final _name = TextEditingController(text: widget.name);
+  late final _summary = TextEditingController(text: widget.summary);
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _summary.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      TextField(controller: _name, enabled: !widget.saving, decoration: InputDecoration(labelText: tr('Tên CV', 'CV name'))),
+      TextField(
+        controller: _summary,
+        enabled: !widget.saving,
+        minLines: 3,
+        maxLines: 8,
+        decoration: InputDecoration(labelText: tr('Tóm tắt', 'Summary')),
+      ),
+      const SizedBox(height: 12),
+      BigButton(
+        label: tr('Lưu CV', 'Save CV'),
+        busy: widget.saving,
+        onPressed: () {
+          final name = _name.text.trim();
+          if (name.isEmpty) {
+            toast(context, tr('Nhập tên CV.', 'Enter a CV name.'));
+            return;
+          }
+          widget.onSave(name, _summary.text.trim());
+        },
+      ),
+      TextButton(
+        onPressed: widget.saving ? null : widget.onReview,
+        child: Text(tr('Tiếp tục xem lại CV', 'Continue reviewing CV')),
+      ),
+    ]),
+  );
 }
 
 const _body = TextStyle(fontSize: 14, height: 1.6, color: Color(0xFF3F4843));

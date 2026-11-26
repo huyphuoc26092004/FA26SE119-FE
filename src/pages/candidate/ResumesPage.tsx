@@ -394,7 +394,7 @@ export default function ResumesPage() {
                   <div className="flex items-baseline gap-4 md:contents">
                     <p className="text-[clamp(1.75rem,2.6vw,2rem)] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums md:text-right">
                       <span className="sr-only">{c.colAts}: </span>
-                      {cv.atsScore || '—'}
+                      {(cv.atsScoreAvailable ?? cv.atsScore > 0) ? cv.atsScore : '—'}
                     </p>
                     <p className="text-sm text-slate-600">
                       <span className="md:sr-only">{c.colUpdated} </span>
@@ -423,7 +423,7 @@ export default function ResumesPage() {
                   </div>
                   <p className="shrink-0 text-[2rem] font-normal leading-none tracking-[-0.02em] text-brand tabular-nums">
                     <span className="sr-only">{c.colAts}: </span>
-                    {cv.atsScore || '—'}
+                    {(cv.atsScoreAvailable ?? cv.atsScore > 0) ? cv.atsScore : '—'}
                   </p>
                 </div>
 

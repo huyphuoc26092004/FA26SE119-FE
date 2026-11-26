@@ -1,3 +1,4 @@
+import { useCandidateAi } from '../../../layouts/CandidateAiTasks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -246,6 +247,7 @@ export function AssistantChatWidget() {
   const selectedCv = listedCv ?? linkedCv;
   const selectedJob = listedJob ?? linkedJob;
   const sessionUnloaded = !!activeSession && !isDraft(activeSession) && !loadedIds.current.has(activeSession.id);
+  const { busy: aiBusy } = useCandidateAi();
   const busy = typing || saving || historyLoading || sessionUnloaded || !!loadingSessionId;
 
   // Conversation list from the backend; messages load when a conversation is opened.
@@ -509,7 +511,7 @@ export function AssistantChatWidget() {
 
   const handleSend = async (textToSend = input) => {
     const text = textToSend.trim();
-    if (!text || busy || operationInFlight.current) return;
+    if (!text || aiBusy || busy || operationInFlight.current) return;
     if (text.length > 8000) { setActionError(c.messageTooLong); return; }
 
     operationInFlight.current = true;
@@ -1020,7 +1022,7 @@ export function AssistantChatWidget() {
                   />
                   <button
                     type="submit"
-                    disabled={busy || !input.trim()}
+                    disabled={aiBusy || busy || !input.trim()}
                     className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-white transition-colors hover:bg-brand-800 disabled:opacity-30"
                     aria-label={c.send}
                   >

@@ -1,3 +1,4 @@
+import { AI_QUEUE_MUTATION, useCandidateAi } from '../../layouts/CandidateAiTasks';
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -156,6 +157,7 @@ function SectionHead({ title, note, action }: { title: string; note?: string; ac
 }
 
 export default function ResumeAnalysisPage() {
+  const { busy: aiBusy } = useCandidateAi();
   const { resumeId } = useParams<{ resumeId?: string }>();
   const { t, isVietnamese } = useTranslation();
   const c = isVietnamese ? copy.vi : copy.en;
@@ -202,12 +204,17 @@ export default function ResumeAnalysisPage() {
     error,
   } = useQuery({
     queryKey: ['resumeAnalysis', effectiveResumeId],
-    queryFn: () => getResumeAnalysis(effectiveResumeId),
+    queryFn: async () => {
+      const result = await getResumeAnalysis(effectiveResumeId);
+      void queryClient.invalidateQueries({ queryKey: ['resumes'] });
+      return result;
+    },
     enabled: !!effectiveResumeId && !resumesPending && !resumesError,
   });
 
   // Re-analyze mutation
   const reanalyzeMutation = useMutation({
+    mutationKey: AI_QUEUE_MUTATION,
     mutationFn: () => reanalyzeResume(effectiveResumeId),
     onSuccess: (newAnalysis) => {
       queryClient.setQueryData(['resumeAnalysis', effectiveResumeId], newAnalysis);
@@ -351,7 +358,7 @@ export default function ResumeAnalysisPage() {
           <button
             type="button"
             onClick={() => reanalyzeMutation.mutate()}
-            disabled={reanalyzeMutation.isPending}
+            disabled={aiBusy || reanalyzeMutation.isPending}
             className={primaryButton}
           >
             {reanalyzeMutation.isPending ? t('resumes.reAnalyzing') : t('resumes.reAnalyzeButton')}

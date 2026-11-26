@@ -220,21 +220,6 @@ export interface CvSuggestParams {
   background?: string;
 }
 
-const SUGGEST_INSTRUCTIONS: Record<CvSuggestField, Record<'vi' | 'en', string>> = {
-  summary: {
-    vi: 'Viết lại phần "Giới thiệu bản thân" cho CV: 2–4 câu, ngôi thứ nhất ẩn chủ ngữ, nêu thế mạnh và mục tiêu dựa trên dữ kiện đã cung cấp. Chỉ nêu số năm kinh nghiệm khi có thông tin xác thực.',
-    en: 'Rewrite the CV "Professional summary": 2–4 sentences, implied first person, using supplied strengths and goals. Mention years of experience only when provided; do not invent figures.',
-  },
-  experience: {
-    vi: 'Viết tối đa 5 gạch đầu dòng "Điểm nổi bật" cho kinh nghiệm này: mỗi dòng mở đầu bằng động từ và dùng đúng thông tin người dùng cung cấp. Không thêm số liệu hoặc thông tin thay thế khi chưa có dữ kiện.',
-    en: 'Write up to five "Highlights" bullets for this job using only supplied facts. Begin with an action verb; omit unsupported figures and do not add placeholders.',
-  },
-  project: {
-    vi: 'Viết lại mô tả dự án cho CV: 2–3 câu, nêu bài toán, vai trò và công nghệ, kết quả đạt được, không bịa số liệu.',
-    en: 'Rewrite the CV project description: 2–3 sentences covering the problem, role, technologies and outcome, without inventing figures.',
-  },
-};
-
 /** Bỏ phần mở đầu/kết thúc kiểu chat và dấu markdown, chỉ giữ nội dung dán được vào CV. */
 function cleanSuggestion(text: string, field: CvSuggestField): string {
   let out = text.trim().replace(/^```[a-z]*\n?|```$/g, '').trim();
@@ -255,23 +240,12 @@ function cleanSuggestion(text: string, field: CvSuggestField): string {
  */
 export async function suggestCvText(params: CvSuggestParams, options?: { guest?: boolean }): Promise<string> {
   const vi = params.language === 'vi';
-  const lines = [
-    SUGGEST_INSTRUCTIONS[params.field][params.language],
-    vi
-      ? `Viết bằng tiếng Việt. Chỉ trả về nội dung để dán thẳng vào CV${params.field === 'experience' ? ', mỗi ý một dòng' : ''}, không chào hỏi, không giải thích.`
-      : `Write in English. Return only the text to paste into the CV${params.field === 'experience' ? ', one bullet per line' : ''}, no greeting or explanation.`,
-    params.position && `${vi ? 'Vị trí mong muốn' : 'Target position'}: ${params.position}`,
-    params.skills?.length && `${vi ? 'Kỹ năng' : 'Skills'}: ${params.skills.slice(0, 15).join(', ')}`,
-    params.title && `${params.field === 'project' ? (vi ? 'Dự án' : 'Project') : vi ? 'Chức danh' : 'Job title'}: ${params.title}`,
-    params.subtitle && `${params.field === 'project' ? (vi ? 'Vai trò / công nghệ' : 'Role / tech') : vi ? 'Công ty' : 'Company'}: ${params.subtitle}`,
-    params.background && `${vi ? 'Kinh nghiệm' : 'Background'}: ${params.background}`,
-    `${vi ? 'Nội dung hiện tại' : 'Current text'}: ${params.current?.trim() || (vi ? '(trống)' : '(empty)')}`,
-  ].filter(Boolean);
-
-  const prompt = lines.join('\n').slice(0, 7900);
   // Khách dùng thử: hỏi AI qua phiên khách (mỗi gợi ý một cuộc trò chuyện riêng để không lẫn với khung chat).
   if (options?.guest) {
-    const text = cleanSuggestion(await askGuestAssistant(prompt, { freshConversation: true }), params.field);
+    const text = cleanSuggestion(await askGuestAssistant(JSON.stringify({ task: "CV_SUGGESTION", ...params }), {
+      freshConversation: true,
+      language: params.language,
+    }), params.field);
     if (!text) throw new Error(vi ? 'Trợ lý chưa trả về gợi ý nào.' : 'The assistant returned no suggestion.');
     return text;
   }
@@ -279,7 +253,7 @@ export async function suggestCvText(params: CvSuggestParams, options?: { guest?:
   const { data } = await apiClient.post<{ answer: string }>(
     '/resumes/AI-support',
     {
-      question: [SUGGEST_INSTRUCTIONS[params.field][params.language]],
+      question: [params.field],
       is_urgent: false,
       resumeId: params.resumeId,
       language: params.language,
